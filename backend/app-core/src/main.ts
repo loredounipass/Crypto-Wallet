@@ -14,7 +14,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['https://legendary-disco-qj97q4q94vj26w7x-3000.app.github.dev'],
+    origin: ['http://localhost:3000'],
     credentials: true
   })
 

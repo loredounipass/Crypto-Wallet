@@ -1,0 +1,79 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\leida\\Downloads\\Crypto-Wallet\\backend\\tasks\\wallet-generator\\evm\\contracts\\GeneratorFactoryContract.sol": {
+      "lastModificationDate": 1775845985038,
+      "contentHash": "5bbe53a4d0a223477cd2bb09d0e49ccf",
+      "sourceName": "contracts/GeneratorFactoryContract.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./WalletContract.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "GeneratorFactoryContract"
+      ]
+    },
+    "C:\\Users\\leida\\Downloads\\Crypto-Wallet\\backend\\tasks\\wallet-generator\\evm\\contracts\\WalletContract.sol": {
+      "lastModificationDate": 1775847329680,
+      "contentHash": "adaec916757b47e12cc0c5b10f52c946",
+      "sourceName": "contracts/WalletContract.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "WalletContract"
+      ]
+    }
+  }
+}

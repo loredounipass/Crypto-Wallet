@@ -3,7 +3,7 @@ const ObjectId = require('mongoose').Types.ObjectId
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const coins = require(`${appRoot}/config/coins/info`)
-const { Queue } = require('bullmq')
+const { Queue } = require(`${appRoot}/config/bullmq`)
 const Web3 = require('web3')
 
 let web3

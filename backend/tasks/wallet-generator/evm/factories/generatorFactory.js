@@ -1,21 +1,21 @@
-const GeneratorFactoryContract = require('../contracts/abis/GeneratorFactoryContract')
-const Web3 = require('web3')
-
-const HDWalletProvider = require('@truffle/hdwallet-provider')
+const { ethers } = require('ethers');
+const getGeneratorFactoryContract = require('../contracts/abis/GeneratorFactoryContract');
 
 class GeneratorFactory {
     constructor(rpc, privateKeys) {
-        this.web3 = new Web3(
-            new HDWalletProvider(
-                privateKeys,
-                rpc
-            ))
+        // Assume first private key
+        const privateKey = privateKeys[0];
+        this.provider = new ethers.JsonRpcProvider(rpc);
+        this.wallet = new ethers.Wallet(privateKey, this.provider);
     }
 
-    async generate(address) {
-        const contract = await GeneratorFactoryContract(this.web3.currentProvider)
-        return await contract.generate({ from: address })
+    async generate(address, networkId) {
+        // networkId must be passed since ethers doesn't automatically load networks from Truffle JSON
+        const contract = await getGeneratorFactoryContract(this.wallet, networkId);
+        const tx = await contract.generate();
+        const receipt = await tx.wait();
+        return receipt;
     }
 }
 
-module.exports = GeneratorFactory
+module.exports = GeneratorFactory;

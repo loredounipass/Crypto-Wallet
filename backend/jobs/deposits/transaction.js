@@ -1,7 +1,7 @@
 const appRoot = require('app-root-path')
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
-const { Queue } = require('bullmq')
+const { Queue } = require(`${appRoot}/config/bullmq`)
 const { v4: uuidv4 } = require('uuid')
 
 const createTransaction

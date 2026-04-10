@@ -1,7 +1,7 @@
 import axios from 'axios'
 axios.defaults.withCredentials = true
 
-const baseApi = 'https://legendary-disco-qj97q4q94vj26w7x-4000.app.github.dev/secure/api'
+const baseApi = 'http://localhost:4000/secure/api'
 
 // Endpoints usuario
 const loginApi = `${baseApi}/user/login`

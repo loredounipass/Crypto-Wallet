@@ -17,6 +17,23 @@ services:
       - 'backend-redis:/data'
     networks:
       - backend
+
+  backend-daemons-workers:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - DB_HOST=mongodb
+      - DB_PORT=27020
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./backend/config/.env:/usr/src/app/config/.env
+    networks:
+      - backend
 networks:
   backend:
     driver: bridge

@@ -1,6 +1,6 @@
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
-const { Worker, Queue } = require('bullmq')
+const { Worker, Queue } = require(`${appRoot}/config/bullmq`)
 const { v4: uuidv4 } = require('uuid')
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 
