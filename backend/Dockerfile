@@ -3,8 +3,8 @@ FROM node:20
 # Set working directory
 WORKDIR /usr/src/app
 
-# Instalar pnpm y pm2 globalmente
-RUN npm install -g pnpm pm2
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Copy package.json and pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
@@ -15,5 +15,5 @@ RUN pnpm install
 # Copy the rest of the application
 COPY . .
 
-# Comando por defecto para correr con pm2-runtime
-CMD ["pm2-runtime", "start", "process.json"]
+# Run the application with node
+CMD ["node", "dist/main.js"]

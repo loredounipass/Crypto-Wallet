@@ -4,7 +4,7 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const User = require(`${appRoot}/config/models/User`)
 const coins = require(`${appRoot}/config/coins/info`)
-const Web3 = require('web3')
+const { Web3 } = require('web3')
 const { sendWithdrawEmail } = require('../notifications/mailService')
 
 let web3

@@ -1,6 +1,6 @@
 const appRoot = require('app-root-path')
 const ObjectId = require('mongoose').Types.ObjectId
-const Web3 = require('web3')
+const { Web3 } = require('web3')
 const { sendDepositEmail } = require('../notifications/mailService')
 
 const Transaction = require(`${appRoot}/config/models/Transaction`)
