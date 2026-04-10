@@ -8,8 +8,7 @@ const { v4: uuidv4 } = require('uuid')
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 
 const getWeb3WssInstance = (wss) => {
-    return new Web3(new Web3.providers
-        .WebsocketProvider(wss))
+    return new Web3(wss)
 }
 
 module.exports = {
