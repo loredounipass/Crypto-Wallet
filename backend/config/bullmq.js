@@ -1,7 +1,12 @@
 const { Worker, Queue } = require('bullmq')
 
+const isLocalRun = !process.env.CI
+const redisHost = isLocalRun && process.env.REDIS_HOST === 'redis'
+    ? '127.0.0.1'
+    : process.env.REDIS_HOST
+
 const connection = {
-    host: process.env.REDIS_HOST || 'localhost',
+    host: redisHost || 'localhost',
     port: parseInt(process.env.REDIS_PORT) || 6379
 }
 

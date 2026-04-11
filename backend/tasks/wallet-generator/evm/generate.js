@@ -1,5 +1,12 @@
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
+
+// If running locally (outside Docker where CI is not true), override DB to use localhost
+if (!process.env.CI) {
+    process.env.DB_HOST = '127.0.0.1'
+    process.env.DB_PORT = '27020'
+}
+
 const { sleep } = require(`${appRoot}/config/utils/lock`)
 
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
