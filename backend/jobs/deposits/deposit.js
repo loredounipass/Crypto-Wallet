@@ -10,6 +10,9 @@ const User = require(`${appRoot}/config/models/User`)
 
 let web3
 
+const POLL_INTERVAL_MS = Number(process.env.CONFIRMATION_POLL_INTERVAL_MS || 10000)
+const MAX_CONFIRMATION_POLLS = Number(process.env.MAX_CONFIRMATION_POLLS || 180)
+
 const toNumber = (value) => {
     if (typeof value === 'bigint') return Number(value)
     if (typeof value === 'string') return Number(value)
@@ -21,8 +24,8 @@ const toCoinAmount = (rawValue, coin) => {
     return toNumber(rawValue) / 10 ** decimals
 }
 
-const reject = () => {
-    throw 'err: not deposited'
+const reject = (message = 'err: not deposited') => {
+    throw new Error(message)
 }
 
 const _updateTransactionState = async (tId, status, value, confirmations) => {
@@ -92,6 +95,10 @@ const _checkConfirmation = async (
     reject()
 }
 
+const _sleep = async (ms) => {
+    return await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 const processDeposit = async (
     { walletAddress, transactionHash, transactionId, chainId, coin }
 ) => {
@@ -105,46 +112,58 @@ const processDeposit = async (
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
     var result = await Transaction.findOne({ _id: ObjectId(transactionId) })
     if (result) {
-        result = await web3.eth.getTransaction(transactionHash)
-        if (result && 'value' in result) {
-            const { value, blockNumber } = result
-            const latestBlockNumber = await web3.eth.getBlockNumber()
-            const confirmations = Number(latestBlockNumber - blockNumber)
-            const amount = toCoinAmount(value, coin)
-            const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
-            console.log('[DEPOSIT] transaction found on chain', {
-                transactionId,
-                confirmations,
-                blockNumber
-            })
-            await _updateTransactionState(
-                transactionId,
-                2,
-                amount,
-                confirmations
-            )
-            if (confirmations >= minConfirmations) {
-                console.log('[DEPOSIT] minimum confirmations reached', {
-                    transactionId,
-                    minConfirmations
-                })
-                return await _checkConfirmation(
-                    walletAddress,
-                    transactionHash,
-                    value,
-                    coin,
-                    chainId,
-                    transactionId
-                )
+        const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
+        for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
+            result = await web3.eth.getTransaction(transactionHash)
+            if (result && 'value' in result) {
+                const { value, blockNumber } = result
+                if (blockNumber !== null && blockNumber !== undefined) {
+                    const latestBlockNumber = await web3.eth.getBlockNumber()
+                    const confirmations = Number(latestBlockNumber - blockNumber)
+                    const amount = toCoinAmount(value, coin)
+                    console.log('[DEPOSIT] transaction found on chain', {
+                        transactionId,
+                        confirmations,
+                        blockNumber
+                    })
+                    await _updateTransactionState(
+                        transactionId,
+                        2,
+                        amount,
+                        confirmations
+                    )
+                    if (confirmations >= minConfirmations) {
+                        console.log('[DEPOSIT] minimum confirmations reached', {
+                            transactionId,
+                            minConfirmations
+                        })
+                        return await _checkConfirmation(
+                            walletAddress,
+                            transactionHash,
+                            value,
+                            coin,
+                            chainId,
+                            transactionId
+                        )
+                    }
+
+                    console.log('[DEPOSIT] waiting for more confirmations', {
+                        transactionId,
+                        confirmations,
+                        minConfirmations
+                    })
+                } else {
+                    console.log('[DEPOSIT] transaction is pending inclusion in block', {
+                        transactionId,
+                        poll: poll + 1
+                    })
+                }
             }
 
-            console.log('[DEPOSIT] waiting for more confirmations', {
-                transactionId,
-                confirmations,
-                minConfirmations
-            })
-            reject()
+            await _sleep(POLL_INTERVAL_MS)
         }
+
+        reject(`err: confirmation timeout after ${MAX_CONFIRMATION_POLLS} polls`)
     }
 
     reject()
