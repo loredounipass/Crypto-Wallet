@@ -824,8 +824,8 @@
       "transactionHash": "0xbeaa74d774c232791bf483f62723e5854f815c6143bb184a67815941fd3c2c21"
     },
     "11155111": {
-      "address": "0x7Ba04adAa7F498e776fdb62dE0d13469E9A9B153",
-      "transactionHash": "0x401db549bf06be1b5016dc1ad70746979291491637b183fb1ba43c8feb937299"
+      "address": "0x52c8b7E37CBE381391c9fa437f8774F08bB16681",
+      "transactionHash": "0xd5e1f3b57079bda524a7109f19d8632800eb777ac799369e6f29c139d1fab2ac"
     },
     "11155420": {
       "events": {},

@@ -19,7 +19,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import useAllWallets from '../hooks/useAllWallets';
-import { getCoinLogo } from '../components/utils/Chains';
+import { getCoinLogo, getCoinFallbackLogo } from '../components/utils/Chains';
 import { useHistory } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -28,6 +28,10 @@ const Dashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const history = useHistory();
+  const handleCoinImageError = (coin) => (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = getCoinFallbackLogo(coin);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,7 +85,11 @@ const Dashboard = () => {
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center">
-            <Avatar src={getCoinLogo(wallet.coin)} sx={{ width: 40, height: 40, mr: 2 }} />
+            <Avatar
+              src={getCoinLogo(wallet.coin)}
+              imgProps={{ onError: handleCoinImageError(wallet.coin) }}
+              sx={{ width: 40, height: 40, mr: 2 }}
+            />
             <Box>
               <Typography variant="h6">{wallet.coin}</Typography>
               <Typography variant="body2" color="textSecondary">

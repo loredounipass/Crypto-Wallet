@@ -17,6 +17,7 @@ import {
     getCoinList,
     getDefaultCoin,
     getCoinLogo,
+    getCoinFallbackLogo,
     getDefaultNetworkId,
     getNetworkName
 } from '../components/utils/Chains';
@@ -36,6 +37,10 @@ const Wallets = () => {
     const handleCoinChange = (e) => setSelectedCoin(e.target.value);
     const handleCreateWallet = () => history.push(`/wallet/${selectedCoin}`);
     const handleBack = () => history.push('/');
+    const handleCoinImageError = (coin) => (event) => {
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = getCoinFallbackLogo(coin);
+    };
 
     const texts = useMemo(() => [
         t('p2p_service_wallets'),
@@ -131,6 +136,7 @@ const Wallets = () => {
                                                         width={24}
                                                         src={getCoinLogo(coin)}
                                                         alt={`${coin} logo`}
+                                                        onError={handleCoinImageError(coin)}
                                                         style={{ marginRight: 8 }}
                                                     />
                                                     <span>{coin.toUpperCase()} • {getNetworkName(getDefaultNetworkId(coin))}</span>

@@ -12,7 +12,7 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { getCoinLogo } from './utils/Chains';
+import { getCoinLogo, getCoinFallbackLogo } from './utils/Chains';
 import { getDisplayableAddress } from './utils/Display';
 
 export default function MyWallets() {
@@ -20,6 +20,10 @@ export default function MyWallets() {
     const { allWalletInfo } = useAllWallets();
     const theme = useTheme();
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const handleCoinImageError = (coin) => (event) => {
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = getCoinFallbackLogo(coin);
+    };
 
     return (
         <Box sx={{ width: '100%', padding: isSmallScreen ? 0.5 : 2, marginBottom: isSmallScreen ? 2 : 4 }}>
@@ -41,7 +45,12 @@ export default function MyWallets() {
                                         </Typography>
                                         <Grid container spacing={0.5} alignItems='center'>
                                             <Grid item>
-                                                <img width={20} src={getCoinLogo(wallet.coin)} alt={wallet.coin} />
+                                                <img
+                                                    width={20}
+                                                    src={getCoinLogo(wallet.coin)}
+                                                    alt={wallet.coin}
+                                                    onError={handleCoinImageError(wallet.coin)}
+                                                />
                                             </Grid>
                                             <Grid item>
                                                 <Typography variant='body2'>{wallet.coin}</Typography>
@@ -107,7 +116,12 @@ export default function MyWallets() {
                                 }}>
                                     <Grid container spacing={1} alignItems='center'>
                                         <Grid item>
-                                            <img width={20} src={getCoinLogo(wallet.coin)} alt={wallet.coin} />
+                                            <img
+                                                width={20}
+                                                src={getCoinLogo(wallet.coin)}
+                                                alt={wallet.coin}
+                                                onError={handleCoinImageError(wallet.coin)}
+                                            />
                                         </Grid>
                                         <Grid item xs>
                                             <Typography variant='body2' component='div'>
