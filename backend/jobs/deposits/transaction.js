@@ -6,6 +6,12 @@ const { v4: uuidv4 } = require('uuid')
 
 const createTransaction
     = async ({ walletAddress, transactionHash, chainId, coin }) => {
+        console.log('[DEPOSIT_TX] create transaction requested', {
+            walletAddress,
+            transactionHash,
+            chainId,
+            coin
+        })
         const transaction = new Transaction({
             nature: 1,
             created_at: Date.now(),
@@ -39,6 +45,11 @@ const createTransaction
                         type: 'exponential',
                         delay: 5000,
                     }
+                })
+                console.log('[DEPOSIT_TX] deposit job enqueued', {
+                    queue: `${coin.toLowerCase()}-deposits`,
+                    transactionId: transaction._id.toString(),
+                    transactionHash
                 })
             }
 

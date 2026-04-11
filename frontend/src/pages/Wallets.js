@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import useAllWallets from '../hooks/useAllWallets';
 import {
     Typography,
@@ -37,12 +37,12 @@ const Wallets = () => {
     const handleCreateWallet = () => history.push(`/wallet/${selectedCoin}`);
     const handleBack = () => history.push('/');
 
-    const texts = [
+    const texts = useMemo(() => [
         t('p2p_service_wallets'),
         t('rpc_description'),
         t('password_security_wallets'),
         t('evm_wallet_description')
-    ];
+    ], [t]);
 
     const [textIndex, setTextIndex] = useState(0);
     const [visibleText, setVisibleText] = useState(texts[0]);

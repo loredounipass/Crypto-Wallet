@@ -33,6 +33,13 @@ const _updateTransactionState = async (tId, status, value, confirmations) => {
 }
 
 const _deposit = async (transactionId, chainId, coin, address, value) => {
+    console.log('[DEPOSIT] applying balance increment', {
+        transactionId,
+        chainId,
+        coin,
+        address,
+        value
+    })
     var result = await Wallet.updateOne({
         address, coin, chainId
     }, {
@@ -60,6 +67,12 @@ const _checkConfirmation = async (
 ) => {
     var result = await web3.eth.getTransactionReceipt(txHash)
     if (result && 'status' in result && result.status) {
+        console.log('[DEPOSIT] receipt confirmed, processing credit', {
+            transactionId,
+            txHash,
+            chainId,
+            coin
+        })
         return _deposit(
             transactionId, chainId, coin, address, value / 10 ** coins[coin].decimals
         )
@@ -71,6 +84,13 @@ const _checkConfirmation = async (
 const processDeposit = async (
     { walletAddress, transactionHash, transactionId, chainId, coin }
 ) => {
+    console.log('[DEPOSIT] processing started', {
+        walletAddress,
+        transactionHash,
+        transactionId,
+        chainId,
+        coin
+    })
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
     var result = await Transaction.findOne({ _id: ObjectId(transactionId) })
     if (result) {
@@ -78,6 +98,11 @@ const processDeposit = async (
         if (result && 'value' in result) {
             const { value, blockNumber } = result
             const confirmations = (await web3.eth.getBlockNumber()) - blockNumber
+            console.log('[DEPOSIT] transaction found on chain', {
+                transactionId,
+                confirmations,
+                blockNumber
+            })
             await _updateTransactionState(
                 transactionId,
                 2,
@@ -85,7 +110,10 @@ const processDeposit = async (
                 confirmations
             )
             if (confirmations >= process.env.MIN_CONFIRMATIONS) {
-                // registrar
+                console.log('[DEPOSIT] minimum confirmations reached', {
+                    transactionId,
+                    minConfirmations: process.env.MIN_CONFIRMATIONS
+                })
                 return await _checkConfirmation(
                     walletAddress,
                     transactionHash,
@@ -96,6 +124,11 @@ const processDeposit = async (
                 )
             }
 
+            console.log('[DEPOSIT] waiting for more confirmations', {
+                transactionId,
+                confirmations,
+                minConfirmations: process.env.MIN_CONFIRMATIONS
+            })
             reject()
         }
     }

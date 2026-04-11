@@ -1,56 +1,16 @@
 {
     "apps": [
         {
-            "name": "ME: AVAX Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/avax.js"
-        },
-        {
-            "name": "ME: BNB Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/bnb.js"
-        },
-        {
             "name": "ME: ETH Broadcast NODE",
             "script": "./daemon/subscriptions/chain/evm/native-coins/eth.js"
-        },
-        {
-            "name": "ME: FTM Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/ftm.js"
-        },
-        {
-            "name": "ME: MATIC Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/matic.js"
-        },
-        {
-            "name": "ME: OP Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/optimism.js"
         },
         {
             "name": "ME: App Withdraw Broadcast NODE",
             "script": "./daemon/subscriptions/app/withdraws.js"
         },
         {
-            "name": "ME: Avalanche Worker NODE",
-            "script": "./daemon/workers/chain/avalanche.js"
-        },
-        {
-            "name": "ME: BSC Worker NODE",
-            "script": "./daemon/workers/chain/bsc.js"
-        },
-        {
             "name": "ME: Ethereum Worker NODE",
             "script": "./daemon/workers/chain/ethereum.js"
-        },
-        {
-            "name": "ME: Fantom Worker NODE",
-            "script": "./daemon/workers/chain/fantom.js"
-        },
-        {
-            "name": "ME: Polygon Worker NODE",
-            "script": "./daemon/workers/chain/polygon.js"
-        },
-        {
-            "name": "ME: optimism Worker NODE",
-            "script": "./daemon/workers/chain/optimism.js"
         },
         {
             "name": "ME: App Withdraw Worker NODE",

@@ -18,12 +18,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { post, resetPasswordApi } from '../api/http'
 import { useLocation, useHistory } from 'react-router-dom'
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search)
-}
-
 export default function ResetPassword() {
-  const query = useQuery()
+  const location = useLocation()
   const history = useHistory()
   const [email, setEmail] = useState('')
   const [token, setToken] = useState('')
@@ -38,11 +34,12 @@ export default function ResetPassword() {
   const isMounted = useRef(true)
 
   useEffect(() => {
-    const qEmail = query.get('email') || ''
-    const qToken = query.get('token') || ''
+    const searchParams = new URLSearchParams(location.search)
+    const qEmail = searchParams.get('email') || ''
+    const qToken = searchParams.get('token') || ''
     setEmail(qEmail)
     setToken(qToken)
-  }, [])
+  }, [location.search])
 
   useEffect(() => {
     return () => {

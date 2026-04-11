@@ -8,6 +8,17 @@ const connection = {
 class CustomWorker extends Worker {
     constructor(name, processor, opts = {}) {
         super(name, processor, { connection, ...opts })
+        this.on('active', (job) => {
+            console.log(`[WORKER][${name}] active jobId=${job.id} name=${job.name}`)
+        })
+        this.on('completed', (job) => {
+            console.log(`[WORKER][${name}] completed jobId=${job.id} name=${job.name}`)
+        })
+        this.on('failed', (job, err) => {
+            const jobId = job ? job.id : 'unknown'
+            const jobName = job ? job.name : 'unknown'
+            console.error(`[WORKER][${name}] failed jobId=${jobId} name=${jobName} error=${err.message || err}`)
+        })
     }
 }
 

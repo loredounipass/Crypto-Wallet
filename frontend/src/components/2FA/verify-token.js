@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Typography, Box, Button, TextField, Grid, Alert, CircularProgress } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import RefreshIcon from '@mui/icons-material/Refresh'; 
 import { useHistory } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 

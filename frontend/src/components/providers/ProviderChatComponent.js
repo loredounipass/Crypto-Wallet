@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Paper,
   Box,
@@ -29,7 +29,10 @@ const ProviderChatComponent = () => {
 
   const messagesEndRef = useRef(null);
 
-  const messagesForSelected = messagesByChat[selectedChat.id] || [];
+  const messagesForSelected = useMemo(
+    () => messagesByChat[selectedChat.id] || [],
+    [messagesByChat, selectedChat.id]
+  );
 
   const handleSend = () => {
     if (input.trim() !== '') {

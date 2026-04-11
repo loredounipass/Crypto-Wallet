@@ -14,9 +14,9 @@ import {
   Checkbox,
   FormControlLabel,
 } from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
+
 
 export default function ProviderForm() {
   const { createNewProvider, findByEMail, provider, error } = useProvider();

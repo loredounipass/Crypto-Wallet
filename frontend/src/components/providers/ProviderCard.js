@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { 
   Grid, 
   Card, 
@@ -19,7 +19,7 @@ export default function ProviderCard() {
   const [error, setError] = useState(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     try {
       const res = await getAllProviders();
       if (res && res.length > 0) {
@@ -33,7 +33,7 @@ export default function ProviderCard() {
       setError(err);
       setProviders([]);
     }
-  };
+  }, [getAllProviders]);
 
   const handleCreateChat = async (providerEmail) => {
     if (!auth?.email || isCreatingChat) return;
@@ -80,7 +80,7 @@ export default function ProviderCard() {
     // Clear old chat data when component mounts
     localStorage.removeItem('chatData');
     fetchProviders();
-  }, []);
+  }, [fetchProviders]);
 
   return (
     <Box sx={{ padding: 3 }}>
