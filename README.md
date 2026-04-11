@@ -64,6 +64,13 @@ $ pm2 stop process.json
 # start Instances
 ```
 $ docker-compose up  
+
+$docker compose down
+
+$docker compose up --build -d
+
+docker compose logs -f backend-daemons-workers
+
 $ download Redis server  
 $ download MongoDB server  
 $ redis-server  
