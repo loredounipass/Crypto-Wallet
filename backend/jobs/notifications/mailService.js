@@ -1,17 +1,36 @@
 const nodemailer = require('nodemailer')
 
-let mailTransporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
-        
+const mailUser = process.env.MAIL_USER || process.env.EMAIL_USER || process.env.SMTP_USER
+const mailPass = process.env.MAIL_PASS || process.env.EMAIL_PASS || process.env.SMTP_PASS
+
+let mailTransporter = null
+if (mailUser && mailPass) {
+    mailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: mailUser,
+            pass: mailPass
+        }
+    })
+}
+
+const sendMailSafe = async (mailDetails) => {
+    if (!mailTransporter) {
+        console.warn('[MAIL] transporter not configured: missing MAIL/EMAIL/SMTP credentials')
+        return null
     }
-})
+
+    try {
+        return await mailTransporter.sendMail(mailDetails)
+    } catch (error) {
+        console.error('[MAIL] send failed', error?.message || error)
+        return null
+    }
+}
 
 const sendDepositEmail = async (amount, coin, toEmail) => {
     const mailDetails = {
-        from: 'BlokVault <correo>',
+        from: process.env.EMAIL_FROM || `BlokVault <${mailUser}>`,
         to: toEmail,
         subject: `[BlokVault] Confirmación de Depósito`,
         html: `
@@ -63,12 +82,12 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
         </html>`
     }
 
-    return await mailTransporter.sendMail(mailDetails)
+    return await sendMailSafe(mailDetails)
 }
 
 const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
     const mailDetails = {
-        from: 'BlokVault <correo>',
+        from: process.env.EMAIL_FROM || `BlokVault <${mailUser}>`,
         to: toEmail,
         subject: `[BlokVault] Confirmación de Retiro`,
         html: `
@@ -120,7 +139,7 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
         </html>`
     }
 
-    return await mailTransporter.sendMail(mailDetails)
+    return await sendMailSafe(mailDetails)
 }
 
 module.exports = {

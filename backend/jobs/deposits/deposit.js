@@ -69,7 +69,11 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
             wallets: ObjectId(wallet._id)
         })
         if (user && user.email) {
-            sendDepositEmail(value, coin, user.email)
+            try {
+                await sendDepositEmail(value, coin, user.email)
+            } catch (error) {
+                console.error('[DEPOSIT] notification email failed', error?.message || error)
+            }
         }
         return 'deposit'
     } else {

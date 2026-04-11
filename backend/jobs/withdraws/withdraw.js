@@ -48,7 +48,11 @@ const _checkConfirmation = async (address, txHash, value, coin, chainId, transac
         if (wallet) {
             const user = await User.findOne({ wallets: ObjectId(wallet._id) })
             if (user && user.email) {
-                sendWithdrawEmail(toCoinAmount(value, coin), coin, address, txHash, user.email)
+                try {
+                    await sendWithdrawEmail(toCoinAmount(value, coin), coin, address, txHash, user.email)
+                } catch (error) {
+                    console.error('[WITHDRAW] notification email failed', error?.message || error)
+                }
             }
         }
         return 'withdrawed'
