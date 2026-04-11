@@ -31,8 +31,12 @@ const _checkConfirmation = async (address, txHash, value, coin, chainId, transac
     if (result && 'status' in result && result.status) {
         await _updateTransactionState(transactionId, 3)
         const wallet = await Wallet.findOne({ transactions: ObjectId(transactionId) })
-        const user = await User.findOne({ wallets: ObjectId(wallet._id) })
-        sendWithdrawEmail(value / 10 ** coins[coin.toUpperCase()].decimals, coin, address, txHash, user.email)
+        if (wallet) {
+            const user = await User.findOne({ wallets: ObjectId(wallet._id) })
+            if (user && user.email) {
+                sendWithdrawEmail(value / 10 ** coins[coin.toUpperCase()].decimals, coin, address, txHash, user.email)
+            }
+        }
         return 'withdrawed'
     }
 

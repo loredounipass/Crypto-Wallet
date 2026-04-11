@@ -26,7 +26,7 @@ const createTransaction
                 coin: coin.toUpperCase()
             }, {
                 $push: {
-                    transactions: transaction
+                    transactions: transaction._id
                 }
             })
 

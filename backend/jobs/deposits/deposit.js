@@ -54,7 +54,9 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
         const user = await User.findOne({
             wallets: ObjectId(wallet._id)
         })
-        sendDepositEmail(value, coin, user.email)
+        if (user && user.email) {
+            sendDepositEmail(value, coin, user.email)
+        }
         return 'deposit'
     } else {
         await _updateTransactionState(transactionId, 4)

@@ -1,16 +1,16 @@
 {
     "apps": [
         {
-            "name": "ME: ETH Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/native-coins/eth.js"
+            "name": "ME: MATIC Broadcast NODE",
+            "script": "./daemon/subscriptions/chain/evm/native-coins/matic.js"
         },
         {
             "name": "ME: App Withdraw Broadcast NODE",
             "script": "./daemon/subscriptions/app/withdraws.js"
         },
         {
-            "name": "ME: Ethereum Worker NODE",
-            "script": "./daemon/workers/chain/ethereum.js"
+            "name": "ME: Polygon Worker NODE",
+            "script": "./daemon/workers/chain/polygon.js"
         },
         {
             "name": "ME: App Withdraw Worker NODE",

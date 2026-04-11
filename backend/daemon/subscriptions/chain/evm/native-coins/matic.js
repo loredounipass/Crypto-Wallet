@@ -26,39 +26,33 @@ connectDB.then(() => {
         }
 
         console.log('[SUB][MATIC] log detected tx:', result.transactionHash, 'address:', result.address)
-        Wallet.find({ chainId, coin }, async function (err, wallets) {
+        Wallet.findOne({ chainId, coin, address: result.address }, async function (err, wallet) {
             if (err) {
                 console.error('[SUB][MATIC] wallet query error:', err.message || err)
                 return
             }
 
-            if (wallets) {
-                const wallet = wallets.find(
-                    wallet => wallet.address === result.address
-                )
-
-                if (wallet) {
-                    try {
-                        await transactionsQueue.add('transaction', {
-                            walletAddress: wallet.address,
-                            transactionHash: result.transactionHash,
-                            chainId,
-                            coin,
-                            uuid: uuidv4()
-                        }, {
-                            attempts: 2,
-                            backoff: {
-                                type: 'exponential',
-                                delay: 5000
-                            }
-                        })
-                        console.log('[SUB][MATIC] transaction queued tx:', result.transactionHash, 'wallet:', wallet.address)
-                    } catch (queueError) {
-                        console.error('[SUB][MATIC] queue add error:', queueError.message || queueError)
-                    }
-                } else {
-                    console.log('[SUB][MATIC] no wallet match for address:', result.address)
+            if (wallet) {
+                try {
+                    await transactionsQueue.add('transaction', {
+                        walletAddress: wallet.address,
+                        transactionHash: result.transactionHash,
+                        chainId,
+                        coin,
+                        uuid: uuidv4()
+                    }, {
+                        attempts: 2,
+                        backoff: {
+                            type: 'exponential',
+                            delay: 5000
+                        }
+                    })
+                    console.log('[SUB][MATIC] transaction queued tx:', result.transactionHash, 'wallet:', wallet.address)
+                } catch (queueError) {
+                    console.error('[SUB][MATIC] queue add error:', queueError.message || queueError)
                 }
+            } else {
+                console.log('[SUB][MATIC] no wallet match for address:', result.address)
             }
         })
     })

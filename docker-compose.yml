@@ -25,11 +25,8 @@ services:
     depends_on:
       - mongodb
       - redis
-    environment:
-      - DB_HOST=mongodb
-      - DB_PORT=27017
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    env_file:
+      - ./backend/config/.env
     volumes:
       - ./backend/config/.env:/usr/src/app/config/.env
     networks:
