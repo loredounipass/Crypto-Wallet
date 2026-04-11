@@ -34,12 +34,12 @@ const _updateTransactionState = async (txHash, status, transactionId) => {
 const sendTransaction = async (valueWei, toAddress) => {
     const fromAddress = web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET)
     const toChecksum = web3.utils.toChecksumAddress(toAddress)
-    const valueHex = web3.utils.toHex(valueWei.toString())
+    const valueStr = valueWei.toString()
     const gasPrice = BigInt(await web3.eth.getGasPrice())
     const gasLimit = BigInt(await web3.eth.estimateGas({
         from: fromAddress,
         to: toChecksum,
-        value: valueHex
+        value: valueStr
     }))
     const senderBalance = BigInt(await web3.eth.getBalance(fromAddress))
     const requiredBalance = valueWei + (gasPrice * gasLimit)
@@ -54,10 +54,10 @@ const sendTransaction = async (valueWei, toAddress) => {
         from: fromAddress,
         chainId,
         nonce: web3.utils.toHex(nonce),
-        gasPrice: web3.utils.toHex(gasPrice.toString()),
-        gas: web3.utils.toHex(gasLimit.toString()),
+        gasPrice: gasPrice.toString(),
+        gas: gasLimit.toString(),
         to: toChecksum,
-        value: valueHex
+        value: valueStr
     }
 
     const signedTx = await web3.eth.accounts.signTransaction(
