@@ -4,6 +4,11 @@ const { Worker, Queue } = require(`${appRoot}/config/bullmq`)
 const { v4: uuidv4 } = require('uuid')
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 
+const toSerializable = (value) => {
+    if (typeof value === 'bigint') return Number(value)
+    return value
+}
+
 connectDB.then(() => {
     new Worker('WithdrawedFromMetaDapp', async (job) => {
         const { withdrawAddress, transactionHash, transactionId, amount, coin, chainId } = job.data
@@ -13,8 +18,8 @@ connectDB.then(() => {
             transactionHash,
             coin,
             transactionId,
-            chainId,
-            amount,
+            chainId: toSerializable(chainId),
+            amount: toSerializable(amount),
             uuid: uuidv4()
         }, {
             attempts: 20,

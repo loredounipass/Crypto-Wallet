@@ -8,6 +8,11 @@ const { Web3 } = require('web3')
 
 let web3
 
+const toSerializable = (value) => {
+    if (typeof value === 'bigint') return Number(value)
+    return value
+}
+
 const _updateTransactionState = async (txHash, status, transactionId) => {
     const upsert = {
         status
@@ -61,12 +66,12 @@ const sendWithdraw = async ({
 
             const withdrawFrom = new Queue('WithdrawedFromMetaDapp')
             withdrawFrom.add('withdraw', {
-                chainId,
-                amount,
+                chainId: toSerializable(chainId),
+                amount: toSerializable(amount),
                 withdrawAddress,
                 transactionHash,
                 transactionId,
-                status,
+                status: toSerializable(status),
                 coin: wallet.coin
             })
 
