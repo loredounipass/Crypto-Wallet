@@ -132,14 +132,17 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   
   const { auth, setAuth } = useContext(AuthContext);
   const { logoutUser } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { mode, toggleTheme } = useThemeMode();
   const isDarkMode = mode === "dark";
 
   const handleNavigation = (item) => {
     if (item.path === "logout") {
-      setAuth(null);
-      logoutUser().catch(() => {});
-      window.location.reload();
+      if (isLoggingOut) return;
+      setIsLoggingOut(true);
+      logoutUser()
+        .catch(() => {})
+        .finally(() => setIsLoggingOut(false));
     } else {
       history.push(item.path);
     }
@@ -349,6 +352,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               style={{
                 ...getListItemStyle(),
                 color: item.color || "white",
+                opacity: item.path === "logout" && isLoggingOut ? 0.7 : 1,
               }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.15)" : "rgba(255,255,255,0.15)"}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}

@@ -48,8 +48,9 @@ const AppBarStyled = styled(MuiAppBar)(({ theme, open }) => ({
 }));
 
 function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
-  const { auth, setAuth } = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
   const [anchorElUser, setAnchorElUser] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logoutUser } = useAuth();
   const history = useHistory();
   const theme = useTheme();
@@ -60,14 +61,14 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   const handleCloseUserMenu = () => setAnchorElUser(null);
   const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
 
-  const handleClickUserMenu = async (e) => {
+  const handleClickUserMenu = async (e, action) => {
     e.stopPropagation();
-    const action = e.target.innerHTML;
 
     if (action === "Logout") {
-      setAuth(null);
-      logoutUser().catch(() => {});
-      window.location.reload();
+      if (isLoggingOut) return;
+      setIsLoggingOut(true);
+      await logoutUser().catch(() => {});
+      setIsLoggingOut(false);
     } else if (action === "Mis billeteras") {
       history.push("/wallets");
     } else if (action === "Settings") {
@@ -252,7 +253,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
             onClose={handleCloseUserMenu}
           >
             {settings.map(({ label, icon }) => (
-              <MenuItem key={label} onClick={handleClickUserMenu}>
+              <MenuItem key={label} onClick={(e) => handleClickUserMenu(e, label)}>
                 {icon}
                 <Typography textAlign="center">{label}</Typography>
               </MenuItem>
