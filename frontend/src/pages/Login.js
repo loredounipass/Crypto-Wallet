@@ -11,6 +11,8 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '../ui/material';
 
 import { Visibility as Visibility } from '../ui/icons';
@@ -19,10 +21,15 @@ import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
 
 import { useHistory } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
+import { useThemeMode } from '../ui/styles';
 
 export default function Login() {
   const { loginUser, error } = useAuth();
   const history = useHistory();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [password, setPassword] = useState('');
@@ -68,57 +75,82 @@ export default function Login() {
     };
   }, []);
 
+  const styles = {
+    page: {
+      minHeight: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: isMobile ? '16px' : '24px',
+      backgroundColor: isDark ? '#0F0F1A' : '#F6F8FA',
+      boxSizing: 'border-box',
+    },
+    card: {
+      width: '100%',
+      maxWidth: '460px',
+      padding: isMobile ? '4px' : '8px',
+    },
+    title: {
+      color: isDark ? '#FFFFFF' : '#111827',
+      fontWeight: 700,
+      fontSize: isMobile ? '22px' : '26px',
+      marginBottom: '2px',
+    },
+    subtitle: {
+      color: isDark ? '#9CA3AF' : '#6B7280',
+      fontSize: '13px',
+      marginBottom: isMobile ? '14px' : '18px',
+    },
+    input: {
+      borderRadius: 12,
+      border: `1px solid ${isDark ? '#2D2D44' : '#E5E7EB'}`,
+      backgroundColor: isDark ? '#0F0F1A' : '#FFFFFF',
+      color: isDark ? '#FFFFFF' : '#111827',
+    },
+    link: {
+      marginTop: '8px',
+      fontSize: '0.9rem',
+      color: '#2186EB',
+      fontWeight: 600,
+      textDecoration: 'none',
+    },
+  };
+
   return (
-    <Box
-      sx={{
-        minHeight: 'calc(100vh - 140px)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-      }}
-    >
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: '480px',
-          mt: 0,
-          px: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        {/* CAMBIO: el logo ahora va DENTRO del form para quedar centrado en el formulario */}
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', mt: 0 }}>
+    <Box style={styles.page}>
+      <Box style={styles.card}>
+        <Box component="form" onSubmit={handleSubmit} noValidate style={{ width: '100%' }}>
           <Box
-            sx={{
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 1,
-              mb: 2,
+              marginBottom: '6px',
             }}
           >
             <Box
-              sx={{
+              style={{
                 width: 45,
                 height: 50,
                 clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-                bgcolor: '#2186EB',
+                backgroundColor: '#2186EB',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <ArrowDropDownIcon sx={{ color: 'white', fontSize: 40 }} />
+              <ArrowDropDownIcon style={{ color: 'white', fontSize: 40 }} />
             </Box>
 
-            <Typography component="h1" variant="h5" sx={{ fontWeight: 502 }}>
-              Login now
+            <Typography component="h1" style={styles.title}>
+              Iniciar Sesion
             </Typography>
           </Box>
+
+          <Typography style={styles.subtitle}>
+            Accede con tu correo y contrasena
+          </Typography>
 
           <TextField
             margin="normal"
@@ -132,10 +164,7 @@ export default function Login() {
             error={!!error}
             helperText={error ? error : ''}
             InputProps={{
-              sx: {
-                borderRadius: 2,
-                border: '1px solid #ddd',
-              },
+              sx: styles.input,
             }}
             InputLabelProps={{
               shrink: true,
@@ -161,15 +190,13 @@ export default function Login() {
                   <IconButton
                     aria-label="toggle password visibility"
                     onClick={() => setShowPassword(!showPassword)}
+                    style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: {
-                borderRadius: 2,
-                border: '1px solid #ddd',
-              },
+              sx: styles.input,
             }}
             InputLabelProps={{
               shrink: true,
@@ -180,21 +207,21 @@ export default function Login() {
             type="submit"
             fullWidth
             variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
+            style={{
+              marginTop: '16px',
+              marginBottom: '10px',
               color: 'white',
-              bgcolor: '#326DEB',
-              '&:hover': {
-                bgcolor: '#326DEB',
-              },
+              backgroundColor: '#2186EB',
+              borderRadius: '12px',
+              padding: isMobile ? '12px 14px' : '14px 16px',
+              fontWeight: 600,
             }}
             disabled={loading}
           >
             {loading ? (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CircularProgress size={20} sx={{ color: '#074EE7FF' }} />
-                <Typography sx={{ ml: 1, color: '#074EE7FF', fontSize: '0.875rem' }}>
+              <Box style={{ display: 'flex', alignItems: 'center' }}>
+                <CircularProgress size={20} style={{ color: '#FFFFFF' }} />
+                <Typography style={{ marginLeft: '8px', color: '#FFFFFF', fontSize: '0.875rem' }}>
                   Iniciando sesión...
                 </Typography>
               </Box>
@@ -208,19 +235,7 @@ export default function Login() {
               <Link
                 href="/register"
                 variant="body2"
-                sx={{
-                  mt: 2,
-                  fontSize: '0.9rem',
-                  color: '#1E5BB5',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  textTransform: 'none',
-                  letterSpacing: '0.2px',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                    color: '#163f7a',
-                  },
-                }}
+                style={styles.link}
               >
                 ¿Aún no tienes cuenta? Regístrate
               </Link>
@@ -230,19 +245,7 @@ export default function Login() {
               <Link
                 href="/forgot-password"
                 variant="body2"
-                sx={{
-                  mt: 1,
-                  fontSize: '0.9rem',
-                  color: '#1E5BB5',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  textTransform: 'none',
-                  letterSpacing: '0.2px',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                    color: '#163f7a',
-                  },
-                }}
+                style={styles.link}
               >
                 ¿Olvidaste tu contraseña?
               </Link>
