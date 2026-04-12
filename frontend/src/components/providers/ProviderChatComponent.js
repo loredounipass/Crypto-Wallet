@@ -9,8 +9,8 @@ import {
   Button,
   Typography,
   Avatar,
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+} from '../../ui/material';
+import { Send as SendIcon } from '../../ui/icons';
 
 const ProviderChatComponent = () => {
   const currentUser = 'Yo';

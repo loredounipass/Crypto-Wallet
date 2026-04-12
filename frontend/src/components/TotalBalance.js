@@ -1,10 +1,10 @@
 import React from 'react';
-import Link from '@mui/material/Link';
-import Typography from '@mui/material/Typography';
-import WalletIcon from '@mui/icons-material/Wallet';
+import { Link } from '../ui/material';
+import { Typography } from '../ui/material';
+import { Wallet as WalletIcon } from '../ui/icons';
 import Title from './utils/Title';
 import useAllWallets from '../hooks/useAllWallets';
-import { Box } from '@mui/material'; 
+import { Box } from '../ui/material'; 
 import { useTranslation } from 'react-i18next';
 
 const TotalBalance = () => {

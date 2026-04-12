@@ -1,7 +1,7 @@
 import React from 'react';
 import ProviderForm from '../components/providers/ProviderFom';
-import { Typography, Box } from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd'; 
+import { Typography, Box } from '../ui/material';
+import { PersonAdd as PersonAddIcon } from '../ui/icons'; 
 
 export default function CreateProvider() {
     return (

@@ -1,44 +1,67 @@
-import React from 'react';
-import {
-    Typography,
-    Box,
-    IconButton,
-    Divider,
-    Stack,
-    TextField,
-    Tooltip,
-    Zoom,
-    Button,
-    useTheme,
-    useMediaQuery,
-    Card,
-    CardContent,
-    CardHeader,
-} from '@mui/material';
+import React, { useState } from 'react';
+import { Avatar, useMediaQuery, useTheme } from '../ui/material';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import CopyIcon from '../assets/receiveCopyIcon.svg';
 import QRCode from 'react-qr-code';
 import useWalletInfo from '../hooks/useWalletInfo';
 import useCoinPrice from '../hooks/useCoinPrice';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import {
     getCoinDecimalsPlace,
     getCoinFee,
     getDefaultNetworkId,
-    getNetworkName
+    getNetworkName,
+    getCoinLogo,
+    getCoinFallbackLogo
 } from '../components/utils/Chains';
 import useWithdraw from '../hooks/useWithdraw';
 import createWallet from '../hooks/createWallet';
 import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
 import { useTranslation } from 'react-i18next';
+import { useThemeMode } from '../ui/styles';
+
+const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        {children}
+    </svg>
+);
+
+const BackIcon = ({ size = 20, color = "currentColor" }) => (
+    <WalletIconBase size={size} color={color}>
+        <path d="M15 18l-6-6 6-6" />
+        <path d="M9 12h10" />
+    </WalletIconBase>
+);
+
+const CopyIcon = ({ size = 20, color = "currentColor" }) => (
+    <WalletIconBase size={size} color={color}>
+        <rect x="9" y="9" width="10" height="12" rx="2" />
+        <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+    </WalletIconBase>
+);
 
 export default function Wallet() {
     const { t } = useTranslation();
-    const [copied, setCopied] = React.useState(false);
-    const [withdrawAmount, setWithdrawAmount] = React.useState('');
-    const [withdrawAddress, setWithdrawAddress] = React.useState('');
-    const [error, setError] = React.useState('');
+    const history = useHistory();
+    const muiTheme = useTheme();
+    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
+    const { mode } = useThemeMode();
+    const isDark = mode === 'dark';
+    
+    const [copied, setCopied] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawAddress, setWithdrawAddress] = useState('');
+    const [error, setError] = useState('');
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
@@ -47,8 +70,10 @@ export default function Wallet() {
     const { withdraw } = useWithdraw(walletId);
     const { transactions, getTransactions } = useTransitions(walletId);
 
-    const theme = useTheme();
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const truncateToDecimals = (num, dec) => {
+        const calcDec = Math.pow(10, dec);
+        return Math.trunc(num * calcDec) / calcDec;
+    };
 
     const handleWithdraw = async () => {
         if (parseFloat(withdrawAmount) > parseFloat(walletInfo.balance)) {
@@ -58,34 +83,15 @@ export default function Wallet() {
         const result = await withdraw(withdrawAmount, withdrawAddress);
         if (result === 'success') {
             getTransactions();
-            resetWithdrawFields();
+            setWithdrawAmount('');
+            setWithdrawAddress('');
+            setError('');
         }
-    };
-
-    const resetWithdrawFields = () => {
-        setWithdrawAmount('');
-        setWithdrawAddress('');
-        setError('');
-    };
-
-    const handleInputAddress = (e) => {
-        setWithdrawAddress(e.target.value);
-        setError('');
-    };
-
-    const handleInputAmount = (e) => {
-        setWithdrawAmount(e.target.value);
-        setError('');
     };
 
     const setMaxAmount = () => {
         setWithdrawAmount(walletInfo.balance);
         setError('');
-    };
-
-    const truncateToDecimals = (num, dec) => {
-        const calcDec = Math.pow(10, dec);
-        return Math.trunc(num * calcDec) / calcDec;
     };
 
     const handleCreateWallet = async () => {
@@ -98,131 +104,205 @@ export default function Wallet() {
         }
     };
 
+    const styles = {
+        container: {
+            padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
+            maxWidth: "900px",
+            margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
+            overflowX: "hidden",
+        },
+        section: {
+            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+            borderRadius: "16px",
+            padding: isMobile ? "14px" : "24px",
+            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            marginBottom: isMobile ? "12px" : "24px",
+        },
+        input: {
+            width: "100%",
+            padding: isMobile ? "12px 14px" : "14px 16px",
+            borderRadius: "12px",
+            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            backgroundColor: isDark ? "#0F0F1A" : "#FFFFFF",
+            color: isDark ? "#FFFFFF" : "#1A1A2E",
+            fontSize: isMobile ? "13px" : "14px",
+            outline: "none",
+            boxSizing: "border-box",
+        },
+        button: (primary = false, disabled = false) => ({
+            backgroundColor: disabled ? (isDark ? "#2D2D44" : "#E5E7EB") : (primary ? "#2186EB" : "transparent"),
+            color: disabled ? (isDark ? "#6B7280" : "#9CA3AF") : (primary ? "white" : (isDark ? "#FFFFFF" : "#1A1A2E")),
+            border: primary ? "none" : `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            borderRadius: "12px",
+            padding: isMobile ? "12px 16px" : "14px 24px",
+            fontWeight: 600,
+            cursor: disabled ? "not-allowed" : "pointer",
+            textTransform: "none",
+            fontSize: isMobile ? "13px" : "14px",
+        }),
+    };
+
+    if (isWalletLoading) {
+        return (
+            <div style={styles.container}>
+                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280" }}>Cargando...</div>
+            </div>
+        );
+    }
+
     return (
-        <Box sx={{ p: 2, maxWidth: '800px', margin: '0 auto', backgroundColor: theme.palette.background.default, borderRadius: 2, boxShadow: 3 }}>
-            {!isWalletLoading ? (
-                walletInfo ? (
-                    <>
-                        <Card sx={{ mb: 2 }}>
-                            <CardHeader title={t('balance')} />
-                            <CardContent>
-                                <Typography variant="h4" fontWeight={700}>
-                                    {truncateToDecimals(walletInfo.balance, getCoinDecimalsPlace(walletInfo.coin))}
-                                    <Typography component="span" variant="h4" fontWeight={700}>
-                                        {` ${walletInfo.coin}`}
-                                    </Typography>
-                                </Typography>
-                                <Typography variant="body1" color="text.secondary">
-                                    {coinPrice ? `$${(parseFloat(walletInfo.balance) * parseFloat(coinPrice)).toFixed(2)}` : ''}
-                                </Typography>
-                            </CardContent>
-                        </Card>
+        <div style={styles.container}>
+            {/* Back */}
+            <div 
+                style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: isDark ? "#FFFFFF" : "#1A1A2E" }}
+                onClick={() => history.push('/wallets')}
+            >
+                <BackIcon size={20} color={isDark ? "#FFFFFF" : "#1A1A2E"} />
+                <span style={{ fontWeight: 500 }}>Volver a Billeteras</span>
+            </div>
 
-                        <Divider sx={{ mb: 2 }} />
+            {!isWalletLoading && walletInfo ? (
+                <>
+                    {/* Balance Card */}
+                    <div style={styles.section}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
+                            <Avatar 
+                                src={getCoinLogo(walletInfo.coin)}
+                                imgProps={{ onError: (e) => { e.currentTarget.src = getCoinFallbackLogo(walletInfo.coin); } }}
+                                style={{ width: isMobile ? 46 : 56, height: isMobile ? 46 : 56 }}
+                            />
+                            <div>
+                                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px" }}>Balance</div>
+                                <div style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
+                                    {truncateToDecimals(walletInfo.balance, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "16px" : "20px" }}>{walletInfo.coin}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {coinPrice && (
+                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "16px" }}>
+                                ≈ ${(parseFloat(walletInfo.balance) * parseFloat(coinPrice)).toFixed(2)} USD
+                            </div>
+                        )}
+                    </div>
 
-                        <Typography variant="h6" color="text.primary" mb={1}>{t('deposits')}</Typography>
-                        <Typography variant="caption" color="text.secondary" mb={1}>
-                            {t('your_address', { coin: walletInfo.coin, network: getNetworkName(walletInfo.chainId) })}
-                        </Typography>
-                        <Stack spacing={2}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ maxWidth: '470px' }}>
-                                <TextField
-                                    variant="outlined"
-                                    value={walletInfo.address}
-                                    InputProps={{
-                                        readOnly: true,
-                                        endAdornment: (
-                                            <CopyToClipboard
-                                                text={walletInfo.address}
-                                                onCopy={() => {
-                                                    setCopied(true);
-                                                    setTimeout(() => setCopied(false), 2000);
-                                                }}
-                                            >
-                                                <Tooltip
-                                                    title={copied ? <Typography variant="caption" color="success">{t('address_copied')}</Typography> : t('copy')}
-                                                    TransitionComponent={Zoom}
-                                                >
-                                                    <IconButton sx={{ padding: 0 }}>
-                                                        <img src={CopyIcon} alt="Copiar" style={{ width: "24px", height: "24px" }} />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </CopyToClipboard>
-                                        ),
-                                    }}
-                                    fullWidth
-                                    sx={{ fontSize: '14px',fontWeight: 500 }}
-                                />
-                            </Stack>
-                            <QRCode value={walletInfo.address} size={200} />
-                        </Stack>
-
-                        <Divider sx={{ my: 3 }} />
-
-                        <Typography variant="h6" color="text.primary" mb={1}>{t('withdrawals')}</Typography>
-                        <Stack spacing={2}>
-                            <Stack direction={isSmallScreen ? "column" : "row"} spacing={1}>
-                                <TextField
-                                    value={withdrawAddress}
-                                    onChange={handleInputAddress}
-                                    placeholder={t('address_placeholder', { network: getNetworkName(walletInfo.chainId) })}
-                                    variant="outlined"
-                                    sx={{ flexGrow: 7, borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                                />
-                                <TextField
-                                    type='number'
-                                    onChange={handleInputAmount}
-                                    value={withdrawAmount || ''}
-                                    placeholder={t("amount_to_withdraw")}
-                                    variant="outlined"
-                                    sx={{ flexGrow: 2, borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <Button
-                                                variant="outlined"
-                                                onClick={setMaxAmount}
-                                                sx={{ height: '40%', color: '#000' }}
-                                            >
-                                                Max
-                                            </Button>
-                                        ),
-                                    }}
-                                />
-                            </Stack>
-                            <Button
-                                disabled={!(withdrawAmount > 0 && withdrawAddress && parseFloat(withdrawAmount) <= parseFloat(walletInfo.balance))}
-                                onClick={handleWithdraw}
-                                variant="contained"
-                                color="primary"
-                                sx={{
-                                    borderRadius: 2,
-                                    padding: '8px',
-                                    fontSize: '14px',
-                                    width: '150px',
-                                }}
+                    {/* Deposit */}
+                    <div style={styles.section}>
+                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
+                            Depositar
+                        </h2>
+                        <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px", marginBottom: "16px" }}>
+                            Tu direccion ({walletInfo.coin} - {getNetworkName(walletInfo.chainId)})
+                        </div>
+                        
+                        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", marginBottom: "16px" }}>
+                            <input 
+                                type="text" 
+                                value={walletInfo.address} 
+                                readOnly 
+                                style={{ ...styles.input, fontFamily: "monospace", flex: 1 }}
+                            />
+                            <CopyToClipboard
+                                text={walletInfo.address}
+                                onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                             >
-                                {t('withdraw')}
-                            </Button>
-                            {error && <Typography variant="caption" color="error">{error}</Typography>}
-                            <Typography variant="caption" color="text.secondary" mt={1}>
-                                {t('commission', { fee: getCoinFee(walletInfo.coin), coin: walletInfo.coin })}
-                            </Typography>
-                        </Stack>
-                    </>
-                ) : (
-                    <Button
-                        onClick={handleCreateWallet}
-                        color="info"
-                        fullWidth
-                        sx={{ borderRadius: 2, padding: '10px', fontSize: '16px' }}
-                    >
-                        {t('create_wallet', { walletId: walletId.toUpperCase() })}
-                    </Button>
-                )
-            ) : (
-                <Typography variant="body1" color="text.secondary">Cargando...</Typography>
-            )}
-            <CoinTransactions transactions={transactions} chainId={defaultNetworkId} coin={walletId} />
-        </Box>
+                                <div style={{
+                                    padding: isMobile ? "12px" : "14px",
+                                    borderRadius: "12px",
+                                    backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}>
+                                    <CopyIcon size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                                </div>
+                            </CopyToClipboard>
+                        </div>
+                        
+                        {copied && <div style={{ color: "#4CAF50", fontSize: "14px", marginBottom: "16px" }}>Direccion copiada!</div>}
+
+                        <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
+                            <div style={{ padding: isMobile ? "10px" : "16px", backgroundColor: "white", borderRadius: "12px" }}>
+                                <QRCode value={walletInfo.address} size={isMobile ? 140 : 180} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Withdraw */}
+                    <div style={styles.section}>
+                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
+                            Retirar
+                        </h2>
+                        
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <input 
+                                type="text"
+                                value={withdrawAddress}
+                                onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
+                                placeholder={`Direccion de ${getNetworkName(walletInfo.chainId)}`}
+                                style={styles.input}
+                            />
+                            
+                            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px" }}>
+                                <input 
+                                    type="number"
+                                    value={withdrawAmount || ''}
+                                    onChange={(e) => { setWithdrawAmount(e.target.value); setError(''); }}
+                                    placeholder="Cantidad"
+                                    style={{ ...styles.input, flex: isMobile ? undefined : 2 }}
+                                />
+                                <button onClick={setMaxAmount} style={styles.button()}>
+                                    Max
+                                </button>
+                            </div>
+
+                            <button 
+                                onClick={handleWithdraw}
+                                disabled={!(withdrawAmount > 0 && withdrawAddress && parseFloat(withdrawAmount) <= parseFloat(walletInfo.balance))}
+                                style={styles.button(true, !(withdrawAmount > 0 && withdrawAddress && parseFloat(withdrawAmount) <= parseFloat(walletInfo.balance)))}
+                            >
+                                Retirar
+                            </button>
+
+                            {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
+
+                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                                Comision: {getCoinFee(walletInfo.coin)} {walletInfo.coin}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Transactions */}
+                    <div style={styles.section}>
+                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
+                            Transacciones
+                        </h2>
+                        <CoinTransactions
+                            transactions={transactions}
+                            chainId={defaultNetworkId}
+                            coin={walletId}
+                            hideDateOnMobile
+                            compactMobile
+                        />
+                    </div>
+                </>
+            ) : walletInfo === null ? (
+                <div style={styles.section}>
+                    <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "16px" }}>
+                        Crear Billetera {walletId.toUpperCase()}
+                    </h2>
+                    <div style={{ textAlign: "center", marginBottom: "24px", color: isDark ? "#9CA3AF" : "#6B7280" }}>
+                        No tienes una billetera para esta moneda
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                        <button onClick={handleCreateWallet} style={styles.button(true)}>
+                            Crear Billetera
+                        </button>
+                    </div>
+                </div>
+            ) : null}
+        </div>
     );
 }

@@ -14,10 +14,10 @@ import {
   Button,
   Paper,
   Snackbar
-} from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import MuiAlert from '@mui/material/Alert';
+} from '../../ui/material';
+import { CheckCircle as CheckCircleIcon } from '../../ui/icons';
+import { Warning as WarningIcon } from '../../ui/icons';
+import { Alert as MuiAlert } from '../../ui/material';
 
 const TwoFactorAuthComponent = () => {
   const { auth } = useContext(AuthContext);

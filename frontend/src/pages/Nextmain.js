@@ -2,19 +2,19 @@ import React from 'react';
 import {
     AppBar, Toolbar, Typography, Box, Link, Button, IconButton, Drawer,
     List, ListItem, ListItemText, Divider, Grid, Card, CardContent
-} from '@mui/material';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import MenuIcon from '@mui/icons-material/Menu';
+} from '../ui/material';
+import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
+import { Menu as MenuIcon } from '../ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
 import heroBanner from '../assets/hero-banner.png';
 import blockchainImg from '../assets/blockchain.png';
 import web3Img from '../assets/web3.png';
-import QrCodeIcon from '@mui/icons-material/QrCode';
-import RecentActorsIcon from '@mui/icons-material/RecentActors';
-import ContactMailIcon from '@mui/icons-material/ContactMail';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import { QrCode as QrCodeIcon } from '../ui/icons';
+import { RecentActors as RecentActorsIcon } from '../ui/icons';
+import { ContactMail as ContactMailIcon } from '../ui/icons';
+import { Twitter as TwitterIcon } from '../ui/icons';
+import { Facebook as FacebookIcon } from '../ui/icons';
+import { LinkedIn as LinkedInIcon } from '../ui/icons';
 
 const pairs = [
     { label: 'Bitcoin (BTC)', value: 'bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },

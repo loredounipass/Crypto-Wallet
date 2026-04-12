@@ -5,8 +5,8 @@ import {
     Button,
     Alert,
     Avatar
-} from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
+} from '../../ui/material';
+import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 

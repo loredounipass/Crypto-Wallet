@@ -1,37 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Container,
-  Grid,
-  Paper,
   Typography,
-  Card,
-  CardContent,
-  Button,
-  IconButton,
-  Avatar,
-  useTheme,
   useMediaQuery,
-  LinearProgress,
-  Divider
-} from '@mui/material';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import useAllWallets from '../hooks/useAllWallets';
-import { getCoinLogo, getCoinFallbackLogo } from '../components/utils/Chains';
-import { useHistory } from 'react-router-dom';
+  useTheme,
+} from "../ui/material";
+import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
+import useAllWallets from "../hooks/useAllWallets";
+import { useHistory } from "react-router-dom";
+import { useThemeMode } from "../ui/styles";
+import useTransitions from "../hooks/useTransactions";
+import CoinTransactions from "../components/CoinTransactions";
+
+const WalletIcon = Wallet;
+const SwapIcon = SwapHoriz;
+const TrendingIcon = TrendingUp;
 
 const Dashboard = () => {
   const { allWalletInfo, walletBalance } = useAllWallets();
   const [loading, setLoading] = useState(true);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { transactions } = useTransitions(null);
   const history = useHistory();
-  const handleCoinImageError = (coin) => (event) => {
-    event.currentTarget.onerror = null;
-    event.currentTarget.src = getCoinFallbackLogo(coin);
-  };
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
+  const { mode } = useThemeMode();
+  const isDark = mode === "dark";
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,156 +34,223 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <Card sx={{ 
-      height: '100%',
-      background: `linear-gradient(135deg, ${color}22 0%, ${color}11 100%)`,
-      borderRadius: 4,
-      border: `1px solid ${color}33`,
-      transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-      '&:hover': {
-        transform: 'translateY(-5px)',
-        boxShadow: `0 8px 24px ${color}22`
-      }
-    }}>
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography variant="h6" color="textSecondary" gutterBottom>
-              {title}
-            </Typography>
-            <Typography variant="h4" component="div">
-              {value}
-            </Typography>
-          </Box>
-          <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
-            {icon}
-          </Avatar>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Buenos dias";
+    if (hour < 18) return "Buenas tardes";
+    return "Buenas noches";
+  };
 
-  const WalletCard = ({ wallet }) => (
-    <Card 
-      sx={{ 
-        mb: 2,
-        cursor: 'pointer',
-        transition: 'transform 0.2s',
-        '&:hover': {
-          transform: 'scale(1.02)'
-        }
-      }}
-      onClick={() => history.push(`/wallet/${wallet.coin.toLowerCase()}`)}
-    >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center">
-            <Avatar
-              src={getCoinLogo(wallet.coin)}
-              imgProps={{ onError: handleCoinImageError(wallet.coin) }}
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
-            <Box>
-              <Typography variant="h6">{wallet.coin}</Typography>
-              <Typography variant="body2" color="textSecondary">
-                Balance: {wallet.balance}
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton>
-            <SwapHorizIcon />
-          </IconButton>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  const formatDate = () => {
+    return new Date().toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   if (loading) {
     return (
-      <Box sx={{ width: '100%', mt: 4 }}>
-        <LinearProgress />
+      <Box style={{ width: "100%", padding: "16px" }}>
+        <div style={{ height: "4px", backgroundColor: isDark ? "#2D2D44" : "#E5E7EB", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: "100%", backgroundColor: "#2186EB", animation: "loading 1.5s infinite" }} />
+        </div>
+        <style>{`@keyframes loading { 0% { width: 0% } 50% { width: 70% } 100% { width: 100% } }`}</style>
       </Box>
     );
   }
 
+  const containerStyle = {
+    padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
+    maxWidth: "1400px",
+    margin: "0 auto",
+    width: "100%",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+  };
+
+  const headerStyle = {
+    marginBottom: isMobile ? "12px" : "32px",
+  };
+
+  const statsGridStyle = {
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: isMobile ? "10px" : "24px",
+    marginBottom: isMobile ? "12px" : "32px",
+  };
+
+  const statCardStyle = (color) => ({
+    backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+    borderRadius: "16px",
+    padding: isMobile ? "12px" : "24px",
+    border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+    position: "relative",
+    overflow: "hidden",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  });
+
+  const iconContainerStyle = (color) => ({
+    width: isMobile ? "42px" : "56px",
+    height: isMobile ? "42px" : "56px",
+    borderRadius: "12px",
+    backgroundColor: `${color}15`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  });
+
+  const sectionStyle = {
+    backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+    borderRadius: "16px",
+    padding: isMobile ? "0" : "24px",
+    border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+    overflow: "hidden",
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Welcome to BlockVault
-          </Typography>
-        </Grid>
+    <div style={containerStyle}>
+      {/* Header */}
+      <div style={headerStyle}>
+        <Typography
+          variant="h4"
+          style={{ 
+            color: isDark ? "#FFFFFF" : "#111827", 
+            fontWeight: 700, 
+            fontSize: isMobile ? "20px" : "32px",
+            marginBottom: "8px",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          }}
+        >
+          {getGreeting()}!
+        </Typography>
+        <Typography
+          style={{ 
+            color: isDark ? "#9CA3AF" : "#6B7280", 
+            fontSize: isMobile ? "13px" : "14px",
+            textTransform: "capitalize",
+          }}
+        >
+          {formatDate()}
+        </Typography>
+      </div>
 
-        <Grid item xs={12} md={4}>
-          <StatCard
-            title="Total Balance"
-            value={`$${parseFloat(walletBalance).toFixed(2)}`}
-            icon={<AccountBalanceWalletIcon />}
-            color={theme.palette.primary.main}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <StatCard
-            title="Active Wallets"
-            value={allWalletInfo.length}
-            icon={<TrendingUpIcon />}
-            color={theme.palette.success.main}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <StatCard
-            title="Total Transactions"
-            value="Coming Soon"
-            icon={<SwapHorizIcon />}
-            color={theme.palette.warning.main}
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Divider sx={{ my: 3 }} />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Paper 
-            sx={{ 
-              p: 3,
-              borderRadius: 4,
-              background: 'linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%)'
-            }}
-          >
-            <Typography variant="h5" gutterBottom>
-              Your Wallets
+      {/* Stats Cards */}
+      <div style={statsGridStyle}>
+        <div style={statCardStyle("#2186EB")}>
+          <div>
+            <Typography
+              style={{ 
+                color: isDark ? "#9CA3AF" : "#6B7280", 
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: 500,
+                marginBottom: "8px",
+              }}
+            >
+              Balance Total
             </Typography>
-            <Grid container spacing={3}>
-              {allWalletInfo.map((wallet, index) => (
-                <Grid item xs={12} md={6} key={index}>
-                  <WalletCard wallet={wallet} />
-                </Grid>
-              ))}
-            </Grid>
-            {allWalletInfo.length === 0 && (
-              <Box textAlign="center" py={4}>
-                <Typography variant="body1" color="textSecondary" gutterBottom>
-                  No wallets found
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  onClick={() => history.push('/wallets')}
-                  sx={{ mt: 2 }}
-                >
-                  Create Wallet
-                </Button>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
-    </Container>
+            <Typography
+              style={{ 
+                color: isDark ? "#FFFFFF" : "#111827", 
+                fontSize: isMobile ? "22px" : "28px", 
+                fontWeight: 700,
+              }}
+            >
+              ${parseFloat(walletBalance || 0).toFixed(2)}
+            </Typography>
+          </div>
+          <div style={iconContainerStyle("#2186EB")}>
+            <WalletIcon style={{ color: "#2186EB", fontSize: 24 }} />
+          </div>
+        </div>
+
+        <div style={statCardStyle("#4CAF50")}>
+          <div>
+            <Typography
+              style={{ 
+                color: isDark ? "#9CA3AF" : "#6B7280", 
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: 500,
+                marginBottom: "8px",
+              }}
+            >
+              Billeteras Activas
+            </Typography>
+            <Typography
+              style={{ 
+                color: isDark ? "#FFFFFF" : "#111827", 
+                fontSize: isMobile ? "22px" : "28px", 
+                fontWeight: 700,
+              }}
+            >
+              {allWalletInfo.length}
+            </Typography>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+            <div style={iconContainerStyle("#4CAF50")}>
+              <TrendingIcon style={{ color: "#4CAF50", fontSize: 24 }} />
+            </div>
+            <button
+              onClick={() => history.push("/wallets")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#4CAF50",
+                fontSize: isMobile ? "11px" : "12px",
+                cursor: "pointer",
+                fontWeight: 500,
+                padding: 0,
+                lineHeight: 1,
+              }}
+            >
+              Ver mas
+            </button>
+          </div>
+        </div>
+
+        <div style={statCardStyle("#F6851B")}>
+          <div>
+            <Typography
+              style={{ 
+                color: isDark ? "#9CA3AF" : "#6B7280", 
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: 500,
+                marginBottom: "8px",
+              }}
+            >
+              Transacciones Recientes
+            </Typography>
+            <Typography
+              style={{ 
+                color: isDark ? "#FFFFFF" : "#111827", 
+                fontSize: isMobile ? "22px" : "28px", 
+                fontWeight: 700,
+              }}
+            >
+              {transactions.length}
+            </Typography>
+          </div>
+          <div style={iconContainerStyle("#F6851B")}>
+            <SwapIcon style={{ color: "#F6851B", fontSize: 24 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={sectionStyle}>
+        <CoinTransactions
+          transactions={transactions}
+          title="Transacciones Recientes"
+          hideDateOnMobile
+          compactMobile
+        />
+      </div>
+    </div>
   );
 };
 

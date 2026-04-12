@@ -9,8 +9,8 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-} from '@mui/material'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
+} from '../ui/material'
+import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
 import { post, forgotPasswordApi } from '../api/http'
 import { useHistory } from 'react-router-dom'
 

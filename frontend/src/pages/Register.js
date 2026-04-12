@@ -1,5 +1,5 @@
 import React from 'react';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
 import {
   Typography,
   Box,
@@ -11,9 +11,9 @@ import {
   Alert,
   IconButton,
   InputAdornment,
-} from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+} from '../ui/material';
+import { Visibility as Visibility } from '../ui/icons';
+import { VisibilityOff as VisibilityOff } from '../ui/icons';
 import useAuth from './../hooks/useAuth';
 
 export default function Register() {

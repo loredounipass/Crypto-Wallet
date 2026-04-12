@@ -7,10 +7,10 @@ import {
     InputAdornment,
     IconButton,
     Avatar
-} from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import LockIcon from '@mui/icons-material/Lock';
+} from '../../ui/material';
+import { Visibility } from '../../ui/icons';
+import { VisibilityOff } from '../../ui/icons';
+import { Lock as LockIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 

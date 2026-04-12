@@ -1,7 +1,7 @@
 import React, { useState, forwardRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Container, Typography, Button, Box, Dialog, DialogActions, DialogContent, DialogTitle, Slide } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Container, Typography, Button, Box, Dialog, DialogActions, DialogContent, DialogTitle, Slide } from '../ui/material';
+import { styled } from '../ui/styles';
 
 // Styled components with Roboto font
 const StyledContainer = styled(Container)(({ theme }) => ({

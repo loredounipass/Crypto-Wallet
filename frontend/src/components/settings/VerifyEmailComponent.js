@@ -1,11 +1,11 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { Alert, Typography, CircularProgress, Button, Snackbar, Box } from '@mui/material'; 
+import { Alert, Typography, CircularProgress, Button, Snackbar, Box } from '../../ui/material'; 
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
-import MuiAlert from '@mui/material/Alert';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { Alert as MuiAlert } from '../../ui/material';
+import { EmailOutlined as EmailOutlinedIcon } from '../../ui/icons';
+import { CheckCircleOutline as CheckCircleOutlineIcon } from '../../ui/icons';
+import { WarningAmber as WarningAmberIcon } from '../../ui/icons';
 
 const VerifyEmailComponent = () => {
     const { auth } = useContext(AuthContext); 

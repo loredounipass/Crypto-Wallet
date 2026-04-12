@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import { Grid, Paper, Typography, Button } from '@mui/material';
+import { Grid, Paper, Typography, Button } from '../ui/material';
 import { Link } from 'react-router-dom';
 import TotalBalance from './TotalBalance';
 import MyWallets from './MyWallets';

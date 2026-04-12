@@ -9,8 +9,8 @@ import {
     IconButton, 
     InputAdornment, 
     CircularProgress 
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+} from '../../ui/material';
+import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useProviders from '../../hooks/useProviders';
 

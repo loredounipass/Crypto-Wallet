@@ -8,7 +8,7 @@ import {
   Button, 
   Alert,
   CircularProgress  // Added this import
-} from '@mui/material';
+} from '../../ui/material';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
 

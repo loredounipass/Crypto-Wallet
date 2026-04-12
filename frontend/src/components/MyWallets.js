@@ -11,7 +11,7 @@ import {
     Button,
     useMediaQuery,
     useTheme
-} from '@mui/material';
+} from '../ui/material';
 import { getCoinLogo, getCoinFallbackLogo } from './utils/Chains';
 import { getDisplayableAddress } from './utils/Display';
 

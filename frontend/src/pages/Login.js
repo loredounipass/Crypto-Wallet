@@ -11,11 +11,11 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
-} from '@mui/material';
+} from '../ui/material';
 
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { Visibility as Visibility } from '../ui/icons';
+import { VisibilityOff as VisibilityOff } from '../ui/icons';
+import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
 
 import { useHistory } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';

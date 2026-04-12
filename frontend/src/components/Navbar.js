@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { styled } from '@mui/material/styles';
+import React, { useContext, useState } from "react";
+import { styled } from "../ui/styles";
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -11,15 +11,10 @@ import {
   Menu,
   Avatar,
   Tooltip,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
   useMediaQuery,
   useTheme,
-} from '@mui/material';
-import { useHistory } from 'react-router-dom';
+} from "../ui/material";
+import { useHistory } from "react-router-dom";
 import {
   ArrowDropDown as ArrowDropDownIcon,
   SupportAgent as SupportAgentIcon,
@@ -28,62 +23,39 @@ import {
   AccountBalanceWallet as WalletIcon,
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
-} from '@mui/icons-material';
-import useAuth from '../hooks/useAuth';
-import { AuthContext } from '../hooks/AuthContext';
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
+} from "../ui/icons";
+import useAuth from "../hooks/useAuth";
+import { AuthContext } from "../hooks/AuthContext";
+import { useThemeMode } from "../ui/styles";
+import { DRAWER_WIDTH_EXPANDED } from "./Sidebar";
 
-const drawerWidth = 240;
-
-const AppBar = styled(MuiAppBar)(({ theme, open }) => ({
+const AppBarStyled = styled(MuiAppBar)(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(['width', 'margin'], {
+  transition: theme.transitions.create(["width", "margin"], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(['width', 'margin'], {
+    marginLeft: DRAWER_WIDTH_EXPANDED,
+    width: `calc(100% - ${DRAWER_WIDTH_EXPANDED}px)`,
+    transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
 }));
 
-const navLinksStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  textDecoration: 'none',
-  color: 'inherit',
-  mx: 2,
-  '&:hover': {
-    textDecoration: 'underline',
-  },
-};
-
-const navLinkIconStyle = {
-  mr: 1,
-  display: 'flex',
-  alignItems: 'center',
-};
-
-const navLinkItemStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  textDecoration: 'none',
-  color: 'inherit',
-  py: 1,
-  px: 2,
-};
-
-function DashboardContent() {
+function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   const { auth, setAuth } = useContext(AuthContext);
   const [anchorElUser, setAnchorElUser] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const { logoutUser } = useAuth();
   const history = useHistory();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { mode, toggleTheme } = useThemeMode();
+  const isDark = mode === "dark";
 
   const handleCloseUserMenu = () => setAnchorElUser(null);
   const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
@@ -92,23 +64,21 @@ function DashboardContent() {
     e.stopPropagation();
     const action = e.target.innerHTML;
 
-    if (action === 'Logout') {
+    if (action === "Logout") {
       setAuth(null);
-      // Trigger server logout but don't wait for it — reload immediately for instant UX
       logoutUser().catch(() => {});
       window.location.reload();
-    } else if (action === 'Mis billeteras') {
-      history.push('/wallets');
-    } else if (action === 'Settings') {
-      history.push('/settings');
+    } else if (action === "Mis billeteras") {
+      history.push("/wallets");
+    } else if (action === "Settings") {
+      history.push("/settings");
     }
 
     setAnchorElUser(null);
-    setDrawerOpen(false);
   };
 
   const getAvatarColor = (name) => {
-    const colors = ['#F6851B', '#3C3C3B', '#E8E8E8'];
+    const colors = ["#F6851B", "#3C3C3B", "#E8E8E8"];
     return colors[name.charCodeAt(0) % colors.length];
   };
 
@@ -116,28 +86,42 @@ function DashboardContent() {
 
   const settings = [
     { label: `Hi, ${auth.firstName}`, icon: null },
-    { label: 'Mis billeteras', icon: <WalletIcon sx={{ mr: 1 }} /> },
-    { label: 'Settings', icon: <SettingsIcon sx={{ mr: 1 }} /> },
-    { label: 'Logout', icon: <LogoutIcon sx={{ mr: 1 }} /> },
+    { label: "Mis billeteras", icon: <WalletIcon sx={{ mr: 1 }} /> },
+    { label: "Settings", icon: <SettingsIcon sx={{ mr: 1 }} /> },
+    { label: "Logout", icon: <LogoutIcon sx={{ mr: 1 }} /> },
   ];
 
   const navItems = [
-    { href: '/welcome', label: 'Crypto Soporte', Icon: SupportAgentIcon },
-    { href: '/providers', label: 'Vender P2P', Icon: QrCodeIcon },
-    { href: '/create', label: 'Proveedor P2P', Icon: QrCodeIcon },
+    { href: "/welcome", label: "Crypto Soporte", Icon: SupportAgentIcon },
+    { href: "/providers", label: "Vender P2P", Icon: QrCodeIcon },
+    { href: "/create", label: "Proveedor P2P", Icon: QrCodeIcon },
   ];
 
+  const navLinkStyle = {
+    display: "flex",
+    alignItems: "center",
+    textDecoration: "none",
+    color: "inherit",
+    margin: "0 8px",
+  };
+
+  const navIconStyle = {
+    marginRight: "4px",
+    display: "flex",
+    alignItems: "center",
+  };
+
   const renderNavLinks = () => (
-    <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+    <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
       {navItems.map(({ href, label, Icon }) => (
         <Link
           key={label}
           href={href}
-          target={href.startsWith('http') ? '_blank' : undefined}
-          sx={navLinksStyle}
+          target={href.startsWith("http") ? "_blank" : undefined}
+          sx={navLinkStyle}
         >
-          <Icon sx={navLinkIconStyle} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+          <Icon sx={navIconStyle} />
+          <Typography variant="body1" sx={{ fontWeight: "bold", fontSize: "1rem" }}>
             {label}
           </Typography>
         </Link>
@@ -145,169 +129,141 @@ function DashboardContent() {
     </Box>
   );
 
+  const toggleButtonStyle = {
+    color: "white",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    border: "none",
+    borderRadius: "8px",
+    padding: "8px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background-color 0.2s",
+  };
+
+  const avatarStyle = {
+    bgcolor: getAvatarColor(auth.firstName),
+    width: 35,
+    height: 35,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+  };
+
   return (
-    <>
-      <AppBar position="absolute">
-        <Toolbar
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pr: '24px',
-          }}
-        >
-          {isMobile && (
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              onClick={() => setDrawerOpen(true)}
-              sx={{ position: 'absolute', left: 16 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+    <AppBarStyled position="fixed" open={sidebarOpen} style={{ background: "linear-gradient(90deg, #2186EB 0%, #1A6BC7 100%)" }}>
+      <Toolbar
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingRight: "24px",
+        }}
+      >
+        {isMobile && (
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={onMobileMenuToggle}
+            style={{ position: "absolute", left: 16 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
 
-          {/* LOGO (mismo estilo que el Login) */}
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', ml: 3 }}>
-            <Link
-              href="/"
-              sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1, // igual que en Login
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 45,
-                    height: 50,
-                    clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-                    bgcolor: '#2186EB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ArrowDropDownIcon sx={{ color: 'white', fontSize: 40 }} />
-                </Box>
-
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 502, // igual que en Login
-                    color: 'white',
-                    lineHeight: 1,
-                  }}
-                >
-                  BlockVault
-                </Typography>
-              </Box>
-            </Link>
-          </Box>
-
-          {isMobile ? (
-            <Drawer
-              anchor="left"
-              open={drawerOpen}
-              onClose={() => setDrawerOpen(false)}
-              sx={{
-                '& .MuiDrawer-paper': {
-                  backgroundColor: '#2186EB',
-                  color: 'white',
-                },
+        <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", ml: 3 }}>
+          <Link
+            href="/"
+            style={{ display: "flex", alignItems: "center", textDecoration: "none", color: "inherit" }}
+          >
+            <Box
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
               }}
             >
               <Box
-                sx={{ width: drawerWidth, paddingTop: 8 }}
-                role="presentation"
-                onClick={() => setDrawerOpen(false)}
-                onKeyDown={() => setDrawerOpen(false)}
-              >
-                <List>
-                  {navItems.map(({ href, label, Icon }) => (
-                    <ListItem
-                      button
-                      component={Link}
-                      key={label}
-                      href={href}
-                      sx={{ ...navLinkItemStyle, color: 'white' }}
-                      onClick={() => setDrawerOpen(false)}
-                    >
-                      <Icon sx={{ mr: 1, color: 'white' }} />
-                      <ListItemText primary={label} sx={{ color: 'white' }} />
-                    </ListItem>
-                  ))}
-                  <Divider />
-                  {settings.map(({ label, icon }) => (
-                    <ListItem
-                      button
-                      key={label}
-                      onClick={handleClickUserMenu}
-                      sx={{ ...navLinkItemStyle, color: 'white' }}
-                    >
-                      {icon}
-                      <ListItemText primary={label} sx={{ color: 'white' }} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            </Drawer>
-          ) : (
-            renderNavLinks()
-          )}
-
-          <Box>
-            <Tooltip title="Open settings">
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenUserMenu(e);
+                style={{
+                  width: 45,
+                  height: 50,
+                  clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+                  bgcolor: "#2186EB",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-                sx={{ p: 0 }}
               >
-                <Avatar
-                  sx={{
-                    bgcolor: getAvatarColor(auth.firstName),
-                    width: 35,
-                    height: 35,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    color: '#fff',
-                  }}
-                >
-                  {auth.firstName.charAt(0)}
-                </Avatar>
-              </IconButton>
-            </Tooltip>
+                <ArrowDropDownIcon sx={{ color: "white", fontSize: 40 }} />
+              </Box>
 
-            <Menu
-              sx={{ mt: '45px' }}
-              anchorEl={anchorElUser}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
+              <Typography
+                variant="h6"
+                style={{
+                  fontWeight: 502,
+                  color: "white",
+                  lineHeight: 1,
+                }}
+              >
+                BlockVault
+              </Typography>
+            </Box>
+          </Link>
+        </Box>
+
+        {renderNavLinks()}
+
+        <Box style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Tooltip title={isDark ? "Modo claro" : "Modo oscuro"}>
+            <button
+              onClick={toggleTheme}
+              style={toggleButtonStyle}
+              onMouseOver={(e) => e.target.style.backgroundColor = "rgba(255,255,255,0.2)"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "rgba(255,255,255,0.1)"}
             >
-              {settings.map(({ label, icon }) => (
-                <MenuItem key={label} onClick={handleClickUserMenu}>
-                  {icon}
-                  <Typography textAlign="center">{label}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-    </>
+              {isDark ? <LightModeIcon /> : <DarkModeIcon />}
+            </button>
+          </Tooltip>
+
+          <Tooltip title="Open settings">
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenUserMenu(e);
+              }}
+              style={{ padding: 0 }}
+            >
+              <Avatar sx={avatarStyle}>
+                {auth.firstName.charAt(0)}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
+
+          <Menu
+            style={{ marginTop: "45px" }}
+            anchorEl={anchorElUser}
+            open={Boolean(anchorElUser)}
+            onClose={handleCloseUserMenu}
+          >
+            {settings.map(({ label, icon }) => (
+              <MenuItem key={label} onClick={handleClickUserMenu}>
+                {icon}
+                <Typography textAlign="center">{label}</Typography>
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBarStyled>
   );
 }
 
-export default function Navbar() {
-  return <DashboardContent />;
+export default function Navbar({ sidebarOpen, onMobileMenuToggle }) {
+  return <DashboardContent sidebarOpen={sidebarOpen} onMobileMenuToggle={onMobileMenuToggle} />;
 }

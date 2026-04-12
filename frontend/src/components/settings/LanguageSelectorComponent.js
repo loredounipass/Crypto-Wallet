@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check'; 
+import { Box, Typography, FormControl, InputLabel, Select } from '../../ui/material';
 import { useLanguage } from '../../hooks/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -55,12 +54,9 @@ function LanguageSelectorComponent() {
                     label={t('language')}
                 >
                     {Object.entries(languageOptions).map(([key, value]) => (
-                        <MenuItem key={key} value={key}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {language === key && <CheckIcon sx={{ color: 'green', fontSize: 'medium' }} />} {/* Check más grande */}
-                                <Chip label={value} variant="outlined" size="small" />
-                            </Box>
-                        </MenuItem>
+                        <option key={key} value={key}>
+                            {value}
+                        </option>
                     ))}
                 </Select>
             </FormControl>
