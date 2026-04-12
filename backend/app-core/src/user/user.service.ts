@@ -1,8 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { UserRepository, ProfileRepository } from './index';
 import { HashService } from './hash.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile';
@@ -12,26 +10,36 @@ import { EmailService } from './email.service';
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private hashService: HashService,
-    private emailService: EmailService
+    private readonly userRepository: UserRepository,
+    private readonly profileRepository: ProfileRepository,
+    private readonly hashService: HashService,
+    private readonly emailService: EmailService
   ) {}
 
-  async getUserByEmail(email: string) {
-    return this.userModel.findOne({ email }).exec();
+
+
+  // Retrieve a user by their email address from the database
+  getUserByEmail(email: string) {
+    return this.userRepository.findOne({ email });
+  }
+
+  getUserById(id: string) {
+    return this.userRepository.findById(id);
   }
 
 
   //Register a new user, hash the password, and save to the database
   async register(createUserDto: CreateUserDto) {
-    const createUser = new this.userModel(createUserDto);
     const user = await this.getUserByEmail(createUserDto.email);
     if (user) {
-      throw new BadRequestException();
+      throw new BadRequestException("Este correo electrónico ya está registrado");
     }
 
-    createUser.password = await this.hashService.hashPassword(createUser.password);
-    return createUser.save();
+    const createUser = {
+      ...createUserDto,
+      password: await this.hashService.hashPassword(createUserDto.password),
+    };
+    return this.userRepository.create(createUser);
   }
 
 
@@ -193,15 +201,15 @@ async sendVerificationEmail(email: string): Promise<boolean> {
 
     // If email is being changed, ensure it's not already used by another user
     if (providedEmail && emailChanged) {
-      const existingUser = await this.userModel.findOne({ email: updateProfileDto.email });
+      const existingUser = await this.userRepository.findOne({ email: updateProfileDto.email });
       if (existingUser && existingUser.email !== email) {
         throw new BadRequestException('El correo electrónico ya está en uso');
       }
-      user.email = updateProfileDto.email;
+      user.email = updateProfileDto.email!;
     }
 
-    if (firstNameChanged) user.firstName = updateProfileDto.firstName;
-    if (lastNameChanged) user.lastName = updateProfileDto.lastName;
+    if (firstNameChanged) user.firstName = updateProfileDto.firstName!;
+    if (lastNameChanged) user.lastName = updateProfileDto.lastName!;
 
     // update lastProfileUpdate timestamp
     user.lastProfileUpdate = Date.now();
@@ -227,5 +235,57 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     }
 
     return result;
+  }
+
+  // Sanitize search query to prevent ReDoS attacks
+  private sanitizeSearchQuery(q: string): string {
+    if (!q || typeof q !== 'string') return '';
+    // Limit input length to 50 characters
+    const truncated = q.substring(0, 50);
+    // Escape regex special characters
+    return truncated.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Search users by query -- supports partial name/email and exact ObjectId
+  async searchUsers(q: string) {
+    if (!q) return [];
+    
+    // Sanitize input to prevent ReDoS attacks - escape regex special characters
+    const sanitized = this.sanitizeSearchQuery(q);
+    if (!sanitized) return [];
+    
+    const regex = new RegExp(sanitized, 'i');
+    const or: any[] = [
+      { email: regex },
+      { firstName: regex },
+      { lastName: regex },
+    ];
+
+    // If q looks like a Mongo ObjectId, include exact _id match
+    if (/^[0-9a-fA-F]{24}$/.test(q)) {
+      or.push({ _id: q });
+    }
+
+    // Enforce maximum limit of 20 results to prevent abuse
+    const MAX_LIMIT = 20;
+    const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('-password').lean().exec();
+
+    // Fetch profile photos for the matching users and merge into results so frontend can render avatars
+    try {
+      const ids = users.map((u: any) => u._id).filter(Boolean);
+      if (ids.length > 0) {
+        const profiles = await this.profileRepository.find({ owner: { $in: ids } }).select('owner profilePhotoUrl').lean().exec();
+        const photoMap: Record<string, string> = {};
+        for (const p of profiles) {
+          if (p && p.owner) photoMap[p.owner.toString()] = (p as any).profilePhotoUrl || '';
+        }
+        return users.map((u: any) => ({ ...u, profilePhotoUrl: photoMap[u._id?.toString()] || undefined }));
+      }
+    } catch (err) {
+      // if profile lookup fails, just return users without photos
+      return users;
+    }
+
+    return users;
   }
 }

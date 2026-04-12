@@ -1,16 +1,7 @@
 import React, { useState, useContext } from 'react';
-import {
-    TextField,
-    Button,
-    Alert,
-    Typography,
-    InputAdornment,
-    IconButton,
-    Avatar
-} from '../../ui/material';
-import { Visibility } from '../../ui/icons';
-import { VisibilityOff } from '../../ui/icons';
-import { Lock as LockIcon } from '../../ui/icons';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import LockIcon from '@mui/icons-material/Lock';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 
@@ -68,59 +59,98 @@ function ChangePasswordComponent() {
         }
     };
 
-    return (
-        <>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-                <Avatar style={{ backgroundColor: '#1976D2', width: '48px', height: '48px' }}>
-                    <LockIcon />
-                </Avatar>
-                <Typography variant="h6" component="h2" style={{ marginTop: '8px', fontWeight: 'bold' }}>
-                    Cambiar Contraseña
-                </Typography>
-            </div>
-            <form noValidate autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '420px', margin: '0 auto' }}>
-                {['currentPassword', 'newPassword', 'confirmNewPassword'].map((field) => (
-                    <TextField
-                        key={field}
-                        name={field}
-                        label={field === 'currentPassword' ? 'Contraseña Actual' : field === 'newPassword' ? 'Nueva Contraseña' : 'Confirmar Contraseña'}
-                        type={showPasswords[field] ? 'text' : 'password'}
-                        variant="outlined"
-                        value={passwords[field]}
-                        onChange={handleChange}
-                        required
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label={`toggle ${field} visibility`}
-                                        onClick={() => handleTogglePasswordVisibility(field)}
-                                    >
-                                        {showPasswords[field] ? <VisibilityOff /> : <Visibility />}
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                ))}
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleChangePassword}
-                    disabled={isSubmitting || remainingMinutes > 0}
-                    style={{ marginTop: '16px' }}
+    const PasswordInput = ({ name, label, value, showPassword, onToggle }) => (
+        <div className="settings-input-group">
+            <label className="settings-label">
+                {label} <span className="settings-required-asterisk">*</span>
+            </label>
+            <div className="settings-password-wrapper">
+                <input
+                    type={showPassword ? 'text' : 'password'}
+                    name={name}
+                    value={value}
+                    onChange={handleChange}
+                    className="settings-input"
+                    style={{ paddingRight: '2.5rem' }}
+                    required
+                />
+                <button
+                    type="button"
+                    onClick={() => onToggle(name)}
+                    className="settings-password-toggle"
                 >
-                    {isSubmitting ? 'Cambiando...' : 'Cambiar Contraseña'}
-                </Button>
-                {remainingMinutes > 0 && (
-                    <Alert severity="warning" style={{ marginTop: '16px' }}>
-                        No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
-                    </Alert>
-                )}
-                {successMessage && <Alert severity="success" style={{ marginTop: '16px' }}>{successMessage}</Alert>}
-                {error && <Alert severity="error" style={{ marginTop: '16px' }}>{error}</Alert>}
-            </form>
-        </>
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="settings-section-wrapper">
+            <div className="settings-form-card">
+                <div className="settings-section-header">
+                    <div className="settings-large-icon">
+                        <LockIcon className="settings-large-icon-inner" />
+                    </div>
+                    <h2 className="settings-title">
+                        Cambiar Contraseña
+                    </h2>
+                </div>
+
+                <form 
+                    noValidate 
+                    autoComplete="off" 
+                    className="settings-form"
+                    onSubmit={(e) => e.preventDefault()}
+                >
+                    <PasswordInput
+                        name="currentPassword"
+                        label="Contraseña Actual"
+                        value={passwords.currentPassword}
+                        showPassword={showPasswords.currentPassword}
+                        onToggle={handleTogglePasswordVisibility}
+                    />
+                    <PasswordInput
+                        name="newPassword"
+                        label="Nueva Contraseña"
+                        value={passwords.newPassword}
+                        showPassword={showPasswords.newPassword}
+                        onToggle={handleTogglePasswordVisibility}
+                    />
+                    <PasswordInput
+                        name="confirmNewPassword"
+                        label="Confirmar Contraseña"
+                        value={passwords.confirmNewPassword}
+                        showPassword={showPasswords.confirmNewPassword}
+                        onToggle={handleTogglePasswordVisibility}
+                    />
+
+                    <button
+                        onClick={handleChangePassword}
+                        disabled={isSubmitting || remainingMinutes > 0}
+                        className="settings-btn settings-btn-primary"
+                    >
+                        {isSubmitting ? 'Cambiando...' : 'Cambiar Contraseña'}
+                    </button>
+
+                    {remainingMinutes > 0 && (
+                        <div className="settings-alert settings-alert-warning">
+                            No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
+                        </div>
+                    )}
+                    {successMessage && (
+                        <div className="settings-alert settings-alert-success">
+                            {successMessage}
+                        </div>
+                    )}
+                    {error && (
+                        <div className="settings-alert settings-alert-error">
+                            {error}
+                        </div>
+                    )}
+                </form>
+            </div>
+        </div>
     );
 }
 

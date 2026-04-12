@@ -1,9 +1,8 @@
 import { Injectable, UnauthorizedException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
-import { LoginUserDto } from '../user/dto/login-user.dto';
-import { VerifyTokenDto } from '../two-factor/dto/verification.dto';
+import { VerifyTokenDto } from 'src/two-factor/dto';
 import { UserService } from '../user/user.service';
 import { HashService } from '../user/hash.service';
-import { TwoFactorAuthService } from '../two-factor/verification.service';
+import { TwoFactorAuthService } from '../two-factor/verification.module';
 import { EmailService } from '../user/email.service';
 
 
@@ -11,10 +10,10 @@ import { EmailService } from '../user/email.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private hashService: HashService,
-    private twoFactorAuthService: TwoFactorAuthService,
-    private emailService: EmailService,
+    private readonly userService: UserService,
+    private readonly hashService: HashService,
+    private readonly twoFactorAuthService: TwoFactorAuthService,
+    private readonly emailService: EmailService,
   ) {}
 
 
@@ -29,15 +28,15 @@ export class AuthService {
   }
 
 
-  // This method handles the login process for a user. It first validates the user's credentials using the validateUser method. If the credentials are valid and the user has two-factor authentication enabled, it sends a verification code to the user's email and returns a message indicating that 2FA is required. If 2FA is not enabled, it proceeds to perform the login operation by calling the performLogin method, which uses Passport's req.login to establish a session for the user.
-  async login(loginUserDto: LoginUserDto, req: any): Promise<any> {
-    const { email, password } = loginUserDto;
-    const user = await this.validateUser(email, password);
+  // Handle login given an already-validated `user` (from Passport `req.user`).
+  // This avoids re-querying the database and re-checking the password.
+  async login(user: any, req: any): Promise<any> {
     if (!user) {
       throw new UnauthorizedException('Credenciales incorrectas.');
     }
     if ((user as any).isTokenEnabled) {
-      await this.twoFactorAuthService.sendToken(email);
+      // send token for 2FA flow
+      await this.twoFactorAuthService.sendToken((user as any).email);
       return { requires2FA: true, msg: 'Código de verificación enviado a tu correo electrónico.' };
     }
 
@@ -67,7 +66,7 @@ export class AuthService {
       req.login(user, async (err) => {
         if (err) return reject(new UnauthorizedException('Error al iniciar sesión.'));
 
-        this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+        void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
 
         resolve({ msg: 'Logged in!' });
       });

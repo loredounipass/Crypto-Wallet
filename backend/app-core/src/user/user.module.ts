@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { HashService } from './hash.service';
@@ -8,6 +8,8 @@ import { AuthService } from '../auth/auth.service';
 import { TwoFactorAuthModule } from 'src/two-factor/verification.module';
 import { EmailModule } from './email.module';
 import { ForgotPasswordService } from './forgot.password.service';
+import { UserRepository } from 'src/repositories/user.repository';
+import { ProfileModule } from 'src/profile/profile.module';
 
 @Module({
   imports: [
@@ -16,15 +18,17 @@ import { ForgotPasswordService } from './forgot.password.service';
     MongooseModule.forFeature([{
       name: User.name,
       schema: UserSchema
-    }])
+    }]),
+    forwardRef(() => ProfileModule)
   ],
   controllers: [UserController],
   providers: [
+    UserRepository,
     UserService,
     HashService,
-    AuthService
-  ,ForgotPasswordService
+    AuthService,
+    ForgotPasswordService
   ],
-  exports: [UserService, MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])], 
+  exports: [UserService, HashService, MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])], 
 })
 export class UserModule { }

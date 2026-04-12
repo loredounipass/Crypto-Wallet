@@ -75,17 +75,36 @@ export default function Wallet() {
         return Math.trunc(num * calcDec) / calcDec;
     };
 
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+
     const handleWithdraw = async () => {
+        console.log('[Withdraw] handleWithdraw called', { withdrawAmount, withdrawAddress, balance: walletInfo.balance });
+        if (!withdrawAmount || !withdrawAddress) {
+            setError('Ingresa una dirección y cantidad válida.');
+            return;
+        }
         if (parseFloat(withdrawAmount) > parseFloat(walletInfo.balance)) {
             setError(t('insufficient_funds'));
             return;
         }
-        const result = await withdraw(withdrawAmount, withdrawAddress);
-        if (result === 'success') {
-            getTransactions();
-            setWithdrawAmount('');
-            setWithdrawAddress('');
-            setError('');
+        setWithdrawLoading(true);
+        setError('');
+        try {
+            const result = await withdraw(withdrawAmount, withdrawAddress);
+            console.log('[Withdraw] result:', result);
+            if (result === 'success') {
+                getTransactions();
+                setWithdrawAmount('');
+                setWithdrawAddress('');
+                setError('');
+            } else {
+                setError(result?.msg || 'Error al procesar el retiro.');
+            }
+        } catch (err) {
+            console.error('[Withdraw] error:', err);
+            setError(err?.message || 'Error al procesar el retiro.');
+        } finally {
+            setWithdrawLoading(false);
         }
     };
 

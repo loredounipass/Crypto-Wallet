@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Box, Typography, FormControl, InputLabel, Select } from '../../ui/material';
+import CheckIcon from '@mui/icons-material/Check'; 
+import LanguageIcon from '@mui/icons-material/Language';
 import { useLanguage } from '../../hooks/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -21,46 +22,43 @@ function LanguageSelectorComponent() {
         }
     }, [handleLanguageChange]);
 
-    const handleChange = (event) => {
-        const newLanguage = event.target.value;
-        handleLanguageChange(newLanguage);
-        i18n.changeLanguage(newLanguage);
-        localStorage.setItem('language', newLanguage);
+    const handleSelect = (langKey) => {
+        handleLanguageChange(langKey);
+        i18n.changeLanguage(langKey);
+        localStorage.setItem('language', langKey);
     };
 
     return (
-        <Box
-            sx={{
-                mt: 4,
-                p: 3,
-                bgcolor: 'white',
-                borderRadius: 1,
-                boxShadow: 3,
-                maxWidth: 320,
-                mx: 'auto',
-                border: '1px solid #e0e0e0',
-            }}
-        >
-            <Typography variant="h6" component="h2" gutterBottom>
-                {t('language_selection')}
-            </Typography>
-            <FormControl fullWidth variant="outlined">
-                <InputLabel id="language-select-label">{t('language')}</InputLabel>
-                <Select
-                    labelId="language-select-label"
-                    id="language-select"
-                    value={language}
-                    onChange={handleChange}
-                    label={t('language')}
-                >
-                    {Object.entries(languageOptions).map(([key, value]) => (
-                        <option key={key} value={key}>
-                            {value}
-                        </option>
-                    ))}
-                </Select>
-            </FormControl>
-        </Box>
+        <div className="settings-section-wrapper">
+             <div className="settings-section-header">
+                 <div className="settings-large-icon">
+                     <LanguageIcon className="settings-large-icon-inner" />
+                 </div>
+                 <h2 className="settings-title">
+                     {t('language_selection')}
+                 </h2>
+             </div>
+
+            <div className="settings-language-list">
+                {Object.entries(languageOptions).map(([key, value]) => {
+                    const isSelected = language === key;
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => handleSelect(key)}
+                            className={`settings-language-btn ${isSelected ? 'active' : ''}`}
+                        >
+                            <span className="sidebar-text" style={{ fontSize: '1.125rem' }}>{value}</span>
+                            {isSelected && (
+                                <div className="settings-check-circle">
+                                    <CheckIcon style={{ color: 'white', fontSize: '0.875rem' }} />
+                                </div>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
     );
 }
 

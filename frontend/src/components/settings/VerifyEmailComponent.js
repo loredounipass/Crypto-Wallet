@@ -1,11 +1,10 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { Alert, Typography, CircularProgress, Button, Snackbar, Box } from '../../ui/material'; 
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
-import { Alert as MuiAlert } from '../../ui/material';
-import { EmailOutlined as EmailOutlinedIcon } from '../../ui/icons';
-import { CheckCircleOutline as CheckCircleOutlineIcon } from '../../ui/icons';
-import { WarningAmber as WarningAmberIcon } from '../../ui/icons';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CloseIcon from '@mui/icons-material/Close';
 
 const VerifyEmailComponent = () => {
     const { auth } = useContext(AuthContext); 
@@ -62,8 +61,9 @@ const VerifyEmailComponent = () => {
                 await sendVerificationEmail(auth.email);
                 setSnackbar({ open: true, message: "Correo de verificación enviado.", severity: "success" });
             } catch (error) {
-                setLocalError(error.message || 'Error al enviar el correo de verificación.');
-                setSnackbar({ open: true, message: localError, severity: "error" });
+                const msg = error.message || 'Error al enviar el correo de verificación.';
+                setLocalError(msg);
+                setSnackbar({ open: true, message: msg, severity: "error" });
             } finally {
                 setSending(false); 
             }
@@ -82,130 +82,78 @@ const VerifyEmailComponent = () => {
     }, [snackbar.open, handleCloseSnackbar]);
 
     return (
-        <>
-            <Typography 
-                variant="h4" 
-                gutterBottom 
-                sx={{ 
-                    fontWeight: 700,
-                    color: '#0E1BCE', 
-                    textAlign: 'center', 
-                    padding: 2,
-                    fontSize: { xs: '1.4rem', sm: '1.9rem' } 
-                }}
-            >
-                Verificar correo electrónico
-            </Typography>
+        <div className="settings-verify-container">
+            <div className="settings-section-header">
+                <div className="settings-large-icon">
+                    <EmailOutlinedIcon className="settings-large-icon-inner" />
+                </div>
+                <h2 className="settings-title">Verificar correo electrónico</h2>
+            </div>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                <EmailOutlinedIcon sx={{ color: '#6b7280' }} />
-                <Typography 
-                    variant="body1" 
-                    gutterBottom 
-                    sx={{ 
-                        color: '#4b5563', 
-                        textAlign: 'center', 
-                        maxWidth: '520px', 
-                        margin: '0 auto', 
-                        fontSize: { xs: '0.9rem', sm: '1rem' } 
-                    }}
-                >
-                    Correo autenticado: <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>{auth?.email || 'Correo no disponible'}</Box>
-                </Typography>
-            </Box>
+            <div className="settings-verify-info-box">
+                <EmailOutlinedIcon style={{ color: 'var(--settings-muted)' }} />
+                <p style={{ color: 'var(--settings-muted)', margin: 0 }}>
+                    Correo autenticado: <span style={{ fontWeight: 700, color: 'var(--settings-text)' }}>{auth?.email || 'Correo no disponible'}</span>
+                </p>
+            </div>
 
             {loading ? (
-                <CircularProgress sx={{ display: 'block', margin: '20px auto', color: '#1976d2' }} />
+                <div className="settings-spinner-container">
+                    <div className="settings-spinner"></div>
+                </div>
             ) : (
-                <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {localError && (
-                        <Alert 
-                            severity="error" 
-                            variant="filled"
-                            sx={{ 
-                                mt: 3, 
-                                borderRadius: '8px', 
-                                color: '#fff', 
-                                fontWeight: 600, 
-                                textAlign: 'center', 
-                                maxWidth: '520px', 
-                                margin: '0 auto',
-                                px: 2
-                            }}
-                        >
+                        <div className="settings-alert settings-alert-error">
                             {localError}
-                        </Alert>
+                        </div>
                     )}
 
                     {verificationStatus && (
-                        <Alert 
-                            severity={verificationStatus.verified ? 'success' : 'warning'} 
-                            variant="outlined"
-                            icon={verificationStatus.verified ? <CheckCircleOutlineIcon /> : <WarningAmberIcon />}
-                            sx={{ 
-                                mt: 3, 
-                                borderRadius: '10px', 
-                                textAlign: 'center', 
-                                maxWidth: '520px', 
-                                margin: '0 auto',
-                                px: 2,
-                                py: 1.2,
-                                bgcolor: verificationStatus.verified ? 'rgba(16,185,129,0.06)' : 'rgba(255,152,0,0.06)'
-                            }}
-                        >
-                            <Typography component="span" sx={{ fontWeight: 700, color: verificationStatus.verified ? '#065f46' : '#7c2d00' }}>
+                        <div className={`settings-verify-status-box ${verificationStatus.verified 
+                                ? 'settings-verify-status-success' 
+                                : 'settings-verify-status-warning'}`}>
+                            {verificationStatus.verified ? <CheckCircleOutlineIcon /> : <WarningAmberIcon />}
+                            <span style={{ fontWeight: 700 }}>
                                 {verificationStatus.message}
-                            </Typography>
-                        </Alert>
+                            </span>
+                        </div>
                     )}
 
-                    <Button
-                        variant="contained"
+                    <button
                         onClick={handleSendVerificationEmail}
                         disabled={emailVerified || sending} 
-                        sx={{ 
-                            display: 'block', 
-                            margin: '20px auto', 
-                            padding: '10px 20px', 
-                            fontSize: { xs: '14px', sm: '16px' }, 
-                            borderRadius: '12px', 
-                            maxWidth: '220px',
-                            background: 'linear-gradient(90deg,#115AF7,#0E1BCE)',
-                            boxShadow: '0 8px 24px rgba(14,27,206,0.12)',
-                            '&:hover': { filter: 'brightness(0.97)' }
-                        }}
+                        className={`settings-btn ${emailVerified || sending ? '' : 'settings-btn-primary'}`}
+                        style={{ maxWidth: '200px', margin: '0 auto' }}
                     >
-                        {sending ? <CircularProgress size={22} color="inherit" /> : (emailVerified ? 'Verificado' : 'Enviar correo')}
-                    </Button>
-                </>
+                        {sending ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                <div className="settings-spinner" style={{ height: '1rem', width: '1rem', borderBottomColor: 'white' }}></div>
+                                <span>Enviando...</span>
+                            </div>
+                        ) : (
+                            emailVerified ? 'Verificado' : 'Enviar correo'
+                        )}
+                    </button>
+                </div>
             )}
 
-            <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar}>
-                <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-                    {snackbar.message}
-                </MuiAlert>
-            </Snackbar>
-
-            {error && (
-                <Alert 
-                    severity="error" 
-                    variant="filled"
-                    sx={{ 
-                        mb: 2, 
-                        borderRadius: '8px', 
-                        color: '#fff', 
-                        fontWeight: 'bold', 
-                        textAlign: 'center', 
-                        maxWidth: '520px', 
-                        margin: '0 auto',
-                        px: 2
+            {/* Custom Snackbar */}
+            {(snackbar.open || error) && (
+                <div className={`custom-snackbar ${snackbar.severity === 'success' ? 'success' : 'error'} ${error ? 'error' : ''}`}>
+                <span>{snackbar.open ? snackbar.message : error}</span>
+                <button 
+                    onClick={() => {
+                        handleCloseSnackbar();
                     }}
+                    className="snackbar-close"
                 >
-                    {error}
-                </Alert>
+                    <CloseIcon fontSize="small" />
+                </button>
+                </div>
             )}
-        </>
+        </div>
     );
-};
+}
 
 export default VerifyEmailComponent;

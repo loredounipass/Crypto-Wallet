@@ -3,6 +3,85 @@ axios.defaults.withCredentials = true
 
 const baseApi = 'http://localhost:4000/secure/api'
 
+// Base origin for non-API assets (media). Derived from baseApi origin.
+const apiOrigin = (() => {
+    try { return new URL(baseApi).origin; } catch (_) { return 'http://localhost:4000'; }
+})();
+const mediaBase = `${apiOrigin}/uploads`;
+
+
+// CSRF Token management - fetch token from server
+async function fetchCsrfToken() {
+    try {
+        // The csrf-token endpoint is registered at the root level, outside the /secure/api prefix
+        const response = await axios.get(`${apiOrigin}/csrf-token`, { withCredentials: true });
+        if (response.data?.csrfToken) {
+            return response.data.csrfToken;
+        }
+    } catch (err) {
+        console.warn('Failed to fetch CSRF token:', err);
+    }
+    return null;
+}
+
+// Function to get CSRF token from cookie
+function getCsrfTokenFromCookie() {
+    try {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'XSRF-TOKEN') {
+                return decodeURIComponent(value);
+            }
+        }
+    } catch (_) {}
+    return null;
+}
+
+// Initialize CSRF token on load
+fetchCsrfToken().then(token => {
+    if (token) {
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+    }
+});
+
+// Axios interceptor to add CSRF token to every request
+axios.interceptors.request.use((config) => {
+    const csrfToken = getCsrfTokenFromCookie();
+    if (csrfToken) {
+        config.headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+    return config;
+});
+
+// CSRF token refresh on window focus (with cleanup to prevent memory leaks)
+let csrfFocusHandler = null;
+
+function setupCsrfRefresh() {
+    if (typeof window !== 'undefined' && !csrfFocusHandler) {
+        csrfFocusHandler = () => {
+            fetchCsrfToken().then(token => {
+                if (token) {
+                    axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+                }
+            });
+        };
+        window.addEventListener('focus', csrfFocusHandler);
+    }
+}
+
+function cleanupCsrfListener() {
+    if (typeof window !== 'undefined' && csrfFocusHandler) {
+        window.removeEventListener('focus', csrfFocusHandler);
+        csrfFocusHandler = null;
+    }
+}
+
+// Initialize CSRF refresh
+if (typeof window !== 'undefined') {
+    setupCsrfRefresh();
+}
+
 // Endpoints usuario
 const loginApi = `${baseApi}/user/login`
 const logoutApi = `${baseApi}/user/logout`
@@ -30,6 +109,18 @@ const withdrawApi = `${baseApi}/wallet/withdraw`
 const transactionsApi = `${baseApi}/transaction/all`
 const transactionApi = `${baseApi}/transaction/info`
 
+//endpoints de mensajes y multimedia
+const messagesApi = `${baseApi}/messages`
+const messagesUploadApi = `${baseApi}/messages/upload`
+const myMessagesApi = `${baseApi}/messages/me`
+
+
+// profile endpoints
+const profileApi = `${baseApi}/profile`
+const profileMeApi = `${profileApi}/me`
+const profileByIdApi = (id) => `${profileApi}/${id}`
+const profileUploadProfilePhotoApi = `${profileApi}/upload/profile-photo`
+
 // Endpoints provider
 const createProvider = `${baseApi}/providers/create`
 const findByEMail = `${baseApi}/providers/findByEMail/:email`
@@ -56,6 +147,14 @@ async function post(url, body) {
     return await axios.post(url, body)
 }
 
+async function postMultipart(url, formData) {
+    return await axios.post(url, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    })
+}
+
 async function patch(url, body) {
     return await axios.patch(url, body)
 }
@@ -63,8 +162,12 @@ async function patch(url, body) {
 export {
     get,
     post,
+    postMultipart,
     patch,
     priceApi,
+    mediaBase,
+    apiOrigin,
+    cleanupCsrfListener,
     loginApi,
     logoutApi,
     registerApi,
@@ -92,5 +195,12 @@ export {
     createChatApi,
     sendMessageAsUserApi,
     sendMessageAsProviderApi,
-    getMessagesApi
+    getMessagesApi,
+    messagesApi,
+    messagesUploadApi,
+    myMessagesApi,
+    profileApi,
+    profileMeApi,
+    profileByIdApi,
+    profileUploadProfilePhotoApi
 };

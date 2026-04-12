@@ -1,8 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { UserRepository } from './index';
 import { randomBytes } from 'crypto';
-import { User, UserDocument } from './schemas/user.schema';
 import { HashService } from './hash.service';
 import { EmailService } from './email.service';
 
@@ -10,15 +8,15 @@ import { EmailService } from './email.service';
 @Injectable()
 export class ForgotPasswordService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private hashService: HashService,
-    private emailService: EmailService,
+    private readonly userRepository: UserRepository,
+    private readonly hashService: HashService,
+    private readonly emailService: EmailService,
   ) {}
 
 
   // Handles password reset requests by generating a token, saving it to the user, and sending an email
   async requestPasswordReset(email: string): Promise<boolean> {
-    const user = await this.userModel.findOne({ email }).exec();
+    const user = await this.userRepository.findOne({ email });
     if (!user) {
       throw new BadRequestException('Usuario no encontrado');
     }
@@ -52,7 +50,7 @@ export class ForgotPasswordService {
 
 // Resets the user's password after validating the token and new password
   async resetPassword(email: string, token: string, newPassword: string, confirmNewPassword: string) {
-    const user = await this.userModel.findOne({ email }).exec();
+    const user = await this.userRepository.findOne({ email });
     if (!user) {
       throw new BadRequestException('Usuario no encontrado');
     }

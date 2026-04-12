@@ -136,13 +136,21 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const { mode, toggleTheme } = useThemeMode();
   const isDarkMode = mode === "dark";
 
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = React.useRef(true);
+  React.useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const handleNavigation = (item) => {
     if (item.path === "logout") {
       if (isLoggingOut) return;
       setIsLoggingOut(true);
       logoutUser()
         .catch(() => {})
-        .finally(() => setIsLoggingOut(false));
+        .finally(() => {
+          if (isMountedRef.current) setIsLoggingOut(false);
+        });
     } else {
       history.push(item.path);
     }

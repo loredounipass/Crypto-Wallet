@@ -25,10 +25,7 @@ import { EmailModule } from 'src/user/email.module';
   ],
   controllers: [TransactionController],
   providers: [
-    TransactionService,
-    AuthService,
-    UserService,
-    HashService
+    TransactionService
   ]
 })
 export class TransactionModule { }

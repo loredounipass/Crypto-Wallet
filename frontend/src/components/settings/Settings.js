@@ -5,24 +5,16 @@ import TwoFactorAuthComponent from './TwoFactorAuthComponent';
 import LanguageSelectorComponent from './LanguageSelectorComponent';
 import UserProfileComponent from './UserProfileComponent'; 
 import VerifyEmailComponent from './VerifyEmailComponent'; 
-import { 
-    Box, 
-    Paper, 
-    List, 
-    ListItem, 
-    ListItemIcon, 
-    ListItemText, 
-    Typography, 
-    Divider,
-} from '../../ui/material';
-import { Lock as LockIcon } from '../../ui/icons';
-import { Security as SecurityIcon } from '../../ui/icons';
-import { Language as LanguageIcon } from '../../ui/icons';
-import { Person as PersonIcon } from '../../ui/icons';
-import { ArrowBack as ArrowBackIcon } from '../../ui/icons'; 
-import { Settings as SettingsIcon } from '../../ui/icons'; 
+import LockIcon from '@mui/icons-material/Lock';
+import SecurityIcon from '@mui/icons-material/Security';
+import LanguageIcon from '@mui/icons-material/Language';
+import PersonIcon from '@mui/icons-material/Person';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
+import SettingsIcon from '@mui/icons-material/Settings'; 
 import { Link } from 'react-router-dom';
+import { Box, Typography, useTheme, useMediaQuery } from '../../ui/material';
 import { useThemeMode } from '../../ui/styles';
+import './Settings.css';
 
 const sections = [
     { id: 'userProfile', label: 'user_profile', icon: <PersonIcon /> },
@@ -46,125 +38,142 @@ const renderSection = (selectedSection) => {
 function Settings() {
     const { t } = useTranslation(); 
     const [selectedSection, setSelectedSection] = useState('userProfile');
+
+    const muiTheme = useTheme();
+    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
     const { mode } = useThemeMode();
     const isDark = mode === 'dark';
 
-    const containerStyle = {
-        marginTop: "32px",
-        display: "flex",
-        minHeight: "80vh",
-        width: "100%",
-    };
-
-    const paperStyle = {
-        borderRadius: "16px",
-        overflow: "hidden",
-        display: "flex",
-        width: "100%",
-        backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
-        border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-    };
-
-    const sidebarStyle = {
-        width: "240px",
-        backgroundColor: isDark ? "#0F0F1A" : "#F3F4F6",
-        padding: "16px 0",
-        flexShrink: 0,
-    };
-
-    const listItemStyle = (isSelected) => ({
-        padding: "12px 16px",
-        cursor: "pointer",
-        backgroundColor: isSelected ? (isDark ? "#2186EB" : "#2186EB") : "transparent",
-        color: isSelected ? "white" : (isDark ? "#FFFFFF" : "#1A1A2E"),
-        display: "flex",
-        alignItems: "center",
-        transition: "background-color 0.2s",
-        borderRadius: "8px",
-        margin: "4px 8px",
-    });
-
-    const contentStyle = {
-        flex: 1,
-        padding: "24px",
-    };
-
-    const dividerStyle = {
-        marginBottom: "16px",
-        borderColor: isDark ? "#2D2D44" : "#E5E7EB",
+    const styles = {
+        pageContainer: {
+            padding: isMobile ? "16px" : isTablet ? "24px" : "40px",
+            minHeight: "100vh",
+            backgroundColor: isDark ? "#0F0F1A" : "#F6F8FA",
+        },
+        container: {
+            maxWidth: "1100px",
+            margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+            borderRadius: "16px",
+            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            boxShadow: isDark ? "none" : "0 4px 20px rgba(0, 0, 0, 0.05)",
+            overflow: "hidden",
+            minHeight: "75vh",
+        },
+        sidebar: {
+            backgroundColor: isDark ? "#12121D" : "#F8FAFC",
+            minWidth: isMobile ? "100%" : "280px",
+            padding: isMobile ? "16px" : "32px 24px",
+            borderRight: isMobile ? "none" : `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            borderBottom: isMobile ? `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}` : "none",
+            display: "flex",
+            flexDirection: isMobile ? "row" : "column",
+            overflowX: isMobile ? "auto" : "visible",
+            gap: "8px",
+        },
+        sidebarList: {
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            display: "flex",
+            flexDirection: isMobile ? "row" : "column",
+            gap: "8px",
+            width: "100%",
+        },
+        sidebarBtn: (isActive) => ({
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: isMobile ? "10px 14px" : "14px 18px",
+            borderRadius: "12px",
+            backgroundColor: isActive ? (isDark ? "#2D2D44" : "#FFFFFF") : "transparent",
+            color: isActive ? "#2186EB" : (isDark ? "#9CA3AF" : "#6B7280"),
+            border: isActive && !isDark ? "1px solid #E5E7EB" : "1px solid transparent",
+            boxShadow: isActive && !isDark ? "0 2px 4px rgba(0,0,0,0.02)" : "none",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            fontWeight: isActive ? 600 : 500,
+            fontSize: "15px",
+            textAlign: "left",
+            textDecoration: "none",
+            whiteSpace: isMobile ? "nowrap" : "normal",
+        }),
+        mainContent: {
+            padding: isMobile ? "24px 16px" : "40px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+        },
+        header: {
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "32px",
+            paddingBottom: "20px",
+            borderBottom: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+        },
+        title: {
+            color: isDark ? "#FFFFFF" : "#111827",
+            fontSize: isMobile ? "22px" : "28px",
+            fontWeight: 700,
+            margin: 0,
+        },
+        icon: {
+            color: "#2186EB",
+            fontSize: "32px",
+        }
     };
 
     return (
-        <Box style={containerStyle}>
-            <Paper style={paperStyle}>
-                <Box style={sidebarStyle}>
-                    <List style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                        {sections.map(({ id, label, icon }) => (
-                            <ListItem
-                                key={id}
+        <Box sx={styles.pageContainer}>
+            <Box sx={styles.container}>
+                {/* Sidebar */}
+            <Box sx={styles.sidebar} role="navigation" aria-label="Settings navigation">
+                <ul style={styles.sidebarList}>
+                    {sections.map(({ id, label, icon }) => (
+                        <li key={id}>
+                            <button
                                 onClick={() => setSelectedSection(id)}
-                                style={listItemStyle(selectedSection === id)}
-                                onMouseOver={(e) => {
-                                    if (selectedSection !== id) {
-                                        e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (selectedSection !== id) {
-                                        e.currentTarget.style.backgroundColor = "transparent";
-                                    }
-                                }}
+                                style={styles.sidebarBtn(selectedSection === id)}
                             >
-                                <ListItemIcon style={{ color: selectedSection === id ? "white" : (isDark ? "#9CA3AF" : "#6B7280"), minWidth: "40px", fontSize: 24 }}>
-                                    {icon}
-                                </ListItemIcon>
-                                <ListItemText 
-                                    primary={t(label)} 
-                                    style={{ fontSize: "14px", fontWeight: 500, color: selectedSection === id ? "white" : "inherit" }}
-                                />
-                            </ListItem>
-                        ))}
-                        <ListItem
-                            component={Link}
+                                <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
+                                {!isMobile && <span>{t(label)}</span>}
+                            </button>
+                        </li>
+                    ))}
+                    
+                    <li style={{ marginTop: isMobile ? "0" : "auto", paddingTop: isMobile ? "0" : "16px" }}>
+                        <Link
                             to="/"
-                            style={{
-                                marginTop: "auto",
-                                padding: "12px 16px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                color: isDark ? "#9CA3AF" : "#6B7280",
-                                borderRadius: "8px",
-                                margin: "4px 8px",
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                            style={styles.sidebarBtn(false)}
                         >
-                            <ListItemIcon style={{ color: "inherit", minWidth: "40px", fontSize: 24 }}>
-                                <ArrowBackIcon />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={t('go_back')} 
-                                style={{ fontSize: "14px", fontWeight: 500 }}
-                            />
-                        </ListItem>
-                    </List>
+                            <span style={{ display: 'flex', alignItems: 'center' }}><ArrowBackIcon /></span>
+                            {!isMobile && <span>{t('go_back')}</span>}
+                        </Link>
+                    </li>
+                </ul>
+            </Box>
+
+            {/* Main Content */}
+            <Box sx={styles.mainContent}>
+                <Box sx={styles.header}>
+                    <SettingsIcon style={styles.icon} />
+                    <h1 style={styles.title}>
+                        {t('settings_title')}
+                    </h1>
                 </Box>
-                <Box style={contentStyle}>
-                    <Box style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
-                        <SettingsIcon style={{ fontSize: 32, marginRight: "8px", color: isDark ? "#FFFFFF" : "#1A1A2E" }} />
-                        <Typography 
-                            variant="h4" 
-                            component="h1" 
-                            style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "24px", fontWeight: 600 }}
-                        >
-                            {t('settings_title')} 
-                        </Typography>
-                    </Box>
-                    <Divider style={dividerStyle} />
+                
+                <Box sx={{ flex: 1 }}>
                     {renderSection(selectedSection)}
                 </Box>
-            </Paper>
+            </Box>
+        </Box>
         </Box>
     );
 }

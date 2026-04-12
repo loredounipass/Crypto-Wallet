@@ -1,23 +1,30 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { randomInt } from 'crypto';
 
 
-// Service for sending various types of emails to users
 @Injectable()
 export class EmailService {
-  private transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  private readonly FROM_NAME = 'BlockVault';
+  private readonly FROM_EMAIL = 'noreply@blockvault.com';
+  private readonly FRONTEND_URL: string;
+  
+  private transporter: any;
+  constructor(private readonly configService: ConfigService) {
+    this.FRONTEND_URL = this.configService.get<string>('FRONTEND_URL') || 'https://tudominio.com';
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+    });
+  }
 
-  // Sends a login token email to the user with security tips
   async sendTokenLogin(toEmail: string, token: string): Promise<void> {
     const mailOptions = {
-      from: 'BlockVault <noreply@blockvault.com>',
+      from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: toEmail,
       subject: 'Token de verificación para iniciar sesión',
       html: `
@@ -52,7 +59,7 @@ export class EmailService {
                      <span>TOKEN:</span> <strong>${token}</strong>
                     </div>
 
-                    <p class="important">Token expirará en 1 minutos.</p>
+                    <p class="important">Token expirará en 5 minutos.</p>
                     <div class="security-tips">
                         <h4>Consejos para proteger tus fondos:</h4>
                         <ul>
@@ -81,21 +88,17 @@ export class EmailService {
     }
   }
 
-
-  // Generates a secure random 6-digit token as a string
   async generateToken(): Promise<string> {
-    // Genera un token aleatorio de 6 dígitos usando crypto
     const num = randomInt(0, 1000000);
+    await Promise.resolve();
     return String(num).padStart(6, '0');
   }
 
-
-  // Sends a verification email to the user with a link to verify their email address
   async sendVerificationEmail(email: string): Promise<void> {
-    const verificationUrl = `https://cuddly-broccoli-x795wpw9p55fpg5r-3000.app.github.dev/verifyemail`;
+    const verificationUrl = `${this.FRONTEND_URL}/verifyemail`;
 
     const mailOptions = {
-      from: 'BlockVault <noreply@blockvault.com>',
+      from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
       subject: 'Verifica tu correo electrónico',
       html: `
@@ -118,7 +121,7 @@ export class EmailService {
         </head>
         <body>
           <div class="container">
-            <div class="header">
+              <div class="header">
               <h1>BlockVault</h1>
             </div>
             <div class="content">
@@ -134,7 +137,7 @@ export class EmailService {
 
               <p class="muted">Este enlace expirará en 60 minutos. Si no solicitaste esta verificación, ignora este correo.</p>
             </div>
-            <div class="footer">
+              <div class="footer">
               <div>Consejos para proteger tu cuenta: utiliza 2FA y no compartas tus credenciales.</div>
               <div style="margin-top:8px">Gracias por usar BlockVault.</div>
             </div>
@@ -151,15 +154,13 @@ export class EmailService {
     }
   }
 
-
-  // Sends a forgot password email to the user with a link to reset their password
   async sendForgotPasswordEmail(email: string, token: string): Promise<void> {
-    const resetUrl = `https://cuddly-broccoli-x795wpw9p55fpg5r-3000.app.github.dev/reset-password?email=${encodeURIComponent(
+    const resetUrl = `${this.FRONTEND_URL}/reset-password?email=${encodeURIComponent(
       email,
     )}&token=${encodeURIComponent(token)}`;
 
     const mailOptions = {
-      from: 'BlockVault <noreply@blockvault.com>',
+      from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
       subject: 'Restablece tu contraseña',
       html: `
@@ -197,7 +198,6 @@ export class EmailService {
               <p class="muted"><a href="${resetUrl}">${resetUrl}</a></p>
 
               <p class="muted">Este enlace expirará en 60 minutos. Si no solicitaste este restablecimiento, ignora este correo.</p>
-              <p class="muted">Este enlace expirará en 2 minutos. Si no solicitaste este restablecimiento, ignora este correo.</p>
             </div>
             <div class="footer">
               <div>Consejos para proteger tu cuenta: utiliza 2FA y no compartas tus credenciales.</div>
@@ -216,11 +216,9 @@ export class EmailService {
     }
   }
 
-
-// Sends a login notification email to the user with security tips
   async sendLoginNotificationEmail(toEmail: string): Promise<void> {
     const mailOptions = {
-      from: 'BlockVault <noreply@nextcryptoatm.com>',
+      from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: toEmail,
       subject: 'Notificación de Inicio de sesión',
       html: `
@@ -244,7 +242,7 @@ export class EmailService {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>BlockVault</h1>
+                  <h1>BlockVault</h1>
                 </div>
                 <div class="content">
                     <p>Hola,</p>
@@ -263,16 +261,14 @@ export class EmailService {
                     </div>
                 </div>
                 <div class="footer">
-                    <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
-                    <p>Gracias por usar BlockVault.</p>
+                  <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                  <p>Gracias por usar BlockVault.</p>
                 </div>
             </div>
         </body>
         </html>
       `,
     };
-
-
 
     try {
       await this.transporter.sendMail(mailOptions);

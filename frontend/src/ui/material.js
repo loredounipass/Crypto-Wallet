@@ -7,8 +7,48 @@ const resolveComponent = (component) => component || "div";
 
 export const Box = ({ component, sx, style, className, children, ...props }) => {
   const Component = resolveComponent(component);
+  // Extract MUI system props so they don't leak to the DOM
+  const {
+    display, alignItems, justifyContent, flexDirection, flexWrap, flex, gap,
+    p, m, mb, mt, ml, mr, px, py, pt, pb, pl, pr,
+    bgcolor, borderRadius, overflow, position,
+    width, height, minWidth, maxWidth, minHeight, maxHeight, textAlign,
+    ...domProps
+  } = props;
+  const spacingVal = (v) => (typeof v === 'number' ? `${v * 8}px` : v);
+  const systemStyle = {};
+  if (display != null) systemStyle.display = display;
+  if (alignItems != null) systemStyle.alignItems = alignItems;
+  if (justifyContent != null) systemStyle.justifyContent = justifyContent;
+  if (flexDirection != null) systemStyle.flexDirection = flexDirection;
+  if (flexWrap != null) systemStyle.flexWrap = flexWrap;
+  if (flex != null) systemStyle.flex = flex;
+  if (gap != null) systemStyle.gap = spacingVal(gap);
+  if (p != null) systemStyle.padding = spacingVal(p);
+  if (m != null) systemStyle.margin = spacingVal(m);
+  if (mb != null) systemStyle.marginBottom = spacingVal(mb);
+  if (mt != null) systemStyle.marginTop = spacingVal(mt);
+  if (ml != null) systemStyle.marginLeft = spacingVal(ml);
+  if (mr != null) systemStyle.marginRight = spacingVal(mr);
+  if (px != null) { systemStyle.paddingLeft = spacingVal(px); systemStyle.paddingRight = spacingVal(px); }
+  if (py != null) { systemStyle.paddingTop = spacingVal(py); systemStyle.paddingBottom = spacingVal(py); }
+  if (pt != null) systemStyle.paddingTop = spacingVal(pt);
+  if (pb != null) systemStyle.paddingBottom = spacingVal(pb);
+  if (pl != null) systemStyle.paddingLeft = spacingVal(pl);
+  if (pr != null) systemStyle.paddingRight = spacingVal(pr);
+  if (bgcolor != null) systemStyle.backgroundColor = bgcolor;
+  if (borderRadius != null) systemStyle.borderRadius = typeof borderRadius === 'number' ? `${borderRadius * 4}px` : borderRadius;
+  if (overflow != null) systemStyle.overflow = overflow;
+  if (position != null) systemStyle.position = position;
+  if (width != null) systemStyle.width = width;
+  if (height != null) systemStyle.height = height;
+  if (minWidth != null) systemStyle.minWidth = minWidth;
+  if (maxWidth != null) systemStyle.maxWidth = maxWidth;
+  if (minHeight != null) systemStyle.minHeight = minHeight;
+  if (maxHeight != null) systemStyle.maxHeight = maxHeight;
+  if (textAlign != null) systemStyle.textAlign = textAlign;
   return (
-    <Component className={className} style={mergeStyles(sx, style)} {...props}>
+    <Component className={className} style={{ ...systemStyle, ...mergeStyles(sx, style) }} {...domProps}>
       {children}
     </Component>
   );
@@ -130,7 +170,7 @@ export const CardHeader = ({ title, sx, style, ...props }) => (
   </div>
 );
 
-export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, children, sx, style, ...props }) => {
+export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, direction, alignItems, justifyContent, wrap, children, sx, style, ...props }) => {
   const gap = `${Number(spacing || 0) * 8}px`;
   const widthPct = (n) => `${(Number(n || 12) / 12) * 100}%`;
   const itemStyle = item
@@ -138,10 +178,16 @@ export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, children, s
         width: widthPct(xs),
       }
     : {};
+  const flexProps = {};
+  if (direction) flexProps.flexDirection = direction;
+  if (alignItems) flexProps.alignItems = alignItems;
+  if (justifyContent) flexProps.justifyContent = justifyContent;
+  if (wrap) flexProps.flexWrap = wrap;
   return (
     <div
       style={{
         ...(container ? { display: "flex", flexWrap: "wrap", gap } : {}),
+        ...flexProps,
         ...itemStyle,
         ...mergeStyles(sx, style),
       }}

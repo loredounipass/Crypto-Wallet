@@ -32,10 +32,7 @@ import { TwoFactorAuthModule } from 'src/two-factor/verification.module';
   ],
   controllers: [WalletController],
   providers: [
-    WalletService,
-    UserService,
-    HashService,
-    AuthService
+    WalletService
   ]
 })
 export class WalletModule { }

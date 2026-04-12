@@ -53,7 +53,7 @@ export default function Login() {
           responseMessage &&
           responseMessage.msg === 'Código de verificación enviado a tu correo electrónico.'
         ) {
-          history.push('/verifytoken');
+          history.push({ pathname: '/verifytoken', state: { email: data.email } });
         } else if (responseMessage && responseMessage.msg === 'Logged in!') {
           history.push('/');
         } else {
