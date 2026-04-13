@@ -1,22 +1,25 @@
 import React, { useEffect, useState, useContext } from 'react';
-import PersonIcon from '@mui/icons-material/Person';
+import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 import * as profileService from '../../services/profile';
+import { useThemeMode } from '../../ui/styles';
 
 /* ── reusable sub-components ── */
 function InputField({ id, label, value, onChange, type = 'text', required = false, placeholder = '' }) {
+    const { mode } = useThemeMode();
+    const isDark = mode === 'dark';
     return (
-        <div className="settings-input-group">
-            <label htmlFor={id} className="settings-label">
-                {label}{required && <span className="settings-required-asterisk"> *</span>}
+        <div className="mb-5 flex flex-col">
+            <label htmlFor={id} className={`${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} mb-2 text-sm font-medium`}>
+                {label}{required && <span className="text-[#ef4444]"> *</span>}
             </label>
             <input
                 id={id}
                 type={type}
                 value={value}
                 onChange={onChange}
-                className="settings-input"
+                className={`box-border w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A] text-white' : 'border-[#E5E7EB] bg-[#F6F8FA] text-[#111827]'} focus:border-[#2186EB]`}
                 placeholder={placeholder}
                 required={required}
             />
@@ -28,6 +31,8 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
 function UserProfileComponent() {
     const { updateUserProfile, error: authError, successMessage: authSuccess } = useAuth();
     const { auth } = useContext(AuthContext);
+    const { mode } = useThemeMode();
+    const isDark = mode === 'dark';
 
     // Account
     const [firstName, setFirstName]   = useState('');
@@ -107,25 +112,24 @@ function UserProfileComponent() {
 
     /* ── render ── */
     return (
-        <div className="settings-section-wrapper">
-            <div className="settings-form-card">
+        <div className="w-full">
+            <div className="border-0 bg-transparent p-0 shadow-none">
 
                 {/* Header */}
-                <div className="settings-section-header">
-                    <div className="settings-large-icon">
-                        <PersonIcon className="settings-large-icon-inner" />
+                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                    <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
+                        <PersonIcon className="text-[28px] text-[#2186EB]" />
                     </div>
-                    <h2 className="settings-title">Perfil de Usuario</h2>
+                    <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Perfil de Usuario</h2>
                 </div>
 
                 <form
                     noValidate
                     autoComplete="off"
-                    className="settings-form"
                     onSubmit={(e) => e.preventDefault()}
                 >
                     {/* ── Nombre + Apellido ── */}
-                    <div className="upc-grid-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <InputField
                             id="upc-firstName"
                             label="Primer Nombre"
@@ -160,24 +164,24 @@ function UserProfileComponent() {
                         type="button"
                         onClick={handleSave}
                         disabled={isSubmitting || remainingMinutes > 0}
-                        className="settings-btn settings-btn-primary"
+                        className="box-border w-full cursor-pointer rounded-xl border-0 bg-[#2186EB] px-6 py-[14px] text-sm font-semibold text-white transition-all hover:bg-[#1A6BC7] disabled:cursor-not-allowed disabled:opacity-60"
                         id="upc-save-btn"
                     >
                         {isSubmitting ? (
                             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                <span className="pinfo-spinner" />
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white" />
                                 Guardando...
                             </span>
                         ) : 'Guardar cambios'}
                     </button>
 
                     {remainingMinutes > 0 && (
-                        <div className="settings-alert settings-alert-warning">
+                        <div className="mt-4 rounded-xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.1)] px-4 py-3 text-sm font-medium text-[#f59e0b]">
                             Espera {remainingMinutes} minuto(s) antes de volver a cambiar tu cuenta.
                         </div>
                     )}
-                    {successMsg && <div className="settings-alert settings-alert-success">{successMsg}</div>}
-                    {errorMsg   && <div className="settings-alert settings-alert-error">{errorMsg}</div>}
+                    {successMsg && <div className="mt-4 rounded-xl border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.1)] px-4 py-3 text-sm font-medium text-[#22c55e]">{successMsg}</div>}
+                    {errorMsg   && <div className="mt-4 rounded-xl border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.1)] px-4 py-3 text-sm font-medium text-[#ef4444]">{errorMsg}</div>}
                 </form>
             </div>
         </div>

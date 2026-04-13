@@ -1,7 +1,16 @@
 import axios from 'axios'
-axios.defaults.withCredentials = true
 
-const baseApi = 'http://localhost:4000/secure/api'
+const fallbackBaseApi = 'http://localhost:4000/secure/api';
+const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
+
+const baseApi = configuredBaseApi;
+const api = axios.create({
+    baseURL: baseApi,
+    withCredentials: true,
+    timeout: 10000,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-CSRF-TOKEN',
+});
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
 const apiOrigin = (() => {
@@ -41,12 +50,12 @@ function getCsrfTokenFromCookie() {
 // Initialize CSRF token on load
 fetchCsrfToken().then(token => {
     if (token) {
-        axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+        api.defaults.headers.common['X-CSRF-TOKEN'] = token;
     }
 });
 
 // Axios interceptor to add CSRF token to every request
-axios.interceptors.request.use((config) => {
+api.interceptors.request.use((config) => {
     const csrfToken = getCsrfTokenFromCookie();
     if (csrfToken) {
         config.headers['X-CSRF-TOKEN'] = csrfToken;
@@ -62,7 +71,7 @@ function setupCsrfRefresh() {
         csrfFocusHandler = () => {
             fetchCsrfToken().then(token => {
                 if (token) {
-                    axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+                    api.defaults.headers.common['X-CSRF-TOKEN'] = token;
                 }
             });
         };
@@ -137,18 +146,18 @@ const getMessagesApi = `${baseApi}/providers/getMessages/:chatId`
 const priceApi = 'https://min-api.cryptocompare.com/data/price?tsyms=USD&fsym='
 
 async function get(url, body, config = {}) {
-    return await axios.get(url, {
+    return await api.get(url, {
         params: body || {},
         ...config
     })
 }
 
 async function post(url, body) {
-    return await axios.post(url, body)
+    return await api.post(url, body)
 }
 
 async function postMultipart(url, formData) {
-    return await axios.post(url, formData, {
+    return await api.post(url, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -156,7 +165,7 @@ async function postMultipart(url, formData) {
 }
 
 async function patch(url, body) {
-    return await axios.patch(url, body)
+    return await api.patch(url, body)
 }
 
 export {

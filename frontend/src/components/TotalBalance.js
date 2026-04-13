@@ -6,6 +6,7 @@ import Title from './utils/Title';
 import useAllWallets from '../hooks/useAllWallets';
 import { Box } from '../ui/material'; 
 import { useTranslation } from 'react-i18next';
+import { Link as RouterLink } from 'react-router-dom';
 
 const TotalBalance = () => {
     const { walletBalance } = useAllWallets();
@@ -29,8 +30,9 @@ const TotalBalance = () => {
                 }}
             >
                 <Link
+                    component={RouterLink}
+                    to="/wallets"
                     color="primary"
-                    href="/wallets"
                     sx={{
                         display: 'flex',
                         alignItems: 'center',

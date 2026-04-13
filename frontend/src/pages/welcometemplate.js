@@ -4,19 +4,19 @@ import { Container, Typography, Button, Box, Dialog, DialogActions, DialogConten
 import { styled } from '../ui/styles';
 
 // Styled components with Roboto font
-const StyledContainer = styled(Container)(({ theme }) => ({
-  marginTop: theme.spacing(5),
+const StyledContainer = styled(Container)(() => ({
+  marginTop: '40px',
   textAlign: 'center',
 }));
 
-const OptionBox = styled(Box)(({ theme }) => ({
+const OptionBox = styled(Box)(() => ({
   display: 'flex',
   justifyContent: 'space-around',
-  padding: theme.spacing(3),
+  padding: '24px',
   backgroundColor: '#f4f6f9',
-  borderRadius: theme.shape.borderRadius * 2,
+  borderRadius: '16px',
   boxShadow: `0 4px 8px rgba(0, 0, 0, 0.1)`,
-  marginTop: theme.spacing(4),
+  marginTop: '32px',
   textAlign: 'center',
   cursor: 'pointer',
   fontFamily: 'Roboto, sans-serif',
@@ -25,12 +25,12 @@ const OptionBox = styled(Box)(({ theme }) => ({
   },
 }));
 
-const StyledButton = styled(Button)(({ theme }) => ({
+const StyledButton = styled(Button)(() => ({
   textTransform: 'none',
   fontSize: '14px', // Reducción de tamaño de texto
   fontWeight: 500,
   padding: '8px 16px', // Reducción de padding
-  borderRadius: theme.shape.borderRadius * 2,
+  borderRadius: '16px',
   backgroundColor: '#007BFF',
   color: '#FFFFFF',
   border: '1px solid #007BFF', // Agregar borde
@@ -42,12 +42,12 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 
-const DialogStyled = styled(Dialog)(({ theme }) => ({
+const DialogStyled = styled(Dialog)(() => ({
   '& .MuiDialog-paper': {
     borderRadius: '20px',
     backgroundColor: '#F7F9FC',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-    padding: theme.spacing(3),
+    padding: '24px',
   },
 }));
 
@@ -69,7 +69,7 @@ const WelcomeTemplate = () => {
 
   const handleClose = () => {
     setOpenMainDialog(false);
-    history.push('/chatsupport');
+    history.push('/providerchat');
   };
 
   const handleCancel = () => {

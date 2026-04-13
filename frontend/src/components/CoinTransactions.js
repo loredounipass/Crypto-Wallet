@@ -1,5 +1,4 @@
 import React from 'react';
-import { Avatar, useMediaQuery, useTheme } from '../ui/material';
 import { getDisplayableTxHash, getStatusName } from './utils/Display';
 import {
     getCoinDecimalsPlace,
@@ -54,31 +53,67 @@ export default function CoinTransactions({
     title = 'Historial de transacciones',
     showCoinColumn = false,
     hideDateOnMobile = false,
-    compactMobile = false
+    compactMobile = false,
+    fixedHeight = true,
+    desktopHeight = 420,
+    mobileHeight = 300
 }) {
-    const muiTheme = useTheme();
-    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
     const { mode } = useThemeMode();
     const isDark = mode === 'dark';
     const shouldHideDate = hideDateOnMobile && isMobile;
     const isCompact = compactMobile && isMobile;
+    const tableHeight = isMobile ? mobileHeight : desktopHeight;
     const [copied, setCopied] = React.useState(false);
     const [txCopied, setTxCopied] = React.useState(false);
     const [selectedTransaction, setSelectedTransaction] = React.useState(null);
 
+    React.useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth <= 640);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
     const styles = {
         container: {
-            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
-            borderRadius: "16px",
+            background: isDark
+                ? "linear-gradient(180deg, #151529 0%, #10101C 100%)"
+                : "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)",
+            borderRadius: "18px",
             padding: isCompact ? "12px" : "20px",
             border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            overflow: "hidden",
+            boxShadow: isDark ? "0 14px 28px rgba(0,0,0,0.28)" : "0 12px 26px rgba(15,23,42,0.08)",
+        },
+        tableWrapper: {
+            overflowY: fixedHeight ? "auto" : "visible",
             overflowX: "auto",
+            maxHeight: fixedHeight ? `${tableHeight}px` : "none",
+            borderRadius: "12px",
+            border: `1px solid ${isDark ? "#232338" : "#E5E7EB"}`,
+            backgroundColor: isDark ? "#121224" : "#FFFFFF",
+        },
+        titleRow: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            marginBottom: isCompact ? "10px" : "14px",
         },
         title: {
             color: isDark ? "#FFFFFF" : "#1A1A2E",
-            fontSize: isCompact ? "16px" : "18px",
-            fontWeight: 600,
-            marginBottom: isCompact ? "10px" : "16px",
+            fontSize: isCompact ? "16px" : "19px",
+            fontWeight: 700,
+            margin: 0,
+        },
+        countBadge: {
+            padding: isCompact ? "3px 8px" : "4px 10px",
+            borderRadius: "999px",
+            fontSize: "11px",
+            fontWeight: 700,
+            color: isDark ? "#BFDBFE" : "#1D4ED8",
+            backgroundColor: isDark ? "rgba(37,99,235,0.2)" : "#DBEAFE",
+            border: `1px solid ${isDark ? "#1D4ED8" : "#BFDBFE"}`,
         },
         table: {
             width: "100%",
@@ -90,7 +125,14 @@ export default function CoinTransactions({
             padding: isCompact ? "8px 6px" : "12px",
             borderBottom: `2px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
             color: isDark ? "#9CA3AF" : "#6B7280",
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: isCompact ? "10px" : "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.6px",
+            position: "sticky",
+            top: 0,
+            backgroundColor: isDark ? "#121224" : "#FFFFFF",
+            zIndex: 2,
         },
         td: {
             padding: isCompact ? "8px 6px" : "12px",
@@ -108,7 +150,7 @@ export default function CoinTransactions({
         },
         amount: (nature) => ({
             color: nature === 1 ? "#10B981" : "#EF4444",
-            fontWeight: 600,
+            fontWeight: 700,
         }),
         dialog: {
             position: "fixed",
@@ -177,9 +219,13 @@ export default function CoinTransactions({
     if (!transactions || transactions.length === 0) {
         return (
             <div style={styles.container}>
-                <div style={styles.title}>{title}</div>
-                <div style={{ textAlign: "center", padding: "40px", color: isDark ? "#9CA3AF" : "#6B7280" }}>
-                    No hay transacciones todavía
+                <div style={styles.titleRow}>
+                    <h3 style={styles.title}>{title}</h3>
+                    <span style={styles.countBadge}>0 movimientos</span>
+                </div>
+                <div style={{ textAlign: "center", padding: "34px 20px", color: isDark ? "#9CA3AF" : "#6B7280" }}>
+                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>No hay transacciones todavía</div>
+                    <div style={{ fontSize: "12px" }}>Cuando lleguen movimientos, aparecerán aquí.</div>
                 </div>
             </div>
         );
@@ -188,72 +234,78 @@ export default function CoinTransactions({
     return (
         <>
             <div style={styles.container}>
-                <div style={styles.title}>{title}</div>
-                <table style={styles.table}>
-                    <thead>
-                        <tr>
-                            {showCoinColumn && <th style={styles.th}>Moneda</th>}
-                            <th style={styles.th}>ID Transaccion</th>
-                            <th style={styles.th}>Cantidad</th>
-                            <th style={styles.th}>Estado</th>
-                            {!shouldHideDate && <th style={styles.th}>Fecha</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {transactions.map((transaction, index) => (
-                            <tr 
-                                key={`${transaction.txHash}-${index}`}
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleOpen(transaction)}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)"}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-                            >
-                                {showCoinColumn && (
-                                    <td style={styles.td}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <Avatar
-                                                src={getCoinLogo(getTransactionCoin(transaction))}
-                                                imgProps={{ onError: (e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(transaction)); } }}
-                                                style={{ width: 20, height: 20 }}
-                                            />
-                                            <span>{String(getTransactionCoin(transaction) || '').toUpperCase()}</span>
-                                        </div>
-                                    </td>
-                                )}
-                                <td style={styles.td}>
-                                    <span style={{ color: "#2186EB" }}>
-                                        {getDisplayableTxHash(transaction.txHash)}
-                                    </span>
-                                </td>
-                                <td style={styles.td}>
-                                    <span style={styles.amount(transaction.nature)}>
-                                        {transaction.nature === 1 && transaction.status > 1 ? '+' : ''}
-                                        {transaction.amount ? parseFloat(transaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(transaction))) : ''}
-                                    </span>
-                                </td>
-                                <td style={styles.td}>
-                                    <span style={{
-                                        padding: isCompact ? "3px 8px" : "4px 12px",
-                                        borderRadius: "20px",
-                                        fontSize: isCompact ? "10px" : "12px",
-                                        fontWeight: 500,
-                                        backgroundColor: styles.statusBadge(transaction.status).bg,
-                                        color: styles.statusBadge(transaction.status).text,
-                                    }}>
-                                        {transaction.status === 2 && transaction.confirmations > 0 
-                                            ? `Confirmacion ${transaction.confirmations}/12` 
-                                            : getStatusName(transaction.status)}
-                                    </span>
-                                </td>
-                                {!shouldHideDate && (
-                                    <td style={styles.td}>
-                                        {getRealDate(transaction.created_at)}
-                                    </td>
-                                )}
+                <div style={styles.titleRow}>
+                    <h3 style={styles.title}>{title}</h3>
+                    <span style={styles.countBadge}>{transactions.length} movimientos</span>
+                </div>
+                <div className="hide-scrollbar" style={styles.tableWrapper}>
+                    <table style={styles.table}>
+                        <thead>
+                            <tr>
+                                {showCoinColumn && <th style={styles.th}>Moneda</th>}
+                                <th style={styles.th}>ID Transaccion</th>
+                                <th style={styles.th}>Cantidad</th>
+                                <th style={styles.th}>Estado</th>
+                                {!shouldHideDate && <th style={styles.th}>Fecha</th>}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {transactions.map((transaction, index) => (
+                                <tr 
+                                    key={`${transaction.txHash}-${index}`}
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => handleOpen(transaction)}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)"}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                                >
+                                    {showCoinColumn && (
+                                        <td style={styles.td}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                <img
+                                                    src={getCoinLogo(getTransactionCoin(transaction))}
+                                                    alt={getTransactionCoin(transaction)}
+                                                    onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(transaction)); }}
+                                                    style={{ width: 20, height: 20, borderRadius: "999px", objectFit: "cover" }}
+                                                />
+                                                <span>{String(getTransactionCoin(transaction) || '').toUpperCase()}</span>
+                                            </div>
+                                        </td>
+                                    )}
+                                    <td style={styles.td}>
+                                        <span style={{ color: "#2186EB", fontFamily: "monospace", fontWeight: 600 }}>
+                                            {getDisplayableTxHash(transaction.txHash)}
+                                        </span>
+                                    </td>
+                                    <td style={styles.td}>
+                                        <span style={styles.amount(transaction.nature)}>
+                                            {transaction.nature === 1 && transaction.status > 1 ? '+' : ''}
+                                            {transaction.amount ? parseFloat(transaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(transaction))) : ''}
+                                        </span>
+                                    </td>
+                                    <td style={styles.td}>
+                                        <span style={{
+                                            padding: isCompact ? "3px 8px" : "4px 12px",
+                                            borderRadius: "20px",
+                                            fontSize: isCompact ? "10px" : "12px",
+                                            fontWeight: 500,
+                                            backgroundColor: styles.statusBadge(transaction.status).bg,
+                                            color: styles.statusBadge(transaction.status).text,
+                                        }}>
+                                            {transaction.status === 2 && transaction.confirmations > 0 
+                                                ? `Confirmacion ${transaction.confirmations}/12` 
+                                                : getStatusName(transaction.status)}
+                                        </span>
+                                    </td>
+                                    {!shouldHideDate && (
+                                        <td style={styles.td}>
+                                            {getRealDate(transaction.created_at)}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Dialog */}
@@ -304,10 +356,11 @@ export default function CoinTransactions({
                                     borderRadius: "10px",
                                     padding: "6px 10px"
                                 }}>
-                                    <Avatar 
+                                    <img
                                         src={getCoinLogo(getTransactionCoin(selectedTransaction))}
-                                        imgProps={{ onError: (e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(selectedTransaction)); } }}
-                                        style={{ width: isMobile ? 28 : 30, height: isMobile ? 28 : 30 }}
+                                        alt={getTransactionCoin(selectedTransaction)}
+                                        onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(selectedTransaction)); }}
+                                        style={{ width: isMobile ? 28 : 30, height: isMobile ? 28 : 30, borderRadius: "999px", objectFit: "cover" }}
                                     />
                                     <span style={styles.value}>{String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}</span>
                                 </div>

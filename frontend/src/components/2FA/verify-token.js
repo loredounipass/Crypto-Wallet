@@ -27,8 +27,8 @@ const VerifyToken = () => {
     const { mode } = useThemeMode();
     const isDark = mode === 'dark';
 
-    // Get email from route state first, fall back to localStorage (set during login)
-    const email = location.state?.email || localStorage.getItem('email');
+    // Keep email in navigation state only; avoid persisting PII in localStorage
+    const email = location.state?.email;
 
     // Track mounted state to prevent state updates after unmount
     const isMounted = React.useRef(true);

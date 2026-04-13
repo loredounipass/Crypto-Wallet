@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { post, resetPasswordApi } from '../api/http'
 import { useLocation, useHistory } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   Typography,
   Box,
@@ -16,13 +17,8 @@ import {
 import { ArrowDropDown as ArrowDropDownIcon, Visibility, VisibilityOff } from '../ui/icons';
 import { useThemeMode } from '../ui/styles';
 
-function useQuery() {
-  const { search } = useLocation()
-  return useMemo(() => new URLSearchParams(search), [search])
-}
-
 export default function ResetPassword() {
-  const query = useQuery()
+  const location = useLocation()
   const history = useHistory()
   const [email, setEmail] = useState('')
   const [token, setToken] = useState('')
@@ -42,11 +38,25 @@ export default function ResetPassword() {
   const isDark = mode === 'dark';
 
   useEffect(() => {
-    const qEmail = query.get('email') || ''
-    const qToken = query.get('token') || ''
-    setEmail(qEmail)
-    setToken(qToken)
-  }, [query])
+    const stateEmail = location.state?.email || ''
+    const stateToken = location.state?.token || ''
+    const queryParams = new URLSearchParams(location.search)
+    const qEmail = queryParams.get('email') || ''
+    const qToken = queryParams.get('token') || ''
+    const resolvedEmail = stateEmail || qEmail
+    const resolvedToken = stateToken || qToken
+
+    setEmail(resolvedEmail)
+    setToken(resolvedToken)
+
+    // Move sensitive reset token out of the URL as soon as possible.
+    if ((qEmail || qToken) && (!stateEmail || !stateToken)) {
+      history.replace({
+        pathname: '/reset-password',
+        state: { email: resolvedEmail, token: resolvedToken },
+      })
+    }
+  }, [location.search, location.state, history])
 
   useEffect(() => {
     return () => {
@@ -166,7 +176,20 @@ export default function ResetPassword() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    InputProps={{ sx: styles.input, readOnly: true }}
+                    InputProps={{ sx: styles.input }}
+                    InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="token"
+                    label="Token de recuperación"
+                    name="token"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    InputProps={{ sx: styles.input }}
                     InputLabelProps={{ shrink: true }}
                 />
 
@@ -243,7 +266,7 @@ export default function ResetPassword() {
                 </Button>
 
                 <Box style={{ textAlign: 'center', marginTop: '10px' }}>
-                    <Link href="/login" style={styles.link}>
+                    <Link component={RouterLink} to="/login" style={styles.link}>
                         Volver al inicio de sesión
                     </Link>
                 </Box>

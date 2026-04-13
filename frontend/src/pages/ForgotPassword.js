@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { post, forgotPasswordApi } from '../api/http'
 import { useHistory } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   Typography,
   Box,
@@ -168,7 +169,7 @@ export default function ForgotPassword() {
                 </Button>
 
                 <Box style={{ textAlign: 'center', marginTop: '10px' }}>
-                    <Link href="/login" style={styles.link}>
+                    <Link component={RouterLink} to="/login" style={styles.link}>
                         Volver al inicio de sesión
                     </Link>
                 </Box>

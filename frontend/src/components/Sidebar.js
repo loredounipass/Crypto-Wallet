@@ -130,7 +130,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   const isDark = theme?.palette?.mode === "dark";
   
-  const { auth, setAuth } = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { mode, toggleTheme } = useThemeMode();
@@ -179,7 +179,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   });
 
   const sidebarContent = (
-    <Box style={{ 
+    <Box
+      className="hide-scrollbar"
+      style={{ 
       display: "flex", 
       flexDirection: "column", 
       height: "100%", 
@@ -189,6 +191,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
       transition: "width 0.3s ease-in-out",
       overflowX: "hidden",
+      overflowY: "auto",
     }}>
       {/* Logo Section */}
       <Box style={{ 

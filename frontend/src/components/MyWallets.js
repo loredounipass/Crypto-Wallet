@@ -1,181 +1,135 @@
 import * as React from 'react';
 import useAllWallets from '../hooks/useAllWallets';
 import { useTranslation } from 'react-i18next'; 
-
-import {
-    Typography,
-    Link,
-    Grid,
-    Paper,
-    Box,
-    Button,
-    useMediaQuery,
-    useTheme
-} from '../ui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { getCoinLogo, getCoinFallbackLogo } from './utils/Chains';
 import { getDisplayableAddress } from './utils/Display';
+import { useThemeMode } from '../ui/styles';
 
 export default function MyWallets() {
     const { t } = useTranslation();
     const { allWalletInfo } = useAllWallets();
-    const theme = useTheme();
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const [isSmallScreen, setIsSmallScreen] = React.useState(() => window.innerWidth <= 640);
+    const { mode } = useThemeMode();
+    const isDark = mode === 'dark';
+
+    React.useEffect(() => {
+        const onResize = () => setIsSmallScreen(window.innerWidth <= 640);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
     const handleCoinImageError = (coin) => (event) => {
         event.currentTarget.onerror = null;
         event.currentTarget.src = getCoinFallbackLogo(coin);
     };
 
     return (
-        <Box sx={{ width: '100%', padding: isSmallScreen ? 0.5 : 2, marginBottom: isSmallScreen ? 2 : 4 }}>
+        <div style={{ width: '100%', padding: isSmallScreen ? '4px' : '16px', marginBottom: isSmallScreen ? '16px' : '32px' }}>
             {isSmallScreen ? (
-                <Grid container spacing={1}>
+                <div className="grid grid-cols-1 gap-2">
                     {allWalletInfo.map((wallet) => (
-                        <Grid item xs={12} key={wallet.walletId}>
-                            <Paper sx={{
-                                padding: 1.5, 
-                                marginBottom: 1,
-                                borderRadius: 2, 
-                                boxShadow: 3, 
-                                backgroundColor: theme.palette.background.paper,
-                            }}>
-                                <Grid container spacing={1} direction='column'>
-                                    <Grid item>
-                                        <Typography variant='body2' fontWeight='bold'>
+                        <div key={wallet.walletId} className="rounded-xl border p-3 shadow-sm" style={{ borderColor: isDark ? '#2D2D44' : '#E5E7EB', backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }}>
+                                <div className="flex flex-col gap-2">
+                                    <div>
+                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                         {t('currency')}: {/* Usar t para traducir */}
-                                        </Typography>
-                                        <Grid container spacing={0.5} alignItems='center'>
-                                            <Grid item>
+                                        </p>
+                                        <div className="flex items-center gap-2">
                                                 <img
                                                     width={20}
                                                     src={getCoinLogo(wallet.coin)}
                                                     alt={wallet.coin}
                                                     onError={handleCoinImageError(wallet.coin)}
                                                 />
-                                            </Grid>
-                                            <Grid item>
-                                                <Typography variant='body2'>{wallet.coin}</Typography>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                    <Grid item>
-                                        <Typography variant='body2' fontWeight='bold'>
+                                                <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.coin}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                         {t('address')}: 
-                                        </Typography>
-                                        <Link underline='none' href={`/wallet/${wallet.coin.toLowerCase()}`}>
-                                            <Typography variant='body2' color='primary'>
+                                        </p>
+                                        <RouterLink className="text-sm text-blue-500 hover:underline" to={`/wallet/${wallet.coin.toLowerCase()}`}>
                                                 {getDisplayableAddress(wallet.address)}
-                                            </Typography>
-                                        </Link>
-                                    </Grid>
-                                    <Grid item>
-                                        <Typography variant='body2' fontWeight='bold'>
+                                        </RouterLink>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                         {t('balance')}: 
-                                        </Typography>
-                                        <Typography variant='body2'>{wallet.balance}</Typography>
-                                    </Grid>
+                                        </p>
+                                        <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.balance}</p>
+                                    </div>
 
         
-                                    <Grid item>
-                                        <Link 
-                                            href={`/wallet/${wallet.coin.toLowerCase()}`} 
-                                            underline='none' 
-                                            style={{ width: '100%' }}
+                                    <div>
+                                        <RouterLink 
+                                            to={`/wallet/${wallet.coin.toLowerCase()}`} 
+                                            className="block w-full"
                                         >
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                fullWidth 
-                                                sx={{
-                                                    marginTop: 1,
-                                                    padding: isSmallScreen ? '6px 12px' : '8px 16px', 
-                                                    fontSize: isSmallScreen ? '0.75rem' : '0.875rem', 
-                                                    borderRadius: '16px', 
-                                                }}
+                                            <button
+                                                type="button"
+                                                className="mt-2 w-full rounded-2xl bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700"
                                             >
                                                 {t('view_details')} 
-                                            </Button>
-                                        </Link>
-                                    </Grid>
-                                </Grid>
-                            </Paper>
-                        </Grid>
+                                            </button>
+                                        </RouterLink>
+                                    </div>
+                                </div>
+                        </div>
                     ))}
-                </Grid>
+                </div>
             ) : (
-                <Box sx={{ overflowX: 'auto' }}>
-                    <Grid container spacing={2}>
+                <div className="overflow-x-auto">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {allWalletInfo.map((wallet) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={wallet.walletId}>
-                                <Paper sx={{
-                                    padding: 2, 
-                                    borderRadius: 2, 
-                                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
-                                    backgroundColor: theme.palette.background.paper,
-                                    border: '1px solid rgba(0, 0, 0, 0.1)',
-                                    minHeight: '100px',
-                                }}>
-                                    <Grid container spacing={1} alignItems='center'>
-                                        <Grid item>
+                            <div key={wallet.walletId} className="rounded-xl border p-4 shadow-sm" style={{ borderColor: isDark ? '#2D2D44' : '#E5E7EB', backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', minHeight: '100px' }}>
+                                    <div className="flex items-center gap-2">
                                             <img
                                                 width={20}
                                                 src={getCoinLogo(wallet.coin)}
                                                 alt={wallet.coin}
                                                 onError={handleCoinImageError(wallet.coin)}
                                             />
-                                        </Grid>
-                                        <Grid item xs>
-                                            <Typography variant='body2' component='div'>
+                                            <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                                 {wallet.coin}
-                                            </Typography>
-                                        </Grid>
-                                    </Grid>
-                                    <Grid container spacing={1} direction='column' sx={{ marginTop: 0.5 }}>
-                                        <Grid item>
-                                            <Typography variant='body2' fontWeight='bold'>
+                                            </p>
+                                    </div>
+                                    <div className="mt-2 flex flex-col gap-2">
+                                        <div>
+                                            <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                             {t('address')}: 
-                                            </Typography>
-                                            <Link underline='none' href={`/wallet/${wallet.coin.toLowerCase()}`}>
-                                                <Typography variant='body2' color='primary'>
+                                            </p>
+                                            <RouterLink className="text-sm text-blue-500 hover:underline" to={`/wallet/${wallet.coin.toLowerCase()}`}>
                                                     {getDisplayableAddress(wallet.address)}
-                                                </Typography>
-                                            </Link>
-                                        </Grid>
-                                        <Grid item>
-                                            <Typography variant='body2' fontWeight='bold'>
+                                            </RouterLink>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                             {t('balance')}: 
-                                            </Typography>
-                                            <Typography variant='body2'>{wallet.balance}</Typography>
-                                        </Grid>
+                                            </p>
+                                            <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.balance}</p>
+                                        </div>
 
                                        
-                                        <Grid item>
-                                            <Link 
-                                                href={`/wallet/${wallet.coin.toLowerCase()}`} 
-                                                underline='none' 
-                                                style={{ width: '100%' }}
+                                        <div>
+                                            <RouterLink 
+                                                to={`/wallet/${wallet.coin.toLowerCase()}`} 
+                                                className="block w-full"
                                             >
-                                                <Button
-                                                    variant="contained"
-                                                    color="primary"
-                                                    fullWidth 
-                                                    sx={{
-                                                        marginTop: 1,
-                                                        padding: isSmallScreen ? '6px 12px' : '8px 16px', 
-                                                        fontSize: isSmallScreen ? '0.75rem' : '0.875rem', 
-                                                        borderRadius: '16px'
-                                                    }}
+                                                <button
+                                                    type="button"
+                                                    className="mt-2 w-full rounded-2xl bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
                                                 >
                                                     {t('view_details')} 
-                                                </Button>
-                                            </Link>
-                                        </Grid>
-                                    </Grid>
-                                </Paper>
-                            </Grid>
+                                                </button>
+                                            </RouterLink>
+                                        </div>
+                                    </div>
+                            </div>
                         ))}
-                    </Grid>
-                </Box>
+                    </div>
+                </div>
             )}
-        </Box>
+        </div>
     );
 }

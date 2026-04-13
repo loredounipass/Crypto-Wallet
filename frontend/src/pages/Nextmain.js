@@ -750,6 +750,9 @@ const Nextmain = () => {
             frameBorder="0"
             scrolling="no"
             allow="encrypted-media"
+            sandbox="allow-scripts allow-same-origin"
+            referrerPolicy="strict-origin-when-cross-origin"
+            loading="lazy"
             title="Trading View"
             style={{
                 borderRadius: '12px',

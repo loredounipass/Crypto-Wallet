@@ -1,47 +1,42 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-    Box, 
-    TextField, 
-    Typography, 
-    List, 
-    ListItem, 
-    Paper, 
-    IconButton, 
-    InputAdornment, 
-    CircularProgress 
-} from '../../ui/material';
+import { useLocation } from 'react-router-dom';
 import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useProviders from '../../hooks/useProviders';
 
 const ChatComponent = () => {
     const [messageContent, setMessageContent] = useState('');
-    const [chatId, setChatId] = useState(null);
-    const { messages, sendMessage, getMessages } = useProviders();
+    const location = useLocation();
+    const chatroomId = location.state?.chatroomId || null;
+    const { messages, sendMessageAsUser, getMessages } = useProviders();
     const { auth } = useContext(AuthContext);
     const [isSending, setIsSending] = useState(false);
+    const [localError, setLocalError] = useState('');
 
     useEffect(() => {
-        const fetchMessages = async (chatId) => {
-            await getMessages(chatId);
+        const fetchMessages = async () => {
+            if (!chatroomId) {
+                setLocalError('No se encontró una sesión de chat válida. Vuelve a iniciar el chat desde proveedores.');
+                return;
+            }
+            await getMessages(chatroomId);
         };
-
-        const chatData = JSON.parse(localStorage.getItem('chatData'));
-        if (chatData) {
-            setChatId(chatData.chat.chatId);
-            fetchMessages(chatData.chat.chatId);
-        }
-    }, [getMessages]);
+        fetchMessages();
+    }, [chatroomId, getMessages]);
 
     const handleSendMessage = async () => {
-      if (!messageContent.trim() || isSending) return;
+      if (!chatroomId || !messageContent.trim() || isSending) return;
       setIsSending(true);
       try {
-          await sendMessage(auth.email, chatId, messageContent);
+          await sendMessageAsUser({
+            sender: auth.email,
+            chatroomId,
+            message: messageContent,
+          });
           setMessageContent('');
-          await getMessages(chatId);
+          await getMessages(chatroomId);
       } catch (error) {
-          console.error("Error al enviar el mensaje:", error);
+          setLocalError('No se pudo enviar el mensaje. Intenta de nuevo.');
       } finally {
           setIsSending(false);
       }
@@ -49,116 +44,73 @@ const ChatComponent = () => {
   
 
     return (
-        <Box 
-            sx={{ 
-                height: 'calc(85vh - 40px)', 
-                width: '85%', 
-                maxWidth: 800, 
-                margin: 'auto', 
-                bgcolor: '#f0f2f5', 
-                p: 2 
-            }}
-        >
-            <Paper 
-                elevation={3} 
-                sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    borderRadius: 3 
-                }}
-            >
-                <Box 
-                    sx={{ 
-                        p: 2, 
-                        borderBottom: 1, 
-                        borderColor: 'divider', 
-                        bgcolor: '#fff' 
-                    }}
-                >
-                    <Typography variant="h6" align="center">
-                        Chat
-                    </Typography>
-                </Box>
+        <div className="mx-auto h-[calc(85vh-40px)] w-[85%] max-w-[800px] rounded-xl bg-slate-100 p-2">
+            <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white shadow">
+                <div className="border-b border-slate-200 bg-white p-4">
+                    <h2 className="text-center text-lg font-semibold text-slate-900">Chat</h2>
+                </div>
 
-                <Box 
-                    sx={{ 
-                        flex: 1, 
-                        overflow: 'auto', 
-                        p: 2, 
-                        bgcolor: '#fff' 
-                    }}
-                >
-                    {messages.length === 0 ? (
-                        <Typography variant="body1" align="center" color="text.secondary">
-                            Aún no hay mensajes
-                        </Typography>
-                    ) : (
-                        <List>
-                            {messages.map((message, index) => (
-                                <ListItem
-                                    key={index}
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: message.sender === auth.email ? 'flex-end' : 'flex-start',
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            backgroundColor: message.sender === auth.email ? '#e0f7fa' : '#f1f8e9',
-                                            color: message.sender === auth.email ? '#00796b' : '#33691e',
-                                            borderRadius: 2,
-                                            padding: 1,
-                                            maxWidth: '70%',
-                                        }}
-                                    >
-                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                            {message.sender === auth.email ? 'You' : message.sender}
-                                        </Typography>
-                                        <Typography variant="body2">{message.message}</Typography>
-                                    </Box>
-                                </ListItem>
-                            ))}
-                        </List>
+                <div className="flex-1 overflow-auto bg-white p-4">
+                    {localError && (
+                        <p className="mb-2 text-sm text-red-600">
+                            {localError}
+                        </p>
                     )}
-                </Box>
+                    {messages.length === 0 ? (
+                        <p className="text-center text-sm text-slate-500">
+                            Aún no hay mensajes
+                        </p>
+                    ) : (
+                        <ul className="space-y-2">
+                            {messages.map((message, index) => (
+                                <li
+                                    key={index}
+                                    className={`flex ${message.sender === auth.email ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div
+                                        className={`max-w-[70%] rounded-xl px-3 py-2 ${message.sender === auth.email ? 'bg-cyan-50 text-cyan-800' : 'bg-lime-50 text-lime-800'}`}
+                                    >
+                                        <p className="text-xs font-bold">
+                                            {message.sender === auth.email ? 'You' : message.sender}
+                                        </p>
+                                        <p className="text-sm">{message.message}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
 
-                <Box 
-                    sx={{ 
-                        p: 2, 
-                        bgcolor: '#fff', 
-                        borderTop: 1, 
-                        borderColor: 'divider' 
-                    }}
-                >
-                    <TextField
-                        fullWidth
+                <div className="border-t border-slate-200 bg-white p-4">
+                    <div className="relative">
+                        <input
+                            className="w-full rounded-xl border border-slate-300 py-2 pl-3 pr-12 text-sm outline-none focus:border-blue-500"
                         placeholder="Escribe tu mensaje..."
                         value={messageContent}
                         onChange={(e) => setMessageContent(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleSendMessage();
                             }
                         }}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        onClick={handleSendMessage}
-                                        disabled={!messageContent.trim() || isSending}
-                                        sx={{ bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' } }}
-                                    >
-                                        {isSending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-                                    </IconButton>
-                                </InputAdornment>
-                            )
-                        }}
-                    />
-                </Box>
-            </Paper>
-        </Box>
+                        />
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={!chatroomId || !messageContent.trim() || isSending}
+                            className="absolute right-1 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                        >
+                            {isSending ? (
+                                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            ) : (
+                                <SendIcon />
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 

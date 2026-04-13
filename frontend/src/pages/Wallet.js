@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Avatar, useMediaQuery, useTheme } from '../ui/material';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'react-qr-code';
 import useWalletInfo from '../hooks/useWalletInfo';
@@ -11,13 +10,13 @@ import {
     getDefaultNetworkId,
     getNetworkName,
     getCoinLogo,
-    getCoinFallbackLogo
+    getCoinFallbackLogo,
+    normalizeCoin
 } from '../components/utils/Chains';
 import useWithdraw from '../hooks/useWithdraw';
 import createWallet from '../hooks/createWallet';
 import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
-import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../ui/styles';
 
 const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
@@ -50,11 +49,9 @@ const CopyIcon = ({ size = 20, color = "currentColor" }) => (
 );
 
 export default function Wallet() {
-    const { t } = useTranslation();
     const history = useHistory();
-    const muiTheme = useTheme();
-    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
-    const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
+    const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
     const { mode } = useThemeMode();
     const isDark = mode === 'dark';
     
@@ -62,6 +59,7 @@ export default function Wallet() {
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [withdrawAddress, setWithdrawAddress] = useState('');
     const [error, setError] = useState('');
+    const [activeAction, setActiveAction] = useState('deposit');
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
@@ -76,22 +74,47 @@ export default function Wallet() {
     };
 
     const [withdrawLoading, setWithdrawLoading] = useState(false);
+    const coinCode = normalizeCoin(walletInfo?.coin || walletId);
+    const fee = getCoinFee(coinCode);
+    const balanceNumber = Number(walletInfo?.balance || 0);
+    const maxWithdrawable = Math.max(0, balanceNumber - fee);
+
+    const isValidAddressForCoin = (address, coin) => {
+        const trimmed = String(address || '').trim();
+        if (!trimmed) return false;
+
+        // Current supported coins are EVM-based in this UI.
+        if (['bnb', 'avax', 'eth', 'matic', 'ftm', 'op'].includes(coin)) {
+            return /^0x[a-fA-F0-9]{40}$/.test(trimmed);
+        }
+
+        return trimmed.length >= 10;
+    };
 
     const handleWithdraw = async () => {
-        console.log('[Withdraw] handleWithdraw called', { withdrawAmount, withdrawAddress, balance: walletInfo.balance });
-        if (!withdrawAmount || !withdrawAddress) {
+        const normalizedAddress = String(withdrawAddress || '').trim();
+        const amountNumber = Number(withdrawAmount);
+
+        if (!withdrawAmount || !normalizedAddress) {
             setError('Ingresa una dirección y cantidad válida.');
             return;
         }
-        if (parseFloat(withdrawAmount) > parseFloat(walletInfo.balance)) {
-            setError(t('insufficient_funds'));
+        if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+            setError('Ingresa un monto válido mayor a 0.');
+            return;
+        }
+        if (!isValidAddressForCoin(normalizedAddress, coinCode)) {
+            setError(`Dirección inválida para ${coinCode.toUpperCase()}.`);
+            return;
+        }
+        if (amountNumber > maxWithdrawable) {
+            setError(`Monto inválido. Máximo disponible: ${maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))}`);
             return;
         }
         setWithdrawLoading(true);
         setError('');
         try {
-            const result = await withdraw(withdrawAmount, withdrawAddress);
-            console.log('[Withdraw] result:', result);
+            const result = await withdraw(withdrawAmount, normalizedAddress);
             if (result === 'success') {
                 getTransactions();
                 setWithdrawAmount('');
@@ -101,7 +124,6 @@ export default function Wallet() {
                 setError(result?.msg || 'Error al procesar el retiro.');
             }
         } catch (err) {
-            console.error('[Withdraw] error:', err);
             setError(err?.message || 'Error al procesar el retiro.');
         } finally {
             setWithdrawLoading(false);
@@ -109,9 +131,15 @@ export default function Wallet() {
     };
 
     const setMaxAmount = () => {
-        setWithdrawAmount(walletInfo.balance);
+        setWithdrawAmount(String(maxWithdrawable));
         setError('');
     };
+
+    const canWithdraw = Number.isFinite(Number(withdrawAmount))
+        && Number(withdrawAmount) > 0
+        && Number(withdrawAmount) <= maxWithdrawable
+        && isValidAddressForCoin(withdrawAddress, coinCode)
+        && !withdrawLoading;
 
     const handleCreateWallet = async () => {
         const wallet = await createWallet({
@@ -122,6 +150,15 @@ export default function Wallet() {
             setWalletInfo(wallet);
         }
     };
+
+    React.useEffect(() => {
+        const onResize = () => {
+            setIsMobile(window.innerWidth <= 640);
+            setIsTablet(window.innerWidth <= 768);
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
 
     const styles = {
         container: {
@@ -161,7 +198,133 @@ export default function Wallet() {
             textTransform: "none",
             fontSize: isMobile ? "13px" : "14px",
         }),
+        actionSwitcher: {
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            backgroundColor: isDark ? "#0F0F1A" : "#F8FAFC",
+            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            borderRadius: "12px",
+            padding: "4px",
+            marginBottom: "12px",
+        },
+        actionTab: (isActive) => ({
+            border: "none",
+            borderRadius: "10px",
+            padding: "10px 12px",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "13px",
+            backgroundColor: isActive ? "#2186EB" : "transparent",
+            color: isActive ? "#FFFFFF" : (isDark ? "#9CA3AF" : "#6B7280"),
+            transition: "all 0.2s ease",
+        }),
+        inputActionButton: {
+            position: "absolute",
+            right: "8px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            border: "none",
+            borderRadius: "8px",
+            padding: "6px 10px",
+            backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
+            color: isDark ? "#E5E7EB" : "#374151",
+            fontSize: "12px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: "44px",
+        },
     };
+    const useCompactActions = isTablet;
+    const actionSectionStyle = useCompactActions
+        ? styles.section
+        : { ...styles.section, marginBottom: 0, height: "100%" };
+
+    const depositSection = (
+        <div style={actionSectionStyle}>
+            <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
+                Depositar
+            </h2>
+            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px", marginBottom: "16px" }}>
+                Tu direccion ({walletInfo?.coin || walletId} - {getNetworkName(walletInfo?.chainId || defaultNetworkId)})
+            </div>
+            
+            <div style={{ marginBottom: "16px", position: "relative" }}>
+                <input 
+                    type="text" 
+                    value={walletInfo?.address || ''} 
+                    readOnly 
+                    style={{ ...styles.input, fontFamily: "monospace", paddingRight: "52px" }}
+                />
+                <CopyToClipboard
+                    text={walletInfo?.address || ''}
+                    onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                >
+                    <button type="button" style={styles.inputActionButton} aria-label="Copiar dirección">
+                        <CopyIcon size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                    </button>
+                </CopyToClipboard>
+            </div>
+            
+            {copied && <div style={{ color: "#4CAF50", fontSize: "14px", marginBottom: "16px" }}>Direccion copiada!</div>}
+
+            <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
+                <div style={{ padding: isMobile ? "10px" : "16px", backgroundColor: "white", borderRadius: "12px" }}>
+                    <QRCode value={walletInfo?.address || ''} size={isMobile ? 140 : 180} />
+                </div>
+            </div>
+        </div>
+    );
+
+    const withdrawSection = (
+        <div style={actionSectionStyle}>
+            <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
+                Retirar
+            </h2>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <input 
+                    type="text"
+                    value={withdrawAddress}
+                    onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
+                    placeholder={`Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`}
+                    style={styles.input}
+                />
+                
+                <div style={{ position: "relative" }}>
+                    <input 
+                        type="number"
+                        value={withdrawAmount || ''}
+                        onChange={(e) => { setWithdrawAmount(e.target.value); setError(''); }}
+                        placeholder="Cantidad"
+                        style={{ ...styles.input, paddingRight: "58px" }}
+                    />
+                    <button type="button" onClick={setMaxAmount} style={styles.inputActionButton}>
+                        Max
+                    </button>
+                </div>
+
+                <button 
+                    onClick={handleWithdraw}
+                    disabled={!canWithdraw}
+                    style={styles.button(true, !canWithdraw)}
+                >
+                    Retirar
+                </button>
+
+                {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
+
+                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                    Comision: {fee} {walletInfo?.coin || coinCode.toUpperCase()}
+                </div>
+                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                    Máximo retirable: {maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
+                </div>
+            </div>
+        </div>
+    );
 
     if (isWalletLoading) {
         return (
@@ -172,7 +335,7 @@ export default function Wallet() {
     }
 
     return (
-        <div style={styles.container}>
+        <div className="mx-auto w-full" style={styles.container}>
             {/* Back */}
             <div 
                 style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: isDark ? "#FFFFFF" : "#1A1A2E" }}
@@ -187,11 +350,25 @@ export default function Wallet() {
                     {/* Balance Card */}
                     <div style={styles.section}>
                         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-                            <Avatar 
-                                src={getCoinLogo(walletInfo.coin)}
-                                imgProps={{ onError: (e) => { e.currentTarget.src = getCoinFallbackLogo(walletInfo.coin); } }}
-                                style={{ width: isMobile ? 46 : 56, height: isMobile ? 46 : 56 }}
-                            />
+                            <div
+                                style={{
+                                    width: isMobile ? 46 : 56,
+                                    height: isMobile ? 46 : 56,
+                                    borderRadius: "999px",
+                                    overflow: "hidden",
+                                    backgroundColor: isDark ? "#2D2D44" : "#E5E7EB",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <img
+                                    src={getCoinLogo(walletInfo.coin)}
+                                    alt={walletInfo.coin}
+                                    onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(walletInfo.coin); }}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                            </div>
                             <div>
                                 <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px" }}>Balance</div>
                                 <div style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
@@ -206,95 +383,37 @@ export default function Wallet() {
                         )}
                     </div>
 
-                    {/* Deposit */}
-                    <div style={styles.section}>
-                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
-                            Depositar
-                        </h2>
-                        <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px", marginBottom: "16px" }}>
-                            Tu direccion ({walletInfo.coin} - {getNetworkName(walletInfo.chainId)})
-                        </div>
-                        
-                        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", marginBottom: "16px" }}>
-                            <input 
-                                type="text" 
-                                value={walletInfo.address} 
-                                readOnly 
-                                style={{ ...styles.input, fontFamily: "monospace", flex: 1 }}
-                            />
-                            <CopyToClipboard
-                                text={walletInfo.address}
-                                onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                            >
-                                <div style={{
-                                    padding: isMobile ? "12px" : "14px",
-                                    borderRadius: "12px",
-                                    backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}>
-                                    <CopyIcon size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                    <div style={{ marginBottom: isMobile ? "12px" : "24px" }}>
+                        {useCompactActions ? (
+                            <>
+                                <div style={styles.actionSwitcher}>
+                                    <button
+                                        type="button"
+                                        style={styles.actionTab(activeAction === 'deposit')}
+                                        onClick={() => setActiveAction('deposit')}
+                                    >
+                                        Depositar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        style={styles.actionTab(activeAction === 'withdraw')}
+                                        onClick={() => setActiveAction('withdraw')}
+                                    >
+                                        Retirar
+                                    </button>
                                 </div>
-                            </CopyToClipboard>
-                        </div>
-                        
-                        {copied && <div style={{ color: "#4CAF50", fontSize: "14px", marginBottom: "16px" }}>Direccion copiada!</div>}
-
-                        <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
-                            <div style={{ padding: isMobile ? "10px" : "16px", backgroundColor: "white", borderRadius: "12px" }}>
-                                <QRCode value={walletInfo.address} size={isMobile ? 140 : 180} />
+                                {activeAction === 'deposit' ? depositSection : withdrawSection}
+                            </>
+                        ) : (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignItems: "stretch" }}>
+                                {depositSection}
+                                {withdrawSection}
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Withdraw */}
-                    <div style={styles.section}>
-                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
-                            Retirar
-                        </h2>
-                        
-                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <input 
-                                type="text"
-                                value={withdrawAddress}
-                                onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
-                                placeholder={`Direccion de ${getNetworkName(walletInfo.chainId)}`}
-                                style={styles.input}
-                            />
-                            
-                            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px" }}>
-                                <input 
-                                    type="number"
-                                    value={withdrawAmount || ''}
-                                    onChange={(e) => { setWithdrawAmount(e.target.value); setError(''); }}
-                                    placeholder="Cantidad"
-                                    style={{ ...styles.input, flex: isMobile ? undefined : 2 }}
-                                />
-                                <button onClick={setMaxAmount} style={styles.button()}>
-                                    Max
-                                </button>
-                            </div>
-
-                            <button 
-                                onClick={handleWithdraw}
-                                disabled={!(withdrawAmount > 0 && withdrawAddress && parseFloat(withdrawAmount) <= parseFloat(walletInfo.balance))}
-                                style={styles.button(true, !(withdrawAmount > 0 && withdrawAddress && parseFloat(withdrawAmount) <= parseFloat(walletInfo.balance)))}
-                            >
-                                Retirar
-                            </button>
-
-                            {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
-
-                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
-                                Comision: {getCoinFee(walletInfo.coin)} {walletInfo.coin}
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Transactions */}
-                    <div style={styles.section}>
+                    <div className="rounded-2xl" style={styles.section}>
                         <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
                             Transacciones
                         </h2>
@@ -304,6 +423,9 @@ export default function Wallet() {
                             coin={walletId}
                             hideDateOnMobile
                             compactMobile
+                            fixedHeight
+                            desktopHeight={460}
+                            mobileHeight={320}
                         />
                     </div>
                 </>

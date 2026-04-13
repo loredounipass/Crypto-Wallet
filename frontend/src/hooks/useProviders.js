@@ -85,7 +85,7 @@ export default function useProvider() {
       const res = await Provider.sendMessageAsUser({
         sender: body.sender,
         message: body.message,
-        chatId: body.chatId
+        chatroomId: body.chatroomId
       });
       setChat(res);
       setError(null);
@@ -104,7 +104,7 @@ export default function useProvider() {
       const res = await Provider.sendMessageAsProvider({
         sender: body.sender,
         message: body.message,
-        chatId: body.chatId
+        chatroomId: body.chatroomId
       });
       setChat(res);
       setError(null);
@@ -117,14 +117,20 @@ export default function useProvider() {
     }
   };
 
-  const getMessages = useCallback(async (chatId) => {
+  const getMessages = useCallback(async (chatroomId) => {
     setIsLoading(true);
     try {
-      const res = await Provider.getMessages(chatId);
-      if (Array.isArray(res)) {
-        setMessages(res);
+      const res = await Provider.getMessages(chatroomId);
+      const parsedMessages = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.messages)
+          ? res.messages
+          : [];
+
+      if (parsedMessages.length > 0 || Array.isArray(res?.messages) || Array.isArray(res)) {
+        setMessages(parsedMessages);
         setError(null);
-        return res;
+        return parsedMessages;
       }
       setMessages([]);
       setError({ message: 'No se encontraron mensajes.' });

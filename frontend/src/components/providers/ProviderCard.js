@@ -1,20 +1,12 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
-import { 
-  Grid, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  Button, 
-  Alert,
-  CircularProgress  // Added this import
-} from '../../ui/material';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
+import { useHistory } from 'react-router-dom';
 
 export default function ProviderCard() {
   const { getAllProviders, createChat } = useProvider();
   const { auth } = useContext(AuthContext);
+  const history = useHistory();
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -50,21 +42,10 @@ export default function ProviderCard() {
       const response = await createChat(chatBody);
       
       if (response?.chatroomId) {
-        // Clear any existing chat data first
-        localStorage.removeItem('chatData');
-        
-        // Save new chat data with timestamp
-        const chatData = {
-          chat: {
-            chatroomId: response.chatroomId,
-            providerEmail,
-            userEmail: auth.email,
-            createdAt: new Date().toISOString()
-          }
-        };
-        
-        localStorage.setItem('chatData', JSON.stringify(chatData));
-        window.location.href = '/chat';
+        history.push('/chat', {
+          chatroomId: response.chatroomId,
+          providerEmail,
+        });
       } else {
         throw new Error('No se recibió un ID de chat válido');
       }
@@ -77,50 +58,43 @@ export default function ProviderCard() {
   };
 
   useEffect(() => {
-    // Clear old chat data when component mounts
-    localStorage.removeItem('chatData');
     fetchProviders();
   }, [fetchProviders]);
 
   return (
-    <Box sx={{ padding: 3 }}>
+    <div className="p-3">
       {error && (
-        <Alert severity="error" sx={{ marginBottom: 2 }}>
+        <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error.message || 'Ocurrió un error al cargar los proveedores.'}
-        </Alert>
+        </div>
       )}
 
-      <Grid container spacing={2}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {providers.map((provider) => (
-          <Grid item xs={12} sm={6} md={4} key={provider._id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" component="h2">
+          <div key={provider._id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-900">
                   {provider.firstName} {provider.lastName}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
                   Correo electrónico: {provider.email}
-                </Typography>
-                <Box mt={2}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
+                </p>
+                <div className="mt-3">
+                  <button
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                     onClick={() => handleCreateChat(provider.email)}
                     disabled={isCreatingChat}
+                    type="button"
                   >
                     {isCreatingChat ? (
-                      <CircularProgress size={24} color="inherit" />
+                      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
                       'Vender P2P'
                     )}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+                  </button>
+                </div>
+          </div>
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 }

@@ -15,11 +15,11 @@ import {
   useMediaQuery,
 } from '../ui/material';
 
-import { Visibility as Visibility } from '../ui/icons';
-import { VisibilityOff as VisibilityOff } from '../ui/icons';
+import { Visibility, VisibilityOff } from '../ui/icons';
 import { ArrowDropDown as ArrowDropDownIcon } from '../ui/icons';
 
 import { useHistory } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
 import { useThemeMode } from '../ui/styles';
 
@@ -41,8 +41,6 @@ export default function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
-
-    localStorage.setItem('email', data.email);
 
     setLoading(true);
 
@@ -233,7 +231,8 @@ export default function Login() {
           <Grid container direction="column" alignItems="center">
             <Grid item>
               <Link
-                href="/register"
+                component={RouterLink}
+                to="/register"
                 variant="body2"
                 style={styles.link}
               >
@@ -243,7 +242,8 @@ export default function Login() {
 
             <Grid item>
               <Link
-                href="/forgot-password"
+                component={RouterLink}
+                to="/forgot-password"
                 variant="body2"
                 style={styles.link}
               >

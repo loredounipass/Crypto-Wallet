@@ -41,7 +41,8 @@ const getCoinFallbackLogo = (coin) => {
 }
 
 const getNetworkName = (chainId) => {
-    return getNetWorkList().find(network => network.id === chainId).name
+    const network = getNetWorkList().find((item) => item.id === chainId)
+    return network?.name || 'Unknown Network'
 }
 
 const getCoinList = () => {
@@ -95,7 +96,7 @@ const getNetWorkList = (coin) => {
             name: 'Ethereum',
             abbr: 'ethereum',
             coin: 'eth',
-            explorerBase: 'https://sepolia-optimism.etherscan.io/tx'
+            explorerBase: 'https://sepolia.etherscan.io/tx/'
         },
         {
             id: 4002,
@@ -142,7 +143,8 @@ const getDefaultNetworkId = (coin) => {
 }
 
 const getNetworkExplorerBase = (chainId) => {
-    return getNetWorkList().find(network => network.id === chainId).explorerBase
+    const network = getNetWorkList().find((item) => item.id === chainId)
+    return network?.explorerBase || ''
 }
 
 const getCoinFee = (coin) => {

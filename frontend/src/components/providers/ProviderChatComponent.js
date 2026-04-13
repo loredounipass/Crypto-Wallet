@@ -1,15 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  Paper,
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  TextField,
-  Button,
-  Typography,
-  Avatar,
-} from '../../ui/material';
 import { Send as SendIcon } from '../../ui/icons';
 
 const ProviderChatComponent = () => {
@@ -64,146 +53,76 @@ const ProviderChatComponent = () => {
   }, [messagesForSelected]);
 
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        display: 'flex',
-        width: '100%',
-        maxWidth: 900,
-        height: '90vh',
-        margin: 'auto',
-      }}
-    >
-      <Box
-        sx={{
-          width: 250,
-          borderRight: '1px solid #ddd',
-          p: 2,
-          bgcolor: '#fff',
-          overflowY: 'auto',
-        }}
-      >
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Chats
-        </Typography>
-        <List>
+    <div className="mx-auto flex h-[90vh] w-full max-w-[900px] rounded-xl border border-slate-200 bg-white shadow">
+      <div className="w-[250px] overflow-y-auto border-r border-slate-200 bg-white p-4">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Chats</h2>
+        <ul>
           {chatList.map((chat) => (
-            <ListItem
+            <li
               key={chat.id}
-              button
-              selected={selectedChat.id === chat.id}
+              className={`mb-1 flex cursor-pointer items-center rounded-lg px-2 py-2 ${selectedChat.id === chat.id ? 'bg-blue-50' : 'hover:bg-slate-100'}`}
               onClick={() => setSelectedChat(chat)}
             >
-              <Avatar sx={{ mr: 1 }}>{chat.name.charAt(0)}</Avatar>
-              <ListItemText primary={chat.name} />
-            </ListItem>
+              <div className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-sm font-semibold text-slate-800">
+                {chat.name.charAt(0)}
+              </div>
+              <span className="text-sm text-slate-800">{chat.name}</span>
+            </li>
           ))}
-        </List>
-      </Box>
+        </ul>
+      </div>
 
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: '1px solid #ddd',
-            bgcolor: '#f7f7f7',
-          }}
-        >
-          <Typography variant="h6">{selectedChat.name}</Typography>
-        </Box>
+      <div className="flex flex-1 flex-col">
+        <div className="border-b border-slate-200 bg-slate-50 p-4">
+          <h3 className="text-lg font-semibold text-slate-900">{selectedChat.name}</h3>
+        </div>
 
-        <Box
-          sx={{
-            flex: 1,
-            p: 2,
-            bgcolor: '#f7f7f7',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <List sx={{ width: '100%' }}>
+        <div className="flex flex-1 flex-col justify-end overflow-y-auto bg-slate-50 p-4">
+          <ul className="w-full">
             {messagesForSelected.map((msg, index) => (
-              <ListItem
+              <li
                 key={index}
-                sx={{
-                  display: 'flex',
-                  justifyContent:
-                    msg.sender === currentUser ? 'flex-end' : 'flex-start',
-                  py: 0.5,
-                }}
+                className={`flex py-1 ${msg.sender === currentUser ? 'justify-end' : 'justify-start'}`}
               >
-                <Box
-                  sx={{
-                    bgcolor: msg.sender === currentUser ? '#0088cc' : '#e0e0e0',
-                    color: msg.sender === currentUser ? '#fff' : '#000',
-                    borderRadius: '16px',
-                    p: 1,
-                    maxWidth: '75%',
-                    textAlign: msg.sender === currentUser ? 'right' : 'left',
-                  }}
+                <div
+                  className={`max-w-[75%] rounded-2xl px-3 py-2 ${msg.sender === currentUser ? 'bg-sky-600 text-white text-right' : 'bg-slate-200 text-slate-900 text-left'}`}
                 >
                   {msg.sender !== currentUser && (
-                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                    <p className="text-xs font-medium">
                       {msg.sender}
-                    </Typography>
+                    </p>
                   )}
-                  <Typography variant="body1">{msg.text}</Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}
-                  >
+                  <p className="text-sm">{msg.text}</p>
+                  <span className="mt-1 block text-xs text-right opacity-80">
                     {msg.timestamp.toLocaleTimeString()}
-                  </Typography>
-                </Box>
-              </ListItem>
+                  </span>
+                </div>
+              </li>
             ))}
-          </List>
+          </ul>
           <div ref={messagesEndRef} />
-        </Box>
+        </div>
 
-        <Box sx={{ p: 1, borderTop: '1px solid #ddd' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              bgcolor: '#fff',
-              p: '0 8px',
-              borderRadius: '25px',
-              border: '1px solid #ddd',
-              height: '40px',
-            }}
-          >
-            <TextField
-              variant="standard"
+        <div className="border-t border-slate-200 p-3">
+          <div className="flex h-10 items-center rounded-full border border-slate-300 bg-white px-2">
+            <input
+              className="w-full border-none bg-transparent px-2 text-sm outline-none"
               placeholder="Escribe tu mensaje..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              fullWidth
-              InputProps={{
-                disableUnderline: true,
-              }}
+              onKeyDown={handleKeyPress}
             />
-            <Button
-              variant="contained"
+            <button
+              type="button"
               onClick={handleSend}
-              sx={{
-                borderRadius: '50%',
-                minWidth: '35px',
-                minHeight: '35px',
-                ml: 0.5,
-                backgroundColor: '#0088cc',
-                '&:hover': { backgroundColor: '#007ab8' },
-              }}
+              className="ml-1 inline-flex h-[35px] w-[35px] items-center justify-center rounded-full bg-sky-600 transition hover:bg-sky-700"
             >
               <SendIcon style={{ color: '#fff', fontSize: '20px' }} />
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-    </Paper>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

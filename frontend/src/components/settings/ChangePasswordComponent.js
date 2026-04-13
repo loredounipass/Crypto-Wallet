@@ -1,13 +1,18 @@
 import React, { useState, useContext } from 'react';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import LockIcon from '@mui/icons-material/Lock';
+import {
+    Visibility,
+    VisibilityOff,
+    Lock as LockIcon,
+} from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
+import { useThemeMode } from '../../ui/styles';
 
 function ChangePasswordComponent() {
     const { changePassword, successMessage, error } = useAuth();
     const { auth } = useContext(AuthContext);
+    const { mode } = useThemeMode();
+    const isDark = mode === 'dark';
 
     const [passwords, setPasswords] = useState({
         currentPassword: '',
@@ -60,24 +65,23 @@ function ChangePasswordComponent() {
     };
 
     const PasswordInput = ({ name, label, value, showPassword, onToggle }) => (
-        <div className="settings-input-group">
-            <label className="settings-label">
-                {label} <span className="settings-required-asterisk">*</span>
+        <div className="mb-5 flex flex-col">
+            <label className={`${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} mb-2 text-sm font-medium`}>
+                {label} <span className="text-[#ef4444]">*</span>
             </label>
-            <div className="settings-password-wrapper">
+            <div className="relative flex items-center">
                 <input
                     type={showPassword ? 'text' : 'password'}
                     name={name}
                     value={value}
                     onChange={handleChange}
-                    className="settings-input"
-                    style={{ paddingRight: '2.5rem' }}
+                    className={`w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A] text-white' : 'border-[#E5E7EB] bg-[#F6F8FA] text-[#111827]'} focus:border-[#2186EB]`}
                     required
                 />
                 <button
                     type="button"
                     onClick={() => onToggle(name)}
-                    className="settings-password-toggle"
+                    className={`absolute right-3 flex items-center justify-center border-0 bg-transparent p-0 ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}
                 >
                     {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                 </button>
@@ -86,13 +90,13 @@ function ChangePasswordComponent() {
     );
 
     return (
-        <div className="settings-section-wrapper">
-            <div className="settings-form-card">
-                <div className="settings-section-header">
-                    <div className="settings-large-icon">
-                        <LockIcon className="settings-large-icon-inner" />
+        <div className="w-full">
+            <div className="border-0 bg-transparent p-0 shadow-none">
+                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                    <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
+                        <LockIcon className="text-[28px] text-[#2186EB]" />
                     </div>
-                    <h2 className="settings-title">
+                    <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>
                         Cambiar Contraseña
                     </h2>
                 </div>
@@ -100,7 +104,6 @@ function ChangePasswordComponent() {
                 <form 
                     noValidate 
                     autoComplete="off" 
-                    className="settings-form"
                     onSubmit={(e) => e.preventDefault()}
                 >
                     <PasswordInput
@@ -128,23 +131,23 @@ function ChangePasswordComponent() {
                     <button
                         onClick={handleChangePassword}
                         disabled={isSubmitting || remainingMinutes > 0}
-                        className="settings-btn settings-btn-primary"
+                        className="box-border w-full cursor-pointer rounded-xl border-0 bg-[#2186EB] px-6 py-[14px] text-sm font-semibold text-white transition-all hover:bg-[#1A6BC7] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {isSubmitting ? 'Cambiando...' : 'Cambiar Contraseña'}
                     </button>
 
                     {remainingMinutes > 0 && (
-                        <div className="settings-alert settings-alert-warning">
+                        <div className="mt-4 rounded-xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.1)] px-4 py-3 text-sm font-medium text-[#f59e0b]">
                             No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
                         </div>
                     )}
                     {successMessage && (
-                        <div className="settings-alert settings-alert-success">
+                        <div className="mt-4 rounded-xl border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.1)] px-4 py-3 text-sm font-medium text-[#22c55e]">
                             {successMessage}
                         </div>
                     )}
                     {error && (
-                        <div className="settings-alert settings-alert-error">
+                        <div className="mt-4 rounded-xl border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.1)] px-4 py-3 text-sm font-medium text-[#ef4444]">
                             {error}
                         </div>
                     )}

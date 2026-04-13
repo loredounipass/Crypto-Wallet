@@ -35,7 +35,7 @@ const ResendTokenForm = () => {
         event.preventDefault();
         setLoading(true);
         try {
-            await resendToken(email);
+            await resendToken({ email: email.trim() });
         } catch (err) {
             console.error(err);
         } finally {

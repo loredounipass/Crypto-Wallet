@@ -83,7 +83,7 @@ export default function useAuth() {
     const resendToken = async (body) => {
         try {
             const { data } = await User.resendToken(body);
-            if (data && data.message === 'Código de verificación reenviado a tu correo electrónico.') {
+            if (data && data.message) {
                 setSuccessMessage(data.message);
             } else {
                 setError(data.error || 'Error al reenviar el código de verificación.');
@@ -114,24 +114,16 @@ export default function useAuth() {
     };
 
     const updateTokenStatus = async (body) => {
-        console.log('[2FA][useAuth] updateTokenStatus called with body:', body);
         try {
             const response = await User.updateTokenStatus(body);
-            console.log('[2FA][useAuth] Raw response:', response);
             const { data } = response || {};
-            console.log('[2FA][useAuth] Response data:', JSON.stringify(data, null, 2));
             if (data && data.msg === 'Seguridad de la cuenta actualizada con éxito.') {
-                console.log('[2FA][useAuth] Success!');
                 setSuccessMessage('Seguridad de la cuenta actualizada con éxito.');
             } else {
-                console.warn('[2FA][useAuth] Unexpected response, setting error:', data?.error);
                 setError(data?.error || 'Error al actualizar el estado de seguridad.');
             }
             return data;
         } catch (err) {
-            console.error('[2FA][useAuth] Exception:', err);
-            console.error('[2FA][useAuth] Error response:', err.response?.data);
-            console.error('[2FA][useAuth] Error status:', err.response?.status);
             setError(err.message);
             return null;
         }

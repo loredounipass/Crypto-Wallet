@@ -14,8 +14,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '../ui/material';
-import { Visibility as Visibility } from '../ui/icons';
-import { VisibilityOff as VisibilityOff } from '../ui/icons';
+import { Visibility, VisibilityOff } from '../ui/icons';
 import useAuth from './../hooks/useAuth';
 import { useThemeMode } from '../ui/styles';
 

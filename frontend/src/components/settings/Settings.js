@@ -5,16 +5,17 @@ import TwoFactorAuthComponent from './TwoFactorAuthComponent';
 import LanguageSelectorComponent from './LanguageSelectorComponent';
 import UserProfileComponent from './UserProfileComponent'; 
 import VerifyEmailComponent from './VerifyEmailComponent'; 
-import LockIcon from '@mui/icons-material/Lock';
-import SecurityIcon from '@mui/icons-material/Security';
-import LanguageIcon from '@mui/icons-material/Language';
-import PersonIcon from '@mui/icons-material/Person';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
-import SettingsIcon from '@mui/icons-material/Settings'; 
+import {
+    Lock as LockIcon,
+    Security as SecurityIcon,
+    Language as LanguageIcon,
+    Person as PersonIcon,
+    ArrowBack as ArrowBackIcon,
+    Settings as SettingsIcon,
+} from '../../ui/icons';
 import { Link } from 'react-router-dom';
-import { Box, Typography, useTheme, useMediaQuery } from '../../ui/material';
+import { useTheme, useMediaQuery } from '../../ui/material';
 import { useThemeMode } from '../../ui/styles';
-import './Settings.css';
 
 const sections = [
     { id: 'userProfile', label: 'user_profile', icon: <PersonIcon /> },
@@ -45,102 +46,25 @@ function Settings() {
     const { mode } = useThemeMode();
     const isDark = mode === 'dark';
 
-    const styles = {
-        pageContainer: {
-            padding: isMobile ? "16px" : isTablet ? "24px" : "40px",
-            minHeight: "100vh",
-            backgroundColor: isDark ? "#0F0F1A" : "#F6F8FA",
-        },
-        container: {
-            maxWidth: "1100px",
-            margin: "0 auto",
-            width: "100%",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
-            borderRadius: "16px",
-            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-            boxShadow: isDark ? "none" : "0 4px 20px rgba(0, 0, 0, 0.05)",
-            overflow: "hidden",
-            minHeight: "75vh",
-        },
-        sidebar: {
-            backgroundColor: isDark ? "#12121D" : "#F8FAFC",
-            minWidth: isMobile ? "100%" : "280px",
-            padding: isMobile ? "16px" : "32px 24px",
-            borderRight: isMobile ? "none" : `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-            borderBottom: isMobile ? `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}` : "none",
-            display: "flex",
-            flexDirection: isMobile ? "row" : "column",
-            overflowX: isMobile ? "auto" : "visible",
-            gap: "8px",
-        },
-        sidebarList: {
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            display: "flex",
-            flexDirection: isMobile ? "row" : "column",
-            gap: "8px",
-            width: "100%",
-        },
-        sidebarBtn: (isActive) => ({
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: isMobile ? "10px 14px" : "14px 18px",
-            borderRadius: "12px",
-            backgroundColor: isActive ? (isDark ? "#2D2D44" : "#FFFFFF") : "transparent",
-            color: isActive ? "#2186EB" : (isDark ? "#9CA3AF" : "#6B7280"),
-            border: isActive && !isDark ? "1px solid #E5E7EB" : "1px solid transparent",
-            boxShadow: isActive && !isDark ? "0 2px 4px rgba(0,0,0,0.02)" : "none",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            fontWeight: isActive ? 600 : 500,
-            fontSize: "15px",
-            textAlign: "left",
-            textDecoration: "none",
-            whiteSpace: isMobile ? "nowrap" : "normal",
-        }),
-        mainContent: {
-            padding: isMobile ? "24px 16px" : "40px",
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-        },
-        header: {
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "32px",
-            paddingBottom: "20px",
-            borderBottom: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-        },
-        title: {
-            color: isDark ? "#FFFFFF" : "#111827",
-            fontSize: isMobile ? "22px" : "28px",
-            fontWeight: 700,
-            margin: 0,
-        },
-        icon: {
-            color: "#2186EB",
-            fontSize: "32px",
-        }
-    };
-
     return (
-        <Box sx={styles.pageContainer}>
-            <Box sx={styles.container}>
+        <div
+            className={`min-h-screen ${isMobile ? 'p-4' : isTablet ? 'p-6' : 'p-10'} ${isDark ? 'bg-[#0F0F1A]' : 'bg-[#F6F8FA]'}`}
+        >
+            <div
+                className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col' : 'flex-row'} ${isDark ? 'border-[#2D2D44] bg-[#1A1A2E]' : 'border-[#E5E7EB] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]'} min-h-[75vh]`}
+            >
                 {/* Sidebar */}
-            <Box sx={styles.sidebar} role="navigation" aria-label="Settings navigation">
-                <ul style={styles.sidebarList}>
+            <div
+                role="navigation"
+                aria-label="Settings navigation"
+                className={`flex gap-2 ${isMobile ? 'min-w-full flex-row overflow-x-auto border-b p-4' : 'min-w-[280px] flex-col border-r px-6 py-8'} ${isDark ? 'border-[#2D2D44] bg-[#12121D]' : 'border-[#E5E7EB] bg-[#F8FAFC]'}`}
+            >
+                <ul className={`m-0 flex w-full list-none gap-2 p-0 ${isMobile ? 'flex-row' : 'flex-col'}`}>
                     {sections.map(({ id, label, icon }) => (
                         <li key={id}>
                             <button
                                 onClick={() => setSelectedSection(id)}
-                                style={styles.sidebarBtn(selectedSection === id)}
+                                className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 ${selectedSection === id ? `font-semibold text-[#2186EB] ${isDark ? 'bg-[#2D2D44] border-transparent' : 'bg-white border-[#E5E7EB] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'}` : `font-medium ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} border-transparent bg-transparent`}`}
                             >
                                 <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
                                 {!isMobile && <span>{t(label)}</span>}
@@ -148,33 +72,33 @@ function Settings() {
                         </li>
                     ))}
                     
-                    <li style={{ marginTop: isMobile ? "0" : "auto", paddingTop: isMobile ? "0" : "16px" }}>
+                    <li className={isMobile ? '' : 'mt-auto pt-4'}>
                         <Link
                             to="/"
-                            style={styles.sidebarBtn(false)}
+                            className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 font-medium no-underline border-transparent bg-transparent ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}
                         >
                             <span style={{ display: 'flex', alignItems: 'center' }}><ArrowBackIcon /></span>
                             {!isMobile && <span>{t('go_back')}</span>}
                         </Link>
                     </li>
                 </ul>
-            </Box>
+            </div>
 
             {/* Main Content */}
-            <Box sx={styles.mainContent}>
-                <Box sx={styles.header}>
-                    <SettingsIcon style={styles.icon} />
-                    <h1 style={styles.title}>
+            <div className={`flex flex-1 flex-col ${isMobile ? 'px-4 py-6' : 'p-10'}`}>
+                <div className={`mb-8 flex items-center gap-3 border-b pb-5 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                    <SettingsIcon style={{ color: '#2186EB', fontSize: '32px' }} />
+                    <h1 className={`m-0 font-bold ${isMobile ? 'text-[22px]' : 'text-[28px]'} ${isDark ? 'text-white' : 'text-[#111827]'}`}>
                         {t('settings_title')}
                     </h1>
-                </Box>
+                </div>
                 
-                <Box sx={{ flex: 1 }}>
+                <div className="flex-1">
                     {renderSection(selectedSection)}
-                </Box>
-            </Box>
-        </Box>
-        </Box>
+                </div>
+            </div>
+        </div>
+        </div>
     );
 }
 
