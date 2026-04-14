@@ -17,7 +17,6 @@ import { Transaction, TransactionDocument } from '../transaction/schemas/transac
 // This service handles operations related to wallets, such as creating a new wallet for a user, retrieving wallet information, and processing withdrawal requests. It interacts with the User, Wallet, WalletContract, and Transaction models to perform these operations and uses a queue to handle withdrawal requests asynchronously.
 @Injectable()
 export class WalletService {
-
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
@@ -83,10 +82,10 @@ export class WalletService {
           const result = await this.userModel.updateOne({
             email: createWalletDto.email
           }, {
-            $push: { wallets: wallet }
+            $push: { wallets: wallet._id }
           });
 
-          if (result) {
+          if (result.modifiedCount > 0) {
             return {
               address: wallet.address,
               chainId: wallet.chainId,
@@ -159,7 +158,7 @@ export class WalletService {
 
 
     if (data && data.length > 0) {
-      return data.map(wallet => {
+      const wallets = data.map(wallet => {
         return {
           balance: wallet.walletsData[0].balance,
           address: wallet.walletsData[0].address,
@@ -167,7 +166,8 @@ export class WalletService {
           chainId: wallet.walletsData[0].chainId,
           walletId: wallet.walletsData[0]._id
         }
-      })
+      });
+      return wallets;
     }
   }
 

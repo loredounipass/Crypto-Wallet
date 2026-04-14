@@ -10,6 +10,14 @@ let cache = {
 };
 let inflightRequest = null;
 
+export function invalidateWalletsCache() {
+    cache = {
+        timestamp: 0,
+        wallets: [],
+        balance: 0,
+    };
+}
+
 async function fetchAllWalletsAndBalance(force = false) {
     const now = Date.now();
     const isCacheValid = (now - cache.timestamp) < CACHE_TTL_MS;

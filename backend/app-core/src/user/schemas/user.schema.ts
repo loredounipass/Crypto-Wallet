@@ -22,6 +22,9 @@ export class User {
     })
     password: string;
 
+    @Prop({ type: [{ type: Types.ObjectId, ref: 'Wallet' }], default: [] })
+    wallets: Types.ObjectId[];
+
 
     _id?: string; 
 
