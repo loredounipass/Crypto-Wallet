@@ -378,25 +378,33 @@ export default function CoinTransactions({
                                 </div>
                             </div>
                             <div>
-                                <div style={styles.label}>Cantidad</div>
+                                <div style={styles.label}>Monto Bruto</div>
                                 <div style={styles.value}>
                                     {selectedTransaction.nature === 1 
                                         ? parseFloat(selectedTransaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))
-                                        : -1 * parseFloat(Math.abs(selectedTransaction.amount) - getCoinFee(getTransactionCoin(selectedTransaction))).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))}
+                                        : parseFloat(Math.abs(selectedTransaction.amount)).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                </div>
+                            </div>
+                            {selectedTransaction.nature === 2 && (
+                                <div>
+                                    <div style={styles.label}>Comision</div>
+                                    <div style={{ ...styles.value, color: "#F44336" }}>
+                                        -{selectedTransaction.fee || getCoinFee(getTransactionCoin(selectedTransaction))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                    </div>
+                                </div>
+                            )}
+                            <div>
+                                <div style={styles.label}>{selectedTransaction.nature === 1 ? 'Monto Recibido' : 'Monto Neto'}</div>
+                                <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : (isDark ? "#FFFFFF" : "#1A1A2E"), fontWeight: 700 }}>
+                                    {selectedTransaction.nature === 1 
+                                        ? parseFloat(selectedTransaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))
+                                        : parseFloat(Math.abs(selectedTransaction.amount) - (selectedTransaction.fee || getCoinFee(getTransactionCoin(selectedTransaction)))).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
                                 </div>
                             </div>
                             <div>
                                 <div style={styles.label}>Red</div>
                                 <div style={styles.value}>{getSafeNetworkName(selectedTransaction)}</div>
                             </div>
-                            {selectedTransaction.nature === 2 && (
-                                <div>
-                                    <div style={styles.label}>Comision</div>
-                                    <div style={styles.value}>
-                                        {getCoinFee(getTransactionCoin(selectedTransaction))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         {selectedTransaction.nature === 2 && (

@@ -19,13 +19,16 @@ const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
-const _updateTransactionState = async (txHash, status, transactionId) => {
+const _updateTransactionState = async (txHash, status, transactionId, fee) => {
     const upsert = {
         status
     }
 
     if (txHash)
         upsert.txHash = txHash
+    
+    if (fee !== undefined)
+        upsert.fee = fee
 
     await Transaction.updateOne({ _id: ObjectId(transactionId) }, {
         $set: upsert
@@ -97,9 +100,10 @@ const sendWithdraw = async ({
         }
         web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
         const receipt = await sendTransaction(valueWei, withdrawAddress)
+        const feeValue = coins[coin].fee
         if (receipt) {
             const { transactionHash, status } = receipt
-            await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId)
+            await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, feeValue)
 
             const withdrawFrom = new Queue('WithdrawedFromMetaDapp')
             withdrawFrom.add('withdraw', {

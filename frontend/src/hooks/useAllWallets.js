@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Wallet from '../services/wallet'
 import Price from '../services/price'
+import { getCoinFee, normalizeCoin } from '../components/utils/Chains'
 
 const CACHE_TTL_MS = 30 * 1000;
 let cache = {
@@ -52,8 +53,11 @@ async function fetchAllWalletsAndBalance(force = false) {
         const priceMap = Object.fromEntries(priceEntries);
         const balance = wallets.reduce((acc, wallet) => {
             const coin = String(wallet.coin || '').toUpperCase();
+            const coinCode = normalizeCoin(coin);
+            const fee = getCoinFee(coinCode);
             const usdPrice = Number(priceMap[coin] || 0);
-            return acc + (Number(wallet.balance || 0) * usdPrice);
+            const availableBalance = Math.max(0, Number(wallet.balance || 0) - fee);
+            return acc + (availableBalance * usdPrice);
         }, 0);
 
         cache = {

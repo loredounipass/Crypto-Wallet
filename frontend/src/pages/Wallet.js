@@ -7,6 +7,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import {
     getCoinDecimalsPlace,
     getCoinFee,
+    getCoinMinWithdraw,
     getDefaultNetworkId,
     getNetworkName,
     getCoinLogo,
@@ -77,8 +78,10 @@ export default function Wallet() {
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const coinCode = normalizeCoin(walletInfo?.coin || walletId);
     const fee = getCoinFee(coinCode);
+    const minWithdraw = getCoinMinWithdraw(coinCode);
     const balanceNumber = Number(walletInfo?.balance || 0);
-    const maxWithdrawable = Math.max(0, balanceNumber - fee);
+    const maxWithdrawable = balanceNumber;
+    const hasInsufficientFunds = maxWithdrawable < minWithdraw;
 
     const isValidAddressForCoin = (address, coin) => {
         const trimmed = String(address || '').trim();
@@ -112,6 +115,10 @@ export default function Wallet() {
             setError(`Monto inválido. Máximo disponible: ${maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))}`);
             return;
         }
+        if (amountNumber <= fee) {
+            setError(`Monto inválido. El monto debe ser mayor a la comisión (${fee} ${coinCode.toUpperCase()})`);
+            return;
+        }
         setWithdrawLoading(true);
         setError('');
         try {
@@ -132,15 +139,29 @@ export default function Wallet() {
     };
 
     const setMaxAmount = () => {
-        setWithdrawAmount(String(maxWithdrawable));
+        setWithdrawAmount(String(truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))));
         setError('');
     };
 
+    const getWithdrawButtonText = () => {
+        if (withdrawLoading) return 'Procesando...';
+        if (hasInsufficientFunds) return 'Fondos Insuficientes';
+        if (!withdrawAmount || Number(withdrawAmount) <= 0) return 'Ingresa un monto';
+        if (Number(withdrawAmount) <= fee) return 'Monto debe ser > comisión';
+        if (Number(withdrawAmount) > maxWithdrawable) return 'Monto excede máximo';
+        if (Number(withdrawAmount) < minWithdraw) return 'Monto < mínimo';
+        if (!withdrawAddress) return 'Ingresa una dirección';
+        if (!isValidAddressForCoin(withdrawAddress, coinCode)) return 'Dirección Inválida';
+        return 'Retirar';
+    };
+
     const canWithdraw = Number.isFinite(Number(withdrawAmount))
-        && Number(withdrawAmount) > 0
-        && Number(withdrawAmount) <= maxWithdrawable
+        && Number(withdrawAmount) > fee
+        && Number(withdrawAmount) <= maxWithdrawable + 0.00000001 // Small tolerance for float
+        && Number(withdrawAmount) >= minWithdraw
         && isValidAddressForCoin(withdrawAddress, coinCode)
-        && !withdrawLoading;
+        && !withdrawLoading
+        && !hasInsufficientFunds;
 
     const handleCreateWallet = async () => {
         const wallet = await createWallet({
@@ -312,17 +333,30 @@ export default function Wallet() {
                     disabled={!canWithdraw}
                     style={styles.button(true, !canWithdraw)}
                 >
-                    Retirar
+                    {getWithdrawButtonText()}
                 </button>
+
+                {hasInsufficientFunds && (
+                    <div style={{ color: "#F44336", fontSize: "14px", fontWeight: 500, textAlign: 'center' }}>
+                        Monto mínimo de retiro: {minWithdraw} {coinCode.toUpperCase()}
+                    </div>
+                )}
 
                 {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
 
                 <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
-                    Comision: {fee} {walletInfo?.coin || coinCode.toUpperCase()}
+                    Comision de red: {fee} {walletInfo?.coin || coinCode.toUpperCase()}
                 </div>
-                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
-                    Máximo retirable: {maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
-                </div>
+                {withdrawAmount && Number(withdrawAmount) > 0 && (
+                    <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px", marginTop: "-8px" }}>
+                        Recibirás: {Math.max(0, Number(withdrawAmount) - fee).toFixed(getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
+                    </div>
+                )}
+                {maxWithdrawable > 0 && (
+                    <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                        Máximo disponible: {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -374,13 +408,13 @@ export default function Wallet() {
                             <div>
                                 <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px" }}>Balance</div>
                                 <div style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
-                                    {truncateToDecimals(walletInfo.balance, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "16px" : "20px" }}>{walletInfo.coin}</span>
+                                    {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "16px" : "20px" }}>{walletInfo.coin}</span>
                                 </div>
                             </div>
                         </div>
                         {coinPrice && (
-                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "16px" }}>
-                                ≈ ${(parseFloat(walletInfo.balance) * parseFloat(coinPrice)).toFixed(2)} USD
+                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "16px", marginTop: "8px" }}>
+                                ≈ ${(parseFloat(maxWithdrawable) * parseFloat(coinPrice)).toFixed(2)} USD
                             </div>
                         )}
                     </div>

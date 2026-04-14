@@ -144,6 +144,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
             created_at: 1,
             nature: 1,
             amount: 1,
+            fee: 1,
             to: 1,
           })
           .lean(),
@@ -168,6 +169,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
         created_at: (transaction as any).created_at,
         nature: transaction.nature,
         amount: transaction.amount,
+        fee: (transaction as any).fee || 0,
         to: transaction.to,
         coin: wallet.coin,
         chainId: wallet.chainId,

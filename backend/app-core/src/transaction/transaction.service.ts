@@ -80,6 +80,7 @@ export class TransactionService {
               confirmations: tx.confirmations,
               status: tx.status,
               amount: tx.amount,
+              fee: tx.fee || 0,
               to: tx.to,
               coin: wallet.coin,
               chainId: wallet.chainId

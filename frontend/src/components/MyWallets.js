@@ -2,7 +2,7 @@ import * as React from 'react';
 import useAllWallets from '../hooks/useAllWallets';
 import { useTranslation } from 'react-i18next'; 
 import { Link as RouterLink } from 'react-router-dom';
-import { getCoinLogo, getCoinFallbackLogo } from './utils/Chains';
+import { getCoinLogo, getCoinFallbackLogo, getCoinFee, normalizeCoin } from './utils/Chains';
 import { getDisplayableAddress } from './utils/Display';
 import { useThemeMode } from '../ui/styles';
 
@@ -57,7 +57,9 @@ export default function MyWallets() {
                                         <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
                                         {t('balance')}: 
                                         </p>
-                                        <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.balance}</p>
+                                        <p className="text-sm font-bold" style={{ color: isDark ? '#60A5FA' : '#2563EB' }}>
+                                            {Math.max(0, Number(wallet.balance || 0) - getCoinFee(normalizeCoin(wallet.coin))).toFixed(4)} {wallet.coin}
+                                        </p>
                                     </div>
 
         
@@ -104,10 +106,12 @@ export default function MyWallets() {
                                             </RouterLink>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                            <p className="text-xs font-bold" style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}>
                                             {t('balance')}: 
                                             </p>
-                                            <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.balance}</p>
+                                            <p className="text-lg font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                                {Math.max(0, Number(wallet.balance || 0) - getCoinFee(normalizeCoin(wallet.coin))).toFixed(4)} {wallet.coin}
+                                            </p>
                                         </div>
 
                                        

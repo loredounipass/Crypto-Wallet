@@ -171,9 +171,22 @@ const getCoinDecimalsPlace = (coin) => {
     }
 }
 
+const getCoinMinWithdraw = (coin) => {
+    switch (coin.toUpperCase()) {
+        case 'BNB': return 0.01;
+        case 'AVAX': return 1;
+        case 'ETH': return 0.01;
+        case 'MATIC': return 13;
+        case 'FTM': return 1;
+        case 'OP': return 0.01;
+        default: return 0;
+    }
+}
+
 export {
     getNetworkName,
     getCoinFee,
+    getCoinMinWithdraw,
     getNetworkExplorerBase,
     getNetWorkList,
     getDefaultNetworkId,

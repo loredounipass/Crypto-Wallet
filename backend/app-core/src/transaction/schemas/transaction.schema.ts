@@ -20,6 +20,9 @@ export class Transaction {
     @Prop()
     amount: number;
 
+    @Prop({ default: 0 })
+    fee: number;
+
     @Prop()
     to: string;
 

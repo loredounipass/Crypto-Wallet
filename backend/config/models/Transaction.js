@@ -11,6 +11,10 @@ const transactionScheme = mongoose.Schema({
         index: true,
     },
     amount: Number,
+    fee: {
+        type: Number,
+        default: 0
+    },
     created_at: {
         type: Date,
         required: false,
