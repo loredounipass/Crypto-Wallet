@@ -17,6 +17,7 @@ import useWithdraw from '../hooks/useWithdraw';
 import createWallet from '../hooks/createWallet';
 import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
+import TransactionToast from '../components/TransactionToast';
 import { useThemeMode } from '../ui/styles';
 
 const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
@@ -66,7 +67,7 @@ export default function Wallet() {
     const { walletInfo, isWalletLoading, setWalletInfo } = useWalletInfo(walletId);
     const { coinPrice } = useCoinPrice(walletId);
     const { withdraw } = useWithdraw(walletId);
-    const { transactions, getTransactions } = useTransitions(walletId);
+    const { transactions, getTransactions, toast, dismissToast } = useTransitions(walletId);
 
     const truncateToDecimals = (num, dec) => {
         const calcDec = Math.pow(10, dec);
@@ -330,6 +331,7 @@ export default function Wallet() {
         return (
             <div style={styles.container}>
                 <div style={{ color: isDark ? "#9CA3AF" : "#6B7280" }}>Cargando...</div>
+                <TransactionToast toast={toast} onClose={dismissToast} />
             </div>
         );
     }
@@ -444,6 +446,7 @@ export default function Wallet() {
                     </div>
                 </div>
             ) : null}
+            <TransactionToast toast={toast} onClose={dismissToast} />
         </div>
     );
 }

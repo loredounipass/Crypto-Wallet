@@ -5,6 +5,7 @@ import { useHistory } from "react-router-dom";
 import { useThemeMode } from "../ui/styles";
 import useTransitions from "../hooks/useTransactions";
 import CoinTransactions from "../components/CoinTransactions";
+import TransactionToast from "../components/TransactionToast";
 
 const WalletIcon = Wallet;
 const SwapIcon = SwapHoriz;
@@ -13,7 +14,7 @@ const TrendingIcon = TrendingUp;
 const Dashboard = () => {
   const { allWalletInfo, walletBalance } = useAllWallets();
   const [loading, setLoading] = useState(true);
-  const { transactions } = useTransitions(null);
+  const { transactions, toast, dismissToast } = useTransitions(null);
   const history = useHistory();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
@@ -261,6 +262,7 @@ const Dashboard = () => {
           mobileHeight={280}
         />
       </div>
+      <TransactionToast toast={toast} onClose={dismissToast} />
     </div>
   );
 };
