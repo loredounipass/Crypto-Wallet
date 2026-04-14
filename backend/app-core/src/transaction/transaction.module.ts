@@ -11,12 +11,19 @@ import { UserService } from '../user/user.service';
 import { HashService } from '../user/hash.service';
 import { TwoFactorAuthModule } from 'src/two-factor/verification.module';
 import { EmailModule } from 'src/user/email.module';
+import { BullModule } from '@nestjs/bullmq';
+import QueueType from '../wallet/queue/types.queue';
+import { TransactionGateway } from './transaction.gateway';
+import { TransactionStatusProcessor } from './transaction-status.processor';
 
 @Module({
   imports: [
     TwoFactorAuthModule,
     UserModule,
     EmailModule,
+    BullModule.registerQueue({
+      name: QueueType.TRANSACTION_STATUS_EVENTS
+    }),
     MongooseModule.forFeature([
       { name: Transaction.name, schema: TransactionSchema },
       { name: User.name, schema: UserSchema },
@@ -25,7 +32,10 @@ import { EmailModule } from 'src/user/email.module';
   ],
   controllers: [TransactionController],
   providers: [
-    TransactionService
-  ]
+    TransactionService,
+    TransactionGateway,
+    TransactionStatusProcessor
+  ],
+  exports: [TransactionGateway]
 })
 export class TransactionModule { }

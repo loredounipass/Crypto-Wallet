@@ -22,7 +22,8 @@ export class WalletService {
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     @InjectModel(WalletContract.name) private walletContractModel: Model<WalletContractDocument>,
     @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>,
-    @InjectQueue(QueueType.WITHDRAW_REQUEST) private withdrawQueue: Queue
+    @InjectQueue(QueueType.WITHDRAW_REQUEST) private withdrawQueue: Queue,
+    @InjectQueue(QueueType.TRANSACTION_STATUS_EVENTS) private transactionStatusQueue: Queue
   ) { }
 
 
@@ -215,6 +216,16 @@ export class WalletService {
           const saved = await transaction.save();
 
           if (saved) {
+            await this.transactionStatusQueue.add('status-update', {
+              transactionId: transaction._id.toString(),
+              status: transaction.status,
+              confirmations: transaction.confirmations ?? 0,
+              source: 'app-core-withdraw'
+            }, {
+              removeOnComplete: true,
+              removeOnFail: 50
+            });
+
             const result = await this.walletModel.updateOne(
               { _id: new Types.ObjectId(wallet._id) },
               {

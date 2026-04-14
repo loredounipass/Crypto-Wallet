@@ -5,6 +5,7 @@ import {
     getCoinFee,
     getCoinLogo,
     getNetworkName,
+    getNetworkExplorerBase,
     getCoinFallbackLogo,
     normalizeCoin
 } from './utils/Chains';
@@ -206,6 +207,17 @@ export default function CoinTransactions({
         } catch (error) {
             return '-';
         }
+    };
+
+    const getTransactionExplorerUrl = (transaction) => {
+        const txHash = transaction?.txHash;
+        const txChainId = getTransactionChainId(transaction);
+        if (!txHash || !txChainId) return '';
+
+        const base = getNetworkExplorerBase(txChainId);
+        if (!base) return '';
+
+        return `${base}${txHash}`;
     };
 
     const handleOpen = (transaction) => {
@@ -446,6 +458,26 @@ export default function CoinTransactions({
                                         </button>
                                     </CopyToClipboard>
                                 </div>
+                            </div>
+                        )}
+
+                        {selectedTransaction.status > 1 && getTransactionExplorerUrl(selectedTransaction) && (
+                            <div style={{ marginTop: "16px" }}>
+                                <div style={styles.label}>Explorer</div>
+                                <a
+                                    href={getTransactionExplorerUrl(selectedTransaction)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        ...styles.value,
+                                        color: "#2186EB",
+                                        textDecoration: "none",
+                                        fontWeight: 600,
+                                        display: "inline-block"
+                                    }}
+                                >
+                                    Ver en Explorer
+                                </a>
                             </div>
                         )}
 

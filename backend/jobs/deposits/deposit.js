@@ -7,6 +7,7 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const coins = require(`${appRoot}/config/coins/info`)
 const User = require(`${appRoot}/config/models/User`)
+const { publishTransactionStatusUpdate } = require('../notifications/transactionStatusQueue')
 
 let web3
 
@@ -43,6 +44,12 @@ const _updateTransactionState = async (tId, status, value, confirmations) => {
 
     await Transaction.updateOne({ _id: ObjectId(tId) }, {
         $set: upsert
+    })
+
+    await publishTransactionStatusUpdate({
+        transactionId: tId.toString(),
+        status,
+        confirmations: upsert.confirmations ?? 0
     })
 }
 

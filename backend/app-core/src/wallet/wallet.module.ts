@@ -28,6 +28,9 @@ import { TwoFactorAuthModule } from 'src/two-factor/verification.module';
     ]),
     BullModule.registerQueue({
       name: QueueType.WITHDRAW_REQUEST
+    }),
+    BullModule.registerQueue({
+      name: QueueType.TRANSACTION_STATUS_EVENTS
     })
   ],
   controllers: [WalletController],

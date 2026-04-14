@@ -6,6 +6,7 @@ const coins = require(`${appRoot}/config/coins/info`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const { Web3 } = require('web3')
 const { parseUnits } = require('ethers')
+const { publishTransactionStatusUpdate } = require('../notifications/transactionStatusQueue')
 
 let web3
 
@@ -28,6 +29,11 @@ const _updateTransactionState = async (txHash, status, transactionId) => {
 
     await Transaction.updateOne({ _id: ObjectId(transactionId) }, {
         $set: upsert
+    })
+
+    await publishTransactionStatusUpdate({
+        transactionId: transactionId.toString(),
+        status
     })
 }
 

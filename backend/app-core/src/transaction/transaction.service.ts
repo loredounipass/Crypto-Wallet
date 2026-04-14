@@ -71,14 +71,18 @@ export class TransactionService {
 
         if (data && data.length > 0) {
           return data.map(transaction => {
+            const tx = transaction.transactionData[0];
             return {
-              nature: transaction.transactionData[0].nature,
-              txHash: transaction.transactionData[0].txHash,
-              transactionId: transaction.transactionData[0]._id,
-              created_at: transaction.transactionData[0].created_at,
-              confirmations: transaction.transactionData[0].confirmations,
-              status: transaction.transactionData[0].status,
-              amount: transaction.transactionData[0].amount
+              nature: tx.nature,
+              txHash: tx.txHash,
+              transactionId: tx._id,
+              created_at: tx.created_at,
+              confirmations: tx.confirmations,
+              status: tx.status,
+              amount: tx.amount,
+              to: tx.to,
+              coin: wallet.coin,
+              chainId: wallet.chainId
             }
           })
         }

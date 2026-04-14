@@ -1,12 +1,15 @@
 const nodemailer = require('nodemailer')
 
-const mailUser = process.env.MAIL_USER || process.env.EMAIL_USER || process.env.SMTP_USER
-const mailPass = process.env.MAIL_PASS || process.env.EMAIL_PASS || process.env.SMTP_PASS
+const mailService = process.env.SERVICE || 'gmail'
+const mailUser = process.env.USER
+const mailPass = process.env.PASS
+const mailFrom = process.env.EMAIL_FROM || process.env.MAIL_FROM || `BlokVault <${mailUser}>`
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 let mailTransporter = null
 if (mailUser && mailPass) {
     mailTransporter = nodemailer.createTransport({
-        service: 'gmail',
+        service: mailService,
         auth: {
             user: mailUser,
             pass: mailPass
@@ -16,7 +19,7 @@ if (mailUser && mailPass) {
 
 const sendMailSafe = async (mailDetails) => {
     if (!mailTransporter) {
-        console.warn('[MAIL] transporter not configured: missing MAIL/EMAIL/SMTP credentials')
+        console.warn('[MAIL] transporter not configured: missing SERVICE/USER/PASS credentials')
         return null
     }
 
@@ -30,7 +33,7 @@ const sendMailSafe = async (mailDetails) => {
 
 const sendDepositEmail = async (amount, coin, toEmail) => {
     const mailDetails = {
-        from: process.env.EMAIL_FROM || `BlokVault <${mailUser}>`,
+        from: mailFrom,
         to: toEmail,
         subject: `[BlokVault] Confirmación de Depósito`,
         html: `
@@ -60,7 +63,7 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
                 <h3><strong>Depósito completado correctamente</strong></h3>
                 <p>Tu depósito de <strong>${amount} ${coin.toUpperCase()}</strong> 
                 ya está disponible en tu cuenta de BlokVault. 
-                <a href="http://localhost:3000/wallet/${coin.toLowerCase()}"
+                <a href="${frontendUrl}/wallet/${coin.toLowerCase()}"
                  target="_blank" rel="noopener">Comprueba tu balance aquí.</a></p>
                 
                 <div class="security-tips">
@@ -87,7 +90,7 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
 
 const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
     const mailDetails = {
-        from: process.env.EMAIL_FROM || `BlokVault <${mailUser}>`,
+        from: mailFrom,
         to: toEmail,
         subject: `[BlokVault] Confirmación de Retiro`,
         html: `

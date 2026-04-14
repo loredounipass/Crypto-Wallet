@@ -3,6 +3,8 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const { v4: uuidv4 } = require('uuid')
+const { publishTransactionStatusUpdate } = require('../notifications/transactionStatusQueue')
+
 
 const createTransaction
     = async ({ walletAddress, transactionHash, chainId, coin }) => {
@@ -20,6 +22,12 @@ const createTransaction
 
         var result = await transaction.save()
         if (result) {
+            await publishTransactionStatusUpdate({
+                transactionId: transaction._id.toString(),
+                status: transaction.status || 1,
+                confirmations: transaction.confirmations || 0
+            })
+
             result = await Wallet.updateOne({
                 address: walletAddress,
                 chainId,
