@@ -25,6 +25,7 @@ const ObjectId = require('mongoose').Types.ObjectId
 
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
+const Transaction = require(`${appRoot}/config/models/Transaction`)
 const User = require(`${appRoot}/config/models/User`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
@@ -78,9 +79,9 @@ const sendDirectTransfer = async (chainId, providerWalletAddress, amountWei) => 
 }
 
 /**
- * Credit the provider's wallet balance in the database
+ * Credit the provider wallet and append a transaction record.
  */
-const creditProviderWallet = async (providerEmail, coin, amount) => {
+const creditProviderWallet = async (providerEmail, coin, amount, releaseTxHash, providerWalletAddress) => {
     const walletData = await User.aggregate([
         { $match: { email: providerEmail } },
         { $unwind: '$wallets' },
@@ -102,12 +103,28 @@ const creditProviderWallet = async (providerEmail, coin, amount) => {
         const walletEntry = walletData.find(w => w.walletsData.length > 0)
         if (walletEntry) {
             const wallet = walletEntry.walletsData[0]
+
+            // nature=1 means incoming transaction (deposit-like credit)
+            const transaction = new Transaction({
+                nature: 1,
+                amount,
+                created_at: Date.now(),
+                status: 3,
+                confirmations: 1,
+                txHash: releaseTxHash,
+                to: providerWalletAddress
+            })
+            await transaction.save()
+
             await Wallet.updateOne(
                 { _id: ObjectId(wallet._id) },
-                { $inc: { balance: amount } }
+                {
+                    $inc: { balance: amount },
+                    $push: { transactions: transaction._id }
+                }
             )
             console.log('[ESCROW-RELEASE] Credited provider wallet:', {
-                email: providerEmail, coin, amount, walletId: wallet._id
+                email: providerEmail, coin, amount, walletId: wallet._id, transactionId: transaction._id
             })
             return true
         }
@@ -190,7 +207,7 @@ const processEscrowRelease = async (jobData) => {
     )
 
     // 2. Credit provider's wallet balance in DB
-    await creditProviderWallet(providerEmail, coin, amount)
+    await creditProviderWallet(providerEmail, coin, amount, releaseTxHash, providerWalletAddress)
 
     // 3. Update provider stats
     await Provider.updateOne(
