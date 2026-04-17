@@ -138,6 +138,17 @@ const createChatApi = `${baseApi}/providers/createChat`
 const sendMessageAsUserApi = `${baseApi}/providers/sendMessageAsUser`
 const sendMessageAsProviderApi = `${baseApi}/providers/sendMessageAsProvider`
 const getMessagesApi = `${baseApi}/providers/getMessages/:chatId`
+const updateProviderApi = `${baseApi}/providers/update`
+
+// Endpoints escrow P2P
+const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
+const escrowMyOrdersApi = `${baseApi}/escrow/orders`
+const escrowProviderOrdersApi = `${baseApi}/escrow/provider-orders`
+const escrowOrderDetailApi = `${baseApi}/escrow/order`
+const escrowConfirmPaymentApi = `${baseApi}/escrow/confirm-payment`
+const escrowReleaseFundsApi = `${baseApi}/escrow/release-funds`
+const escrowOpenDisputeApi = `${baseApi}/escrow/open-dispute`
+const escrowCancelOrderApi = `${baseApi}/escrow/cancel-order`
 
 
 
@@ -150,6 +161,19 @@ async function get(url, body, config = {}) {
         params: body || {},
         ...config
     })
+}
+
+// External/public APIs must not send app CSRF headers or cookies.
+async function getExternal(url, config = {}) {
+    const safeHeaders = { ...(config.headers || {}) };
+    delete safeHeaders['X-CSRF-TOKEN'];
+    delete safeHeaders['x-csrf-token'];
+
+    return await axios.get(url, {
+        ...config,
+        withCredentials: false,
+        headers: safeHeaders
+    });
 }
 
 async function post(url, body) {
@@ -170,6 +194,7 @@ async function patch(url, body) {
 
 export {
     get,
+    getExternal,
     post,
     postMultipart,
     patch,
@@ -211,5 +236,14 @@ export {
     profileApi,
     profileMeApi,
     profileByIdApi,
-    profileUploadProfilePhotoApi
+    profileUploadProfilePhotoApi,
+    updateProviderApi,
+    escrowCreateOrderApi,
+    escrowMyOrdersApi,
+    escrowProviderOrdersApi,
+    escrowOrderDetailApi,
+    escrowConfirmPaymentApi,
+    escrowReleaseFundsApi,
+    escrowOpenDisputeApi,
+    escrowCancelOrderApi
 };

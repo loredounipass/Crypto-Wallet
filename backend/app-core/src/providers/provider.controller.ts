@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get, Param, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Request, UseGuards, Patch } from '@nestjs/common';
 import { ProviderService } from './provider.service';
 import { CreateProviderDto } from './dto/provider.dto';
 import { CreateChatDto } from './dto/chat.dto';
 import { CreateMessageDto } from './dto/message.dto';
+import { UpdateProviderDto } from './dto/update-provider.dto';
 import { Provider } from './schemas/provider.schema';
 import { Chat } from './schemas/chat-schema/chat.schema';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
@@ -67,5 +68,14 @@ findAllProviders(): Promise<Provider[]> {
   @Get('getMessages/:chatId')
   getMessages(@Param('chatId') chatId: string): Promise<any> {
     return this.providerService.getMessages(chatId);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Patch('update')
+  updateProvider(
+    @Request() req,
+    @Body() updateProviderDto: UpdateProviderDto
+  ): Promise<Provider> {
+    return this.providerService.updateProvider(req.user.email, updateProviderDto);
   }
 }

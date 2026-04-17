@@ -20,7 +20,14 @@ export default function ProviderForm() {
     streetName: '',
     city: '',
     postalCode: '',
+    walletAddress: '',
   });
+
+  const AVAILABLE_PAYMENT_METHODS = [
+    'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
+    'Mercado Pago', 'Efectivo', 'Otro'
+  ];
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([]);
 
   const [hasCheckedProvider, setHasCheckedProvider] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
@@ -37,7 +44,16 @@ export default function ProviderForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createNewProvider(form);
+    await createNewProvider({
+      ...form,
+      paymentMethods: selectedPaymentMethods,
+    });
+  };
+
+  const togglePaymentMethod = (pm) => {
+    setSelectedPaymentMethods((prev) =>
+      prev.includes(pm) ? prev.filter((p) => p !== pm) : [...prev, pm]
+    );
   };
 
   useEffect(() => {
@@ -193,6 +209,45 @@ export default function ProviderForm() {
                 required
               />
             </label>
+
+            {/* P2P Escrow Fields */}
+            <label className="block sm:col-span-2">
+              <span className={labelClass}>Wallet de destino (para recibir crypto P2P)</span>
+              <input
+                className={inputClass}
+                name="walletAddress"
+                value={form.walletAddress}
+                onChange={handleChange}
+                placeholder="0x..."
+              />
+            </label>
+
+            <div className="block sm:col-span-2">
+              <span className={labelClass}>Métodos de pago aceptados</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {AVAILABLE_PAYMENT_METHODS.map((pm) => (
+                  <button
+                    key={pm}
+                    type="button"
+                    onClick={() => togglePaymentMethod(pm)}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                      selectedPaymentMethods.includes(pm)
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : isDark
+                          ? 'border border-slate-600 bg-slate-800 text-slate-300 hover:border-blue-400'
+                          : 'border border-slate-300 bg-white text-slate-600 hover:border-blue-500'
+                    }`}
+                  >
+                    {selectedPaymentMethods.includes(pm) ? '✓ ' : ''}{pm}
+                  </button>
+                ))}
+              </div>
+              {selectedPaymentMethods.length === 0 && (
+                <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Selecciona al menos un método de pago para P2P
+                </p>
+              )}
+            </div>
   
             <div className="sm:col-span-2">
               <button

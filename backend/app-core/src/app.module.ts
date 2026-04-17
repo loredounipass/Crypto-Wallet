@@ -13,6 +13,7 @@ import { TwoFactorAuthModule  } from './two-factor/verification.module';
 import { ProfileModule } from './profile/profile.module';
 import { MessagesAndMultimediaModule } from './messages-and-multimedia/messages-and-multimedia.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EscrowModule } from './escrow/escrow.module';
 
 
 // This is the main application module that imports and configures various modules such as ConfigModule for environment variables, MongooseModule for MongoDB connection, ThrottlerModule for rate limiting, BullModule for Redis-based queues, and other feature modules like UserModule, WalletModule, AuthModule, TransactionModule, ProviderModule, and TwoFactorAuthModule. It also provides the AppService for handling application-level logic.
@@ -45,7 +46,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     TwoFactorAuthModule,
     ProfileModule,
     MessagesAndMultimediaModule,
-    EventEmitterModule.forRoot()
+    EventEmitterModule.forRoot(),
+    EscrowModule
   ],
   providers: [AppService],
 })

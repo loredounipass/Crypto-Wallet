@@ -27,6 +27,8 @@ import './i18n';
 import Chatcomponent from './components/providers/Chat';
 import ProviderChatComponent from './components/providers/ProviderChatComponent';
 import Dashboard from './pages/Dashboard'
+import P2P from './pages/P2P'
+import P2POrderChat from './components/p2p/P2POrderChat'
 import { Menu as MenuIcon } from './ui/icons';
 
 const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/nextmain', '/verifytoken', '/resendtoken'];
@@ -113,6 +115,8 @@ function AppContent() {
                             <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent}/>
                             <PrivateRoute exact path='/chat' component={Chatcomponent}/>
                             <PrivateRoute exact path='/providerchat' component={ProviderChatComponent}/>
+                            <PrivateRoute exact path='/p2p' component={P2P}/>
+                            <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat}/>
                             <PublicRoute exact path='/login' component={Login} />
                             <PublicRoute exact path='/register' component={Register} />
                             <PublicRoute exact path='/forgot-password' component={ForgotPassword} />

@@ -85,15 +85,21 @@ async function bootstrap() {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // CSRF token endpoint (before global prefix)
-  app.use('/csrf-token', (req: any, res: any) => {
-    const csrfToken = req.csrfToken?.() || req.session?.csrfToken;
-    res.json({ csrfToken });
+  // CSRF - only protect state-changing operations (POST, PUT, DELETE, PATCH)
+  const { csrfSynchronisedProtection, generateToken } = csrfSync({
+    ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
   });
 
-  // CSRF - only protect state-changing operations (POST, PUT, DELETE, PATCH)
-  const { csrfSynchronisedProtection } = csrfSync({
-    ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+  // CSRF token endpoint (before global prefix)
+  app.use('/csrf-token', (req: any, res: any) => {
+    const csrfToken = generateToken(req);
+    res.cookie('XSRF-TOKEN', csrfToken, {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: '/',
+    });
+    res.json({ csrfToken });
   });
   
   // Skip CSRF for specific routes that need it (login, register, etc.)
@@ -118,7 +124,8 @@ async function bootstrap() {
       '/secure/api/user/logout',
       '/secure/api/user/update-token-status',
       '/secure/api/profile',
-      '/secure/api/wallet'
+      '/secure/api/wallet',
+      '/secure/api/escrow'
     ];
     const shouldSkip = skipPaths.some(p => req.path.startsWith(p));
     if (shouldSkip) {

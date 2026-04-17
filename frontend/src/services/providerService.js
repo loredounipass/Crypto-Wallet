@@ -1,13 +1,15 @@
 import {
     get,
     post,
+    patch,
     createProvider,
     findByEMail,
     getAllProviders,
     createChatApi,
     sendMessageAsUserApi,
     sendMessageAsProviderApi,
-    getMessagesApi
+    getMessagesApi,
+    updateProviderApi
 
 } from '../api/http';
 
@@ -44,6 +46,11 @@ export default class Provider {
 
     static async getMessages(chatId) {
         const { data } = await get(getMessagesApi.replace(':chatId', chatId))
+        return data
+    }
+
+    static async updateProvider(body) {
+        const { data } = await patch(updateProviderApi, body)
         return data
     }
 

@@ -23,6 +23,18 @@
         {
             "name": "ME: App Withdraw Worker NODE",
             "script": "./daemon/workers/local/withdrawRequests.js"
+        },
+        {
+            "name": "ME: Escrow Release Worker NODE",
+            "script": "./daemon/workers/local/escrowRelease.js"
+        },
+        {
+            "name": "ME: Escrow Funding Worker NODE",
+            "script": "./daemon/workers/local/escrowFunding.js"
+        },
+        {
+            "name": "ME: Escrow Expiry Worker NODE",
+            "script": "./daemon/workers/local/escrowExpiry.js"
         }
     ]
 }

@@ -113,7 +113,7 @@ const LogoutIcon = (props) => (
 const menuItems = [
   { text: "Dashboard", icon: DashboardIcon, path: "/" },
   { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets" },
-  { text: "Vender P2P", icon: P2PIcon, path: "/providers" },
+  { text: "P2P Trading", icon: P2PIcon, path: "/p2p" },
   { text: "Proveedor P2P", icon: ProviderIcon, path: "/create" },
   { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome" },
 ];

@@ -74,6 +74,42 @@
       "artifacts": [
         "WalletContract"
       ]
+    },
+    "C:\\Users\\leida\\Downloads\\Crypto-Wallet\\backend\\tasks\\wallet-generator\\evm\\contracts\\EscrowContract.sol": {
+      "lastModificationDate": 1776401776056,
+      "contentHash": "25b242de2f180b612ba3bf3d0908e12a",
+      "sourceName": "contracts/EscrowContract.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "EscrowContract"
+      ]
     }
   }
 }

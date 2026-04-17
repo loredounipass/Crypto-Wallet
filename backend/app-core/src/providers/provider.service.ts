@@ -79,7 +79,8 @@ export class ProviderService {
   const newMessage = new this.messageModel({
     sender,
     message,
-    chatroomId,
+    chatId: chatroomId,
+    hash: uuidv4(),
   });
 
   await newMessage.save();
@@ -106,7 +107,8 @@ export class ProviderService {
   const newMessage = new this.messageModel({
     sender,
     message,
-    chatroomId,
+    chatId: chatroomId,
+    hash: uuidv4(),
   });
 
   await newMessage.save();
@@ -119,6 +121,21 @@ export class ProviderService {
 
 
 
+  async updateProvider(email: string, updateData: { paymentMethods?: string[]; walletAddress?: string }): Promise<Provider> {
+    const provider = await this.providerModel.findOne({ email });
+    if (!provider) {
+      throw new BadRequestException('Provider not found.');
+    }
+    if (updateData.paymentMethods !== undefined) {
+      provider.paymentMethods = updateData.paymentMethods;
+    }
+    if (updateData.walletAddress !== undefined) {
+      provider.walletAddress = updateData.walletAddress;
+    }
+    return provider.save();
+  }
+
+
   async getMessages(chatroomId: string): Promise<any> {
   const chat = await this.chatModel.findOne({ chatroomId }).exec();
   if (!chat) {
@@ -126,7 +143,7 @@ export class ProviderService {
   }
 
   const messages = await this.messageModel
-    .find({ chatroomId: chat.chatroomId })
+    .find({ chatId: chat.chatroomId })
     .sort({ timeStamp: 1 })
     .exec();
 

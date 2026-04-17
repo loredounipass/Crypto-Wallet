@@ -1,127 +1,77 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send as SendIcon } from '../../ui/icons';
+import React, { useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
+import useEscrow from '../../hooks/useEscrow';
 
 const ProviderChatComponent = () => {
-  const currentUser = 'Yo';
-
-  const chatList = [
-    { id: 1, name: 'Alice' },
-    { id: 2, name: 'Bob' },
-    { id: 3, name: 'Charlie' },
-  ];
-
-  const [selectedChat, setSelectedChat] = useState(chatList[0]);
-
-  const [messagesByChat, setMessagesByChat] = useState({});
-
-  const [input, setInput] = useState('');
-
-  const messagesEndRef = useRef(null);
-
-  const messagesForSelected = useMemo(
-    () => messagesByChat[selectedChat.id] || [],
-    [messagesByChat, selectedChat.id]
-  );
-
-  const handleSend = () => {
-    if (input.trim() !== '') {
-      const newMessage = {
-        text: input,
-        timestamp: new Date(),
-        sender: currentUser,
-      };
-      const prevMessages = messagesByChat[selectedChat.id] || [];
-      setMessagesByChat({
-        ...messagesByChat,
-        [selectedChat.id]: [...prevMessages, newMessage],
-      });
-      setInput('');
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const history = useHistory();
+  const { providerOrders, getProviderOrders, isLoading, error } = useEscrow();
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messagesForSelected]);
+    getProviderOrders();
+  }, [getProviderOrders]);
 
   return (
-    <div className="mx-auto flex h-[90vh] w-full max-w-[900px] rounded-xl border border-slate-200 bg-white shadow">
-      <div className="w-[250px] overflow-y-auto border-r border-slate-200 bg-white p-4">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Chats</h2>
-        <ul>
-          {chatList.map((chat) => (
-            <li
-              key={chat.id}
-              className={`mb-1 flex cursor-pointer items-center rounded-lg px-2 py-2 ${selectedChat.id === chat.id ? 'bg-blue-50' : 'hover:bg-slate-100'}`}
-              onClick={() => setSelectedChat(chat)}
+    <div className="mx-auto w-full max-w-[980px] rounded-xl border border-slate-200 bg-white p-5 shadow">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-900">Órdenes P2P (Proveedor)</h2>
+        <button
+          type="button"
+          onClick={getProviderOrders}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Recargar
+        </button>
+      </div>
+
+      {isLoading && (
+        <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Cargando órdenes...</p>
+      )}
+
+      {!isLoading && error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error.message || 'No se pudieron cargar las órdenes del proveedor.'}
+        </p>
+      )}
+
+      {!isLoading && !error && providerOrders.length === 0 && (
+        <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+          Aún no tienes órdenes P2P asignadas.
+        </p>
+      )}
+
+      {!isLoading && providerOrders.length > 0 && (
+        <div className="space-y-3">
+          {providerOrders.map((order) => (
+            <div
+              key={order.orderId}
+              className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
             >
-              <div className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-sm font-semibold text-slate-800">
-                {chat.name.charAt(0)}
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  Orden: {order.orderId}
+                </p>
+                <p className="text-sm text-slate-700">
+                  Vendedor: {order.sellerEmail}
+                </p>
+                <p className="text-sm text-slate-700">
+                  {order.amount} {order.coin} • {order.paymentMethod}
+                </p>
+                <p className="text-xs text-slate-500">
+                  Estado: {order.status}
+                </p>
               </div>
-              <span className="text-sm text-slate-800">{chat.name}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
 
-      <div className="flex flex-1 flex-col">
-        <div className="border-b border-slate-200 bg-slate-50 p-4">
-          <h3 className="text-lg font-semibold text-slate-900">{selectedChat.name}</h3>
-        </div>
-
-        <div className="flex flex-1 flex-col justify-end overflow-y-auto bg-slate-50 p-4">
-          <ul className="w-full">
-            {messagesForSelected.map((msg, index) => (
-              <li
-                key={index}
-                className={`flex py-1 ${msg.sender === currentUser ? 'justify-end' : 'justify-start'}`}
+              <button
+                type="button"
+                onClick={() => history.push(`/p2p/order/${order.orderId}`)}
+                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
               >
-                <div
-                  className={`max-w-[75%] rounded-2xl px-3 py-2 ${msg.sender === currentUser ? 'bg-sky-600 text-white text-right' : 'bg-slate-200 text-slate-900 text-left'}`}
-                >
-                  {msg.sender !== currentUser && (
-                    <p className="text-xs font-medium">
-                      {msg.sender}
-                    </p>
-                  )}
-                  <p className="text-sm">{msg.text}</p>
-                  <span className="mt-1 block text-xs text-right opacity-80">
-                    {msg.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div ref={messagesEndRef} />
+                Abrir Chat de Orden
+              </button>
+            </div>
+          ))}
         </div>
-
-        <div className="border-t border-slate-200 p-3">
-          <div className="flex h-10 items-center rounded-full border border-slate-300 bg-white px-2">
-            <input
-              className="w-full border-none bg-transparent px-2 text-sm outline-none"
-              placeholder="Escribe tu mensaje..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              className="ml-1 inline-flex h-[35px] w-[35px] items-center justify-center rounded-full bg-sky-600 transition hover:bg-sky-700"
-            >
-              <SendIcon style={{ color: '#fff', fontSize: '20px' }} />
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail, IsString, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsEmail, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
 
 export class CreateProviderDto {
   @IsNotEmpty()
@@ -31,5 +31,14 @@ export class CreateProviderDto {
 
   @IsBoolean()
   isValid: boolean = false;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  paymentMethods?: string[];
+
+  @IsOptional()
+  @IsString()
+  walletAddress?: string;
 
 }

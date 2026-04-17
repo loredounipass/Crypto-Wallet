@@ -32,6 +32,18 @@ export class Provider {
   @Prop({ default: false })
   isValid: boolean;
 
+  @Prop({ type: [String], default: [] })
+  paymentMethods: string[];
+
+  @Prop({ default: '' })
+  walletAddress: string;
+
+  @Prop({ default: 0 })
+  completedOrders: number;
+
+  @Prop({ default: 0 })
+  totalTradeVolume: number;
+
   _id?: string; 
 
   get name(): string {
