@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useThemeMode } from '../../ui/styles';
 import useAllWallets from '../../hooks/useAllWallets';
+import Price from '../../services/price';
+import { getCoinFee } from '../utils/Chains';
 
 const PAYMENT_METHODS = [
   'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
@@ -11,23 +13,66 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const { mode } = useThemeMode();
   const isDark = mode === 'dark';
   const { allWalletInfo: wallets } = useAllWallets();
+  const shouldRender = Boolean(open && provider);
 
   const [coin, setCoin] = useState('');
   const [amount, setAmount] = useState('');
   const [fiatAmount, setFiatAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [coinPriceUsd, setCoinPriceUsd] = useState(0);
 
-  if (!open || !provider) return null;
-
-  const availablePaymentMethods = provider.paymentMethods?.length > 0
+  const availablePaymentMethods = provider?.paymentMethods?.length > 0
     ? provider.paymentMethods
     : PAYMENT_METHODS;
 
   const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
   const balance = selectedWallet?.balance || 0;
+  const commission = useMemo(() => (coin ? getCoinFee(coin.toUpperCase()) : 0), [coin]);
+  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0) - Number(commission || 0)), [balance, commission]);
+
+  const truncateToDecimals = (value, decimals = 8) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+    const factor = 10 ** decimals;
+    return Math.floor(numeric * factor) / factor;
+  };
+
+  const formatTrimmed = (value, decimals = 8) => {
+    const truncated = truncateToDecimals(value, decimals);
+    if (!truncated) return '';
+    return truncated.toFixed(decimals).replace(/\.?0+$/, '');
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPrice() {
+      if (!coin) {
+        if (isMounted) setCoinPriceUsd(0);
+        return;
+      }
+      try {
+        const { data } = await Price.getPrice(coin);
+        if (isMounted) setCoinPriceUsd(Number(data?.USD || 0));
+      } catch (_) {
+        if (isMounted) setCoinPriceUsd(0);
+      }
+    }
+    loadPrice();
+    return () => { isMounted = false; };
+  }, [coin]);
+
+  useEffect(() => {
+    const qty = Number(amount || 0);
+    if (!qty || !coinPriceUsd) {
+      setFiatAmount('');
+      return;
+    }
+    const totalUsd = truncateToDecimals(qty * coinPriceUsd, 2);
+    setFiatAmount(totalUsd ? totalUsd.toFixed(2) : '');
+  }, [amount, coinPriceUsd]);
 
   const isValid = coin && parseFloat(amount) > 0 && parseFloat(fiatAmount) > 0
-    && paymentMethod && parseFloat(amount) <= balance;
+    && paymentMethod && parseFloat(amount) <= availableAfterFee;
 
   const handleSubmit = () => {
     if (!isValid) return;
@@ -38,6 +83,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
       providerEmail: provider.email,
       paymentMethod,
     });
+  };
+
+  const handleSetMax = () => {
+    if (!coin || availableAfterFee <= 0) return;
+    setAmount(formatTrimmed(availableAfterFee, 8));
   };
 
   const inputStyle = {
@@ -53,6 +103,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     color: isDark ? '#94A3B8' : '#64748B',
     textTransform: 'uppercase', letterSpacing: '0.5px',
   };
+
+  if (!shouldRender) return null;
 
   return (
     <div style={{
@@ -106,22 +158,47 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             Cantidad a vender
             {selectedWallet && (
               <span style={{ float: 'right', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
-                Disponible: <span style={{ color: '#2186EB' }}>{balance.toFixed(6)} {coin?.toUpperCase()}</span>
+                Disponible: <span style={{ color: '#2186EB' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
               </span>
             )}
           </label>
-          <input
-            type="number"
-            step="any"
-            min="0"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            placeholder="0.00"
-            style={inputStyle}
-          />
-          {parseFloat(amount) > balance && balance > 0 && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0.00"
+              style={inputStyle}
+            />
+            <button
+              type="button"
+              onClick={handleSetMax}
+              disabled={!coin || availableAfterFee <= 0}
+              style={{
+                border: `1px solid ${isDark ? '#2D2D44' : '#CBD5E1'}`,
+                backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
+                color: '#2186EB',
+                borderRadius: 10,
+                padding: '0 14px',
+                fontWeight: 700,
+                cursor: !coin || availableAfterFee <= 0 ? 'not-allowed' : 'pointer',
+                opacity: !coin || availableAfterFee <= 0 ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Max
+            </button>
+          </div>
+          {selectedWallet && (
+            <p style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 12, margin: '6px 0 0' }}>
+              Balance: {truncateToDecimals(balance, 8).toFixed(8)} {coin?.toUpperCase()} | Comisión: {truncateToDecimals(commission, 8).toFixed(8)} {coin?.toUpperCase()}
+            </p>
+          )}
+          {parseFloat(amount) > availableAfterFee && availableAfterFee >= 0 && (
             <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>
-              Balance insuficiente
+              Balance insuficiente (considerando comisión)
             </p>
           )}
         </div>
@@ -134,10 +211,15 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             step="any"
             min="0"
             value={fiatAmount}
-            onChange={e => setFiatAmount(e.target.value)}
+            readOnly
             placeholder="0.00"
-            style={inputStyle}
+            style={{ ...inputStyle, opacity: 0.9 }}
           />
+          {coin && (
+            <p style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 12, margin: '6px 0 0' }}>
+              Precio actual: {coinPriceUsd ? `$${coinPriceUsd}` : 'No disponible'} por {coin.toUpperCase()}
+            </p>
+          )}
         </div>
 
         {/* Payment Method */}

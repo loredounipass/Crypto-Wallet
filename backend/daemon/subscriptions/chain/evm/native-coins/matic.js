@@ -11,7 +11,9 @@ const coin = 'MATIC'
 
 const transactionsQueue = new Queue('matic-transactions')
 
+console.log('[SUB][MATIC] Starting MATIC subscription daemon...')
 connectDB.then(async () => {
+    console.log('[SUB][MATIC] Database connected, initializing WebSocket...')
     const web3 = getWeb3WssInstance(process.env.POLYGON_WSS)
     const topic = web3.utils.sha3('DepositedOnMetaDapp()')
     console.log('[SUB][MATIC] subscription started on chainId:', chainId)

@@ -149,6 +149,7 @@ const processEscrowRelease = async (jobData) => {
 
     const order = await EscrowOrder.findOne({ orderId })
     if (!order || order.status !== 'released') {
+        console.error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
         throw new Error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
     }
 
@@ -168,6 +169,7 @@ const processEscrowRelease = async (jobData) => {
             const receipt = await interactor.releaseFundsOnChain(orderId)
 
             if (!receipt || !receipt.status) {
+                console.error('Contract release transaction failed')
                 throw new Error('Contract release transaction failed')
             }
 
@@ -186,6 +188,7 @@ const processEscrowRelease = async (jobData) => {
         const receipt = await sendDirectTransfer(chainId, providerWalletAddress, amountWei)
 
         if (!receipt || !receipt.status) {
+            console.error('[ESCROW-RELEASE] Direct transfer failed')
             throw new Error('[ESCROW-RELEASE] Direct transfer failed')
         }
 
@@ -220,7 +223,7 @@ const processEscrowRelease = async (jobData) => {
         }
     )
 
-    // 4. Emit status update via queue → WebSocket
+    // 4. Emit status update via queue ��' WebSocket
     const statusQueue = new Queue('escrow-status-events')
     statusQueue.add('status-update', {
         orderId,
@@ -238,8 +241,16 @@ const processEscrowRelease = async (jobData) => {
 }
 
 connectDB.then(() => {
-    new Worker('escrow-release', async (job) => {
-        return await processEscrowRelease(job.data)
-    })
     console.log('[ESCROW-RELEASE] Worker started and ready')
+    new Worker('escrow-release', async (job) => {
+        console.log(`[ESCROW-RELEASE] Processing job ${job.id}`)
+        try {
+            const result = await processEscrowRelease(job.data)
+            console.log(`[ESCROW-RELEASE] Job ${job.id} completed with result: ${result}`)
+            return result
+        } catch (error) {
+            console.error(`[ESCROW-RELEASE] Job ${job.id} failed:`, error.message || error)
+            throw error
+        }
+    })
 })

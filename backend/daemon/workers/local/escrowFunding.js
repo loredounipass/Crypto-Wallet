@@ -62,20 +62,37 @@ const processEscrowFunding = async (jobData) => {
 
     if (contractAvailable) {
         console.log('[ESCROW-FUNDING] Contract available, funding on-chain...')
+        try {
+            const receipt = await interactor.createOrderOnChain(
+                orderId,
+                sellerWalletAddress,
+                providerWalletAddress,
+                amountWei
+            )
 
-        const receipt = await interactor.createOrderOnChain(
-            orderId,
-            sellerWalletAddress,
-            providerWalletAddress,
-            amountWei
-        )
+            if (!receipt || !receipt.status) {
+                throw new Error(`[ESCROW-FUNDING] On-chain funding failed for order ${orderId}`)
+            }
 
-        if (!receipt || !receipt.status) {
-            throw new Error(`[ESCROW-FUNDING] On-chain funding failed for order ${orderId}`)
+            escrowTxHash = receipt.transactionHash
+            console.log('[ESCROW-FUNDING] On-chain funding successful:', { orderId, txHash: escrowTxHash })
+        } catch (error) {
+            const errorMessage = String(error?.message || error)
+            const canFallbackToOffchain =
+                errorMessage.includes('Insufficient relayer balance')
+                || errorMessage.toLowerCase().includes('insufficient funds')
+
+            if (!canFallbackToOffchain) {
+                throw error
+            }
+
+            // If relayer cannot fund on-chain right now, keep order funded off-chain.
+            console.warn('[ESCROW-FUNDING] On-chain funding skipped due to relayer balance, falling back to off-chain escrow:', {
+                orderId,
+                error: errorMessage
+            })
+            escrowTxHash = `offchain-${orderId}`
         }
-
-        escrowTxHash = receipt.transactionHash
-        console.log('[ESCROW-FUNDING] On-chain funding successful:', { orderId, txHash: escrowTxHash })
     } else {
         // Fallback: off-chain escrow — funds stay in relayer wallet
         // The balance was already deducted from seller's DB wallet in escrow.service.ts
