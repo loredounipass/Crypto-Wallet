@@ -34,42 +34,6 @@ findAllProviders(): Promise<Provider[]> {
   return this.providerService.findAllProviders();
 }
 
-
-  @UseGuards(AuthenticatedGuard)
-  @Post('createChat')
-  createChat(
-    @Request() req,
-    @Body() createChatDto: CreateChatDto
-  ): Promise<Chat> {
-    return this.providerService.createChat(createChatDto);
-  }
-
-  @UseGuards(AuthenticatedGuard)
-  @Post('sendMessageAsUser')
-  sendMessageAsUser(
-    @Request() req,
-    @Body() createMessageDto: CreateMessageDto
-  ): Promise<Chat> {
-    createMessageDto.sender = req.user.email;
-    return this.providerService.sendMessageAsUser(createMessageDto);
-  }
-
-  @UseGuards(AuthenticatedGuard)
-  @Post('sendMessageAsProvider')
-  sendMessageAsProvider(
-    @Request() req,
-    @Body() createMessageDto: CreateMessageDto
-  ): Promise<Chat> {
-    createMessageDto.sender = req.user.email;
-    return this.providerService.sendMessageAsProvider(createMessageDto);
-  }
-
-  @UseGuards(AuthenticatedGuard)
-  @Get('getMessages/:chatId')
-  getMessages(@Param('chatId') chatId: string): Promise<any> {
-    return this.providerService.getMessages(chatId);
-  }
-
   @UseGuards(AuthenticatedGuard)
   @Patch('update')
   updateProvider(

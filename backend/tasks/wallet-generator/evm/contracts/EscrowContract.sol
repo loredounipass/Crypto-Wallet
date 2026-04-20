@@ -38,7 +38,7 @@ contract EscrowContract {
         bytes32 orderId,
         address seller,
         address providerWallet
-    ) external payable onlyRelayer {
+    ) external payable {
         require(msg.value > 0, "No value sent");
         require(orders[orderId].amount == 0, "Order already exists");
         require(seller != address(0), "Invalid seller");

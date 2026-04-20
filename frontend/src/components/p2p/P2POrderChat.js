@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useEscrow from '../../hooks/useEscrow';
-import useProviders from '../../hooks/useProviders';
+import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import P2POrderStatus from './P2POrderStatus';
 import P2PDisputeModal from './P2PDisputeModal';
 import { useThemeMode } from '../../ui/styles';
+import { get } from '../../api/http';
 
 export default function P2POrderChat() {
   const { orderId } = useParams();
@@ -14,16 +15,19 @@ export default function P2POrderChat() {
   const { mode } = useThemeMode();
   const isDark = mode === 'dark';
   const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading } = useEscrow();
-  const { messages, sendMessageAsUser, sendMessageAsProvider, getMessages } = useProviders();
+  const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat } = useMessagesAndMultimedia();
 
   const [messageContent, setMessageContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showDispute, setShowDispute] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
+  const [counterpartId, setCounterpartId] = useState(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
   const isSeller = currentOrder?.sellerEmail === auth?.email;
+  const counterpartEmail = isProvider ? currentOrder?.sellerEmail : currentOrder?.providerEmail;
 
   const fetchOrder = useCallback(async () => {
     if (orderId) {
@@ -35,32 +39,69 @@ export default function P2POrderChat() {
     fetchOrder();
   }, [fetchOrder]);
 
+  // Fetch the counterpart user's ID
   useEffect(() => {
-    if (currentOrder?.chatroomId) {
-      getMessages(currentOrder.chatroomId);
-      const interval = setInterval(() => getMessages(currentOrder.chatroomId), 5000);
-      return () => clearInterval(interval);
+    const fetchCounterpart = async () => {
+      if (!counterpartEmail) return;
+      try {
+        const res = await get(`/user/search?q=${counterpartEmail}`);
+        if (res?.data?.length > 0) {
+          setCounterpartId(res.data[0]._id);
+        }
+      } catch (e) {
+        console.error('Failed to fetch counterpart user', e);
+      }
+    };
+    fetchCounterpart();
+  }, [counterpartEmail]);
+
+  // Join socket room and fetch initial messages when counterpart is known
+  useEffect(() => {
+    if (counterpartId && auth?._id) {
+      joinChat(counterpartId);
+      fetchMyMessages();
     }
-  }, [currentOrder?.chatroomId, getMessages]);
+  }, [counterpartId, auth?._id, joinChat, fetchMyMessages]);
+
+  // Filter messages for this conversation and sort chronologically
+  const messages = useMemo(() => {
+    if (!allMessages || !counterpartId || !auth?._id) return [];
+    return allMessages
+      .filter(m => 
+        (m.sender === auth._id && m.receiver === counterpartId) ||
+        (m.sender === counterpartId && m.receiver === auth._id)
+      )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [allMessages, counterpartId, auth?._id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!currentOrder?.chatroomId || !messageContent.trim() || isSending) return;
+    if (!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending) return;
     setIsSending(true);
     try {
-      const msgBody = { sender: auth.email, chatroomId: currentOrder.chatroomId, message: messageContent };
-      if (isProvider) {
-        await sendMessageAsProvider(msgBody);
+      const file = fileInputRef.current?.files[0];
+      const payload = {
+        receiverId: counterpartId,
+        content: messageContent,
+        type: file ? (file.type.startsWith('image/') ? 'image' : 'video') : 'text',
+      };
+
+      if (file) {
+        await uploadMessage(file, payload);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
-        await sendMessageAsUser(msgBody);
+        await createMessage(payload);
       }
       setMessageContent('');
-      await getMessages(currentOrder.chatroomId);
-    } catch (e) { /* handled by hook */ }
-    finally { setIsSending(false); }
+      await fetchMyMessages();
+    } catch (e) {
+      console.error('Failed to send message', e);
+    } finally { 
+      setIsSending(false); 
+    }
   };
 
   const handleAction = async (action) => {
@@ -141,7 +182,7 @@ export default function P2POrderChat() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {messages.map((msg, i) => {
-                const isMe = msg.sender === auth.email;
+                const isMe = msg.sender === auth?._id;
                 return (
                   <div key={i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                     <div style={{
@@ -156,10 +197,29 @@ export default function P2POrderChat() {
                     }}>
                       {!isMe && (
                         <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#2186EB' }}>
-                          {msg.sender}
+                          {counterpartEmail}
                         </p>
                       )}
-                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{msg.message}</p>
+                      
+                      {/* Multimedia handling */}
+                      {msg.multimediaUrl && msg.type === 'image' && (
+                        <img 
+                          src={msg.multimediaUrl} 
+                          alt="adjunto" 
+                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block' }} 
+                        />
+                      )}
+                      {msg.multimediaUrl && msg.type === 'video' && (
+                        <video 
+                          src={msg.multimediaUrl} 
+                          controls 
+                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block' }} 
+                        />
+                      )}
+                      {msg.multimediaStatus === 'uploading' && <p style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.8 }}>Subiendo archivo...</p>}
+                      {msg.multimediaStatus === 'processing' && <p style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.8 }}>Procesando archivo...</p>}
+
+                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{msg.content || msg.message}</p>
                     </div>
                   </div>
                 );
@@ -188,6 +248,19 @@ export default function P2POrderChat() {
               onChange={e => setMessageContent(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
             />
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept="image/*,video/*"
+                onChange={() => {
+                  // just focus input or show some indicator if we wanted, 
+                  // but we will rely on the input ref directly for sending
+                }}
+              />
+              <span style={{ fontSize: 18, color: '#94A3B8', marginRight: 4 }}>📎</span>
+            </label>
             <button
               onClick={handleSendMessage}
               disabled={!messageContent.trim() || isSending}

@@ -26,7 +26,6 @@ const ObjectId = require('mongoose').Types.ObjectId
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
-const User = require(`${appRoot}/config/models/User`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
@@ -36,11 +35,11 @@ const toWeiAmount = (amount, decimals) => {
 }
 
 /**
- * Send a direct transfer from the relayer wallet (off-chain fallback)
+ * Send a direct transfer from the platform's hot wallet (withdraw flow)
  */
 const sendDirectTransfer = async (chainId, providerWalletAddress, amountWei) => {
     const web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
-    const fromAddress = web3.utils.toChecksumAddress(process.env.ESCROW_RELAYER_WALLET)
+    const fromAddress = web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET || process.env.ESCROW_RELAYER_WALLET)
     const toAddress = web3.utils.toChecksumAddress(providerWalletAddress)
 
     const gasPrice = BigInt(await web3.eth.getGasPrice())
@@ -54,7 +53,7 @@ const sendDirectTransfer = async (chainId, providerWalletAddress, amountWei) => 
     const requiredBalance = BigInt(amountWei) + (gasPrice * gasLimit)
 
     if (senderBalance < requiredBalance) {
-        throw new Error(`Insufficient relayer balance: required=${requiredBalance} available=${senderBalance}`)
+        throw new Error(`Insufficient hot wallet balance for release: required=${requiredBalance} available=${senderBalance}`)
     }
 
     const nonce = await web3.eth.getTransactionCount(fromAddress, 'pending')
@@ -72,65 +71,88 @@ const sendDirectTransfer = async (chainId, providerWalletAddress, amountWei) => 
 
     const signedTx = await web3.eth.accounts.signTransaction(
         transaction,
-        process.env.ESCROW_RELAYER_PRIVATE_KEY
+        process.env.WITHDRAW_FROM_PRIVATE_KEY || process.env.ESCROW_RELAYER_PRIVATE_KEY
     )
 
     return await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
 }
 
 /**
- * Credit the provider wallet and append a transaction record.
+ * Register release tx in the normal deposit-confirmation pipeline (12 conf flow).
  */
-const creditProviderWallet = async (providerEmail, coin, amount, releaseTxHash, providerWalletAddress) => {
-    const walletData = await User.aggregate([
-        { $match: { email: providerEmail } },
-        { $unwind: '$wallets' },
-        { $project: { _id: 0 } },
-        {
-            $lookup: {
-                from: 'wallets',
-                localField: 'wallets',
-                foreignField: '_id',
-                as: 'walletsData',
-                pipeline: [
-                    { $match: { coin: coin.toUpperCase() } }
-                ]
-            }
-        }
-    ]).exec()
+const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
+    const coin = String(order.coin || '').toUpperCase()
+    const providerAddress = String(order.providerWalletAddress || '').toLowerCase()
+    const chainId = Number(order.chainId)
 
-    if (walletData && walletData.length > 0) {
-        const walletEntry = walletData.find(w => w.walletsData.length > 0)
-        if (walletEntry) {
-            const wallet = walletEntry.walletsData[0]
-
-            // nature=1 means incoming transaction (deposit-like credit)
-            const transaction = new Transaction({
-                nature: 1,
-                amount,
-                created_at: Date.now(),
-                status: 3,
-                confirmations: 1,
-                txHash: releaseTxHash,
-                to: providerWalletAddress
-            })
-            await transaction.save()
-
-            await Wallet.updateOne(
-                { _id: ObjectId(wallet._id) },
-                {
-                    $inc: { balance: amount },
-                    $push: { transactions: transaction._id }
-                }
-            )
-            console.log('[ESCROW-RELEASE] Credited provider wallet:', {
-                email: providerEmail, coin, amount, walletId: wallet._id, transactionId: transaction._id
-            })
-            return true
-        }
+    const existing = await Transaction.findOne({ txHash: releaseTxHash })
+    if (existing) {
+        console.log('[ESCROW-RELEASE] Existing transaction found for tx hash, skipping registration:', {
+            orderId: order.orderId,
+            txHash: releaseTxHash,
+            transactionId: existing._id.toString()
+        })
+        return existing
     }
-    console.warn('[ESCROW-RELEASE] Could not find provider wallet to credit:', { providerEmail, coin })
-    return false
+
+    const wallet = await Wallet.findOne({
+        address: new RegExp(`^${providerAddress}$`, 'i'),
+        coin,
+        chainId
+    })
+
+    if (!wallet) {
+        console.warn('[ESCROW-RELEASE] Provider wallet not found for escrow transaction registration:', {
+            orderId: order.orderId,
+            providerAddress,
+            coin,
+            chainId
+        })
+        return null
+    }
+
+    const transaction = new Transaction({
+        nature: 1,
+        amount: Number(order.amount || 0),
+        created_at: Date.now(),
+        status: 1,
+        confirmations: 0,
+        txHash: releaseTxHash,
+        to: order.providerWalletAddress
+    })
+    await transaction.save()
+
+    await Wallet.updateOne(
+        { _id: ObjectId(wallet._id) },
+        { $addToSet: { transactions: transaction._id } }
+    )
+
+    // Reuse the normal deposit worker so confirmations/balance update follow the same path.
+    const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
+    await depositsQueue.add('deposit', {
+        walletAddress: order.providerWalletAddress,
+        transactionHash: releaseTxHash,
+        chainId,
+        coin,
+        transactionId: transaction._id.toString()
+    }, {
+        attempts: 20,
+        backoff: {
+            type: 'exponential',
+            delay: 5000
+        },
+        removeOnComplete: true,
+        removeOnFail: 50
+    })
+
+    console.log('[ESCROW-RELEASE] Registered release tx for confirmation tracking:', {
+        orderId: order.orderId,
+        txHash: releaseTxHash,
+        transactionId: transaction._id.toString(),
+        walletId: wallet._id.toString()
+    })
+
+    return transaction
 }
 
 /**
@@ -209,8 +231,8 @@ const processEscrowRelease = async (jobData) => {
         }
     )
 
-    // 2. Credit provider's wallet balance in DB
-    await creditProviderWallet(providerEmail, coin, amount, releaseTxHash, providerWalletAddress)
+    // 2. Register tx in normal confirmation pipeline (wallet gets credited after confirmations)
+    await registerEscrowReleaseTransaction(order, releaseTxHash)
 
     // 3. Update provider stats
     await Provider.updateOne(

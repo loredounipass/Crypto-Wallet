@@ -28,7 +28,10 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
   const balance = selectedWallet?.balance || 0;
   const commission = useMemo(() => (coin ? getCoinFee(coin.toUpperCase()) : 0), [coin]);
-  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0) - Number(commission || 0)), [balance, commission]);
+  
+  // Note: We leave a small margin (e.g. 0.005) for dynamic on-chain gas since the exact amount is estimated on the backend
+  const gasBuffer = useMemo(() => (coin ? (commission > 0 ? commission * 0.5 : 0.001) : 0), [commission, coin]);
+  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0) - Number(commission || 0) - Number(gasBuffer || 0)), [balance, commission, gasBuffer]);
 
   const truncateToDecimals = (value, decimals = 8) => {
     const numeric = Number(value);
@@ -193,12 +196,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
           </div>
           {selectedWallet && (
             <p style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 12, margin: '6px 0 0' }}>
-              Balance: {truncateToDecimals(balance, 8).toFixed(8)} {coin?.toUpperCase()} | Comisión: {truncateToDecimals(commission, 8).toFixed(8)} {coin?.toUpperCase()}
+              Balance: {truncateToDecimals(balance, 8).toFixed(8)} {coin?.toUpperCase()} <br/>
+              Comisión: {truncateToDecimals(commission, 8).toFixed(8)} {coin?.toUpperCase()} + Gas Estimado
             </p>
           )}
           {parseFloat(amount) > availableAfterFee && availableAfterFee >= 0 && (
             <p style={{ color: '#EF4444', fontSize: 12, margin: '4px 0 0' }}>
-              Balance insuficiente (considerando comisión)
+              Balance insuficiente (considerando comisión y gas)
             </p>
           )}
         </div>

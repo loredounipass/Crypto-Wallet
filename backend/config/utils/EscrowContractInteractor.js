@@ -25,6 +25,10 @@ class EscrowContractInteractor {
         this.chainId = chainId
         this.relayerAddress = this.web3.utils.toChecksumAddress(process.env.ESCROW_RELAYER_WALLET)
         this.relayerPrivateKey = process.env.ESCROW_RELAYER_PRIVATE_KEY
+        
+        this.hotWalletAddress = process.env.WITHDRAW_FROM_WALLET ? this.web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET) : null;
+        this.hotWalletPrivateKey = process.env.WITHDRAW_FROM_PRIVATE_KEY;
+
         this.contractAddress = process.env.ESCROW_CONTRACT_ADDRESS
 
         // Load contract ABI
@@ -64,17 +68,17 @@ class EscrowContractInteractor {
     }
 
     /**
-     * Sign and send a transaction from the relayer wallet
+     * Sign and send a transaction from the specified wallet
      */
-    async _sendTransaction(txData, value = '0') {
-        const nonce = await this.web3.eth.getTransactionCount(this.relayerAddress, 'pending')
+    async _sendTransactionFrom(txData, fromAddress, privateKey, value = '0') {
+        const nonce = await this.web3.eth.getTransactionCount(fromAddress, 'pending')
         const gasPrice = await this.web3.eth.getGasPrice()
         const chainId = await this.web3.eth.getChainId()
 
         let gasLimit
         try {
             gasLimit = await this.web3.eth.estimateGas({
-                from: this.relayerAddress,
+                from: fromAddress,
                 to: this.contractAddress,
                 data: txData,
                 value: value
@@ -87,7 +91,7 @@ class EscrowContractInteractor {
         }
 
         const transaction = {
-            from: this.relayerAddress,
+            from: fromAddress,
             to: this.contractAddress,
             chainId: chainId,
             nonce: this.web3.utils.toHex(nonce),
@@ -99,10 +103,69 @@ class EscrowContractInteractor {
 
         const signedTx = await this.web3.eth.accounts.signTransaction(
             transaction,
-            this.relayerPrivateKey
+            privateKey
         )
 
         return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+    }
+
+    /**
+     * Sign and send a transaction from the relayer wallet
+     */
+    async _sendTransaction(txData, value = '0') {
+        return this._sendTransactionFrom(txData, this.relayerAddress, this.relayerPrivateKey, value)
+    }
+
+    /**
+     * Estimate exact gas cost for creating an order
+     */
+    async estimateCreateOrderGas(orderId, sellerAddress, providerAddress, amountWei) {
+        const orderIdBytes32 = this.uuidToBytes32(orderId)
+        const seller = this.web3.utils.toChecksumAddress(sellerAddress)
+        const provider = this.web3.utils.toChecksumAddress(providerAddress)
+
+        const txData = this.contract.methods.createOrder(
+            orderIdBytes32, seller, provider
+        ).encodeABI()
+
+        const gasPrice = await this.web3.eth.getGasPrice()
+        
+        let gasLimit
+        try {
+            gasLimit = await this.web3.eth.estimateGas({
+                from: this.hotWalletAddress,
+                to: this.contractAddress,
+                data: txData,
+                value: amountWei.toString()
+            })
+        } catch (err) {
+            gasLimit = 150000n // fallback
+        }
+
+        return { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() }
+    }
+
+    /**
+     * Estimate exact gas cost for releasing funds
+     */
+    async estimateReleaseFundsGas(orderId) {
+        const orderIdBytes32 = this.uuidToBytes32(orderId)
+        const txData = this.contract.methods.releaseFunds(orderIdBytes32).encodeABI()
+        
+        const gasPrice = await this.web3.eth.getGasPrice()
+        
+        let gasLimit
+        try {
+            gasLimit = await this.web3.eth.estimateGas({
+                from: this.relayerAddress,
+                to: this.contractAddress,
+                data: txData
+            })
+        } catch (err) {
+            gasLimit = 80000n // fallback
+        }
+
+        return { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() }
     }
 
     /**
@@ -123,18 +186,23 @@ class EscrowContractInteractor {
             seller, provider, amountWei: amountWei.toString()
         })
 
-        // Check relayer balance
-        const relayerBalance = BigInt(await this.web3.eth.getBalance(this.relayerAddress))
+        // Check hot wallet balance (WITHDRAW_FROM_WALLET)
+        const hotWalletBalance = BigInt(await this.web3.eth.getBalance(this.hotWalletAddress))
         const requiredAmount = BigInt(amountWei)
-        if (relayerBalance < requiredAmount) {
-            throw new Error(`Insufficient relayer balance: required=${requiredAmount} available=${relayerBalance}`)
+        if (hotWalletBalance < requiredAmount) {
+            throw new Error(`Insufficient hot wallet balance: required=${requiredAmount} available=${hotWalletBalance}`)
         }
 
         const txData = this.contract.methods.createOrder(
             orderIdBytes32, seller, provider
         ).encodeABI()
 
-        const receipt = await this._sendTransaction(txData, amountWei.toString())
+        const receipt = await this._sendTransactionFrom(
+            txData,
+            this.hotWalletAddress,
+            this.hotWalletPrivateKey,
+            amountWei.toString()
+        )
 
         console.log('[ESCROW-CONTRACT] Order created on-chain:', {
             orderId, txHash: receipt.transactionHash, status: receipt.status

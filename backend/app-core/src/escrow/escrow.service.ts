@@ -74,14 +74,45 @@ export class EscrowService {
     }
 
     const wallet = walletEntry.walletsData[0];
-    if (wallet.balance < dto.amount) {
-      throw new BadRequestException('Insufficient balance.');
+    const coinInfo = require('../../../config/coins/info.js')[dto.coin.toUpperCase()];
+    
+    // Generate orderId early for gas estimation
+    const orderId = uuidv4();
+    
+    let exactGasFee = 0;
+    try {
+      const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+      const interactor = new EscrowContractInteractor(wallet.chainId);
+      const { parseUnits, formatUnits } = require('ethers');
+      
+      const decimals = coinInfo ? coinInfo.decimals : 18;
+      const amountWei = parseUnits(dto.amount.toString(), decimals);
+      
+      // Estimate gas for creation and release
+      const createGas = await interactor.estimateCreateOrderGas(orderId, wallet.address, provider.walletAddress, amountWei);
+      const releaseGas = await interactor.estimateReleaseFundsGas(orderId);
+      
+      const totalGasWei = BigInt(createGas.gasPrice) * BigInt(createGas.gasLimit) + 
+                          BigInt(releaseGas.gasPrice) * BigInt(releaseGas.gasLimit);
+      
+      exactGasFee = parseFloat(formatUnits(totalGasWei.toString(), decimals));
+      console.log(`[ESCROW] Exact gas fee estimated: ${exactGasFee} ${dto.coin}`);
+    } catch (err) {
+      console.error('[ESCROW] Failed to estimate gas, using fallback fee:', err.message);
+      exactGasFee = 0; // Don't use coinInfo.fee for gas fallback if we can't estimate
     }
 
-    // 3. Debit seller's wallet (lock funds in escrow)
+    const platformFee = coinInfo ? coinInfo.fee : 0;
+    const totalRequired = dto.amount + exactGasFee + platformFee;
+
+    if (wallet.balance < totalRequired) {
+      throw new BadRequestException(`Insufficient balance. Required: ${totalRequired.toFixed(8)} ${dto.coin} (Amount: ${dto.amount} + Gas: ${exactGasFee.toFixed(8)} + Comisión: ${platformFee} ${dto.coin})`);
+    }
+
+    // 3. Debit seller's wallet (lock funds + exact gas fee + platform fee in escrow)
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
-      { $inc: { balance: -dto.amount } }
+      { $inc: { balance: -totalRequired } }
     );
 
     // 4. Create the chatroom for the order
@@ -96,7 +127,6 @@ export class EscrowService {
 
     // 5. Create escrow order
     const expirySeconds = parseInt(process.env.ESCROW_ORDER_EXPIRY_SECONDS || '1800');
-    const orderId = uuidv4();
     const escrowOrder = new this.escrowOrderModel({
       orderId,
       sellerEmail,
@@ -310,6 +340,24 @@ export class EscrowService {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 
+    // Refund on-chain if funds were locked in the contract
+    if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+      try {
+        const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+        const interactor = new EscrowContractInteractor(order.chainId);
+        const contractAvailable = await interactor.isContractAvailable();
+
+        if (contractAvailable) {
+          console.log(`[ESCROW-CANCEL] Refunding order ${orderId} on-chain...`);
+          await interactor.refundFundsOnChain(orderId);
+          console.log(`[ESCROW-CANCEL] Refund on-chain successful.`);
+        }
+      } catch (err) {
+        console.error(`[ESCROW-CANCEL] Failed to refund on-chain:`, err.message);
+        throw new BadRequestException('Failed to refund funds on-chain. Please try again.');
+      }
+    }
+
     // Refund the seller's wallet
     const walletData = await this.userModel.aggregate([
       { $match: { email: order.sellerEmail } },
@@ -332,9 +380,12 @@ export class EscrowService {
       const walletEntry = walletData.find(w => w.walletsData.length > 0);
       if (walletEntry) {
         const wallet = walletEntry.walletsData[0];
+        // Only refund the principal amount, as the gas fee was consumed by network transactions
+        const totalRefund = order.amount;
+
         await this.walletModel.updateOne(
           { _id: new Types.ObjectId(wallet._id) },
-          { $inc: { balance: order.amount } }
+          { $inc: { balance: totalRefund } }
         );
       }
     }
@@ -392,6 +443,24 @@ export class EscrowService {
     }).exec();
 
     for (const order of expiredOrders) {
+      // Refund on-chain if funds were locked in the contract
+      if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+        try {
+          const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+          const interactor = new EscrowContractInteractor(order.chainId);
+          const contractAvailable = await interactor.isContractAvailable();
+
+          if (contractAvailable) {
+            console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} on-chain...`);
+            await interactor.refundFundsOnChain(order.orderId);
+            console.log(`[ESCROW-EXPIRE] Refund on-chain successful.`);
+          }
+        } catch (err) {
+          console.error(`[ESCROW-EXPIRE] Failed to refund on-chain:`, err.message);
+          continue; // Skip DB refund if on-chain fails to avoid state mismatch
+        }
+      }
+
       // Refund to seller wallet
       const walletData = await this.userModel.aggregate([
         { $match: { email: order.sellerEmail } },
@@ -414,9 +483,12 @@ export class EscrowService {
         const walletEntry = walletData.find(w => w.walletsData.length > 0);
         if (walletEntry) {
           const wallet = walletEntry.walletsData[0];
+          // Only refund the principal amount, as the gas fee was consumed by network transactions
+          const totalRefund = order.amount;
+
           await this.walletModel.updateOne(
             { _id: new Types.ObjectId(wallet._id) },
-            { $inc: { balance: order.amount } }
+            { $inc: { balance: totalRefund } }
           );
         }
       }

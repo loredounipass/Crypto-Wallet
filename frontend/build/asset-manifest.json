@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.b0e40909.css",
+    "main.js": "/static/js/main.495d75b2.js",
+    "static/media/hero-banner.png": "/static/media/hero-banner.eec598253cec8f46e54f.png",
+    "static/media/blockchain.png": "/static/media/blockchain.7b520e1fedf4f2b24d19.png",
+    "static/media/robot.png": "/static/media/robot.57776dd93ddd4626d870.png",
+    "static/media/web3.png": "/static/media/web3.26fb30a48751f74a3115.png",
+    "static/media/wallet.png": "/static/media/wallet.b07cad4bb25ccea43ffd.png",
+    "index.html": "/index.html",
+    "main.b0e40909.css.map": "/static/css/main.b0e40909.css.map",
+    "main.495d75b2.js.map": "/static/js/main.495d75b2.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b0e40909.css",
+    "static/js/main.495d75b2.js"
+  ]
+}

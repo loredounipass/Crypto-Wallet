@@ -8,8 +8,6 @@ const api = axios.create({
     baseURL: baseApi,
     withCredentials: true,
     timeout: 10000,
-    xsrfCookieName: 'XSRF-TOKEN',
-    xsrfHeaderName: 'X-CSRF-TOKEN',
 });
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
@@ -18,78 +16,6 @@ const apiOrigin = (() => {
 })();
 const mediaBase = `${apiOrigin}/uploads`;
 
-
-// CSRF Token management - fetch token from server
-async function fetchCsrfToken() {
-    try {
-        // The csrf-token endpoint is registered at the root level, outside the /secure/api prefix
-        const response = await axios.get(`${apiOrigin}/csrf-token`, { withCredentials: true });
-        if (response.data?.csrfToken) {
-            return response.data.csrfToken;
-        }
-    } catch (err) {
-        console.warn('Failed to fetch CSRF token:', err);
-    }
-    return null;
-}
-
-// Function to get CSRF token from cookie
-function getCsrfTokenFromCookie() {
-    try {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            const [name, value] = cookie.trim().split('=');
-            if (name === 'XSRF-TOKEN') {
-                return decodeURIComponent(value);
-            }
-        }
-    } catch (_) {}
-    return null;
-}
-
-// Initialize CSRF token on load
-fetchCsrfToken().then(token => {
-    if (token) {
-        api.defaults.headers.common['X-CSRF-TOKEN'] = token;
-    }
-});
-
-// Axios interceptor to add CSRF token to every request
-api.interceptors.request.use((config) => {
-    const csrfToken = getCsrfTokenFromCookie();
-    if (csrfToken) {
-        config.headers['X-CSRF-TOKEN'] = csrfToken;
-    }
-    return config;
-});
-
-// CSRF token refresh on window focus (with cleanup to prevent memory leaks)
-let csrfFocusHandler = null;
-
-function setupCsrfRefresh() {
-    if (typeof window !== 'undefined' && !csrfFocusHandler) {
-        csrfFocusHandler = () => {
-            fetchCsrfToken().then(token => {
-                if (token) {
-                    api.defaults.headers.common['X-CSRF-TOKEN'] = token;
-                }
-            });
-        };
-        window.addEventListener('focus', csrfFocusHandler);
-    }
-}
-
-function cleanupCsrfListener() {
-    if (typeof window !== 'undefined' && csrfFocusHandler) {
-        window.removeEventListener('focus', csrfFocusHandler);
-        csrfFocusHandler = null;
-    }
-}
-
-// Initialize CSRF refresh
-if (typeof window !== 'undefined') {
-    setupCsrfRefresh();
-}
 
 // Endpoints usuario
 const loginApi = `${baseApi}/user/login`
@@ -134,10 +60,6 @@ const profileUploadProfilePhotoApi = `${profileApi}/upload/profile-photo`
 const createProvider = `${baseApi}/providers/create`
 const findByEMail = `${baseApi}/providers/findByEMail/:email`
 const getAllProviders = `${baseApi}/providers/allProviders`
-const createChatApi = `${baseApi}/providers/createChat`
-const sendMessageAsUserApi = `${baseApi}/providers/sendMessageAsUser`
-const sendMessageAsProviderApi = `${baseApi}/providers/sendMessageAsProvider`
-const getMessagesApi = `${baseApi}/providers/getMessages/:chatId`
 const updateProviderApi = `${baseApi}/providers/update`
 
 // Endpoints escrow P2P
@@ -166,8 +88,6 @@ async function get(url, body, config = {}) {
 // External/public APIs must not send app CSRF headers or cookies.
 async function getExternal(url, config = {}) {
     const safeHeaders = { ...(config.headers || {}) };
-    delete safeHeaders['X-CSRF-TOKEN'];
-    delete safeHeaders['x-csrf-token'];
 
     return await axios.get(url, {
         ...config,
@@ -201,7 +121,6 @@ export {
     priceApi,
     mediaBase,
     apiOrigin,
-    cleanupCsrfListener,
     loginApi,
     logoutApi,
     registerApi,
@@ -226,10 +145,7 @@ export {
     createProvider,
     findByEMail,
     getAllProviders,
-    createChatApi,
-    sendMessageAsUserApi,
-    sendMessageAsProviderApi,
-    getMessagesApi,
+    updateProviderApi,
     messagesApi,
     messagesUploadApi,
     myMessagesApi,
@@ -237,7 +153,6 @@ export {
     profileMeApi,
     profileByIdApi,
     profileUploadProfilePhotoApi,
-    updateProviderApi,
     escrowCreateOrderApi,
     escrowMyOrdersApi,
     escrowProviderOrdersApi,

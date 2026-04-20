@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { BrowserRouter as Router, Switch, useLocation } from 'react-router-dom'
 import { AuthContext } from './hooks/AuthContext'
+import { SocketProvider } from './hooks/SocketContext'
 import useFindUser from './hooks/useFindUser'
 
 import Login from "./pages/Login"
@@ -70,64 +71,66 @@ function AppContent() {
 
     return (
         <AuthContext.Provider value={{ auth, setAuth, loading }}>
-            <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: isDark ? '#0F0F1A' : '#F6F8FA' }}>
-                <CssBaseline />
-                
-                {isAuthenticated && !isPublicRoute && (
-                    <Sidebar 
-                        open={isMobile ? true : sidebarOpen}
-                        onToggle={handleSidebarToggle}
-                        mobileOpen={mobileOpen}
-                        onMobileClose={handleMobileClose}
-                    />
-                )}
+            <SocketProvider>
+                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: isDark ? '#0F0F1A' : '#F6F8FA' }}>
+                    <CssBaseline />
+                    
+                    {isAuthenticated && !isPublicRoute && (
+                        <Sidebar 
+                            open={isMobile ? true : sidebarOpen}
+                            onToggle={handleSidebarToggle}
+                            mobileOpen={mobileOpen}
+                            onMobileClose={handleMobileClose}
+                        />
+                    )}
 
-                {isAuthenticated && !isPublicRoute && isMobile && (
-                    <IconButton
-                        onClick={handleMobileOpen}
-                        style={{
-                            position: 'fixed',
-                            top: 12,
-                            left: 12,
-                            zIndex: 80,
-                            color: isDark ? '#FFFFFF' : '#1A1A2E',
-                            backgroundColor: isDark ? 'rgba(45,45,68,0.9)' : 'rgba(255,255,255,0.95)',
-                            border: `1px solid ${isDark ? '#2D2D44' : '#E5E7EB'}`,
-                        }}
+                    {isAuthenticated && !isPublicRoute && isMobile && (
+                        <IconButton
+                            onClick={handleMobileOpen}
+                            style={{
+                                position: 'fixed',
+                                top: 12,
+                                left: 12,
+                                zIndex: 80,
+                                color: isDark ? '#FFFFFF' : '#1A1A2E',
+                                backgroundColor: isDark ? 'rgba(45,45,68,0.9)' : 'rgba(255,255,255,0.95)',
+                                border: `1px solid ${isDark ? '#2D2D44' : '#E5E7EB'}`,
+                            }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                    )}
+
+                    <Box
+                        component="main"
+                        style={mainContentStyle}
                     >
-                        <MenuIcon />
-                    </IconButton>
-                )}
-
-                <Box
-                    component="main"
-                    style={mainContentStyle}
-                >
-                    <Container maxWidth="xl" sx={{ p: 0 }}>
-                        <Switch>
-                            <PrivateRoute exact path='/' component={Dashboard} />
-                            <PrivateRoute exact path="/wallets" component={Wallets} />
-                            <PrivateRoute exact path="/wallet/:walletId" component={Wallet} />
-                            <PrivateRoute exact path="/providers" component={ProviderCard} />
-                            <PrivateRoute exact path="/create" component={CreateProvider} />
-                            <PrivateRoute exact path='/welcome' component={WelcomeTemplate}/>
-                            <PrivateRoute exact path='/settings' component={Settings}/>
-                            <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent}/>
-                            <PrivateRoute exact path='/chat' component={Chatcomponent}/>
-                            <PrivateRoute exact path='/providerchat' component={ProviderChatComponent}/>
-                            <PrivateRoute exact path='/p2p' component={P2P}/>
-                            <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat}/>
-                            <PublicRoute exact path='/login' component={Login} />
-                            <PublicRoute exact path='/register' component={Register} />
-                            <PublicRoute exact path='/forgot-password' component={ForgotPassword} />
-                            <PublicRoute exact path='/reset-password' component={ResetPassword} />
-                            <PublicRoute exact path='/nextmain' component={Nextmain}/>
-                            <PublicRoute exact path='/verifytoken' component={VerifyToken} />
-                            <PublicRoute exact path='/resendtoken' component={ResendTokenForm}/>
-                        </Switch>
-                    </Container>
+                        <Container maxWidth="xl" sx={{ p: 0 }}>
+                            <Switch>
+                                <PrivateRoute exact path='/' component={Dashboard} />
+                                <PrivateRoute exact path="/wallets" component={Wallets} />
+                                <PrivateRoute exact path="/wallet/:walletId" component={Wallet} />
+                                <PrivateRoute exact path="/providers" component={ProviderCard} />
+                                <PrivateRoute exact path="/create" component={CreateProvider} />
+                                <PrivateRoute exact path='/welcome' component={WelcomeTemplate}/>
+                                <PrivateRoute exact path='/settings' component={Settings}/>
+                                <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent}/>
+                                <PrivateRoute exact path='/chat' component={Chatcomponent}/>
+                                <PrivateRoute exact path='/providerchat' component={ProviderChatComponent}/>
+                                <PrivateRoute exact path='/p2p' component={P2P}/>
+                                <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat}/>
+                                <PublicRoute exact path='/login' component={Login} />
+                                <PublicRoute exact path='/register' component={Register} />
+                                <PublicRoute exact path='/forgot-password' component={ForgotPassword} />
+                                <PublicRoute exact path='/reset-password' component={ResetPassword} />
+                                <PublicRoute exact path='/nextmain' component={Nextmain}/>
+                                <PublicRoute exact path='/verifytoken' component={VerifyToken} />
+                                <PublicRoute exact path='/resendtoken' component={ResendTokenForm}/>
+                            </Switch>
+                        </Container>
+                    </Box>
                 </Box>
-            </Box>
+            </SocketProvider>
         </AuthContext.Provider>
     );
 }

@@ -4,12 +4,12 @@ import { AuthContext } from '../../hooks/AuthContext';
 import { useHistory } from 'react-router-dom';
 
 export default function ProviderCard() {
-  const { getAllProviders, createChat } = useProvider();
+  const { getAllProviders } = useProvider();
   const { auth } = useContext(AuthContext);
   const history = useHistory();
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState(null);
-  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isCreatingChat] = useState(false);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -28,33 +28,13 @@ export default function ProviderCard() {
   }, [getAllProviders]);
 
   const handleCreateChat = async (providerEmail) => {
-    if (!auth?.email || isCreatingChat) return;
+    if (!auth?.email) return;
     
-    setIsCreatingChat(true);
-    
-    try {
-      const chatBody = {
-        chatName: `Chat con ${providerEmail}`,
-        users: [auth.email, providerEmail],
-        latestMessage: 'Chat iniciado'
-      };
-
-      const response = await createChat(chatBody);
-      
-      if (response?.chatroomId) {
-        history.push('/chat', {
-          chatroomId: response.chatroomId,
-          providerEmail,
-        });
-      } else {
-        throw new Error('No se recibió un ID de chat válido');
-      }
-    } catch (err) {
-      console.error('Error al crear el chat:', err);
-      alert(`Error al crear el chat: ${err.message}`);
-    } finally {
-      setIsCreatingChat(false);
-    }
+    // Ahora simplemente redirigimos al chat usando el correo del proveedor
+    // El componente Chat se encargará de buscar el ID y unirse al room del nuevo sistema
+    history.push('/chat', {
+      providerEmail,
+    });
   };
 
   useEffect(() => {

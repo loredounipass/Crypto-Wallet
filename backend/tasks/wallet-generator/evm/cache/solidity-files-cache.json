@@ -76,8 +76,8 @@
       ]
     },
     "C:\\Users\\leida\\Downloads\\Crypto-Wallet\\backend\\tasks\\wallet-generator\\evm\\contracts\\EscrowContract.sol": {
-      "lastModificationDate": 1776401776056,
-      "contentHash": "25b242de2f180b612ba3bf3d0908e12a",
+      "lastModificationDate": 1776655331308,
+      "contentHash": "789f10735fee00858c8d5a378978fcdd",
       "sourceName": "contracts/EscrowContract.sol",
       "solcConfig": {
         "version": "0.8.20",

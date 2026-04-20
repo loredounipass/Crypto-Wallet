@@ -10,7 +10,6 @@ import Redis from 'ioredis'
 import * as session from 'express-session';
 import * as passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
-import { csrfSync } from 'csrf-sync';
 import helmet from 'helmet';
 
 
@@ -84,59 +83,6 @@ async function bootstrap() {
   // Initialize Passport before CSRF
   app.use(passport.initialize());
   app.use(passport.session());
-
-  // CSRF - only protect state-changing operations (POST, PUT, DELETE, PATCH)
-  const { csrfSynchronisedProtection, generateToken } = csrfSync({
-    ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
-  });
-
-  // CSRF token endpoint (before global prefix)
-  app.use('/csrf-token', (req: any, res: any) => {
-    const csrfToken = generateToken(req);
-    res.cookie('XSRF-TOKEN', csrfToken, {
-      httpOnly: false,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      path: '/',
-    });
-    res.json({ csrfToken });
-  });
-  
-  // Skip CSRF for specific routes that need it (login, register, etc.)
-  const csrfMiddleware = (req: any, res: any, next: any) => {
-    // Skip for GET requests (safe)
-    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-      return next();
-    }
-    
-    // Skip for specific public endpoints (includes /secure/api prefix!)
-    // Use startsWith to handle paths with query strings or trailing slashes
-    const skipPaths = [
-      '/csrf-token',
-      '/secure/api/csrf-token',
-      '/secure/api/user/login', 
-      '/secure/api/user/update-profile',
-      '/secure/api/user/register', 
-      '/secure/api/user/resend-token', 
-      '/secure/api/user/forgot-password', 
-      '/secure/api/user/reset-password',
-      '/secure/api/user/verify-token',
-      '/secure/api/user/logout',
-      '/secure/api/user/update-token-status',
-      '/secure/api/profile',
-      '/secure/api/wallet',
-      '/secure/api/escrow'
-    ];
-    const shouldSkip = skipPaths.some(p => req.path.startsWith(p));
-    if (shouldSkip) {
-      return next();
-    }
-    
-    // Apply CSRF protection for other state-changing requests
-    return csrfSynchronisedProtection(req, res, next);
-  };
-  
-  app.use(csrfMiddleware);
 
   // Serve uploaded files
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
