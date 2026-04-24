@@ -19,11 +19,35 @@ html.dark {
   --settings-border: #2D2D44;
   --settings-text: #FFFFFF;
   --settings-muted: #9CA3AF;
+  --settings-primary: #2186EB;
+  --settings-primary-hover: #1A6BC7;
+  --settings-danger: #ef4444;
+  --settings-danger-hover: #dc2626;
+  --settings-success: #22c55e;
+  --settings-success-hover: #16a34a;
+  --settings-warning: #f59e0b;
 }
 
 /* General Wrappers */
 .settings-section-wrapper {
   width: 100%;
+}
+
+.settings-bg {
+  background-color: var(--settings-bg);
+}
+
+.settings-card {
+  background-color: var(--settings-card);
+  border-color: var(--settings-border);
+}
+
+.settings-border {
+  border-color: var(--settings-border);
+}
+
+.settings-sidebar {
+  background-color: #12121D;
 }
 
 .settings-form-card {

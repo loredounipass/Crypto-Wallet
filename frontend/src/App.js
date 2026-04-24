@@ -40,7 +40,7 @@ function AppContent() {
     const location = useLocation();
     const muiTheme = useTheme();
     const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const isPublicRoute = publicRoutes.includes(location.pathname);

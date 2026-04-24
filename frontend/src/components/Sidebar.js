@@ -127,12 +127,40 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const { auth } = useContext(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const sidebarRef = React.useRef(null);
 
   // Track mounted state to prevent state updates after unmount
   const isMountedRef = React.useRef(true);
   React.useEffect(() => {
     return () => { isMountedRef.current = false; };
   }, []);
+
+  // Auto open sidebar on mouse hover when collapsed
+  React.useEffect(() => {
+    const sidebarElement = sidebarRef.current;
+    if (!sidebarElement || isMobile) return;
+
+    const handleMouseEnter = () => {
+      if (!open) {
+        onToggle();
+      }
+    };
+
+    const handleMouseLeave = () => {
+      // Collapse when mouse leaves the sidebar
+      if (open) {
+        onToggle();
+      }
+    };
+
+    sidebarElement.addEventListener("mouseenter", handleMouseEnter);
+    sidebarElement.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      sidebarElement.removeEventListener("mouseenter", handleMouseEnter);
+      sidebarElement.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [open, onToggle, isMobile]);
 
   const handleNavigation = (item) => {
     if (item.path === "logout") {
@@ -203,31 +231,29 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
        {/* User Info - Only when expanded */}
       {open && auth && (
         <Box style={{ 
-          padding: "16px", 
+          padding: "8px", 
           borderBottom: "1px solid rgba(255,255,255,0.1)",
           display: "flex",
           alignItems: "center",
-          gap: "12px",
+          justifyContent: "center",
+          gap: "6px",
+          textAlign: "center",
         }}>
           <Avatar 
             style={{ 
               backgroundColor: getAvatarColor(auth.firstName), 
-              width: 40, 
-              height: 40,
-              fontSize: 16,
+              width: 32, 
+              height: 32,
+              fontSize: 14,
               fontWeight: 600,
+              flexShrink: 0,
             }}
           >
             {auth.firstName.charAt(0)}
           </Avatar>
-          <Box style={{ flex: 1, overflow: "hidden" }}>
-            <Typography style={{ color: "white", fontSize: "14px", fontWeight: 600, whiteSpace: "nowrap" }}>
-              {auth.firstName}
-            </Typography>
-            <Typography style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px" }}>
-              Usuario
-            </Typography>
-          </Box>
+          <Typography style={{ color: "white", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {auth.firstName} {auth.lastName || ''}
+          </Typography>
         </Box>
       )}
 
@@ -311,11 +337,19 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         open={mobileOpen}
         onClose={onMobileClose}
         style={{ position: "fixed", zIndex: 50 }}
+        PaperProps={{
+          style: {
+            background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
+            border: "none",
+            boxShadow: "none",
+          }
+        }}
       >
        <div style={{ 
          width: DRAWER_WIDTH_EXPANDED, 
          height: "100%", 
-         background: "#1A1A2E" 
+         background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
+         border: "none",
        }}>
           {sidebarContent}
         </div>
@@ -324,16 +358,18 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   }
 
   return (
-    <div style={{ 
-      width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED, 
-      flexShrink: 0, 
-      transition: "width 0.3s ease-in-out",
-      position: "fixed",
-      left: 0,
-      top: 0,
-      bottom: 0,
-      zIndex: 50,
-    }}>
+    <div 
+      ref={sidebarRef}
+      style={{ 
+        width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED, 
+        flexShrink: 0, 
+        transition: "width 0.3s ease-in-out",
+        position: "fixed",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 50,
+      }}>
        <div style={{ 
          height: "100vh", 
          width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,

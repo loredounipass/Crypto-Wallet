@@ -7,6 +7,8 @@ import {
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 
+import './Settings.css';
+
 
 function ChangePasswordComponent() {
     const { changePassword, successMessage, error } = useAuth();
@@ -66,8 +68,8 @@ function ChangePasswordComponent() {
 
     const PasswordInput = ({ name, label, value, showPassword, onToggle }) => (
         <div className="mb-5 flex flex-col">
-            <label className={`${'text-[#9CA3AF]'} mb-2 text-sm font-medium`}>
-                {label} <span className="text-[#ef4444]">*</span>
+            <label className="mb-2 text-sm font-medium" style={{ color: 'var(--settings-muted)' }}>
+                {label} <span style={{ color: 'var(--settings-danger)' }}>*</span>
             </label>
             <div className="relative flex items-center">
                 <input
@@ -75,13 +77,19 @@ function ChangePasswordComponent() {
                     name={name}
                     value={value}
                     onChange={handleChange}
-                    className={`w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors ${'border-[#2D2D44] bg-[#0F0F1A] text-white'} focus:border-[#2186EB]`}
+                    className="w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors focus:border-[#2186EB]"
+                    style={{ 
+                        borderColor: 'var(--settings-border)', 
+                        backgroundColor: 'var(--settings-bg)', 
+                        color: 'var(--settings-text)' 
+                    }}
                     required
                 />
                 <button
                     type="button"
                     onClick={() => onToggle(name)}
-                    className={`absolute right-3 flex items-center justify-center border-0 bg-transparent p-0 ${'text-[#9CA3AF]'}`}
+                    className="absolute right-3 flex items-center justify-center border-0 bg-transparent p-0"
+                    style={{ color: 'var(--settings-muted)' }}
                 >
                     {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                 </button>
@@ -92,11 +100,11 @@ function ChangePasswordComponent() {
     return (
         <div className="w-full">
             <div className="border-0 bg-transparent p-0 shadow-none">
-                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${'border-[#2D2D44]'}`}>
+                <div className="mb-6 flex items-center gap-4 border-b pb-4" style={{ borderColor: 'var(--settings-border)' }}>
                     <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
-                        <LockIcon className="text-[28px] text-[#2186EB]" />
+                        <LockIcon className="text-[28px]" style={{ color: 'var(--settings-primary)' }} />
                     </div>
-                    <h2 className={`m-0 text-[20px] font-semibold ${'text-white'}`}>
+                    <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>
                         Cambiar Contraseña
                     </h2>
                 </div>
@@ -131,23 +139,38 @@ function ChangePasswordComponent() {
                     <button
                         onClick={handleChangePassword}
                         disabled={isSubmitting || remainingMinutes > 0}
-                        className="box-border w-full cursor-pointer rounded-xl border-0 bg-[#2186EB] px-6 py-[14px] text-sm font-semibold text-white transition-all hover:bg-[#1A6BC7] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="box-border w-full cursor-pointer rounded-xl border-0 px-6 py-[14px] text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                        style={{ backgroundColor: 'var(--settings-primary)' }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--settings-primary-hover)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--settings-primary)'}
                     >
                         {isSubmitting ? 'Cambiando...' : 'Cambiar Contraseña'}
                     </button>
 
                     {remainingMinutes > 0 && (
-                        <div className="mt-4 rounded-xl border border-[rgba(245,158,11,0.2)] bg-[rgba(245,158,11,0.1)] px-4 py-3 text-sm font-medium text-[#f59e0b]">
+                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
+                            border: '1px solid rgba(245,158,11,0.2)', 
+                            backgroundColor: 'rgba(245,158,11,0.1)', 
+                            color: 'var(--settings-warning)' 
+                        }}>
                             No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
                         </div>
                     )}
                     {successMessage && (
-                        <div className="mt-4 rounded-xl border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.1)] px-4 py-3 text-sm font-medium text-[#22c55e]">
+                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
+                            border: '1px solid rgba(34,197,94,0.2)', 
+                            backgroundColor: 'rgba(34,197,94,0.1)', 
+                            color: 'var(--settings-success)' 
+                        }}>
                             {successMessage}
                         </div>
                     )}
                     {error && (
-                        <div className="mt-4 rounded-xl border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.1)] px-4 py-3 text-sm font-medium text-[#ef4444]">
+                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
+                            border: '1px solid rgba(239,68,68,0.2)', 
+                            backgroundColor: 'rgba(239,68,68,0.1)', 
+                            color: 'var(--settings-danger)' 
+                        }}>
                             {error}
                         </div>
                     )}

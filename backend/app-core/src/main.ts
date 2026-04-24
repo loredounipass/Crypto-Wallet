@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['https://sturdy-space-fishstick-76rv959r4gpfrxqg-3000.app.github.dev'],
+    origin: ['https://orange-spoon-5j4gqrq49prf7j6r-3000.app.github.dev'],
     credentials: true
   })
 
