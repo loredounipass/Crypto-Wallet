@@ -2,15 +2,15 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom'; 
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
-import { useThemeMode } from '../../ui/styles';
+
 
 
 export default function ProviderForm() {
   const { createNewProvider, findByEMail, provider, error } = useProvider();
   const { auth } = useContext(AuthContext);
   const history = useHistory();
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
 
   const [form, setForm] = useState({
     firstName: '',
@@ -78,37 +78,21 @@ export default function ProviderForm() {
     fetchProvider();
   }, [auth?.email, hasCheckedProvider, findByEMail, history]);
 
-  const cardClass = isDark
-    ? 'mx-auto mt-5 max-w-[640px] rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-xl sm:p-7'
-    : 'mx-auto mt-5 max-w-[640px] rounded-2xl border border-slate-200 bg-white p-5 shadow-md sm:p-7';
+  const cardClass = 'mx-auto mt-5 max-w-[640px] rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-xl sm:p-7';
 
-  const titleClass = isDark
-    ? 'mb-2 text-center text-2xl font-bold text-blue-300'
-    : 'mb-2 text-center text-2xl font-bold text-blue-900';
+  const titleClass = 'mb-2 text-center text-2xl font-bold text-blue-300';
 
-  const subtitleClass = isDark
-    ? 'mb-6 text-center text-sm text-slate-300'
-    : 'mb-6 text-center text-sm text-slate-500';
+  const subtitleClass = 'mb-6 text-center text-sm text-slate-300';
 
-  const labelClass = isDark
-    ? 'mb-1 block text-sm font-medium text-slate-200'
-    : 'mb-1 block text-sm font-medium text-slate-700';
+  const labelClass = 'mb-1 block text-sm font-medium text-slate-200';
 
-  const inputClass = isDark
-    ? 'w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30'
-    : 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
+  const inputClass = 'w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30';
 
-  const modalCardClass = isDark
-    ? 'w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl'
-    : 'w-full max-w-md rounded-2xl bg-gradient-to-br from-sky-100 to-sky-300 p-6 shadow-xl';
+  const modalCardClass = 'w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl';
 
-  const modalTitleClass = isDark
-    ? 'text-center text-xl font-bold text-sky-200'
-    : 'text-center text-xl font-bold text-sky-900';
+  const modalTitleClass = 'text-center text-xl font-bold text-sky-200';
 
-  const modalBodyClass = isDark
-    ? 'mt-4 flex flex-col items-center gap-3 text-slate-200'
-    : 'mt-4 flex flex-col items-center gap-3 text-sky-900';
+  const modalBodyClass = 'mt-4 flex flex-col items-center gap-3 text-slate-200';
 
   return (
     <>
@@ -233,9 +217,7 @@ export default function ProviderForm() {
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                       selectedPaymentMethods.includes(pm)
                         ? 'bg-blue-500 text-white shadow-sm'
-                        : isDark
-                          ? 'border border-slate-600 bg-slate-800 text-slate-300 hover:border-blue-400'
-                          : 'border border-slate-300 bg-white text-slate-600 hover:border-blue-500'
+                        : 'border border-slate-600 bg-slate-800 text-slate-300 hover:border-blue-400'
                     }`}
                   >
                     {selectedPaymentMethods.includes(pm) ? '✓ ' : ''}{pm}
@@ -243,7 +225,7 @@ export default function ProviderForm() {
                 ))}
               </div>
               {selectedPaymentMethods.length === 0 && (
-                <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <p className={`mt-1 text-xs ${'text-slate-400'}`}>
                   Selecciona al menos un método de pago para P2P
                 </p>
               )}
@@ -266,7 +248,7 @@ export default function ProviderForm() {
           <div className={modalCardClass}>
             <h3 className={modalTitleClass}>Bienvenido</h3>
             <div className={modalBodyClass}>
-              <span className={`inline-block h-12 w-12 animate-spin rounded-full border-4 border-t-transparent ${isDark ? 'border-sky-200' : 'border-sky-900'}`} />
+              <span className={`inline-block h-12 w-12 animate-spin rounded-full border-4 border-t-transparent ${'border-sky-200'}`} />
               <p className="text-center text-lg font-medium">Baya, ya eres un proveedor. ¡Te queremos!</p>
             </div>
           </div>

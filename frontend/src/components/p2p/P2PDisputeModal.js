@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useThemeMode } from '../../ui/styles';
+
 
 export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) {
   const [reason, setReason] = useState('');
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
 
   if (!open) return null;
 
@@ -21,8 +21,8 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
     }}>
       <div style={{
         width: '100%', maxWidth: 460, borderRadius: 16, padding: 28,
-        backgroundColor: isDark ? '#1E1E2E' : '#FFF',
-        border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+        backgroundColor: '#1E1E2E',
+        border: `1px solid ${'#2D2D44'}`,
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
         {/* Header */}
@@ -37,7 +37,7 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
           <div>
             <h3 style={{
               margin: 0, fontSize: 18, fontWeight: 700,
-              color: isDark ? '#F1F5F9' : '#0F172A',
+              color: '#F1F5F9',
             }}>Abrir Disputa</h3>
             <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
               Describe el problema con esta orden
@@ -53,9 +53,9 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
           rows={4}
           style={{
             width: '100%', padding: 12, borderRadius: 10, fontSize: 14,
-            border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
-            backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
-            color: isDark ? '#E2E8F0' : '#1E293B',
+            border: `1px solid ${'#2D2D44'}`,
+            backgroundColor: '#0F0F1A',
+            color: '#E2E8F0',
             resize: 'vertical', outline: 'none',
             fontFamily: 'inherit',
             boxSizing: 'border-box',
@@ -69,9 +69,9 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
             disabled={isLoading}
             style={{
               padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-              border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+              border: `1px solid ${'#2D2D44'}`,
               backgroundColor: 'transparent',
-              color: isDark ? '#94A3B8' : '#64748B',
+              color: '#94A3B8',
               cursor: 'pointer',
             }}
           >
@@ -83,7 +83,7 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
             style={{
               padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
               border: 'none',
-              backgroundColor: reason.trim() ? '#EF4444' : (isDark ? '#2D2D44' : '#E2E8F0'),
+              backgroundColor: reason.trim() ? '#EF4444' : ('#2D2D44'),
               color: reason.trim() ? '#FFF' : '#94A3B8',
               cursor: reason.trim() ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,

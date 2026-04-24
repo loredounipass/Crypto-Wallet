@@ -1,15 +1,15 @@
 import React from 'react';
-import { useThemeMode } from '../../ui/styles';
+
 
 export default function P2PProviderList({ providers, onSelectProvider }) {
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
 
   if (!providers || providers.length === 0) {
     return (
       <div style={{
         textAlign: 'center', padding: '60px 20px',
-        color: isDark ? '#64748B' : '#94A3B8', fontSize: 15,
+        color: '#64748B', fontSize: 15,
       }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
         No hay proveedores P2P disponibles
@@ -23,8 +23,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
       <div style={{
         display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1fr',
         padding: '12px 20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.5px', color: isDark ? '#64748B' : '#94A3B8',
-        borderBottom: `1px solid ${isDark ? '#1E1E2E' : '#F1F5F9'}`,
+        letterSpacing: '0.5px', color: '#64748B',
+        borderBottom: `1px solid ${'#1E1E2E'}`,
         minWidth: 600,
       }}>
         <span>Proveedor</span>
@@ -40,11 +40,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
           style={{
             display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1fr',
             padding: '16px 20px', alignItems: 'center',
-            borderBottom: `1px solid ${isDark ? '#1E1E2E' : '#F8FAFC'}`,
+            borderBottom: `1px solid ${'#1E1E2E'}`,
             transition: 'background-color 0.15s',
             minWidth: 600,
           }}
-          onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(33,134,235,0.04)' : 'rgba(33,134,235,0.02)'}
+          onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(33,134,235,0.04)'}
           onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           {/* Provider Info */}
@@ -60,7 +60,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <div>
               <p style={{
                 margin: 0, fontSize: 14, fontWeight: 600,
-                color: isDark ? '#F1F5F9' : '#0F172A',
+                color: '#F1F5F9',
               }}>
                 {provider.firstName} {provider.lastName}
               </p>
@@ -75,7 +75,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '4px 10px', borderRadius: 6,
-              backgroundColor: isDark ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.08)',
+              backgroundColor: 'rgba(16,185,129,0.1)',
               color: '#10B981', fontSize: 13, fontWeight: 600,
             }}>
               {provider.completedOrders || 0}
@@ -88,9 +88,9 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             {(provider.paymentMethods || []).slice(0, 3).map((pm, i) => (
               <span key={i} style={{
                 padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
-                backgroundColor: isDark ? '#1E1E2E' : '#F1F5F9',
-                color: isDark ? '#94A3B8' : '#64748B',
-                border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+                backgroundColor: '#1E1E2E',
+                color: '#94A3B8',
+                border: `1px solid ${'#2D2D44'}`,
               }}>
                 {pm}
               </span>
@@ -115,7 +115,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 border: 'none',
                 background: provider.walletAddress
                   ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)'
-                  : (isDark ? '#2D2D44' : '#E2E8F0'),
+                  : ('#2D2D44'),
                 color: provider.walletAddress ? '#FFF' : '#94A3B8',
                 cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
                 boxShadow: provider.walletAddress ? '0 2px 8px rgba(33,134,235,0.25)' : 'none',

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
 import useAllWallets from "../hooks/useAllWallets";
 import { useHistory } from "react-router-dom";
-import { useThemeMode } from "../ui/styles";
 import useTransitions from "../hooks/useTransactions";
 import CoinTransactions from "../components/CoinTransactions";
 import TransactionToast from "../components/TransactionToast";
@@ -18,9 +17,6 @@ const Dashboard = () => {
   const history = useHistory();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
-  const { mode } = useThemeMode();
-  const isDark = mode === "dark";
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -56,7 +52,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div style={{ width: "100%", padding: "16px" }}>
-        <div style={{ height: "4px", backgroundColor: isDark ? "#2D2D44" : "#E5E7EB", borderRadius: "2px", overflow: "hidden" }}>
+        <div style={{ height: "4px", backgroundColor: "#2D2D44", borderRadius: "2px", overflow: "hidden" }}>
           <div style={{ height: "100%", width: "100%", backgroundColor: "#2186EB", animation: "loading 1.5s infinite" }} />
         </div>
         <style>{`@keyframes loading { 0% { width: 0% } 50% { width: 70% } 100% { width: 100% } }`}</style>
@@ -87,10 +83,10 @@ const Dashboard = () => {
   };
 
   const statCardStyle = (color) => ({
-    backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+    backgroundColor: "#1A1A2E",
     borderRadius: "16px",
     padding: isMobile ? "12px" : "24px",
-    border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+    border: "1px solid #2D2D44",
     position: "relative",
     overflow: "hidden",
     display: "flex",
@@ -109,10 +105,10 @@ const Dashboard = () => {
   });
 
   const sectionStyle = {
-    backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+    backgroundColor: "#1A1A2E",
     borderRadius: "16px",
     padding: isMobile ? "0" : "24px",
-    border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+    border: "1px solid #2D2D44",
     overflow: "hidden",
   };
 
@@ -122,7 +118,7 @@ const Dashboard = () => {
       <div className="mb-3 md:mb-8" style={headerStyle}>
         <h1
           style={{ 
-            color: isDark ? "#FFFFFF" : "#111827", 
+            color: "#FFFFFF", 
             fontWeight: 700, 
             fontSize: isMobile ? "20px" : "32px",
             marginBottom: "8px",
@@ -133,7 +129,7 @@ const Dashboard = () => {
         </h1>
         <p
           style={{ 
-            color: isDark ? "#9CA3AF" : "#6B7280", 
+            color: "#9CA3AF", 
             fontSize: isMobile ? "13px" : "14px",
             textTransform: "capitalize",
             margin: 0,
@@ -149,7 +145,7 @@ const Dashboard = () => {
           <div>
             <p
               style={{ 
-                color: isDark ? "#9CA3AF" : "#6B7280", 
+                color: "#9CA3AF", 
                 fontSize: isMobile ? "13px" : "14px",
                 fontWeight: 500,
                 marginBottom: "8px",
@@ -160,7 +156,7 @@ const Dashboard = () => {
             </p>
             <p
               style={{ 
-                color: isDark ? "#FFFFFF" : "#111827", 
+                color: "#FFFFFF", 
                 fontSize: isMobile ? "22px" : "28px", 
                 fontWeight: 700,
                 margin: 0,
@@ -178,7 +174,7 @@ const Dashboard = () => {
           <div>
             <p
               style={{ 
-                color: isDark ? "#9CA3AF" : "#6B7280", 
+                color: "#9CA3AF", 
                 fontSize: isMobile ? "13px" : "14px",
                 fontWeight: 500,
                 marginBottom: "8px",
@@ -189,7 +185,7 @@ const Dashboard = () => {
             </p>
             <p
               style={{ 
-                color: isDark ? "#FFFFFF" : "#111827", 
+                color: "#FFFFFF", 
                 fontSize: isMobile ? "22px" : "28px", 
                 fontWeight: 700,
                 margin: 0,
@@ -224,7 +220,7 @@ const Dashboard = () => {
           <div>
             <p
               style={{ 
-                color: isDark ? "#9CA3AF" : "#6B7280", 
+                color: "#9CA3AF", 
                 fontSize: isMobile ? "13px" : "14px",
                 fontWeight: 500,
                 marginBottom: "8px",
@@ -235,7 +231,7 @@ const Dashboard = () => {
             </p>
             <p
               style={{ 
-                color: isDark ? "#FFFFFF" : "#111827", 
+                color: "#FFFFFF", 
                 fontSize: isMobile ? "22px" : "28px", 
                 fontWeight: 700,
                 margin: 0,

@@ -9,7 +9,7 @@ import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
 
-@WebSocketGateway({ namespace: '/messages', cors: { origin: ['http://localhost:3000'], credentials: true } })
+@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://sturdy-space-fishstick-76rv959r4gpfrxqg-3000.app.github.dev'], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

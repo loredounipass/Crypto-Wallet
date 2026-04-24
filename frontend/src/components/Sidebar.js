@@ -12,12 +12,12 @@ import {
   Avatar,
   Typography,
 } from "../ui/material";
-import { ChevronLeft, ChevronRight, ArrowDropDown, LightMode, DarkMode } from "../ui/icons";
+import { ChevronLeft } from "../ui/icons";
 import { useHistory } from "react-router-dom";
-import { useThemeMode } from "../ui/styles";
 import { useContext } from "react";
 import { AuthContext } from "../hooks/AuthContext";
 import useAuth from "../hooks/useAuth";
+import Logo from './Logo';
 
 const DRAWER_WIDTH_EXPANDED = 260;
 const DRAWER_WIDTH_COLLAPSED = 72;
@@ -98,10 +98,6 @@ const SettingsIcon = (props) => (
 );
 
 const ChevronLeftIcon = ChevronLeft;
-const ChevronRightIcon = ChevronRight;
-const ArrowDropDownIcon = ArrowDropDown;
-const LightModeIcon = LightMode;
-const DarkModeIcon = DarkMode;
 const LogoutIcon = (props) => (
   <SidebarIconBase {...props}>
     <path d="M10 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
@@ -124,17 +120,13 @@ const bottomItems = [
 ];
 
 export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
-  const { theme } = useThemeMode();
   const history = useHistory();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
-  const isDark = theme?.palette?.mode === "dark";
   
   const { auth } = useContext(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const { mode, toggleTheme } = useThemeMode();
-  const isDarkMode = mode === "dark";
 
   // Track mounted state to prevent state updates after unmount
   const isMountedRef = React.useRef(true);
@@ -185,110 +177,30 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       display: "flex", 
       flexDirection: "column", 
       height: "100%", 
-      background: isDark
-        ? "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)"
-        : "linear-gradient(180deg, #2186EB 0%, #1A6BC7 100%)",
+      background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
       width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
       transition: "width 0.3s ease-in-out",
       overflowX: "hidden",
       overflowY: "auto",
     }}>
-      {/* Logo Section */}
-      <Box style={{ 
-        padding: "16px", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: open ? "space-between" : "center",
-        minHeight: "64px",
-        borderBottom: "1px solid rgba(255,255,255,0.1)",
-      }}>
-        {open ? (
-          <>
-            <Box style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Box
-                style={{
-                  width: 36,
-                  height: 40,
-                  clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                  backgroundColor: "#2186EB",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ArrowDropDownIcon style={{ color: "white", fontSize: 20 }} />
-              </Box>
-              <Typography style={{ color: "white", fontWeight: 600, fontSize: "18px" }}>
-                BlockVault
-              </Typography>
-            </Box>
-            <button
-              onClick={onToggle}
-              style={{
-                color: "white",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                border: "none",
-                borderRadius: "8px",
-                padding: "6px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ChevronLeftIcon style={{ fontSize: 18 }} />
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={onToggle}
-            style={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <ChevronRightIcon style={{ fontSize: 18 }} />
-          </button>
-        )}
-      </Box>
+       {/* Logo Section */}
+       <Box className="p-4 flex items-center justify-between min-h-[64px] border-b border-white/10">
+         {open ? (
+           <>
+             <Logo variant="sidebar-expanded" />
+             <button
+               onClick={onToggle}
+               className="text-white bg-white/10 border-none rounded-lg p-1.5 cursor-pointer flex items-center justify-center hover:bg-white/20 transition-colors"
+             >
+               <ChevronLeftIcon style={{ fontSize: 18 }} />
+             </button>
+           </>
+          ) : (
+            <Logo variant="sidebar-collapsed" />
+          )}
+       </Box>
 
-      {/* Theme Toggle - Only when expanded */}
-      {open && auth && (
-        <Box style={{ 
-          padding: "12px 16px", 
-          display: "flex", 
-          justifyContent: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-        }}>
-          <button
-            onClick={toggleTheme}
-            style={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "13px",
-            }}
-          >
-            {isDarkMode ? <LightModeIcon style={{ fontSize: 16 }} /> : <DarkModeIcon style={{ fontSize: 16 }} />}
-            <span>{isDarkMode ? "Modo Claro" : "Modo Oscuro"}</span>
-          </button>
-        </Box>
-      )}
-
-      {/* User Info - Only when expanded */}
+       {/* User Info - Only when expanded */}
       {open && auth && (
         <Box style={{ 
           padding: "16px", 
@@ -400,11 +312,11 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         onClose={onMobileClose}
         style={{ position: "fixed", zIndex: 50 }}
       >
-        <div style={{ 
-          width: DRAWER_WIDTH_EXPANDED, 
-          height: "100%", 
-          background: isDark ? "#1A1A2E" : "#2186EB" 
-        }}>
+       <div style={{ 
+         width: DRAWER_WIDTH_EXPANDED, 
+         height: "100%", 
+         background: "#1A1A2E" 
+       }}>
           {sidebarContent}
         </div>
       </Drawer>
@@ -422,14 +334,12 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       bottom: 0,
       zIndex: 50,
     }}>
-      <div style={{ 
-        height: "100vh", 
-        width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
-        ...(isDark
-          ? { background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)" }
-          : { background: "linear-gradient(180deg, #2186EB 0%, #1A6BC7 100%)" }),
-        transition: "width 0.3s ease-in-out",
-      }}>
+       <div style={{ 
+         height: "100vh", 
+         width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
+         background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
+         transition: "width 0.3s ease-in-out",
+       }}>
         {sidebarContent}
       </div>
     </div>

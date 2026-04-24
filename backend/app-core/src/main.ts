@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: ['https://sturdy-space-fishstick-76rv959r4gpfrxqg-3000.app.github.dev'],
     credentials: true
   })
 

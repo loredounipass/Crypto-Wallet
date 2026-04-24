@@ -96,7 +96,7 @@ export const mergeStyles = (sx, style) => ({
 
 export const defaultTheme = {
   palette: {
-    mode: "light",
+    mode: "dark",
     grey: {
       100: "#f5f5f5",
       200: "#eeeeee",
@@ -114,8 +114,8 @@ export const defaultTheme = {
       main: "#ed6c02",
     },
     background: {
-      default: "#f6f8fa",
-      paper: "#ffffff",
+      default: "#0F0F1A",
+      paper: "#1A1A2E",
     },
   },
   breakpoints: {

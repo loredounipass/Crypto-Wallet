@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Wallet from '../services/wallet'
 import Price from '../services/price'
-import { getCoinFee, normalizeCoin } from '../components/utils/Chains'
+
 
 const CACHE_TTL_MS = 30 * 1000;
 let cache = {

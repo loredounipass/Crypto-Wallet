@@ -18,10 +18,26 @@
 }
 
 @layer components {
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+   .hide-scrollbar {
+     -ms-overflow-style: none;
+     scrollbar-width: none;
+   }
+ 
+   .hide-scrollbar::-webkit-scrollbar {
+     width:0;
+     height:0;
+     display: none;
+   }
+
+   .logo-glow {
+     animation: none;
+   }
+
+   .gradient-text {
+     background-clip: text;
+     -webkit-background-clip: text;
+     color: transparent;
+   }
 
   .hide-scrollbar::-webkit-scrollbar {
     width: 0;

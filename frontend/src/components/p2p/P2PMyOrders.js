@@ -1,5 +1,5 @@
 import React from 'react';
-import { useThemeMode } from '../../ui/styles';
+
 import { useHistory } from 'react-router-dom';
 
 const STATUS_COLORS = {
@@ -15,15 +15,15 @@ const STATUS_LABELS = {
 };
 
 export default function P2PMyOrders({ orders, role = 'seller' }) {
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
   const history = useHistory();
 
   if (!orders || orders.length === 0) {
     return (
       <div style={{
         textAlign: 'center', padding: '60px 20px',
-        color: isDark ? '#64748B' : '#94A3B8', fontSize: 15,
+        color: '#64748B', fontSize: 15,
       }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
         No tienes órdenes P2P aún
@@ -37,8 +37,8 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
       <div style={{
         display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr',
         padding: '12px 20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.5px', color: isDark ? '#64748B' : '#94A3B8',
-        borderBottom: `1px solid ${isDark ? '#1E1E2E' : '#F1F5F9'}`,
+        letterSpacing: '0.5px', color: '#64748B',
+        borderBottom: `1px solid ${'#1E1E2E'}`,
         minWidth: 700,
       }}>
         <span>Orden</span>
@@ -64,18 +64,18 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
             style={{
               display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr',
               padding: '14px 20px', alignItems: 'center',
-              borderBottom: `1px solid ${isDark ? '#1E1E2E' : '#F8FAFC'}`,
+              borderBottom: `1px solid ${'#1E1E2E'}`,
               transition: 'background-color 0.15s',
               minWidth: 700,
             }}
-            onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(33,134,235,0.04)' : 'rgba(33,134,235,0.02)'}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(33,134,235,0.04)'}
             onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             {/* Order ID + date */}
             <div>
               <p style={{
                 margin: 0, fontSize: 13, fontWeight: 600, fontFamily: 'monospace',
-                color: isDark ? '#E2E8F0' : '#1E293B',
+                color: '#E2E8F0',
               }}>
                 {order.orderId?.slice(0, 8)}...
               </p>
@@ -85,7 +85,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
             {/* Counterparty */}
             <div>
               <p style={{
-                margin: 0, fontSize: 13, color: isDark ? '#94A3B8' : '#64748B',
+                margin: 0, fontSize: 13, color: '#94A3B8',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {counterparty}
@@ -95,7 +95,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
             {/* Amount */}
             <div>
               <span style={{
-                fontSize: 14, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A',
+                fontSize: 14, fontWeight: 700, color: '#F1F5F9',
               }}>
                 {order.amount} {order.coin}
               </span>
@@ -131,13 +131,13 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
                 onClick={() => history.push(`/p2p/order/${order.orderId}`)}
                 style={{
                   padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                  border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+                  border: `1px solid ${'#2D2D44'}`,
                   backgroundColor: 'transparent',
-                  color: isDark ? '#94A3B8' : '#64748B',
+                  color: '#94A3B8',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = '#2186EB'; e.currentTarget.style.color = '#2186EB'; }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = isDark ? '#2D2D44' : '#E2E8F0'; e.currentTarget.style.color = isDark ? '#94A3B8' : '#64748B'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
               >
                 Ver
               </button>

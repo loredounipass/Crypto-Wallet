@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'http://localhost:4000';
+        const fallbackBaseApi = 'https://sturdy-space-fishstick-76rv959r4gpfrxqg-4000.app.github.dev';
         const socketOrigin = (() => {
             try { 
                 return new URL(process.env.REACT_APP_API_BASE_URL).origin; 

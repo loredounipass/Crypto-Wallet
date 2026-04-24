@@ -7,13 +7,13 @@ import {
     WarningAmber as WarningAmberIcon,
     Close as CloseIcon,
 } from '../../ui/icons';
-import { useThemeMode } from '../../ui/styles';
+
 
 const VerifyEmailComponent = () => {
     const { auth } = useContext(AuthContext); 
     const { sendVerificationEmail, isEmailVerified, error } = useAuth(); 
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
 
     const [verificationStatus, setVerificationStatus] = useState(null);
     const [loading, setLoading] = useState(true); 
@@ -88,17 +88,17 @@ const VerifyEmailComponent = () => {
 
     return (
         <div className="flex w-full flex-col border-0 bg-transparent p-0 shadow-none">
-            <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+            <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${'border-[#2D2D44]'}`}>
                 <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
                     <EmailOutlinedIcon className="text-[28px] text-[#2186EB]" />
                 </div>
-                <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Verificar correo electrónico</h2>
+                <h2 className={`m-0 text-[20px] font-semibold ${'text-white'}`}>Verificar correo electrónico</h2>
             </div>
 
-            <div className={`mb-6 flex items-center gap-3 rounded-xl border p-4 ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A]' : 'border-[#E5E7EB] bg-[#F6F8FA]'}`}>
-                <EmailOutlinedIcon style={{ color: isDark ? '#9CA3AF' : '#6B7280' }} />
-                <p className={`m-0 ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                    Correo autenticado: <span className={`font-bold ${isDark ? 'text-white' : 'text-[#111827]'}`}>{auth?.email || 'Correo no disponible'}</span>
+            <div className={`mb-6 flex items-center gap-3 rounded-xl border p-4 ${'border-[#2D2D44] bg-[#0F0F1A]'}`}>
+                <EmailOutlinedIcon style={{ color: '#9CA3AF' }} />
+                <p className={`m-0 ${'text-[#9CA3AF]'}`}>
+                    Correo autenticado: <span className={`font-bold ${'text-white'}`}>{auth?.email || 'Correo no disponible'}</span>
                 </p>
             </div>
 
@@ -145,13 +145,13 @@ const VerifyEmailComponent = () => {
 
             {/* Custom Snackbar */}
             {(snackbar.open || error) && (
-                <div className={`fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${isDark ? 'bg-[#1A1A2E] text-white border-[#2D2D44]' : 'bg-white text-[#111827] border-[#E5E7EB]'} ${(snackbar.severity === 'success' && !error) ? 'border-l-4 border-l-[#22c55e]' : 'border-l-4 border-l-[#ef4444]'}`}>
+                <div className={`fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${'bg-[#1A1A2E] text-white border-[#2D2D44]'} ${(snackbar.severity === 'success' && !error) ? 'border-l-4 border-l-[#22c55e]' : 'border-l-4 border-l-[#ef4444]'}`}>
                 <span>{snackbar.open ? snackbar.message : error}</span>
                 <button 
                     onClick={() => {
                         handleCloseSnackbar();
                     }}
-                    className={`flex items-center justify-center rounded-full border-0 p-1 ${isDark ? 'text-[#9CA3AF] hover:bg-[#0F0F1A]' : 'text-[#6B7280] hover:bg-[#F6F8FA]'}`}
+                    className={`flex items-center justify-center rounded-full border-0 p-1 ${'text-[#9CA3AF] hover:bg-[#0F0F1A]'}`}
                 >
                     <CloseIcon fontSize="small" />
                 </button>

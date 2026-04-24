@@ -1,18 +1,18 @@
 import React from 'react';
 import { CheckCircle, Close } from '../ui/icons';
-import { useThemeMode } from '../ui/styles';
+
 
 export default function TransactionToast({ toast, onClose }) {
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
 
     if (!toast) return null;
 
     const isDeposit = toast.kind === 'deposit';
     const accent = isDeposit ? '#22C55E' : '#EF4444';
-    const background = isDark ? '#1A1A2E' : '#FFFFFF';
-    const border = isDark ? '#2D2D44' : '#E5E7EB';
-    const text = isDark ? '#FFFFFF' : '#111827';
+    const background = '#1A1A2E';
+    const border = '#2D2D44';
+    const text = '#FFFFFF';
     const subtitle = isDeposit ? 'Entrada confirmada en tu wallet' : 'Salida confirmada en tu wallet';
 
     return (
@@ -32,9 +32,7 @@ export default function TransactionToast({ toast, onClose }) {
                 backgroundColor: background,
                 border: `1px solid ${border}`,
                 borderLeft: `4px solid ${accent}`,
-                boxShadow: isDark
-                    ? '0 10px 24px rgba(0,0,0,0.45)'
-                    : '0 10px 24px rgba(15,23,42,0.16)'
+                boxShadow: '0 10px 24px rgba(0,0,0,0.45)'
             }}
         >
             <CheckCircle sx={{ color: accent, fontSize: 22 }} />
@@ -42,7 +40,7 @@ export default function TransactionToast({ toast, onClose }) {
                 <div style={{ color: text, fontSize: '14px', fontWeight: 700 }}>
                     {toast.message}
                 </div>
-                <div style={{ color: isDark ? '#9CA3AF' : '#6B7280', fontSize: '12px', marginTop: '2px' }}>
+                <div style={{ color: '#9CA3AF', fontSize: '12px', marginTop: '2px' }}>
                     {subtitle}
                 </div>
             </div>
@@ -53,7 +51,7 @@ export default function TransactionToast({ toast, onClose }) {
                 style={{
                     border: 'none',
                     background: 'transparent',
-                    color: isDark ? '#9CA3AF' : '#6B7280',
+                    color: '#9CA3AF',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',

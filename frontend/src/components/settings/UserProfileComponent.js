@@ -3,15 +3,15 @@ import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 import * as profileService from '../../services/profile';
-import { useThemeMode } from '../../ui/styles';
+
 
 /* ── reusable sub-components ── */
 function InputField({ id, label, value, onChange, type = 'text', required = false, placeholder = '' }) {
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
     return (
         <div className="mb-5 flex flex-col">
-            <label htmlFor={id} className={`${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} mb-2 text-sm font-medium`}>
+            <label htmlFor={id} className={`${'text-[#9CA3AF]'} mb-2 text-sm font-medium`}>
                 {label}{required && <span className="text-[#ef4444]"> *</span>}
             </label>
             <input
@@ -19,7 +19,7 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
                 type={type}
                 value={value}
                 onChange={onChange}
-                className={`box-border w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A] text-white' : 'border-[#E5E7EB] bg-[#F6F8FA] text-[#111827]'} focus:border-[#2186EB]`}
+                className={`box-border w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors ${'border-[#2D2D44] bg-[#0F0F1A] text-white'} focus:border-[#2186EB]`}
                 placeholder={placeholder}
                 required={required}
             />
@@ -31,8 +31,8 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
 function UserProfileComponent() {
     const { updateUserProfile, error: authError, successMessage: authSuccess } = useAuth();
     const { auth } = useContext(AuthContext);
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
 
     // Account
     const [firstName, setFirstName]   = useState('');
@@ -116,11 +116,11 @@ function UserProfileComponent() {
             <div className="border-0 bg-transparent p-0 shadow-none">
 
                 {/* Header */}
-                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${'border-[#2D2D44]'}`}>
                     <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
                         <PersonIcon className="text-[28px] text-[#2186EB]" />
                     </div>
-                    <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Perfil de Usuario</h2>
+                    <h2 className={`m-0 text-[20px] font-semibold ${'text-white'}`}>Perfil de Usuario</h2>
                 </div>
 
                 <form

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const fallbackBaseApi = 'http://localhost:4000/secure/api';
+const fallbackBaseApi = 'https://sturdy-space-fishstick-76rv959r4gpfrxqg-4000.app.github.dev/secure/api';
 const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
 
 const baseApi = configuredBaseApi;
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
 const apiOrigin = (() => {
-    try { return new URL(baseApi).origin; } catch (_) { return 'http://localhost:4000'; }
+    try { return new URL(baseApi).origin; } catch (_) { return 'https://sturdy-space-fishstick-76rv959r4gpfrxqg-4000.app.github.dev'; }
 })();
 const mediaBase = `${apiOrigin}/uploads`;
 

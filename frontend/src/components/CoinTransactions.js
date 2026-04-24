@@ -10,7 +10,7 @@ import {
     normalizeCoin
 } from './utils/Chains';
 import CopyToClipboard from 'react-copy-to-clipboard';
-import { useThemeMode } from '../ui/styles';
+
 
 const TxIconBase = ({ children, size = 16, color = "currentColor" }) => (
     <svg
@@ -60,8 +60,8 @@ export default function CoinTransactions({
     mobileHeight = 300
 }) {
     const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
     const shouldHideDate = hideDateOnMobile && isMobile;
     const isCompact = compactMobile && isMobile;
     const tableHeight = isMobile ? mobileHeight : desktopHeight;
@@ -77,22 +77,20 @@ export default function CoinTransactions({
 
     const styles = {
         container: {
-            background: isDark
-                ? "linear-gradient(180deg, #151529 0%, #10101C 100%)"
-                : "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)",
+            background: "linear-gradient(180deg, #151529 0%, #10101C 100%)",
             borderRadius: "18px",
             padding: isCompact ? "12px" : "20px",
-            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            border: `1px solid ${"#2D2D44"}`,
             overflow: "hidden",
-            boxShadow: isDark ? "0 14px 28px rgba(0,0,0,0.28)" : "0 12px 26px rgba(15,23,42,0.08)",
+            boxShadow: "0 14px 28px rgba(0,0,0,0.28)",
         },
         tableWrapper: {
             overflowY: fixedHeight ? "auto" : "visible",
             overflowX: "auto",
             maxHeight: fixedHeight ? `${tableHeight}px` : "none",
             borderRadius: "12px",
-            border: `1px solid ${isDark ? "#232338" : "#E5E7EB"}`,
-            backgroundColor: isDark ? "#121224" : "#FFFFFF",
+            border: `1px solid ${"#232338"}`,
+            backgroundColor: "#121224",
         },
         titleRow: {
             display: "flex",
@@ -102,7 +100,7 @@ export default function CoinTransactions({
             marginBottom: isCompact ? "10px" : "14px",
         },
         title: {
-            color: isDark ? "#FFFFFF" : "#1A1A2E",
+            color: "#FFFFFF",
             fontSize: isCompact ? "16px" : "19px",
             fontWeight: 700,
             margin: 0,
@@ -112,9 +110,9 @@ export default function CoinTransactions({
             borderRadius: "999px",
             fontSize: "11px",
             fontWeight: 700,
-            color: isDark ? "#BFDBFE" : "#1D4ED8",
-            backgroundColor: isDark ? "rgba(37,99,235,0.2)" : "#DBEAFE",
-            border: `1px solid ${isDark ? "#1D4ED8" : "#BFDBFE"}`,
+            color: "#BFDBFE",
+            backgroundColor: "rgba(37,99,235,0.2)",
+            border: `1px solid ${"#1D4ED8"}`,
         },
         table: {
             width: "100%",
@@ -124,21 +122,21 @@ export default function CoinTransactions({
         th: {
             textAlign: "left",
             padding: isCompact ? "8px 6px" : "12px",
-            borderBottom: `2px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-            color: isDark ? "#9CA3AF" : "#6B7280",
+            borderBottom: `2px solid ${"#2D2D44"}`,
+            color: "#9CA3AF",
             fontWeight: 700,
             fontSize: isCompact ? "10px" : "11px",
             textTransform: "uppercase",
             letterSpacing: "0.6px",
             position: "sticky",
             top: 0,
-            backgroundColor: isDark ? "#121224" : "#FFFFFF",
+            backgroundColor: "#121224",
             zIndex: 2,
         },
         td: {
             padding: isCompact ? "8px 6px" : "12px",
-            borderBottom: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-            color: isDark ? "#FFFFFF" : "#1A1A2E",
+            borderBottom: `1px solid ${"#2D2D44"}`,
+            color: "#FFFFFF",
         },
         statusBadge: (status) => {
             const colors = {
@@ -166,7 +164,7 @@ export default function CoinTransactions({
             zIndex: 100,
         },
         dialogContent: {
-            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+            backgroundColor: "#1A1A2E",
             borderRadius: "16px",
             padding: isMobile ? "14px" : "24px",
             maxWidth: "500px",
@@ -175,12 +173,12 @@ export default function CoinTransactions({
             overflowY: "auto",
         },
         label: {
-            color: isDark ? "#9CA3AF" : "#6B7280",
+            color: "#9CA3AF",
             fontSize: "12px",
             marginBottom: "4px",
         },
         value: {
-            color: isDark ? "#FFFFFF" : "#1A1A2E",
+            color: "#FFFFFF",
             fontSize: "14px",
             fontWeight: 500,
         },
@@ -235,7 +233,7 @@ export default function CoinTransactions({
                     <h3 style={styles.title}>{title}</h3>
                     <span style={styles.countBadge}>0 movimientos</span>
                 </div>
-                <div style={{ textAlign: "center", padding: "34px 20px", color: isDark ? "#9CA3AF" : "#6B7280" }}>
+                <div style={{ textAlign: "center", padding: "34px 20px", color: "#9CA3AF" }}>
                     <div style={{ fontWeight: 600, marginBottom: "4px" }}>No hay transacciones todavía</div>
                     <div style={{ fontSize: "12px" }}>Cuando lleguen movimientos, aparecerán aquí.</div>
                 </div>
@@ -267,7 +265,7 @@ export default function CoinTransactions({
                                     key={`${transaction.txHash}-${index}`}
                                     style={{ cursor: "pointer" }}
                                     onClick={() => handleOpen(transaction)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)"}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}
                                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                                 >
                                     {showCoinColumn && (
@@ -325,7 +323,7 @@ export default function CoinTransactions({
                 <div style={styles.dialog} onClick={handleClose}>
                     <div style={styles.dialogContent} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? "12px" : "20px" }}>
-                            <div style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: isMobile ? "16px" : "20px", fontWeight: 600 }}>
+                            <div style={{ color: "#FFFFFF", fontSize: isMobile ? "16px" : "20px", fontWeight: 600 }}>
                                 Detalles de {selectedTransaction.nature === 1 ? 'Deposito' : 'Retiro'}
                             </div>
                             <button 
@@ -334,7 +332,7 @@ export default function CoinTransactions({
                                     background: "none",
                                     border: "none",
                                     cursor: "pointer",
-                                    color: isDark ? "#9CA3AF" : "#6B7280",
+                                    color: "#9CA3AF",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -342,7 +340,7 @@ export default function CoinTransactions({
                                 }}
                                 aria-label="Cerrar"
                             >
-                                <CloseIcon size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                                <CloseIcon size={20} color={"#9CA3AF"} />
                             </button>
                         </div>
 
@@ -363,8 +361,8 @@ export default function CoinTransactions({
                                     display: "inline-flex",
                                     alignItems: "center",
                                     gap: "8px",
-                                    backgroundColor: isDark ? "#0F0F1A" : "#F8FAFC",
-                                    border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+                                    backgroundColor: "#0F0F1A",
+                                    border: `1px solid ${"#2D2D44"}`,
                                     borderRadius: "10px",
                                     padding: "6px 10px"
                                 }}>
@@ -395,7 +393,7 @@ export default function CoinTransactions({
                             )}
                             <div>
                                 <div style={styles.label}>{selectedTransaction.nature === 1 ? 'Monto Recibido' : 'Monto Neto'}</div>
-                                <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : (isDark ? "#FFFFFF" : "#1A1A2E"), fontWeight: 700 }}>
+                                <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : ("#FFFFFF"), fontWeight: 700 }}>
                                     {selectedTransaction.nature === 1 
                                         ? parseFloat(selectedTransaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))
                                         : parseFloat(Math.abs(selectedTransaction.amount) - (selectedTransaction.fee || getCoinFee(getTransactionCoin(selectedTransaction)))).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
@@ -422,15 +420,15 @@ export default function CoinTransactions({
                                             padding: "8px",
                                             borderRadius: "8px",
                                             border: "none",
-                                            backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
+                                            backgroundColor: "#2D2D44",
                                             cursor: "pointer",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                         }}>
                                             {copied
-                                                ? <CheckIcon size={16} color={isDark ? "#A7F3D0" : "#059669"} />
-                                                : <CopyIcon size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                                                ? <CheckIcon size={16} color={"#A7F3D0"} />
+                                                : <CopyIcon size={16} color={"#9CA3AF"} />
                                             }
                                         </button>
                                     </CopyToClipboard>
@@ -453,15 +451,15 @@ export default function CoinTransactions({
                                             padding: "8px",
                                             borderRadius: "8px",
                                             border: "none",
-                                            backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
+                                            backgroundColor: "#2D2D44",
                                             cursor: "pointer",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                         }}>
                                             {txCopied
-                                                ? <CheckIcon size={16} color={isDark ? "#A7F3D0" : "#059669"} />
-                                                : <CopyIcon size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                                                ? <CheckIcon size={16} color={"#A7F3D0"} />
+                                                : <CopyIcon size={16} color={"#9CA3AF"} />
                                             }
                                         </button>
                                     </CopyToClipboard>

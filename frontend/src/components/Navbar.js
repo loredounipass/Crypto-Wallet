@@ -23,12 +23,10 @@ import {
   AccountBalanceWallet as WalletIcon,
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
 } from "../ui/icons";
 import useAuth from "../hooks/useAuth";
 import { AuthContext } from "../hooks/AuthContext";
-import { useThemeMode } from "../ui/styles";
+
 import { DRAWER_WIDTH_EXPANDED } from "./Sidebar";
 
 const AppBarStyled = styled(MuiAppBar)(({ theme, open }) => ({
@@ -55,8 +53,8 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   const history = useHistory();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { mode, toggleTheme } = useThemeMode();
-  const isDark = mode === "dark";
+  
+  
 
   const handleCloseUserMenu = () => setAnchorElUser(null);
   const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
@@ -221,17 +219,6 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
         {renderNavLinks()}
 
         <Box style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Tooltip title={isDark ? "Modo claro" : "Modo oscuro"}>
-            <button
-              onClick={toggleTheme}
-              style={toggleButtonStyle}
-              onMouseOver={(e) => e.target.style.backgroundColor = "rgba(255,255,255,0.2)"}
-              onMouseOut={(e) => e.target.style.backgroundColor = "rgba(255,255,255,0.1)"}
-            >
-              {isDark ? <LightModeIcon /> : <DarkModeIcon />}
-            </button>
-          </Tooltip>
-
           <Tooltip title="Open settings">
             <IconButton
               onClick={(e) => {

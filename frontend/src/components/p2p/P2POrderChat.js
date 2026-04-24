@@ -6,14 +6,14 @@ import useEscrow from '../../hooks/useEscrow';
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import P2POrderStatus from './P2POrderStatus';
 import P2PDisputeModal from './P2PDisputeModal';
-import { useThemeMode } from '../../ui/styles';
+
 import { get } from '../../api/http';
 
 export default function P2POrderChat() {
   const { orderId } = useParams();
   const { auth } = useContext(AuthContext);
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
   const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading } = useEscrow();
   const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat } = useMessagesAndMultimedia();
 
@@ -134,8 +134,8 @@ export default function P2POrderChat() {
     );
   }
 
-  const cardBg = isDark ? '#1A1A2E' : '#FFF';
-  const borderColor = isDark ? '#2D2D44' : '#E2E8F0';
+  const cardBg = '#1A1A2E';
+  const borderColor = '#2D2D44';
 
   return (
     <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 100px)', flexWrap: 'wrap' }}>
@@ -161,7 +161,7 @@ export default function P2POrderChat() {
             {(isProvider ? currentOrder?.sellerEmail : currentOrder?.providerEmail)?.charAt(0)?.toUpperCase()}
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: isDark ? '#F1F5F9' : '#0F172A' }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#F1F5F9' }}>
               Chat P2P
             </p>
             <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
@@ -173,7 +173,7 @@ export default function P2POrderChat() {
         {/* Messages */}
         <div style={{
           flex: 1, overflowY: 'auto', padding: 16,
-          backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
+          backgroundColor: '#0F0F1A',
         }}>
           {messages.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 40 }}>
@@ -189,9 +189,9 @@ export default function P2POrderChat() {
                       maxWidth: '70%', padding: '10px 14px', borderRadius: 14,
                       backgroundColor: isMe
                         ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' 
-                        : (isDark ? '#1E1E2E' : '#FFF'),
+                        : ('#1E1E2E'),
                       background: isMe ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : undefined,
-                      color: isMe ? '#FFF' : (isDark ? '#E2E8F0' : '#1E293B'),
+                      color: isMe ? '#FFF' : ('#E2E8F0'),
                       border: isMe ? 'none' : `1px solid ${borderColor}`,
                       boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     }}>
@@ -235,13 +235,13 @@ export default function P2POrderChat() {
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 6px 6px 16px', borderRadius: 24,
             border: `1px solid ${borderColor}`,
-            backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
+            backgroundColor: '#0F0F1A',
           }}>
             <input
               style={{
                 flex: 1, border: 'none', outline: 'none', fontSize: 14,
                 backgroundColor: 'transparent',
-                color: isDark ? '#E2E8F0' : '#1E293B',
+                color: '#E2E8F0',
               }}
               placeholder="Escribe tu mensaje..."
               value={messageContent}
@@ -266,7 +266,7 @@ export default function P2POrderChat() {
               disabled={!messageContent.trim() || isSending}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none',
-                background: messageContent.trim() ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : (isDark ? '#2D2D44' : '#E2E8F0'),
+                background: messageContent.trim() ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
                 color: '#FFF', cursor: messageContent.trim() ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
@@ -293,7 +293,7 @@ export default function P2POrderChat() {
         }}>
           <h3 style={{
             margin: '0 0 16px', fontSize: 16, fontWeight: 700,
-            color: isDark ? '#F1F5F9' : '#0F172A',
+            color: '#F1F5F9',
           }}>
             Estado de la Orden
           </h3>
@@ -308,7 +308,7 @@ export default function P2POrderChat() {
         }}>
           <h3 style={{
             margin: '0 0 16px', fontSize: 16, fontWeight: 700,
-            color: isDark ? '#F1F5F9' : '#0F172A',
+            color: '#F1F5F9',
           }}>
             Detalles
           </h3>
@@ -323,10 +323,10 @@ export default function P2POrderChat() {
             <div key={i} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               padding: '10px 0',
-              borderBottom: i < 4 ? `1px solid ${isDark ? '#1E1E2E' : '#F8FAFC'}` : 'none',
+              borderBottom: i < 4 ? `1px solid ${'#1E1E2E'}` : 'none',
             }}>
               <span style={{ fontSize: 13, color: '#94A3B8' }}>{item.label}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#E2E8F0' : '#1E293B' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>
                 {item.value}
               </span>
             </div>
@@ -374,7 +374,7 @@ export default function P2POrderChat() {
                 onClick={() => setShowDispute(true)}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 10,
-                  border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+                  border: `1px solid ${'#2D2D44'}`,
                   backgroundColor: 'transparent',
                   color: '#EF4444', fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 }}
@@ -390,9 +390,9 @@ export default function P2POrderChat() {
                 disabled={actionLoading === 'cancel'}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 10,
-                  border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+                  border: `1px solid ${'#2D2D44'}`,
                   backgroundColor: 'transparent',
-                  color: isDark ? '#94A3B8' : '#64748B',
+                  color: '#94A3B8',
                   fontSize: 14, fontWeight: 600, cursor: 'pointer',
                   opacity: actionLoading === 'cancel' ? 0.7 : 1,
                 }}
@@ -425,7 +425,7 @@ export default function P2POrderChat() {
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#EF4444' }}>
                   Disputa abierta
                 </p>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: isDark ? '#94A3B8' : '#64748B' }}>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
                   {currentOrder?.disputeReason}
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: 11, color: '#94A3B8' }}>

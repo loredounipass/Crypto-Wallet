@@ -6,13 +6,13 @@ import {
 } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
-import { useThemeMode } from '../../ui/styles';
+
 
 function ChangePasswordComponent() {
     const { changePassword, successMessage, error } = useAuth();
     const { auth } = useContext(AuthContext);
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
 
     const [passwords, setPasswords] = useState({
         currentPassword: '',
@@ -66,7 +66,7 @@ function ChangePasswordComponent() {
 
     const PasswordInput = ({ name, label, value, showPassword, onToggle }) => (
         <div className="mb-5 flex flex-col">
-            <label className={`${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} mb-2 text-sm font-medium`}>
+            <label className={`${'text-[#9CA3AF]'} mb-2 text-sm font-medium`}>
                 {label} <span className="text-[#ef4444]">*</span>
             </label>
             <div className="relative flex items-center">
@@ -75,13 +75,13 @@ function ChangePasswordComponent() {
                     name={name}
                     value={value}
                     onChange={handleChange}
-                    className={`w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A] text-white' : 'border-[#E5E7EB] bg-[#F6F8FA] text-[#111827]'} focus:border-[#2186EB]`}
+                    className={`w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors ${'border-[#2D2D44] bg-[#0F0F1A] text-white'} focus:border-[#2186EB]`}
                     required
                 />
                 <button
                     type="button"
                     onClick={() => onToggle(name)}
-                    className={`absolute right-3 flex items-center justify-center border-0 bg-transparent p-0 ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}
+                    className={`absolute right-3 flex items-center justify-center border-0 bg-transparent p-0 ${'text-[#9CA3AF]'}`}
                 >
                     {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                 </button>
@@ -92,11 +92,11 @@ function ChangePasswordComponent() {
     return (
         <div className="w-full">
             <div className="border-0 bg-transparent p-0 shadow-none">
-                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${'border-[#2D2D44]'}`}>
                     <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
                         <LockIcon className="text-[28px] text-[#2186EB]" />
                     </div>
-                    <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>
+                    <h2 className={`m-0 text-[20px] font-semibold ${'text-white'}`}>
                         Cambiar Contraseña
                     </h2>
                 </div>

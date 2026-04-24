@@ -15,7 +15,6 @@ import {
 } from '../../ui/icons';
 import { Link } from 'react-router-dom';
 import { useTheme, useMediaQuery } from '../../ui/material';
-import { useThemeMode } from '../../ui/styles';
 
 const sections = [
     { id: 'userProfile', label: 'user_profile', icon: <PersonIcon /> },
@@ -43,28 +42,26 @@ function Settings() {
     const muiTheme = useTheme();
     const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
     const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
 
     return (
         <div
-            className={`min-h-screen ${isMobile ? 'p-4' : isTablet ? 'p-6' : 'p-10'} ${isDark ? 'bg-[#0F0F1A]' : 'bg-[#F6F8FA]'}`}
+            className={`min-h-screen ${isMobile ? 'p-4' : isTablet ? 'p-6' : 'p-10'} bg-[#0F0F1A]`}
         >
             <div
-                className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col' : 'flex-row'} ${isDark ? 'border-[#2D2D44] bg-[#1A1A2E]' : 'border-[#E5E7EB] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]'} min-h-[75vh]`}
+                className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col' : 'flex-row'} border-[#2D2D44] bg-[#1A1A2E] min-h-[75vh]`}
             >
                 {/* Sidebar */}
             <div
                 role="navigation"
                 aria-label="Settings navigation"
-                className={`flex gap-2 ${isMobile ? 'min-w-full flex-row overflow-x-auto border-b p-4' : 'min-w-[280px] flex-col border-r px-6 py-8'} ${isDark ? 'border-[#2D2D44] bg-[#12121D]' : 'border-[#E5E7EB] bg-[#F8FAFC]'}`}
+                className={`flex gap-2 ${isMobile ? 'min-w-full flex-row overflow-x-auto border-b p-4' : 'min-w-full flex-col border-r px-6 py-8'} border-[#2D2D44] bg-[#12121D]`}
             >
                 <ul className={`m-0 flex w-full list-none gap-2 p-0 ${isMobile ? 'flex-row' : 'flex-col'}`}>
                     {sections.map(({ id, label, icon }) => (
                         <li key={id}>
                             <button
                                 onClick={() => setSelectedSection(id)}
-                                className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 ${selectedSection === id ? `font-semibold text-[#2186EB] ${isDark ? 'bg-[#2D2D44] border-transparent' : 'bg-white border-[#E5E7EB] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'}` : `font-medium ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'} border-transparent bg-transparent`}`}
+                                className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 ${selectedSection === id ? `font-semibold text-[#2186EB] bg-[#2D2D44] border-transparent` : `font-medium text-[#9CA3AF] border-transparent bg-transparent`}`}
                             >
                                 <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
                                 {!isMobile && <span>{t(label)}</span>}
@@ -75,7 +72,7 @@ function Settings() {
                     <li className={isMobile ? '' : 'mt-auto pt-4'}>
                         <Link
                             to="/"
-                            className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 font-medium no-underline border-transparent bg-transparent ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}
+                            className={`w-full cursor-pointer rounded-xl border px-[18px] ${isMobile ? 'py-[10px] whitespace-nowrap' : 'py-[14px]'} text-left text-[15px] transition-all duration-200 flex items-center gap-3 font-medium no-underline border-transparent bg-transparent text-[#9CA3AF]`}
                         >
                             <span style={{ display: 'flex', alignItems: 'center' }}><ArrowBackIcon /></span>
                             {!isMobile && <span>{t('go_back')}</span>}
@@ -86,9 +83,9 @@ function Settings() {
 
             {/* Main Content */}
             <div className={`flex flex-1 flex-col ${isMobile ? 'px-4 py-6' : 'p-10'}`}>
-                <div className={`mb-8 flex items-center gap-3 border-b pb-5 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+                <div className={`mb-8 flex items-center gap-3 border-b pb-5 border-[#2D2D44]`}>
                     <SettingsIcon style={{ color: '#2186EB', fontSize: '32px' }} />
-                    <h1 className={`m-0 font-bold ${isMobile ? 'text-[22px]' : 'text-[28px]'} ${isDark ? 'text-white' : 'text-[#111827]'}`}>
+                    <h1 className={`m-0 font-bold ${isMobile ? 'text-[22px]' : 'text-[28px]'} text-white`}>
                         {t('settings_title')}
                     </h1>
                 </div>

@@ -7,13 +7,13 @@ import {
   Warning as WarningIcon,
   Close as CloseIcon,
 } from '../../ui/icons';
-import { useThemeMode } from '../../ui/styles';
+
 
 const TwoFactorAuthComponent = () => {
   const { auth } = useContext(AuthContext);
   const { updateTokenStatus } = useAuth();
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
 
   const [isTokenEnabled, setIsTokenEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ const TwoFactorAuthComponent = () => {
   const Switch = ({ checked, onChange, disabled }) => (
     <button
       onClick={disabled ? null : onChange}
-      className={`relative h-6 w-12 rounded-xl border-0 p-[2px] transition-colors ${checked ? 'bg-[#2186EB]' : (isDark ? 'bg-[#2D2D44]' : 'bg-[#E5E7EB]')} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+      className={`relative h-6 w-12 rounded-xl border-0 p-[2px] transition-colors ${checked ? 'bg-[#2186EB]' : ('bg-[#2D2D44]')} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
       <span
         className={`block h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-0'}`}
@@ -114,16 +114,16 @@ const TwoFactorAuthComponent = () => {
   return (
     <div className="w-full">
       <div className="border-0 bg-transparent p-0 shadow-none">
-        <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${isDark ? 'border-[#2D2D44]' : 'border-[#E5E7EB]'}`}>
+        <div className={`mb-6 flex items-center gap-4 border-b pb-4 ${'border-[#2D2D44]'}`}>
           <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
             <CheckCircleIcon className="text-[28px] text-[#2186EB]" />
           </div>
-          <h2 className={`m-0 text-[20px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>2FA Auth</h2>
+          <h2 className={`m-0 text-[20px] font-semibold ${'text-white'}`}>2FA Auth</h2>
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className={`flex items-center justify-between rounded-xl border p-4 ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A]' : 'border-[#E5E7EB] bg-[#F6F8FA]'}`}>
-        <div className={`flex items-center ${isDark ? 'text-white' : 'text-[#111827]'}`}>
+          <div className={`flex items-center justify-between rounded-xl border p-4 ${'border-[#2D2D44] bg-[#0F0F1A]'}`}>
+        <div className={`flex items-center ${'text-white'}`}>
           <span style={{ marginRight: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
             {isTokenEnabled ? 'Desactivar' : 'Activar'}
           </span>
@@ -154,9 +154,9 @@ const TwoFactorAuthComponent = () => {
       {/* Custom Modal */}
       {confirmDialogOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[rgba(0,0,0,0.6)] p-4 backdrop-blur-[4px]">
-          <div className={`w-full max-w-[400px] rounded-2xl border p-6 shadow-[0_10px_25px_rgba(0,0,0,0.2)] ${isDark ? 'border-[#2D2D44] bg-[#1A1A2E]' : 'border-[#E5E7EB] bg-white'}`}>
-            <h3 className={`m-0 mb-3 text-[18px] font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Confirmar Desactivación</h3>
-            <p className={`mb-6 text-sm leading-[1.5] ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+          <div className={`w-full max-w-[400px] rounded-2xl border p-6 shadow-[0_10px_25px_rgba(0,0,0,0.2)] ${'border-[#2D2D44] bg-[#1A1A2E]'}`}>
+            <h3 className={`m-0 mb-3 text-[18px] font-semibold ${'text-white'}`}>Confirmar Desactivación</h3>
+            <p className={`mb-6 text-sm leading-[1.5] ${'text-[#9CA3AF]'}`}>
               ¿Estás seguro de que deseas desactivar la autenticación de dos factores? Esto pone en riesgo tu cuenta a cibercriminales.
             </p>
             <div className="flex justify-end gap-3">
@@ -168,7 +168,7 @@ const TwoFactorAuthComponent = () => {
               </button>
               <button
                 onClick={() => handleConfirmDialogClose(true)}
-                className={`cursor-pointer rounded-[10px] border px-4 py-[10px] text-sm font-semibold transition-all ${isDark ? 'border-[#2D2D44] bg-[#0F0F1A] text-white hover:bg-[#2D2D44]' : 'border-[#E5E7EB] bg-[#F6F8FA] text-[#111827] hover:bg-[#E5E7EB]'}`}
+                className={`cursor-pointer rounded-[10px] border px-4 py-[10px] text-sm font-semibold transition-all ${'border-[#2D2D44] bg-[#0F0F1A] text-white hover:bg-[#2D2D44]'}`}
               >
                 Desactivar
               </button>
@@ -179,14 +179,14 @@ const TwoFactorAuthComponent = () => {
 
       {/* Custom Snackbar */}
           {(snackbar.open || error) && (
-            <div className={`fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${isDark ? 'bg-[#1A1A2E] text-white border-[#2D2D44]' : 'bg-white text-[#111827] border-[#E5E7EB]'} ${(snackbar.severity === 'success' && !error) ? 'border-l-4 border-l-[#22c55e]' : 'border-l-4 border-l-[#ef4444]'}`}>
+            <div className={`fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${'bg-[#1A1A2E] text-white border-[#2D2D44]'} ${(snackbar.severity === 'success' && !error) ? 'border-l-4 border-l-[#22c55e]' : 'border-l-4 border-l-[#ef4444]'}`}>
               <span>{snackbar.open ? snackbar.message : error}</span>
               <button 
                 onClick={() => {
                     if(error) setError(null);
                     else handleCloseSnackbar();
                 }}
-                className={`flex items-center justify-center rounded-full border-0 p-1 ${isDark ? 'text-[#9CA3AF] hover:bg-[#0F0F1A]' : 'text-[#6B7280] hover:bg-[#F6F8FA]'}`}
+                className={`flex items-center justify-center rounded-full border-0 p-1 ${'text-[#9CA3AF] hover:bg-[#0F0F1A]'}`}
               >
                 <CloseIcon fontSize="small" />
               </button>

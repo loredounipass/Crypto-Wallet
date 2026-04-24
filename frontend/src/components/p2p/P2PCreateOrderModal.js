@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useThemeMode } from '../../ui/styles';
+
 import useAllWallets from '../../hooks/useAllWallets';
 import Price from '../../services/price';
 import { getCoinFee } from '../utils/Chains';
@@ -10,8 +10,8 @@ const PAYMENT_METHODS = [
 ];
 
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
   const { allWalletInfo: wallets } = useAllWallets();
   const shouldRender = Boolean(open && provider);
 
@@ -95,15 +95,15 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
   const inputStyle = {
     width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-    border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
-    backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
-    color: isDark ? '#E2E8F0' : '#1E293B',
+    border: `1px solid ${'#2D2D44'}`,
+    backgroundColor: '#0F0F1A',
+    color: '#E2E8F0',
     outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
   };
 
   const labelStyle = {
     display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6,
-    color: isDark ? '#94A3B8' : '#64748B',
+    color: '#94A3B8',
     textTransform: 'uppercase', letterSpacing: '0.5px',
   };
 
@@ -117,15 +117,15 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     }}>
       <div style={{
         width: '100%', maxWidth: 500, borderRadius: 16, padding: 28,
-        backgroundColor: isDark ? '#1E1E2E' : '#FFF',
-        border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+        backgroundColor: '#1E1E2E',
+        border: `1px solid ${'#2D2D44'}`,
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         maxHeight: '90vh', overflowY: 'auto',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A' }}>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#F1F5F9' }}>
               Vender P2P
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
@@ -134,7 +134,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
           </div>
           <button onClick={onClose} style={{
             background: 'none', border: 'none', fontSize: 22,
-            color: isDark ? '#64748B' : '#94A3B8', cursor: 'pointer',
+            color: '#64748B', cursor: 'pointer',
           }}>✕</button>
         </div>
 
@@ -180,8 +180,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               onClick={handleSetMax}
               disabled={!coin || availableAfterFee <= 0}
               style={{
-                border: `1px solid ${isDark ? '#2D2D44' : '#CBD5E1'}`,
-                backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
+                border: `1px solid ${'#2D2D44'}`,
+                backgroundColor: '#0F0F1A',
                 color: '#2186EB',
                 borderRadius: 10,
                 padding: '0 14px',
@@ -195,7 +195,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             </button>
           </div>
           {selectedWallet && (
-            <p style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 12, margin: '6px 0 0' }}>
+            <p style={{ color: '#94A3B8', fontSize: 12, margin: '6px 0 0' }}>
               Balance: {truncateToDecimals(balance, 8).toFixed(8)} {coin?.toUpperCase()} <br/>
               Comisión: {truncateToDecimals(commission, 8).toFixed(8)} {coin?.toUpperCase()} + Gas Estimado
             </p>
@@ -220,7 +220,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             style={{ ...inputStyle, opacity: 0.9 }}
           />
           {coin && (
-            <p style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 12, margin: '6px 0 0' }}>
+            <p style={{ color: '#94A3B8', fontSize: 12, margin: '6px 0 0' }}>
               Precio actual: {coinPriceUsd ? `$${coinPriceUsd}` : 'No disponible'} por {coin.toUpperCase()}
             </p>
           )}
@@ -237,11 +237,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 onClick={() => setPaymentMethod(pm)}
                 style={{
                   padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                  border: paymentMethod === pm ? '2px solid #2186EB' : `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+                  border: paymentMethod === pm ? '2px solid #2186EB' : `1px solid ${'#2D2D44'}`,
                   backgroundColor: paymentMethod === pm
-                    ? (isDark ? 'rgba(33,134,235,0.15)' : 'rgba(33,134,235,0.08)')
+                    ? ('rgba(33,134,235,0.15)')
                     : 'transparent',
-                  color: paymentMethod === pm ? '#2186EB' : (isDark ? '#94A3B8' : '#64748B'),
+                  color: paymentMethod === pm ? '#2186EB' : ('#94A3B8'),
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}
               >
@@ -255,13 +255,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         {coin && parseFloat(amount) > 0 && (
           <div style={{
             padding: 16, borderRadius: 12, marginBottom: 20,
-            backgroundColor: isDark ? 'rgba(33,134,235,0.08)' : 'rgba(33,134,235,0.04)',
-            border: `1px solid ${isDark ? 'rgba(33,134,235,0.2)' : 'rgba(33,134,235,0.15)'}`,
+            backgroundColor: 'rgba(33,134,235,0.08)',
+            border: `1px solid ${'rgba(33,134,235,0.2)'}`,
           }}>
-            <p style={{ margin: 0, fontSize: 13, color: isDark ? '#94A3B8' : '#64748B' }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#94A3B8' }}>
               Resumen de la orden
             </p>
-            <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A' }}>
+            <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
               {amount} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
             </p>
             {paymentMethod && (
@@ -279,9 +279,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             disabled={isLoading}
             style={{
               flex: 1, padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-              border: `1px solid ${isDark ? '#2D2D44' : '#E2E8F0'}`,
+              border: `1px solid ${'#2D2D44'}`,
               backgroundColor: 'transparent',
-              color: isDark ? '#94A3B8' : '#64748B', cursor: 'pointer',
+              color: '#94A3B8', cursor: 'pointer',
             }}
           >
             Cancelar
@@ -292,7 +292,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             style={{
               flex: 2, padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700,
               border: 'none',
-              background: isValid ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)' : (isDark ? '#2D2D44' : '#E2E8F0'),
+              background: isValid ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)' : ('#2D2D44'),
               color: isValid ? '#FFF' : '#94A3B8',
               cursor: isValid ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,

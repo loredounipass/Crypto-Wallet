@@ -19,7 +19,6 @@ import createWallet from '../hooks/createWallet';
 import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
 import TransactionToast from '../components/TransactionToast';
-import { useThemeMode } from '../ui/styles';
 
 const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
     <svg
@@ -54,9 +53,6 @@ export default function Wallet() {
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
-    
     const [copied, setCopied] = useState(false);
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [withdrawAddress, setWithdrawAddress] = useState('');
@@ -192,27 +188,27 @@ export default function Wallet() {
             overflowX: "hidden",
         },
         section: {
-            backgroundColor: isDark ? "#1A1A2E" : "#FFFFFF",
+            backgroundColor: "#1A1A2E",
             borderRadius: "16px",
             padding: isMobile ? "14px" : "24px",
-            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            border: "1px solid #2D2D44",
             marginBottom: isMobile ? "12px" : "24px",
         },
         input: {
             width: "100%",
             padding: isMobile ? "12px 14px" : "14px 16px",
             borderRadius: "12px",
-            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
-            backgroundColor: isDark ? "#0F0F1A" : "#FFFFFF",
-            color: isDark ? "#FFFFFF" : "#1A1A2E",
+            border: "1px solid #2D2D44",
+            backgroundColor: "#0F0F1A",
+            color: "#FFFFFF",
             fontSize: isMobile ? "13px" : "14px",
             outline: "none",
             boxSizing: "border-box",
         },
         button: (primary = false, disabled = false) => ({
-            backgroundColor: disabled ? (isDark ? "#2D2D44" : "#E5E7EB") : (primary ? "#2186EB" : "transparent"),
-            color: disabled ? (isDark ? "#6B7280" : "#9CA3AF") : (primary ? "white" : (isDark ? "#FFFFFF" : "#1A1A2E")),
-            border: primary ? "none" : `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            backgroundColor: disabled ? "#2D2D44" : (primary ? "#2186EB" : "transparent"),
+            color: disabled ? "#6B7280" : (primary ? "white" : "#FFFFFF"),
+            border: primary ? "none" : "1px solid #2D2D44",
             borderRadius: "12px",
             padding: isMobile ? "12px 16px" : "14px 24px",
             fontWeight: 600,
@@ -223,8 +219,8 @@ export default function Wallet() {
         actionSwitcher: {
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            backgroundColor: isDark ? "#0F0F1A" : "#F8FAFC",
-            border: `1px solid ${isDark ? "#2D2D44" : "#E5E7EB"}`,
+            backgroundColor: "#0F0F1A",
+            border: "1px solid #2D2D44",
             borderRadius: "12px",
             padding: "4px",
             marginBottom: "12px",
@@ -237,7 +233,7 @@ export default function Wallet() {
             fontWeight: 600,
             fontSize: "13px",
             backgroundColor: isActive ? "#2186EB" : "transparent",
-            color: isActive ? "#FFFFFF" : (isDark ? "#9CA3AF" : "#6B7280"),
+            color: isActive ? "#FFFFFF" : "#9CA3AF",
             transition: "all 0.2s ease",
         }),
         inputActionButton: {
@@ -248,8 +244,8 @@ export default function Wallet() {
             border: "none",
             borderRadius: "8px",
             padding: "6px 10px",
-            backgroundColor: isDark ? "#2D2D44" : "#F3F4F6",
-            color: isDark ? "#E5E7EB" : "#374151",
+            backgroundColor: "#2D2D44",
+            color: "#E5E7EB",
             fontSize: "12px",
             fontWeight: 600,
             cursor: "pointer",
@@ -266,10 +262,10 @@ export default function Wallet() {
 
     const depositSection = (
         <div style={actionSectionStyle}>
-            <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
+            <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
                 Depositar
             </h2>
-            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px", marginBottom: "16px" }}>
+            <div style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "16px" }}>
                 Tu direccion ({walletInfo?.coin || walletId} - {getNetworkName(walletInfo?.chainId || defaultNetworkId)})
             </div>
             
@@ -285,7 +281,7 @@ export default function Wallet() {
                     onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                 >
                     <button type="button" style={styles.inputActionButton} aria-label="Copiar dirección">
-                        <CopyIcon size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                        <CopyIcon size={16} color="#9CA3AF" />
                     </button>
                 </CopyToClipboard>
             </div>
@@ -302,7 +298,7 @@ export default function Wallet() {
 
     const withdrawSection = (
         <div style={actionSectionStyle}>
-            <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
+            <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
                 Retirar
             </h2>
             
@@ -344,16 +340,16 @@ export default function Wallet() {
 
                 {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
 
-                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
                     Comision de red: {fee} {walletInfo?.coin || coinCode.toUpperCase()}
                 </div>
                 {withdrawAmount && Number(withdrawAmount) > 0 && (
-                    <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px", marginTop: "-8px" }}>
+                    <div style={{ color: "#9CA3AF", fontSize: "12px", marginTop: "-8px" }}>
                         Recibirás: {Math.max(0, Number(withdrawAmount) - fee).toFixed(getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
                     </div>
                 )}
                 {maxWithdrawable > 0 && (
-                    <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "12px" }}>
+                    <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
                         Máximo disponible: {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
                     </div>
                 )}
@@ -364,7 +360,7 @@ export default function Wallet() {
     if (isWalletLoading) {
         return (
             <div style={styles.container}>
-                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280" }}>Cargando...</div>
+                <div style={{ color: "#9CA3AF" }}>Cargando...</div>
                 <TransactionToast toast={toast} onClose={dismissToast} />
             </div>
         );
@@ -374,10 +370,10 @@ export default function Wallet() {
         <div className="mx-auto w-full" style={styles.container}>
             {/* Back */}
             <div 
-                style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: isDark ? "#FFFFFF" : "#1A1A2E" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: "#FFFFFF" }}
                 onClick={() => history.push('/wallets')}
             >
-                <BackIcon size={20} color={isDark ? "#FFFFFF" : "#1A1A2E"} />
+                <BackIcon size={20} color="#FFFFFF" />
                 <span style={{ fontWeight: 500 }}>Volver a Billeteras</span>
             </div>
 
@@ -392,7 +388,7 @@ export default function Wallet() {
                                     height: isMobile ? 46 : 56,
                                     borderRadius: "999px",
                                     overflow: "hidden",
-                                    backgroundColor: isDark ? "#2D2D44" : "#E5E7EB",
+                                    backgroundColor: "#2D2D44",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -406,14 +402,14 @@ export default function Wallet() {
                                 />
                             </div>
                             <div>
-                                <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "14px" }}>Balance</div>
-                                <div style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
+                                <div style={{ color: "#9CA3AF", fontSize: "14px" }}>Balance</div>
+                                <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
                                     {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "16px" : "20px" }}>{walletInfo.coin}</span>
                                 </div>
                             </div>
                         </div>
                         {coinPrice && (
-                            <div style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontSize: "16px", marginTop: "8px" }}>
+                            <div style={{ color: "#9CA3AF", fontSize: "16px", marginTop: "8px" }}>
                                 ≈ ${(parseFloat(maxWithdrawable) * parseFloat(coinPrice)).toFixed(2)} USD
                             </div>
                         )}
@@ -450,7 +446,7 @@ export default function Wallet() {
 
                     {/* Transactions */}
                     <div className="rounded-2xl" style={styles.section}>
-                        <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
+                        <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
                             Transacciones
                         </h2>
                         <CoinTransactions
@@ -467,10 +463,10 @@ export default function Wallet() {
                 </>
             ) : walletInfo === null ? (
                 <div style={styles.section}>
-                    <h2 style={{ color: isDark ? "#FFFFFF" : "#1A1A2E", fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "16px" }}>
+                    <h2 style={{ color: "#FFFFFF", fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "16px" }}>
                         Crear Billetera {walletId.toUpperCase()}
                     </h2>
-                    <div style={{ textAlign: "center", marginBottom: "24px", color: isDark ? "#9CA3AF" : "#6B7280" }}>
+                    <div style={{ textAlign: "center", marginBottom: "24px", color: "#9CA3AF" }}>
                         No tienes una billetera para esta moneda
                     </div>
                     <div style={{ display: "flex", justifyContent: "center" }}>

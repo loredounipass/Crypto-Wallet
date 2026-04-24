@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { getCoinLogo, getCoinFallbackLogo, getCoinFee, normalizeCoin } from './utils/Chains';
 import { getDisplayableAddress } from './utils/Display';
-import { useThemeMode } from '../ui/styles';
+
 
 export default function MyWallets() {
     const { t } = useTranslation();
     const { allWalletInfo } = useAllWallets();
     const [isSmallScreen, setIsSmallScreen] = React.useState(() => window.innerWidth <= 640);
-    const { mode } = useThemeMode();
-    const isDark = mode === 'dark';
+    
+    
 
     React.useEffect(() => {
         const onResize = () => setIsSmallScreen(window.innerWidth <= 640);
@@ -29,10 +29,10 @@ export default function MyWallets() {
             {isSmallScreen ? (
                 <div className="grid grid-cols-1 gap-2">
                     {allWalletInfo.map((wallet) => (
-                        <div key={wallet.walletId} className="rounded-xl border p-3 shadow-sm" style={{ borderColor: isDark ? '#2D2D44' : '#E5E7EB', backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }}>
+                        <div key={wallet.walletId} className="rounded-xl border p-3 shadow-sm" style={{ borderColor: '#2D2D44', backgroundColor: '#1A1A2E' }}>
                                 <div className="flex flex-col gap-2">
                                     <div>
-                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                        <p className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
                                         {t('currency')}: {/* Usar t para traducir */}
                                         </p>
                                         <div className="flex items-center gap-2">
@@ -42,11 +42,11 @@ export default function MyWallets() {
                                                     alt={wallet.coin}
                                                     onError={handleCoinImageError(wallet.coin)}
                                                 />
-                                                <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>{wallet.coin}</p>
+                                                <p className="text-sm" style={{ color: '#FFFFFF' }}>{wallet.coin}</p>
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                        <p className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
                                         {t('address')}: 
                                         </p>
                                         <RouterLink className="text-sm text-blue-500 hover:underline" to={`/wallet/${wallet.coin.toLowerCase()}`}>
@@ -54,10 +54,10 @@ export default function MyWallets() {
                                         </RouterLink>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                        <p className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
                                         {t('balance')}: 
                                         </p>
-                                        <p className="text-sm font-bold" style={{ color: isDark ? '#60A5FA' : '#2563EB' }}>
+                                        <p className="text-sm font-bold" style={{ color: '#60A5FA' }}>
                                             {Math.max(0, Number(wallet.balance || 0) - getCoinFee(normalizeCoin(wallet.coin))).toFixed(4)} {wallet.coin}
                                         </p>
                                     </div>
@@ -84,7 +84,7 @@ export default function MyWallets() {
                 <div className="overflow-x-auto">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {allWalletInfo.map((wallet) => (
-                            <div key={wallet.walletId} className="rounded-xl border p-4 shadow-sm" style={{ borderColor: isDark ? '#2D2D44' : '#E5E7EB', backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', minHeight: '100px' }}>
+                            <div key={wallet.walletId} className="rounded-xl border p-4 shadow-sm" style={{ borderColor: '#2D2D44', backgroundColor: '#1A1A2E', minHeight: '100px' }}>
                                     <div className="flex items-center gap-2">
                                             <img
                                                 width={20}
@@ -92,13 +92,13 @@ export default function MyWallets() {
                                                 alt={wallet.coin}
                                                 onError={handleCoinImageError(wallet.coin)}
                                             />
-                                            <p className="text-sm" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                            <p className="text-sm" style={{ color: '#FFFFFF' }}>
                                                 {wallet.coin}
                                             </p>
                                     </div>
                                     <div className="mt-2 flex flex-col gap-2">
                                         <div>
-                                            <p className="text-sm font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                            <p className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
                                             {t('address')}: 
                                             </p>
                                             <RouterLink className="text-sm text-blue-500 hover:underline" to={`/wallet/${wallet.coin.toLowerCase()}`}>
@@ -106,10 +106,10 @@ export default function MyWallets() {
                                             </RouterLink>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold" style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}>
+                                            <p className="text-xs font-bold" style={{ color: '#9CA3AF' }}>
                                             {t('balance')}: 
                                             </p>
-                                            <p className="text-lg font-bold" style={{ color: isDark ? '#FFFFFF' : '#111827' }}>
+                                            <p className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
                                                 {Math.max(0, Number(wallet.balance || 0) - getCoinFee(normalizeCoin(wallet.coin))).toFixed(4)} {wallet.coin}
                                             </p>
                                         </div>

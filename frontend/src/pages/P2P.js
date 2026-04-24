@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useThemeMode } from '../ui/styles';
 import useEscrow from '../hooks/useEscrow';
 import useProviders from '../hooks/useProviders';
 import P2PProviderList from '../components/p2p/P2PProviderList';
@@ -14,8 +13,6 @@ const TABS = [
 ];
 
 export default function P2P() {
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
   const history = useHistory();
 
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -54,16 +51,13 @@ export default function P2P() {
     } catch (e) { /* handled by hook */ }
   };
 
-  const cardBg = isDark ? '#1A1A2E' : '#FFF';
-  const borderColor = isDark ? '#2D2D44' : '#E2E8F0';
-
   return (
     <div>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{
           margin: 0, fontSize: 28, fontWeight: 800,
-          color: isDark ? '#F1F5F9' : '#0F172A',
+          color: '#F1F5F9',
           letterSpacing: '-0.5px',
         }}>
           P2P Trading
@@ -79,8 +73,8 @@ export default function P2P() {
       <div style={{
         display: 'flex', gap: 0,
         borderRadius: 12, overflow: 'hidden',
-        border: `1px solid ${borderColor}`,
-        backgroundColor: isDark ? '#0F0F1A' : '#F8FAFC',
+        border: '1px solid #2D2D44',
+        backgroundColor: '#0F0F1A',
         marginBottom: 20,
       }}>
         {TABS.map((tab) => (
@@ -91,9 +85,9 @@ export default function P2P() {
               flex: 1, padding: '12px 20px', border: 'none',
               fontSize: 14, fontWeight: 600, cursor: 'pointer',
               backgroundColor: activeTab === tab.key
-                ? (isDark ? '#2186EB' : '#2186EB')
+                ? ('#2186EB')
                 : 'transparent',
-              color: activeTab === tab.key ? '#FFF' : (isDark ? '#64748B' : '#94A3B8'),
+              color: activeTab === tab.key ? '#FFF' : '#64748B',
               transition: 'all 0.2s',
             }}
           >
@@ -123,10 +117,10 @@ export default function P2P() {
       {/* Content Card */}
       <div style={{
         borderRadius: 16,
-        border: `1px solid ${borderColor}`,
-        backgroundColor: cardBg,
+        border: '1px solid #2D2D44',
+        backgroundColor: '#1A1A2E',
         overflow: 'hidden',
-        boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: 'none',
       }}>
         {activeTab === 'marketplace' && (
           <P2PProviderList

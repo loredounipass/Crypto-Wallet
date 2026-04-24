@@ -1,5 +1,5 @@
 import React from 'react';
-import { useThemeMode } from '../../ui/styles';
+
 
 const STATUS_CONFIG = {
   pending:    { label: 'Pendiente', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)', step: 0 },
@@ -16,8 +16,8 @@ const STATUS_CONFIG = {
 const STEPS = ['Escrow', 'Pago', 'Liberación', 'Completado'];
 
 export default function P2POrderStatus({ status }) {
-  const { mode } = useThemeMode();
-  const isDark = mode === 'dark';
+  
+  
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
 
   const isTerminal = config.step === -1;
@@ -53,8 +53,8 @@ export default function P2POrderStatus({ status }) {
                     width: 28, height: 28, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
-                    backgroundColor: isActive ? '#2186EB' : (isDark ? '#2D2D44' : '#E2E8F0'),
-                    color: isActive ? '#FFF' : (isDark ? '#64748B' : '#94A3B8'),
+                    backgroundColor: isActive ? '#2186EB' : ('#2D2D44'),
+                    color: isActive ? '#FFF' : ('#64748B'),
                     border: isCurrent ? '2px solid #2186EB' : 'none',
                     boxShadow: isCurrent ? '0 0 0 4px rgba(33,134,235,0.2)' : 'none',
                     transition: 'all 0.3s ease',
@@ -63,7 +63,7 @@ export default function P2POrderStatus({ status }) {
                   </div>
                   <span style={{
                     fontSize: 10, marginTop: 4, fontWeight: 500,
-                    color: isActive ? (isDark ? '#E2E8F0' : '#1E293B') : (isDark ? '#475569' : '#94A3B8'),
+                    color: isActive ? ('#E2E8F0') : ('#475569'),
                   }}>
                     {step}
                   </span>
@@ -71,7 +71,7 @@ export default function P2POrderStatus({ status }) {
                 {i < STEPS.length - 1 && (
                   <div style={{
                     flex: 1, height: 2, marginTop: -16,
-                    backgroundColor: i < activeStep ? '#2186EB' : (isDark ? '#2D2D44' : '#E2E8F0'),
+                    backgroundColor: i < activeStep ? '#2186EB' : ('#2D2D44'),
                     transition: 'background-color 0.3s ease',
                   }} />
                 )}

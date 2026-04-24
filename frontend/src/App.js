@@ -6,7 +6,7 @@ import useFindUser from './hooks/useFindUser'
 
 import Login from "./pages/Login"
 import { Box, Container, CssBaseline, IconButton, useMediaQuery, useTheme } from './ui/material'
-import { ThemeProvider, useThemeMode } from './ui/styles';
+import { ThemeProvider } from './ui/styles';
 import PublicRoute from './components/route-control/PublicRoute'
 import PrivateRoute from './components/route-control/PrivateRoute'
 import Register from './pages/Register'
@@ -36,7 +36,7 @@ const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-passwor
 
 function AppContent() {
     const { auth, setAuth, loading } = useFindUser();
-    const { mode } = useThemeMode();
+    
     const location = useLocation();
     const muiTheme = useTheme();
     const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -58,7 +58,7 @@ function AppContent() {
         setMobileOpen(true);
     };
 
-    const isDark = mode === 'dark';
+    
 
     const mainContentStyle = {
         flex: 1,
@@ -72,7 +72,7 @@ function AppContent() {
     return (
         <AuthContext.Provider value={{ auth, setAuth, loading }}>
             <SocketProvider>
-                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: isDark ? '#0F0F1A' : '#F6F8FA' }}>
+                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A' }}>
                     <CssBaseline />
                     
                     {isAuthenticated && !isPublicRoute && (
@@ -92,9 +92,9 @@ function AppContent() {
                                 top: 12,
                                 left: 12,
                                 zIndex: 80,
-                                color: isDark ? '#FFFFFF' : '#1A1A2E',
-                                backgroundColor: isDark ? 'rgba(45,45,68,0.9)' : 'rgba(255,255,255,0.95)',
-                                border: `1px solid ${isDark ? '#2D2D44' : '#E5E7EB'}`,
+                                color: '#FFFFFF',
+                                backgroundColor: 'rgba(45,45,68,0.9)',
+                                border: `1px solid ${'#2D2D44'}`,
                             }}
                         >
                             <MenuIcon />
