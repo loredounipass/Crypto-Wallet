@@ -2,9 +2,11 @@ import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validato
 
 export class CreateUserDto {
     @IsString()
+    @MaxLength(50)
     firstName: string;
 
     @IsString()
+    @MaxLength(50)
     lastName: string;
 
     @IsString()

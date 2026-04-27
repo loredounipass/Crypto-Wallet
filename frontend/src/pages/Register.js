@@ -29,6 +29,12 @@ export default function Register() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
+  React.useEffect(() => {
+    if (error) {
+      setOpenSnackbar(true);
+    }
+  }, [error]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -38,11 +44,7 @@ export default function Register() {
     }
 
     const data = Object.fromEntries(new FormData(event.currentTarget));
-    try {
-      await registerUser(data);
-    } catch (e) {
-      setOpenSnackbar(true);
-    }
+    await registerUser(data);
   };
 
   const handleCloseSnackbar = () => setOpenSnackbar(false);
@@ -79,8 +81,6 @@ export default function Register() {
               id="firstName"
               label="Nombre"
               autoFocus
-              error={!!error}
-              helperText={error ? error : ''}
               InputProps={{ sx: inputSx }}
               InputLabelProps={{
                 shrink: true,
@@ -98,8 +98,6 @@ export default function Register() {
               label="Apellidos"
               name="lastName"
               autoComplete="family-name"
-              error={!!error}
-              helperText={error ? error : ''}
               InputProps={{ sx: inputSx }}
               InputLabelProps={{
                 shrink: true,
@@ -117,8 +115,6 @@ export default function Register() {
               label="Correo electrónico"
               name="email"
               autoComplete="email"
-              error={!!error}
-              helperText={error ? error : ''}
               InputProps={{ sx: inputSx }}
               InputLabelProps={{
                 shrink: true,
@@ -139,13 +135,13 @@ export default function Register() {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              error={!!error}
-              helperText={error ? error : ''}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       aria-label="toggle password visibility"
+                      type="button"
+                      edge="end"
                       onClick={() => setShowPassword(!showPassword)}
                       style={{ color: '#9CA3AF' }}
                     >
@@ -181,6 +177,8 @@ export default function Register() {
                   <InputAdornment position="end">
                     <IconButton
                       aria-label="toggle confirm password visibility"
+                      type="button"
+                      edge="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       style={{ color: '#9CA3AF' }}
                     >
@@ -227,7 +225,12 @@ export default function Register() {
         </Box>
       </Box>
 
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+      <Snackbar 
+        open={openSnackbar} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
         <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
           {error || 'Ha ocurrido un error al registrarse.'}
         </Alert>

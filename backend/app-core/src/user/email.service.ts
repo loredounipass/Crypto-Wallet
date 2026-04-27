@@ -94,8 +94,8 @@ export class EmailService {
     return String(num).padStart(6, '0');
   }
 
-  async sendVerificationEmail(email: string): Promise<void> {
-    const verificationUrl = `${this.FRONTEND_URL}/verifyemail`;
+  async sendVerificationEmail(email: string, token: string): Promise<void> {
+    const verificationUrl = `${this.FRONTEND_URL}/verifyemail?token=${encodeURIComponent(token)}`;
 
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,

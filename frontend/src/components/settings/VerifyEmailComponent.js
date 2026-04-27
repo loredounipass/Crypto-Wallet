@@ -65,7 +65,7 @@ const VerifyEmailComponent = () => {
         if (auth && auth.email) {
             setSending(true); 
             try {
-                await sendVerificationEmail(auth.email);
+                await sendVerificationEmail();
                 setSnackbar({ open: true, message: "Correo de verificación enviado.", severity: "success" });
             } catch (error) {
                 const msg = error.message || 'Error al enviar el correo de verificación.';

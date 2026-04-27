@@ -17,6 +17,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyTokenDto } from 'src/two-factor/dto';
 import { LocalAuthGuard } from '../guard/auth/local-auth.guard';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
+import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile';
 import { UpdateTokenStatusDto } from './dto/update-token-status.dto';
@@ -34,6 +35,7 @@ export class UserController {
   ) {}
 
   // Route for user registration. It accepts a CreateUserDto object in the request body and calls the register method of the UserService to create a new user.
+  @UseGuards(EmailThrottlerGuard)
   @Post('register')
   registerUser(@Body() createUserDto: CreateUserDto) {
     return this.userService.register(createUserDto);
@@ -50,7 +52,7 @@ export class UserController {
 
 
   // Route for verifying the two-factor authentication token. It accepts a VerifyTokenDto object in the request body and calls the verifyAndLogin method of the AuthService to validate the token and complete the login process.
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(EmailThrottlerGuard)
   @Post('verify-token')
   async verifyToken(@Body() verifyTokenDto: VerifyTokenDto, @Request() req) {
     return this.authService.verifyAndLogin(verifyTokenDto, req);
@@ -59,7 +61,7 @@ export class UserController {
 
   // Route for resending the two-factor authentication token. 
   // Works for both authenticated users (uses session email) and unauthenticated users in 2FA flow (uses body email).
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(EmailThrottlerGuard)
   @Post('resend-token')
   async resendToken(@Request() req, @Body() resendTokenDto: ResendTokenDto) {
     // Use email from authenticated session if available, otherwise from body (for 2FA flow)
@@ -100,8 +102,12 @@ export class UserController {
   @UseGuards(AuthenticatedGuard)
   @Get('info')
   getUsers(@Request() req) {
+    // Asegurarnos de usar el objeto plano (dependiendo de cómo serializa Passport)
+    const userObj = req.user._doc || req.user;
+    // Omitir campos altamente sensibles
+    const { password, resetPasswordTokenHash, resetPasswordTokenPurpose, ...safeUser } = userObj;
     return {
-      data: req.user
+      data: safeUser
     };
   }
 
@@ -110,7 +116,11 @@ export class UserController {
   @UseGuards(AuthenticatedGuard)
   @Post('logout')
   logout(@Request() req) {
-    req.logout(() => {});
+    req.logout((err) => {
+      if (req.session) {
+        req.session.destroy(() => {});
+      }
+    });
   }
 
 
@@ -135,10 +145,13 @@ export class UserController {
 // Route for verifying the authenticated user's email address. It retrieves the user's email from the authenticated session and calls the verifyEmail method of the UserService to verify the email. If successful, it returns a success message; otherwise, it throws a BadRequestException with an error message.
   @UseGuards(AuthenticatedGuard)
   @Post('verify-email')
-  async verifyEmail(@Request() req): Promise<{ message: string }> {
+  async verifyEmail(@Request() req, @Body() body: { token: string }): Promise<{ message: string }> {
     const userEmail = req.user.email;
+    if (!body || !body.token) {
+        throw new BadRequestException('El token de verificación es requerido.');
+    }
     try {
-        const result = await this.userService.verifyEmail(userEmail);
+        const result = await this.userService.verifyEmail(userEmail, body.token);
         return { message: 'Correo electrónico verificado con éxito.' };
     } catch (error) {
         throw new BadRequestException(error.message || 'El correo electrónico no pudo ser verificado.');
@@ -146,9 +159,10 @@ export class UserController {
 }
 
 // Route for sending a verification email to the authenticated user. It accepts an email address in the request body and calls the sendVerificationEmail method of the UserService to send a verification email. If successful, it returns a success message; otherwise, it throws a BadRequestException with an error message.
-@UseGuards(AuthenticatedGuard)
+@UseGuards(EmailThrottlerGuard, AuthenticatedGuard)
 @Post('send-verification-email')
-async sendVerificationEmail(@Body() { email }: { email: string }): Promise<{ message: string }> {
+async sendVerificationEmail(@Request() req): Promise<{ message: string }> {
+    const email = req.user.email;
     try {
         const result = await this.userService.sendVerificationEmail(email);
         return { message: 'Correo de verificación enviado con éxito.' };
@@ -178,7 +192,7 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
 
 
 // Route for handling the forgot password functionality. It accepts an email address in the request body and calls the requestPasswordReset method of the ForgotPasswordService to initiate the password reset process. If successful, it returns a message indicating that a reset email has been sent; otherwise, it throws a BadRequestException with an error message.
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(EmailThrottlerGuard)
   @Post('forgot-password')
   async forgotPassword(@Body() body: { email: string }) {
     const { email } = body;

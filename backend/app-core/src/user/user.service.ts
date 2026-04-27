@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException, UnauthorizedExcepti
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserRepository, ProfileRepository } from './index';
 import { HashService } from './hash.service';
+import * as crypto from 'crypto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile';
 import { EmailService } from './email.service';
@@ -30,6 +31,10 @@ export class UserService {
 
   //Register a new user, hash the password, and save to the database
   async register(createUserDto: CreateUserDto) {
+    if (createUserDto.password !== createUserDto.confirmPassword) {
+      throw new BadRequestException("Las contraseñas no coinciden");
+    }
+
     const user = await this.getUserByEmail(createUserDto.email);
     if (user) {
       throw new BadRequestException("Este correo electrónico ya está registrado");
@@ -59,7 +64,7 @@ export class UserService {
 
 
 // Verify the user's email by setting the isValid field to true in the database
-async verifyEmail(email: string): Promise<boolean> {
+async verifyEmail(email: string, token: string): Promise<boolean> {
   const user = await this.getUserByEmail(email);
   
   if (!user) {
@@ -69,9 +74,20 @@ async verifyEmail(email: string): Promise<boolean> {
   if (user.isValid) {
       throw new BadRequestException('Correo ya verificado.');
   }
+
+  if (!user.verifyEmailTokenHash || !user.verifyEmailExpires || user.verifyEmailExpires < new Date()) {
+      throw new BadRequestException('El token es inválido o ha expirado.');
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  if (user.verifyEmailTokenHash !== tokenHash) {
+      throw new BadRequestException('El token es inválido o ha expirado.');
+  }
   
   try {
       user.isValid = true;
+      user.verifyEmailTokenHash = undefined;
+      user.verifyEmailExpires = undefined;
       await user.save();
       return true;
   } catch {
@@ -94,7 +110,14 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   }
   
   try {
-      await this.emailService.sendVerificationEmail(user.email);
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      
+      user.verifyEmailTokenHash = tokenHash;
+      user.verifyEmailExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      await user.save();
+
+      await this.emailService.sendVerificationEmail(user.email, token);
       return true;
   } catch {
       throw new BadRequestException('Error al enviar correo.');
@@ -206,6 +229,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         throw new BadRequestException('El correo electrónico ya está en uso');
       }
       user.email = updateProfileDto.email!;
+      user.isValid = false; // Revocar estado de verificación
     }
 
     if (firstNameChanged) user.firstName = updateProfileDto.firstName!;

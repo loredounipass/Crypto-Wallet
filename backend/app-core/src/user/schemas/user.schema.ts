@@ -35,6 +35,13 @@ export class User {
     @Prop({ default: false })
     isTokenEnabled: boolean;
     
+    // Campos para verificación de correo electrónico
+    @Prop()
+    verifyEmailTokenHash?: string;
+
+    @Prop()
+    verifyEmailExpires?: Date;
+
     // Campos para restablecimiento de contraseña
     @Prop()
     resetPasswordTokenHash?: string;

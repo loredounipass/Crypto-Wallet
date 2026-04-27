@@ -88,8 +88,6 @@ export default function Login() {
             name="email"
             autoComplete="email"
             autoFocus
-            error={!!error}
-            helperText={error ? error : ''}
             InputProps={{
               sx: {
                 borderRadius: 12,
@@ -120,13 +118,13 @@ export default function Login() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={!!error}
-            helperText={error ? error : ''}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
                     aria-label="toggle password visibility"
+                    type="button"
+                    edge="end"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{ color: '#9CA3AF' }}
                   >
@@ -205,7 +203,12 @@ export default function Login() {
           </Box>
         </Box>
 
-        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+        <Snackbar 
+          open={openSnackbar} 
+          autoHideDuration={6000} 
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
           <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
             {error || 'Ha ocurrido un error al iniciar sesión.'}
           </Alert>

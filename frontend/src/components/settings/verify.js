@@ -1,10 +1,12 @@
 import React, { useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
 import useAuth from '../../hooks/useAuth';
 
 const EmailVerificationComponent = () => {
     const { auth } = useContext(AuthContext);
     const { verifyEmail } = useAuth();
+    const location = useLocation();
     const [openDialog, setOpenDialog] = useState(false);
     const [dialogMessage, setDialogMessage] = useState('');
     const [showCloseMessage, setShowCloseMessage] = useState(false);
@@ -12,8 +14,14 @@ const EmailVerificationComponent = () => {
     const handleVerifyClick = async () => {
         if (auth && auth.email) {
             try {
-                // No need to pass email - it comes from authenticated session
-                await verifyEmail();
+                const searchParams = new URLSearchParams(location.search);
+                const token = searchParams.get('token');
+                
+                if (!token) {
+                    throw new Error('Falta el token de verificación en la URL. Asegúrate de hacer clic en el enlace completo del correo.');
+                }
+                
+                await verifyEmail(token);
                 handleVerificationResult({ verified: true, message: 'Correo electrónico verificado con éxito.' });
             } catch (err) {
                 handleVerificationResult({ verified: false, message: err.message || 'Error al verificar el correo electrónico.' });

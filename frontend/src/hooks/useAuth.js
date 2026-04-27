@@ -41,7 +41,9 @@ export default function useAuth() {
                 setError(data.error);
             }
         } catch (err) {
-            setError(err.message);
+            let msg = err.response?.data?.message || err.response?.data?.error || err.message;
+            if (Array.isArray(msg)) msg = msg.join('. ');
+            setError(msg);
         }
     };
 
@@ -59,7 +61,8 @@ export default function useAuth() {
                 return null;
             }
         } catch (err) {
-            const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Credenciales incorrectas.';
+            let msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Credenciales incorrectas.';
+            if (Array.isArray(msg)) msg = msg.join('. ');
             setError(msg);
             return null;
         }
@@ -145,13 +148,15 @@ export default function useAuth() {
                 setError(data.error || 'Error al actualizar el perfil.');
             }
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            let msg = err.response?.data?.message || err.response?.data?.error || err.message;
+            if (Array.isArray(msg)) msg = msg.join('. ');
+            setError(msg);
         }
     };
 
-    const verifyEmail = async (email) => {
+    const verifyEmail = async (token) => {
         try {
-            const { data } = await User.verifyEmail({ email });
+            const { data } = await User.verifyEmail({ token });
             if (data && data.message === 'Correo electrónico verificado con éxito.') {
                 setSuccessMessage(data.message);
             } else {
@@ -162,9 +167,9 @@ export default function useAuth() {
         }
     };
     
-    const sendVerificationEmail = async (email) => {
+    const sendVerificationEmail = async () => {
         try {
-            const { data } = await User.sendVerificationEmail({ email });
+            const { data } = await User.sendVerificationEmail({});
             if (data && data.message === 'Correo de verificación enviado con éxito.') {
                 setSuccessMessage(data.message);
             } else {
