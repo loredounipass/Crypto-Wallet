@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'https://orange-spoon-5j4gqrq49prf7j6r-4000.app.github.dev';
+        const fallbackBaseApi = 'https://cuddly-space-meme-9rq7959qwr6hpw46-4000.app.github.dev';
         const socketOrigin = (() => {
             try { 
                 return new URL(process.env.REACT_APP_API_BASE_URL).origin; 
@@ -33,7 +33,7 @@ export const SocketProvider = ({ children }) => {
             }
         })();
 
-        const newSocket = io(socketOrigin, {
+        const newSocket = io(`${socketOrigin}/messages`, {
             withCredentials: true,
             path: '/socket.io',
         });
@@ -54,6 +54,16 @@ export const SocketProvider = ({ children }) => {
             });
         });
 
+        newSocket.on('messageUpdated', (message) => {
+            setMessages((prev) => {
+                const idx = prev.findIndex((m) => m._id === message._id);
+                if (idx === -1) return [...prev, message];
+                const next = [...prev];
+                next[idx] = { ...next[idx], ...message };
+                return next;
+            });
+        });
+
         setSocket(newSocket);
 
         return () => {
@@ -62,9 +72,9 @@ export const SocketProvider = ({ children }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auth?.token]);
 
-    const joinChat = useCallback((chatId) => {
-        if (socket && chatId) {
-            socket.emit('joinChat', chatId);
+    const joinChat = useCallback((otherUserId) => {
+        if (socket && otherUserId) {
+            socket.emit('joinChat', { otherUserId });
         }
     }, [socket]);
 

@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['https://orange-spoon-5j4gqrq49prf7j6r-3000.app.github.dev'],
+    origin: ['https://cuddly-space-meme-9rq7959qwr6hpw46-3000.app.github.dev'],
     credentials: true
   })
 

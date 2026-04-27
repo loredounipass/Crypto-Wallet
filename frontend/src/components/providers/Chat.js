@@ -17,7 +17,6 @@ const ChatComponent = () => {
     const [localError, setLocalError] = useState('');
     const [counterpartId, setCounterpartId] = useState(null);
     const fileInputRef = useRef(null);
-    const messagesEndRef = useRef(null);
 
     // Fetch counterpart user ID by email
     useEffect(() => {
@@ -27,9 +26,12 @@ const ChatComponent = () => {
                 return;
             }
             try {
-                const res = await get(`/user/search?q=${providerEmail}`);
-                if (res?.data?.length > 0) {
-                    setCounterpartId(res.data[0]._id);
+                const res = await get('/user/search', { q: providerEmail });
+                const users = Array.isArray(res?.data?.data)
+                    ? res.data.data
+                    : (Array.isArray(res?.data) ? res.data : []);
+                if (users.length > 0) {
+                    setCounterpartId(users[0]._id);
                     setLocalError('');
                 } else {
                     setLocalError('Proveedor no encontrado en el sistema.');
@@ -60,10 +62,6 @@ const ChatComponent = () => {
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }, [allMessages, counterpartId, auth?._id]);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
     const handleSendMessage = async () => {
         if (!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending) return;
         setIsSending(true);
@@ -72,14 +70,16 @@ const ChatComponent = () => {
             const payload = {
                 receiverId: counterpartId,
                 content: messageContent,
-                type: file ? (file.type.startsWith('image/') ? 'image' : 'video') : 'text',
+                type: file ? 'image' : 'text',
             };
 
             if (file) {
-                await uploadMessage(file, payload);
+                const uploaded = await uploadMessage(file, payload);
+                if (!uploaded) throw new Error('uploadMessage failed');
                 if (fileInputRef.current) fileInputRef.current.value = '';
             } else {
-                await createMessage(payload);
+                const created = await createMessage(payload);
+                if (!created) throw new Error('createMessage failed');
             }
             setMessageContent('');
             await fetchMyMessages();
@@ -98,7 +98,8 @@ const ChatComponent = () => {
                     <h2 className="text-center text-lg font-semibold text-slate-900">Chat</h2>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-white p-4">
+                <div className="flex flex-1 flex-col justify-end bg-white p-4">
+                    <div className="flex flex-1 flex-col justify-end overflow-auto">
                     {localError && (
                         <p className="mb-2 text-sm text-red-600">
                             {localError}
@@ -109,7 +110,7 @@ const ChatComponent = () => {
                             Aún no hay mensajes
                         </p>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="w-full space-y-2">
                             {messages.map((message, index) => {
                                 const isMe = message.sender === auth?._id;
                                 return (
@@ -145,9 +146,9 @@ const ChatComponent = () => {
                                     </div>
                                 </li>
                             )})}
-                            <div ref={messagesEndRef} />
                         </ul>
                     )}
+                    </div>
                 </div>
 
                 <div className="border-t border-slate-200 bg-white p-4">
@@ -169,7 +170,7 @@ const ChatComponent = () => {
                                 type="file" 
                                 ref={fileInputRef} 
                                 className="hidden" 
-                                accept="image/*,video/*"
+                                accept="image/*"
                             />
                             <span className="text-xl text-slate-400 mr-8">📎</span>
                         </label>

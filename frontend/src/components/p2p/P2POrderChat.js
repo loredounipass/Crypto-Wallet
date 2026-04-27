@@ -19,10 +19,10 @@ export default function P2POrderChat() {
 
   const [messageContent, setMessageContent] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [chatError, setChatError] = useState('');
   const [showDispute, setShowDispute] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
   const [counterpartId, setCounterpartId] = useState(null);
-  const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
@@ -44,12 +44,21 @@ export default function P2POrderChat() {
     const fetchCounterpart = async () => {
       if (!counterpartEmail) return;
       try {
-        const res = await get(`/user/search?q=${counterpartEmail}`);
-        if (res?.data?.length > 0) {
-          setCounterpartId(res.data[0]._id);
+        const res = await get('/user/search', { q: counterpartEmail });
+        const users = Array.isArray(res?.data?.data)
+          ? res.data.data
+          : (Array.isArray(res?.data) ? res.data : []);
+        if (users.length > 0) {
+          setCounterpartId(users[0]._id);
+          setChatError('');
+        } else {
+          setCounterpartId(null);
+          setChatError('No se encontró el usuario contraparte para esta orden.');
         }
       } catch (e) {
         console.error('Failed to fetch counterpart user', e);
+        setCounterpartId(null);
+        setChatError('No se pudo resolver la contraparte. Intenta recargar la página.');
       }
     };
     fetchCounterpart();
@@ -74,31 +83,31 @@ export default function P2POrderChat() {
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [allMessages, counterpartId, auth?._id]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const handleSendMessage = async () => {
     if (!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending) return;
     setIsSending(true);
+    setChatError('');
     try {
       const file = fileInputRef.current?.files[0];
       const payload = {
         receiverId: counterpartId,
         content: messageContent,
-        type: file ? (file.type.startsWith('image/') ? 'image' : 'video') : 'text',
+        type: file ? 'image' : 'text',
       };
 
       if (file) {
-        await uploadMessage(file, payload);
+        const uploaded = await uploadMessage(file, payload);
+        if (!uploaded) throw new Error('uploadMessage failed');
         if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
-        await createMessage(payload);
+        const created = await createMessage(payload);
+        if (!created) throw new Error('createMessage failed');
       }
       setMessageContent('');
       await fetchMyMessages();
     } catch (e) {
       console.error('Failed to send message', e);
+      setChatError('No se pudo enviar el mensaje. Verifica la conexión e intenta de nuevo.');
     } finally { 
       setIsSending(false); 
     }
@@ -138,10 +147,12 @@ export default function P2POrderChat() {
   const borderColor = '#2D2D44';
 
   return (
-    <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 100px)', flexWrap: 'wrap' }}>
+    <div className="p2p-chat-layout" style={{ display: 'grid', gap: 16, height: 'calc(100dvh - 16px)', minHeight: 'calc(100dvh - 16px)', width: '100%', overflow: 'hidden', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 420px)' }}>
       {/* LEFT: Chat */}
-      <div style={{
-        flex: '1 1 58%', minWidth: 320,
+      <div className="p2p-chat-panel" style={{
+        minWidth: 0,
+        height: '100%',
+        minHeight: 0,
         display: 'flex', flexDirection: 'column',
         borderRadius: 16, border: `1px solid ${borderColor}`,
         backgroundColor: cardBg, overflow: 'hidden',
@@ -171,16 +182,25 @@ export default function P2POrderChat() {
         </div>
 
         {/* Messages */}
-        <div style={{
-          flex: 1, overflowY: 'auto', padding: 16,
+        <div className="p2p-chat-messages-scroll" style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          padding: 16,
           backgroundColor: '#0F0F1A',
         }}>
+          <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100%',
+          justifyContent: 'flex-end',
+          }}>
           {messages.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 40 }}>
               Aún no hay mensajes. Coordina el pago con tu contraparte.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
               {messages.map((msg, i) => {
                 const isMe = msg.sender === auth?._id;
                 return (
@@ -224,9 +244,9 @@ export default function P2POrderChat() {
                   </div>
                 );
               })}
-              <div ref={messagesEndRef} />
             </div>
           )}
+          </div>
         </div>
 
         {/* Input */}
@@ -253,7 +273,7 @@ export default function P2POrderChat() {
                 type="file" 
                 ref={fileInputRef} 
                 style={{ display: 'none' }} 
-                accept="image/*,video/*"
+                accept="image/*"
                 onChange={() => {
                   // just focus input or show some indicator if we wanted, 
                   // but we will rely on the input ref directly for sending
@@ -263,11 +283,11 @@ export default function P2POrderChat() {
             </label>
             <button
               onClick={handleSendMessage}
-              disabled={!messageContent.trim() || isSending}
+              disabled={!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none',
-                background: messageContent.trim() ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
-                color: '#FFF', cursor: messageContent.trim() ? 'pointer' : 'not-allowed',
+                background: (counterpartId && (messageContent.trim() || fileInputRef.current?.files[0])) ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
+                color: '#FFF', cursor: (counterpartId && (messageContent.trim() || fileInputRef.current?.files[0])) ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
               }}
@@ -278,13 +298,27 @@ export default function P2POrderChat() {
               }
             </button>
           </div>
+          <div style={{ minHeight: 18, margin: '8px 8px 0' }}>
+            {chatError && (
+              <p style={{ margin: 0, fontSize: 12, color: '#F87171' }}>
+                {chatError}
+              </p>
+            )}
+            {!chatError && !counterpartId && (
+              <p style={{ margin: 0, fontSize: 12, color: '#F59E0B' }}>
+                No se pudo identificar la contraparte de esta orden. Reintenta en unos segundos.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* RIGHT: Order Panel */}
-      <div style={{
-        flex: '1 1 38%', minWidth: 300, maxWidth: 420,
+      <div className="p2p-order-panel p2p-order-scroll-hidden" style={{
+        minWidth: 0,
+        minHeight: 'calc(100dvh - 16px)',
         display: 'flex', flexDirection: 'column', gap: 16,
+        overflowY: 'auto', overflowX: 'hidden',
       }}>
         {/* Order Status Card */}
         <div style={{
@@ -301,10 +335,10 @@ export default function P2POrderChat() {
         </div>
 
         {/* Order Details Card */}
-        <div style={{
+        <div className="p2p-order-scroll-hidden" style={{
           borderRadius: 16, padding: 24,
           border: `1px solid ${borderColor}`, backgroundColor: cardBg,
-          flex: 1,
+          flex: 1, minHeight: 0, overflowY: 'auto',
         }}>
           <h3 style={{
             margin: '0 0 16px', fontSize: 16, fontWeight: 700,
@@ -464,6 +498,44 @@ export default function P2POrderChat() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .p2p-chat-messages-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .p2p-chat-messages-scroll::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
+        }
+        .p2p-order-scroll-hidden {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .p2p-order-scroll-hidden::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
+        }
+        @media (max-width: 1400px) {
+          .p2p-chat-layout {
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 380px) !important;
+            min-height: calc(100dvh - 16px) !important;
+          }
+        }
+        @media (max-width: 1200px) {
+          .p2p-chat-layout {
+            grid-template-columns: 1fr !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+          .p2p-order-panel {
+            overflow: visible !important;
+          }
+          .p2p-chat-panel {
+            min-height: 740px;
+          }
+        }
       `}</style>
     </div>
   );
