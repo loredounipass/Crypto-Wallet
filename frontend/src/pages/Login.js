@@ -10,8 +10,6 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
-  useTheme,
-  useMediaQuery,
 } from '../ui/material';
 
 import { Visibility, VisibilityOff } from '../ui/icons';
@@ -25,8 +23,6 @@ import Logo from '../components/Logo';
 export default function Login() {
   const { loginUser, error } = useAuth();
   const history = useHistory();
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [password, setPassword] = useState('');

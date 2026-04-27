@@ -10,8 +10,6 @@ import {
   Alert,
   IconButton,
   InputAdornment,
-  useTheme,
-  useMediaQuery,
 } from '../ui/material';
 import { Visibility, VisibilityOff } from '../ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
@@ -20,8 +18,6 @@ import Logo from '../components/Logo';
 
 export default function Register() {
   const { registerUser, error } = useAuth();
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
   const [openSnackbar, setOpenSnackbar] = React.useState(false);
   const [password, setPassword] = React.useState('');
