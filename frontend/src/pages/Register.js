@@ -203,7 +203,8 @@ export default function Register() {
           variant="contained"
           className="!mt-6 !mb-4 !text-white !font-semibold"
           style={{
-            padding: isMobile ? '12px 14px' : '14px 16px',
+            width: '100%',
+            padding: '10px 0',
             borderRadius: '12px',
             background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
             boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
