@@ -14,7 +14,7 @@
 
 const appRoot = require('app-root-path')
 const { Web3 } = require('web3')
-const { parseUnits, keccak256, toUtf8Bytes } = require('ethers')
+const { keccak256, toUtf8Bytes } = require('ethers')
 const fs = require('fs')
 const path = require('path')
 
@@ -28,6 +28,8 @@ class EscrowContractInteractor {
         
         this.hotWalletAddress = process.env.WITHDRAW_FROM_WALLET ? this.web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET) : null;
         this.hotWalletPrivateKey = process.env.WITHDRAW_FROM_PRIVATE_KEY;
+        this.escrowWalletAddress = process.env.ESCROW_WALLET_ADDRESS ? this.web3.utils.toChecksumAddress(process.env.ESCROW_WALLET_ADDRESS) : null
+        this.escrowWalletPrivateKey = process.env.ESCROW_WALLET_PRIVATE_KEY
 
         this.contractAddress = process.env.ESCROW_CONTRACT_ADDRESS
 
@@ -67,10 +69,19 @@ class EscrowContractInteractor {
         return keccak256(toUtf8Bytes(uuid))
     }
 
+    _normalizePrivateKey(privateKey) {
+        if (!privateKey) return privateKey
+        return privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`
+    }
+
     /**
      * Sign and send a transaction from the specified wallet
      */
     async _sendTransactionFrom(txData, fromAddress, privateKey, value = '0') {
+        if (!this.contractAddress) {
+            throw new Error('Escrow contract address is not configured')
+        }
+
         const nonce = await this.web3.eth.getTransactionCount(fromAddress, 'pending')
         const gasPrice = await this.web3.eth.getGasPrice()
         const chainId = await this.web3.eth.getChainId()
@@ -103,7 +114,7 @@ class EscrowContractInteractor {
 
         const signedTx = await this.web3.eth.accounts.signTransaction(
             transaction,
-            privateKey
+            this._normalizePrivateKey(privateKey)
         )
 
         return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
@@ -114,6 +125,117 @@ class EscrowContractInteractor {
      */
     async _sendTransaction(txData, value = '0') {
         return this._sendTransactionFrom(txData, this.relayerAddress, this.relayerPrivateKey, value)
+    }
+
+    /**
+     * Sign and send a native transfer between two wallets.
+     */
+    async _sendNativeTransfer(fromAddress, privateKey, toAddress, valueWei) {
+        const from = this.web3.utils.toChecksumAddress(fromAddress)
+        const to = this.web3.utils.toChecksumAddress(toAddress)
+        const nonce = await this.web3.eth.getTransactionCount(from, 'pending')
+        const gasPrice = BigInt(await this.web3.eth.getGasPrice())
+        const chainId = await this.web3.eth.getChainId()
+
+        let gasLimit
+        try {
+            gasLimit = BigInt(await this.web3.eth.estimateGas({
+                from,
+                to,
+                value: valueWei.toString()
+            }))
+            gasLimit = gasLimit * 120n / 100n
+        } catch (estimateError) {
+            console.warn('[ESCROW-WALLET] Native transfer gas estimation failed, using fallback:', estimateError.message)
+            gasLimit = 30000n
+        }
+
+        const senderBalance = BigInt(await this.web3.eth.getBalance(from))
+        const requiredBalance = BigInt(valueWei) + (gasPrice * gasLimit)
+        if (senderBalance < requiredBalance) {
+            throw new Error(`Insufficient balance in sender wallet: required=${requiredBalance} available=${senderBalance}`)
+        }
+
+        const transaction = {
+            from,
+            to,
+            chainId,
+            nonce: this.web3.utils.toHex(nonce),
+            gasPrice: gasPrice.toString(),
+            gas: gasLimit.toString(),
+            value: valueWei.toString()
+        }
+
+        const signedTx = await this.web3.eth.accounts.signTransaction(
+            transaction,
+            this._normalizePrivateKey(privateKey)
+        )
+
+        return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+    }
+
+    async getNativeBalance(address) {
+        const checksum = this.web3.utils.toChecksumAddress(address)
+        return BigInt(await this.web3.eth.getBalance(checksum))
+    }
+
+    async _estimateNativeTransferRequiredWei(fromAddress, toAddress, valueWei) {
+        const from = this.web3.utils.toChecksumAddress(fromAddress)
+        const to = this.web3.utils.toChecksumAddress(toAddress)
+        const gasPrice = BigInt(await this.web3.eth.getGasPrice())
+
+        let gasLimit
+        try {
+            gasLimit = BigInt(await this.web3.eth.estimateGas({
+                from,
+                to,
+                value: valueWei.toString()
+            }))
+            gasLimit = gasLimit * 120n / 100n
+        } catch (estimateError) {
+            console.warn('[ESCROW-WALLET] Required-amount gas estimation failed, using fallback:', estimateError.message)
+            gasLimit = 30000n
+        }
+
+        return BigInt(valueWei) + (gasPrice * gasLimit)
+    }
+
+    /**
+     * Ensure escrow wallet has enough native balance to transfer amount + gas.
+     * If not enough, top up from hot wallet.
+     */
+    async ensureEscrowWalletBalanceForTransfer(orderId, toAddress, amountWei) {
+        if (!this.escrowWalletAddress) {
+            throw new Error('Escrow wallet address is not configured')
+        }
+
+        const requiredWei = await this._estimateNativeTransferRequiredWei(
+            this.escrowWalletAddress,
+            toAddress,
+            amountWei
+        )
+        const escrowBalance = await this.getNativeBalance(this.escrowWalletAddress)
+
+        if (escrowBalance >= requiredWei) {
+            return { toppedUp: false, requiredWei, escrowBalance }
+        }
+
+        const missingWei = requiredWei - escrowBalance
+        console.log('[ESCROW-WALLET] Insufficient escrow balance, topping up from hot wallet:', {
+            orderId,
+            requiredWei: requiredWei.toString(),
+            escrowBalance: escrowBalance.toString(),
+            missingWei: missingWei.toString()
+        })
+
+        await this.fundEscrowWallet(`topup-${orderId}`, missingWei)
+
+        const updatedBalance = await this.getNativeBalance(this.escrowWalletAddress)
+        if (updatedBalance < requiredWei) {
+            throw new Error(`Escrow top-up failed: required=${requiredWei} available=${updatedBalance}`)
+        }
+
+        return { toppedUp: true, requiredWei, escrowBalance: updatedBalance }
     }
 
     /**
@@ -212,6 +334,32 @@ class EscrowContractInteractor {
     }
 
     /**
+     * Move funds from hot wallet to escrow wallet (off-chain escrow custody).
+     */
+    async fundEscrowWallet(orderId, amountWei) {
+        if (!this.hotWalletAddress || !this.hotWalletPrivateKey) {
+            throw new Error('Hot wallet credentials are not configured')
+        }
+        if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
+            throw new Error('Escrow wallet credentials are not configured')
+        }
+
+        console.log('[ESCROW-WALLET] Funding escrow wallet:', {
+            orderId,
+            from: this.hotWalletAddress,
+            to: this.escrowWalletAddress,
+            amountWei: amountWei.toString()
+        })
+
+        return this._sendNativeTransfer(
+            this.hotWalletAddress,
+            this.hotWalletPrivateKey,
+            this.escrowWalletAddress,
+            amountWei
+        )
+    }
+
+    /**
      * Release escrowed funds to the provider on-chain
      * @param {string} orderId - UUID of the order
      * @returns {Object} Transaction receipt
@@ -232,6 +380,29 @@ class EscrowContractInteractor {
     }
 
     /**
+     * Release funds from escrow wallet directly to provider wallet.
+     */
+    async releaseFundsFromEscrowWallet(orderId, providerAddress, amountWei) {
+        if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
+            throw new Error('Escrow wallet credentials are not configured')
+        }
+
+        console.log('[ESCROW-WALLET] Releasing from escrow wallet:', {
+            orderId,
+            from: this.escrowWalletAddress,
+            to: providerAddress,
+            amountWei: amountWei.toString()
+        })
+
+        return this._sendNativeTransfer(
+            this.escrowWalletAddress,
+            this.escrowWalletPrivateKey,
+            providerAddress,
+            amountWei
+        )
+    }
+
+    /**
      * Refund escrowed funds to the seller on-chain
      * @param {string} orderId - UUID of the order
      * @returns {Object} Transaction receipt
@@ -249,6 +420,29 @@ class EscrowContractInteractor {
         })
 
         return receipt
+    }
+
+    /**
+     * Refund funds from escrow wallet directly to seller wallet.
+     */
+    async refundFundsFromEscrowWallet(orderId, sellerAddress, amountWei) {
+        if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
+            throw new Error('Escrow wallet credentials are not configured')
+        }
+
+        console.log('[ESCROW-WALLET] Refunding from escrow wallet:', {
+            orderId,
+            from: this.escrowWalletAddress,
+            to: sellerAddress,
+            amountWei: amountWei.toString()
+        })
+
+        return this._sendNativeTransfer(
+            this.escrowWalletAddress,
+            this.escrowWalletPrivateKey,
+            sellerAddress,
+            amountWei
+        )
     }
 
     /**

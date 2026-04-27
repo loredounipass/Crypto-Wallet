@@ -20,9 +20,13 @@ const toNumber = (value) => {
     return value
 }
 
+const isFiniteNumber = (value) => Number.isFinite(Number(value))
+
 const toCoinAmount = (rawValue, coin) => {
-    const decimals = coins[coin]?.decimals || 18
-    return toNumber(rawValue) / 10 ** decimals
+    const decimals = coins[String(coin || '').toUpperCase()]?.decimals || 18
+    const numeric = toNumber(rawValue)
+    if (!isFiniteNumber(numeric)) return 0
+    return Number(numeric) / 10 ** decimals
 }
 
 const reject = (message = 'err: not deposited') => {
@@ -38,8 +42,8 @@ const _updateTransactionState = async (tId, status, value, confirmations) => {
         upsert.confirmations = confirmations
     }
 
-    if (value) {
-        upsert.amount = value
+    if (value !== undefined && value !== null && isFiniteNumber(value)) {
+        upsert.amount = Number(value)
     }
 
     await Transaction.updateOne({ _id: ObjectId(tId) }, {
@@ -90,7 +94,7 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
 }
 
 const _checkConfirmation = async (
-    address, txHash, value, coin, chainId, transactionId
+    address, txHash, amount, coin, chainId, transactionId
 ) => {
     var result = await web3.eth.getTransactionReceipt(txHash)
     if (result && 'status' in result && result.status) {
@@ -100,7 +104,7 @@ const _checkConfirmation = async (
             chainId,
             coin
         })
-        return _deposit(transactionId, chainId, coin, address, toCoinAmount(value, coin))
+        return _deposit(transactionId, chainId, coin, address, amount)
     }
 
     reject()
@@ -121,21 +125,27 @@ const processDeposit = async (
         coin
     })
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
-    var result = await Transaction.findOne({ _id: ObjectId(transactionId) })
-    if (result) {
+    let trackedTransaction = await Transaction.findOne({ _id: ObjectId(transactionId) })
+    if (trackedTransaction) {
         const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
-            result = await web3.eth.getTransaction(transactionHash)
-            if (result && 'value' in result) {
-                const { value, blockNumber } = result
+            const chainTx = await web3.eth.getTransaction(transactionHash)
+            if (chainTx && 'value' in chainTx) {
+                const { value, blockNumber } = chainTx
                 if (blockNumber !== null && blockNumber !== undefined) {
                     const latestBlockNumber = await web3.eth.getBlockNumber()
                     const confirmations = Number(latestBlockNumber - blockNumber)
-                    const amount = toCoinAmount(value, coin)
+                    const chainAmount = toCoinAmount(value, coin)
+                    const storedAmount = Number(trackedTransaction.amount)
+                    const amount = chainAmount > 0
+                        ? chainAmount
+                        : (isFiniteNumber(storedAmount) ? storedAmount : 0)
                     console.log('[DEPOSIT] transaction found on chain', {
                         transactionId,
                         confirmations,
-                        blockNumber
+                        blockNumber,
+                        chainAmount,
+                        trackedAmount: amount
                     })
                     await _updateTransactionState(
                         transactionId,
@@ -151,7 +161,7 @@ const processDeposit = async (
                         return await _checkConfirmation(
                             walletAddress,
                             transactionHash,
-                            value,
+                            amount,
                             coin,
                             chainId,
                             transactionId
@@ -171,6 +181,7 @@ const processDeposit = async (
                 }
             }
 
+            trackedTransaction = await Transaction.findOne({ _id: ObjectId(transactionId) })
             await _sleep(POLL_INTERVAL_MS)
         }
 

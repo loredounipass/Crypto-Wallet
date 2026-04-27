@@ -16,37 +16,60 @@ require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const ObjectId = require('mongoose').Types.ObjectId
+const { parseUnits } = require('ethers')
 
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const User = require(`${appRoot}/config/models/User`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
+const coins = require(`${appRoot}/config/coins/info`)
+const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const POLL_INTERVAL_MS = 60000 // Check every 60 seconds
 
 const refundSellerWallet = async (order) => {
     // 1. If order was funded on-chain, refund via smart contract
-    if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+    if (order.escrowTxHash) {
         try {
             const interactor = new EscrowContractInteractor(order.chainId)
             const contractAvailable = await interactor.isContractAvailable()
+            const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
+            const amountWei = parseUnits(String(order.amount), decimals)
+            let refunded = false
 
-            if (contractAvailable) {
-                console.log('[ESCROW-EXPIRY] Refunding on-chain:', { orderId: order.orderId })
-                const receipt = await interactor.refundFundsOnChain(order.orderId)
+            if (USE_ESCROW_CONTRACT && contractAvailable) {
+                try {
+                    console.log('[ESCROW-EXPIRY] Refunding via escrow contract:', { orderId: order.orderId })
+                    const receipt = await interactor.refundFundsOnChain(order.orderId)
+                    if (receipt && receipt.status) {
+                        refunded = true
+                        console.log('[ESCROW-EXPIRY] Contract refund successful:', {
+                            orderId: order.orderId,
+                            txHash: receipt.transactionHash
+                        })
+                    }
+                } catch (contractError) {
+                    console.warn('[ESCROW-EXPIRY] Contract refund failed, trying escrow wallet fallback:', contractError.message)
+                }
+            }
 
+            if (!refunded) {
+                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
                 if (receipt && receipt.status) {
-                    console.log('[ESCROW-EXPIRY] On-chain refund successful:', {
+                    refunded = true
+                    console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
                         orderId: order.orderId,
                         txHash: receipt.transactionHash
                     })
-                } else {
-                    console.warn('[ESCROW-EXPIRY] On-chain refund failed for:', order.orderId)
                 }
+            }
+
+            if (!refunded) {
+                throw new Error('Refund transaction failed in all strategies')
             }
         } catch (error) {
             console.warn('[ESCROW-EXPIRY] On-chain refund error:', error.message)
-            // Continue with DB refund regardless
+            throw error
         }
     }
 

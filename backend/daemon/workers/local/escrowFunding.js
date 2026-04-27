@@ -27,12 +27,13 @@ const Wallet = require(`${appRoot}/config/models/Wallet`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
+const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
-const registerEscrowFundingTransaction = async (order, escrowTxHash) => {
+const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTargetAddress) => {
     if (!escrowTxHash || escrowTxHash.startsWith('offchain-')) return null
 
     const coin = String(order.coin || '').toUpperCase()
@@ -72,7 +73,7 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash) => {
         status: 1,
         confirmations: 0,
         txHash: escrowTxHash,
-        to: process.env.ESCROW_CONTRACT_ADDRESS
+        to: escrowTargetAddress
     })
     await transaction.save()
 
@@ -135,12 +136,14 @@ const processEscrowFunding = async (jobData) => {
     const amountWei = toWeiAmount(amount, decimals)
 
     let escrowTxHash = null
+    let usedContractFunding = false
 
     try {
         const interactor = new EscrowContractInteractor(chainId)
         const isAvailable = await interactor.isContractAvailable()
 
-        if (isAvailable) {
+        if (USE_ESCROW_CONTRACT && isAvailable) {
+            usedContractFunding = true
             console.log('[ESCROW-FUNDING] Contract available, creating order on-chain from hot wallet...')
             const receipt = await interactor.createOrderOnChain(
                 orderId,
@@ -150,8 +153,12 @@ const processEscrowFunding = async (jobData) => {
             )
             escrowTxHash = receipt.transactionHash
         } else {
-            console.log('[ESCROW-FUNDING] Contract not available, skipping on-chain funding.')
-            escrowTxHash = `offchain-${orderId}`
+            console.log('[ESCROW-FUNDING] Funding escrow wallet directly...')
+            const receipt = await interactor.fundEscrowWallet(orderId, amountWei)
+            if (!receipt || !receipt.status) {
+                throw new Error('[ESCROW-FUNDING] Escrow wallet funding failed')
+            }
+            escrowTxHash = receipt.transactionHash
         }
     } catch (error) {
         console.error('[ESCROW-FUNDING] On-chain funding failed:', error.message)
@@ -169,7 +176,10 @@ const processEscrowFunding = async (jobData) => {
         }
     )
 
-    await registerEscrowFundingTransaction(order, escrowTxHash)
+    const escrowTargetAddress = usedContractFunding
+        ? process.env.ESCROW_CONTRACT_ADDRESS
+        : process.env.ESCROW_WALLET_ADDRESS
+    await registerEscrowFundingTransaction(order, escrowTxHash, escrowTargetAddress)
 
     // Emit status event
     const statusQueue = new Queue('escrow-status-events')

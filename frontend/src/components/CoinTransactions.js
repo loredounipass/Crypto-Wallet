@@ -218,6 +218,21 @@ export default function CoinTransactions({
         return `${base}${txHash}`;
     };
 
+    const toSafeNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const formatAmount = (value, transaction) => {
+        const decimals = getCoinDecimalsPlace(getTransactionCoin(transaction));
+        return toSafeNumber(value).toFixed(decimals);
+    };
+
+    const getSafeFee = (transaction) => {
+        const parsed = Number(transaction?.fee);
+        return Number.isFinite(parsed) ? parsed : getCoinFee(getTransactionCoin(transaction));
+    };
+
     const handleOpen = (transaction) => {
         setSelectedTransaction(transaction);
     };
@@ -289,7 +304,7 @@ export default function CoinTransactions({
                                     <td style={styles.td}>
                                         <span style={styles.amount(transaction.nature)}>
                                             {transaction.nature === 1 && transaction.status > 1 ? '+' : ''}
-                                            {transaction.amount ? parseFloat(transaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(transaction))) : ''}
+                                            {formatAmount(transaction.amount, transaction)}
                                         </span>
                                     </td>
                                     <td style={styles.td}>
@@ -379,15 +394,15 @@ export default function CoinTransactions({
                                 <div style={styles.label}>Monto Bruto</div>
                                 <div style={styles.value}>
                                     {selectedTransaction.nature === 1 
-                                        ? parseFloat(selectedTransaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))
-                                        : parseFloat(Math.abs(selectedTransaction.amount)).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        ? formatAmount(selectedTransaction.amount, selectedTransaction)
+                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)), selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
                                 </div>
                             </div>
                             {selectedTransaction.nature === 2 && (
                                 <div>
                                     <div style={styles.label}>Comision</div>
                                     <div style={{ ...styles.value, color: "#F44336" }}>
-                                        -{selectedTransaction.fee || getCoinFee(getTransactionCoin(selectedTransaction))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        -{getSafeFee(selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
                                     </div>
                                 </div>
                             )}
@@ -395,8 +410,8 @@ export default function CoinTransactions({
                                 <div style={styles.label}>{selectedTransaction.nature === 1 ? 'Monto Recibido' : 'Monto Neto'}</div>
                                 <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : ("#FFFFFF"), fontWeight: 700 }}>
                                     {selectedTransaction.nature === 1 
-                                        ? parseFloat(selectedTransaction.amount).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))
-                                        : parseFloat(Math.abs(selectedTransaction.amount) - (selectedTransaction.fee || getCoinFee(getTransactionCoin(selectedTransaction)))).toFixed(getCoinDecimalsPlace(getTransactionCoin(selectedTransaction)))} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        ? formatAmount(selectedTransaction.amount, selectedTransaction)
+                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)) - getSafeFee(selectedTransaction), selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
                                 </div>
                             </div>
                             <div>

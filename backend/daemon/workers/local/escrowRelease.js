@@ -19,7 +19,6 @@ const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Worker, Queue } = require(`${appRoot}/config/bullmq`)
-const { Web3 } = require('web3')
 const { parseUnits } = require('ethers')
 const ObjectId = require('mongoose').Types.ObjectId
 
@@ -29,52 +28,10 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
+const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
-}
-
-/**
- * Send a direct transfer from the platform's hot wallet (withdraw flow)
- */
-const sendDirectTransfer = async (chainId, providerWalletAddress, amountWei) => {
-    const web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
-    const fromAddress = web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET || process.env.ESCROW_RELAYER_WALLET)
-    const toAddress = web3.utils.toChecksumAddress(providerWalletAddress)
-
-    const gasPrice = BigInt(await web3.eth.getGasPrice())
-    const gasLimit = BigInt(await web3.eth.estimateGas({
-        from: fromAddress,
-        to: toAddress,
-        value: amountWei.toString()
-    }))
-
-    const senderBalance = BigInt(await web3.eth.getBalance(fromAddress))
-    const requiredBalance = BigInt(amountWei) + (gasPrice * gasLimit)
-
-    if (senderBalance < requiredBalance) {
-        throw new Error(`Insufficient hot wallet balance for release: required=${requiredBalance} available=${senderBalance}`)
-    }
-
-    const nonce = await web3.eth.getTransactionCount(fromAddress, 'pending')
-    const txChainId = await web3.eth.getChainId()
-
-    const transaction = {
-        from: fromAddress,
-        chainId: txChainId,
-        nonce: web3.utils.toHex(nonce),
-        gasPrice: gasPrice.toString(),
-        gas: gasLimit.toString(),
-        to: toAddress,
-        value: amountWei.toString()
-    }
-
-    const signedTx = await web3.eth.accounts.signTransaction(
-        transaction,
-        process.env.WITHDRAW_FROM_PRIVATE_KEY || process.env.ESCROW_RELAYER_PRIVATE_KEY
-    )
-
-    return await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
 }
 
 /**
@@ -184,7 +141,7 @@ const processEscrowRelease = async (jobData) => {
     const interactor = new EscrowContractInteractor(chainId)
     const contractAvailable = await interactor.isContractAvailable()
 
-    if (contractAvailable && order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+    if (USE_ESCROW_CONTRACT && contractAvailable && order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
         console.log('[ESCROW-RELEASE] Releasing via smart contract...')
 
         try {
@@ -203,19 +160,19 @@ const processEscrowRelease = async (jobData) => {
         }
     }
 
-    // ===== STRATEGY 2: Direct transfer from relayer wallet (fallback) =====
+    // ===== STRATEGY 2: Transfer directly from escrow wallet (fallback) =====
     if (!releaseTxHash) {
-        console.log('[ESCROW-RELEASE] Releasing via direct transfer from relayer wallet...')
-
-        const receipt = await sendDirectTransfer(chainId, providerWalletAddress, amountWei)
+        console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
+        await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
+        const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei)
 
         if (!receipt || !receipt.status) {
-            console.error('[ESCROW-RELEASE] Direct transfer failed')
-            throw new Error('[ESCROW-RELEASE] Direct transfer failed')
+            console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+            throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
         }
 
         releaseTxHash = receipt.transactionHash
-        console.log('[ESCROW-RELEASE] Direct transfer successful:', { orderId, txHash: releaseTxHash })
+        console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
     }
 
     // ===== Update database =====

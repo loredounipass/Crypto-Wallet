@@ -12,6 +12,8 @@ import { Provider, ProviderDocument } from '../providers/schemas/provider.schema
 import { Chat, ChatDocument } from '../providers/schemas/chat-schema/chat.schema';
 import { default as EscrowQueueType } from './queue/types.queue';
 
+const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true';
+
 
 @Injectable()
 export class EscrowService {
@@ -260,6 +262,10 @@ export class EscrowService {
       throw new BadRequestException(`Cannot release funds for order with status: ${order.status}`);
     }
 
+    if (!order.escrowTxHash) {
+      throw new BadRequestException('Los fondos aún no están bloqueados en escrow. Espera unos segundos e intenta de nuevo.');
+    }
+
     order.status = 'released';
     order.sellerConfirmedRelease = true;
     await order.save();
@@ -340,17 +346,37 @@ export class EscrowService {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 
-    // Refund on-chain if funds were locked in the contract
-    if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+    // Refund on-chain when escrow was already funded
+    if (order.escrowTxHash) {
       try {
         const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
         const interactor = new EscrowContractInteractor(order.chainId);
+        const { parseUnits } = require('ethers');
+        const decimals = require('../../../config/coins/info.js')[order.coin.toUpperCase()]?.decimals || 18;
+        const amountWei = parseUnits(String(order.amount), decimals);
+        let refunded = false;
         const contractAvailable = await interactor.isContractAvailable();
 
-        if (contractAvailable) {
-          console.log(`[ESCROW-CANCEL] Refunding order ${orderId} on-chain...`);
-          await interactor.refundFundsOnChain(orderId);
-          console.log(`[ESCROW-CANCEL] Refund on-chain successful.`);
+        if (USE_ESCROW_CONTRACT && contractAvailable) {
+          try {
+            console.log(`[ESCROW-CANCEL] Refunding order ${orderId} via escrow contract...`);
+            await interactor.refundFundsOnChain(orderId);
+            refunded = true;
+            console.log(`[ESCROW-CANCEL] Contract refund successful.`);
+          } catch (contractRefundError) {
+            console.warn(`[ESCROW-CANCEL] Contract refund failed, trying escrow wallet fallback:`, contractRefundError.message);
+          }
+        }
+
+        if (!refunded) {
+          console.log(`[ESCROW-CANCEL] Refunding order ${orderId} from escrow wallet...`);
+          await interactor.refundFundsFromEscrowWallet(orderId, order.sellerWalletAddress, amountWei);
+          refunded = true;
+          console.log(`[ESCROW-CANCEL] Escrow wallet refund successful.`);
+        }
+
+        if (!refunded) {
+          throw new Error('No refund strategy succeeded');
         }
       } catch (err) {
         console.error(`[ESCROW-CANCEL] Failed to refund on-chain:`, err.message);
@@ -443,17 +469,37 @@ export class EscrowService {
     }).exec();
 
     for (const order of expiredOrders) {
-      // Refund on-chain if funds were locked in the contract
-      if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+      // Refund on-chain when escrow was already funded
+      if (order.escrowTxHash) {
         try {
           const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
           const interactor = new EscrowContractInteractor(order.chainId);
+          const { parseUnits } = require('ethers');
+          const decimals = require('../../../config/coins/info.js')[order.coin.toUpperCase()]?.decimals || 18;
+          const amountWei = parseUnits(String(order.amount), decimals);
+          let refunded = false;
           const contractAvailable = await interactor.isContractAvailable();
 
-          if (contractAvailable) {
-            console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} on-chain...`);
-            await interactor.refundFundsOnChain(order.orderId);
-            console.log(`[ESCROW-EXPIRE] Refund on-chain successful.`);
+          if (USE_ESCROW_CONTRACT && contractAvailable) {
+            try {
+              console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);
+              await interactor.refundFundsOnChain(order.orderId);
+              refunded = true;
+              console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
+            } catch (contractRefundError) {
+              console.warn(`[ESCROW-EXPIRE] Contract refund failed, trying escrow wallet fallback:`, contractRefundError.message);
+            }
+          }
+
+          if (!refunded) {
+            console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} from escrow wallet...`);
+            await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
+            refunded = true;
+            console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
+          }
+
+          if (!refunded) {
+            throw new Error('No refund strategy succeeded');
           }
         } catch (err) {
           console.error(`[ESCROW-EXPIRE] Failed to refund on-chain:`, err.message);
