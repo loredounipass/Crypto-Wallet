@@ -1,9 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
     IsEmail,
-    IsLowercase,
     IsNumber,
-    IsOptional,
+    IsPositive,
     IsString
 } from 'class-validator';
 
@@ -13,9 +12,11 @@ export class CreateEscrowOrderDto {
     coin: string;
 
     @IsNumber()
+    @IsPositive()
     amount: number;
 
     @IsNumber()
+    @IsPositive()
     fiatAmount: number;
 
     @IsString()
@@ -25,9 +26,5 @@ export class CreateEscrowOrderDto {
     @IsString()
     paymentMethod: string;
 
-    @IsOptional()
-    @IsString()
-    @IsEmail()
-    @IsLowercase()
-    email?: string;
+
 }

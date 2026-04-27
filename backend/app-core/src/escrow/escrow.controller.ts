@@ -15,8 +15,7 @@ export class EscrowController {
     @Request() req,
     @Body() dto: CreateEscrowOrderDto
   ) {
-    dto.email = req.user.email;
-    return this.escrowService.createOrder(dto);
+    return this.escrowService.createOrder(dto, req.user.email);
   }
 
   @UseGuards(AuthenticatedGuard)

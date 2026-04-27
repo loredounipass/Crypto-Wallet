@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import Escrow from '../services/escrow';
+import { apiOrigin } from '../api/http';
 
 export default function useEscrow() {
   const [orders, setOrders] = useState([]);
@@ -7,6 +9,50 @@ export default function useEscrow() {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // WebSocket Connection for Real-time Escrow Updates
+  useEffect(() => {
+    // Extraemos la base sin /secure/api para conectarnos al gateway principal
+    const socketOrigin = apiOrigin.replace('/secure/api', '');
+    const socket = io(`${socketOrigin}/escrow`, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    socket.on('connect', () => {
+      console.log('[Escrow Socket] Conectado exitosamente');
+    });
+
+    socket.on('escrowStatusUpdated', (event) => {
+      console.log('[Escrow Socket] Actualización recibida:', event);
+      
+      // Actualizar currentOrder si estamos viéndola
+      setCurrentOrder((prev) => {
+        if (prev && prev.orderId === event.orderId) {
+          return { ...prev, ...event };
+        }
+        return prev;
+      });
+
+      // Actualizar lista de mis órdenes
+      setOrders((prev) => 
+        prev.map(o => o.orderId === event.orderId ? { ...o, ...event } : o)
+      );
+
+      // Actualizar lista de órdenes como proveedor
+      setProviderOrders((prev) => 
+        prev.map(o => o.orderId === event.orderId ? { ...o, ...event } : o)
+      );
+    });
+
+    socket.on('error', (err) => {
+      console.error('[Escrow Socket] Error de conexión:', err);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const createOrder = async (body) => {
     setIsLoading(true);

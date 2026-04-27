@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'https://cuddly-space-meme-9rq7959qwr6hpw46-4000.app.github.dev';
+        const fallbackBaseApi = 'https://effective-enigma-6qr9g5grw79hrgqp-4000.app.github.dev';
         const socketOrigin = (() => {
             try { 
                 return new URL(process.env.REACT_APP_API_BASE_URL).origin; 

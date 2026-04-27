@@ -10,6 +10,9 @@ import { Server, Socket } from 'socket.io';
 import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
 
 type EscrowStatusEvent = {
   orderId: string;
@@ -22,7 +25,7 @@ type EscrowStatusEvent = {
 
 @WebSocketGateway({
   namespace: '/escrow',
-  cors: { origin: ['https://cuddly-space-meme-9rq7959qwr6hpw46-3000.app.github.dev'], credentials: true },
+  cors: { origin: ['https://effective-enigma-6qr9g5grw79hrgqp-3000.app.github.dev'], credentials: true },
 })
 export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -31,7 +34,9 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger('EscrowGateway');
   private readonly redisStore: any;
 
-  constructor() {
+  constructor(
+    @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>
+  ) {
     const RedisStore = connectRedis.default || connectRedis;
     const RedisStoreClass = RedisStore(session);
     const redisClient = new Redis({
@@ -108,8 +113,9 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('watchOrder')
-  handleWatchOrder(client: Socket, payload: { orderId: string }) {
-    if (!client.data?.user?.email) {
+  async handleWatchOrder(client: Socket, payload: { orderId: string }) {
+    const userEmail = client.data?.user?.email;
+    if (!userEmail) {
       void client.emit('error', { message: 'Unauthorized' });
       return;
     }
@@ -117,7 +123,24 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
       void client.emit('error', { message: 'Missing orderId' });
       return;
     }
-    client.join(`escrow:order:${payload.orderId}`);
+
+    try {
+      const order = await this.escrowOrderModel.findOne({ orderId: payload.orderId });
+      if (!order) {
+        void client.emit('error', { message: 'Order not found' });
+        return;
+      }
+
+      if (order.sellerEmail !== userEmail && order.providerEmail !== userEmail) {
+        void client.emit('error', { message: 'Forbidden' });
+        return;
+      }
+
+      client.join(`escrow:order:${payload.orderId}`);
+    } catch (error) {
+      this.logger.error(`Error in watchOrder: ${error}`);
+      void client.emit('error', { message: 'Internal server error' });
+    }
   }
 
   emitEscrowStatusUpdate(event: EscrowStatusEvent) {

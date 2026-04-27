@@ -111,8 +111,8 @@ export class EscrowService {
   }
 
   // Create a new escrow P2P order
-  async createOrder(dto: CreateEscrowOrderDto) {
-    const sellerEmail = dto.email;
+  async createOrder(dto: CreateEscrowOrderDto, email: string) {
+    const sellerEmail = email;
 
     // 1. Find the provider and validate
     const provider = await this.providerModel.findOne({ email: dto.providerEmail, isValid: true });

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const fallbackBaseApi = 'https://cuddly-space-meme-9rq7959qwr6hpw46-4000.app.github.dev/secure/api';
+const fallbackBaseApi = 'https://effective-enigma-6qr9g5grw79hrgqp-4000.app.github.dev/secure/api';
 const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
 
 const baseApi = configuredBaseApi;
