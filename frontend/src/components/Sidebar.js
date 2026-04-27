@@ -136,21 +136,32 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     return () => { isMountedRef.current = false; };
   }, []);
 
-  // Auto open sidebar on mouse hover when collapsed
+  const timeoutRef = React.useRef(null);
+
+  // Auto open sidebar on mouse hover when collapsed, and wait 3s before closing on leave
   React.useEffect(() => {
     const sidebarElement = sidebarRef.current;
     if (!sidebarElement || isMobile) return;
 
     const handleMouseEnter = () => {
+      // Si entra el mouse, cancelamos cualquier intento de cierre
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       if (!open) {
         onToggle();
       }
     };
 
     const handleMouseLeave = () => {
-      // Collapse when mouse leaves the sidebar
+      // Colapsar después de 3 segundos
       if (open) {
-        onToggle();
+        timeoutRef.current = setTimeout(() => {
+          // Es importante chequear el estado actual, pero el closure tiene el valor anterior.
+          // Para evitar que haga toggle cuando no deba, onToggle desde el padre lo invierte.
+          onToggle();
+        }, 3000);
       }
     };
 
@@ -160,6 +171,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     return () => {
       sidebarElement.removeEventListener("mouseenter", handleMouseEnter);
       sidebarElement.removeEventListener("mouseleave", handleMouseLeave);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, [open, onToggle, isMobile]);
 
@@ -217,18 +231,18 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       flexDirection: "column", 
       height: "100%", 
       background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
-      width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
-      transition: "width 0.3s ease-in-out",
+      width: isMobile ? "100%" : (open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED),
+      transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
       overflowX: "hidden",
       overflowY: "auto",
     }}>
        {/* Logo Section */}
        <Box className="p-4 flex items-center justify-between min-h-[64px] border-b border-white/10">
-         {open ? (
+         {open || isMobile ? (
            <>
              <Logo variant="sidebar-expanded" />
              <button
-               onClick={onToggle}
+               onClick={isMobile ? onMobileClose : onToggle}
                className="text-white bg-white/10 border-none rounded-lg p-1.5 cursor-pointer flex items-center justify-center hover:bg-white/20 transition-colors"
              >
                <ChevronLeftIcon style={{ fontSize: 18 }} />
@@ -291,7 +305,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               <ListItemIcon style={{ color: "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
                 <item.icon style={{ fontSize: 18 }} />
               </ListItemIcon>
-              {open && (
+              { (open || isMobile) && (
                 <ListItemText 
                   primary={item.text} 
                   style={{ fontSize: "14px", fontWeight: 500, color: "white" }} 
@@ -333,7 +347,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               <ListItemIcon style={{ color: item.color || "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
                 <item.icon style={{ fontSize: 18 }} />
               </ListItemIcon>
-              {open && (
+              { (open || isMobile) && (
                 <ListItemText 
                   primary={item.text} 
                   style={{ fontSize: "14px", fontWeight: 500, color: item.color || "white" }} 
@@ -361,23 +375,26 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       <Drawer
         open={mobileOpen}
         onClose={onMobileClose}
-        style={{ position: "fixed", zIndex: 50 }}
-        PaperProps={{
-          style: {
-            background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
-            border: "none",
-            boxShadow: "none",
+        transitionDuration={{ enter: 500, exit: 500 }}
+        sx={{
+          zIndex: 1200,
+          '& .MuiDrawer-paper': {
+            backgroundColor: '#0F0F1A !important',
+            background: 'linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%) !important',
+            border: 'none !important',
+            boxShadow: 'none !important',
+            padding: '0 !important',
+            margin: '0 !important',
+            borderRadius: '0 !important',
+            height: '100dvh !important',
+            width: `${DRAWER_WIDTH_EXPANDED}px !important`,
+            top: '0 !important',
+            left: '0 !important',
+            maxWidth: '100% !important',
           }
         }}
       >
-       <div style={{ 
-         width: DRAWER_WIDTH_EXPANDED, 
-         height: "100%", 
-         background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
-         border: "none",
-       }}>
-          {sidebarContent}
-        </div>
+        {sidebarContent}
       </Drawer>
     );
   }
@@ -388,7 +405,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       style={{ 
         width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED, 
         flexShrink: 0, 
-        transition: "width 0.3s ease-in-out",
+        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "fixed",
         left: 0,
         top: 0,
@@ -399,7 +416,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
          height: "100vh", 
          width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
          background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
-         transition: "width 0.3s ease-in-out",
+         transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
        }}>
         {sidebarContent}
       </div>

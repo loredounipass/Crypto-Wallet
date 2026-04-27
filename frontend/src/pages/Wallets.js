@@ -160,6 +160,8 @@ const Wallets = () => {
             background: "linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)",
             borderRadius: "16px",
             padding: isMobile ? "14px" : "24px",
+            minWidth: 0,
+            boxSizing: "border-box",
         },
         createWalletCard: {
             background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
@@ -167,6 +169,8 @@ const Wallets = () => {
             padding: isMobile ? "14px" : "24px",
             border: "1px solid #2D2D44",
             boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+            minWidth: 0,
+            boxSizing: "border-box",
         },
         sectionSubtleText: {
             color: "#9CA3AF",
@@ -323,7 +327,7 @@ const Wallets = () => {
                         Selecciona una moneda
                     </label>
                     <div style={styles.coinPickerWrap}>
-                        <div ref={coinMenuRef} style={{ position: "relative", flex: 1 }}>
+                        <div ref={coinMenuRef} style={{ position: "relative", flex: 1, minWidth: 0 }}>
                             <button
                                 type="button"
                                 style={styles.coinMenuButton}

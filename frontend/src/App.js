@@ -67,12 +67,14 @@ function AppContent() {
         minHeight: '100vh',
         padding: isMobile ? '16px' : '24px',
         width: (isAuthenticated && !isPublicRoute) ? undefined : '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
     };
 
     return (
         <AuthContext.Provider value={{ auth, setAuth, loading }}>
             <SocketProvider>
-                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A' }}>
+                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
                     <CssBaseline />
                     
                     {isAuthenticated && !isPublicRoute && (
