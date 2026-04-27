@@ -2,15 +2,15 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom'; 
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
+import TransactionToast from '../TransactionToast';
 
 
 
 export default function ProviderForm() {
-  const { createNewProvider, findByEMail, provider, error } = useProvider();
+  const { createNewProvider, findByEMail } = useProvider();
   const { auth } = useContext(AuthContext);
   const history = useHistory();
-  
-  
+  const [toast, setToast] = useState(null);
 
   const [form, setForm] = useState({
     firstName: '',
@@ -30,7 +30,6 @@ export default function ProviderForm() {
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([]);
 
   const [hasCheckedProvider, setHasCheckedProvider] = useState(false);
-  const [showLoader, setShowLoader] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -44,10 +43,21 @@ export default function ProviderForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createNewProvider({
-      ...form,
-      paymentMethods: selectedPaymentMethods,
-    });
+    try {
+      await createNewProvider({
+        ...form,
+        paymentMethods: selectedPaymentMethods,
+      });
+      setToast({ kind: 'deposit', message: 'Proveedor creado exitosamente' });
+      setTimeout(() => {
+        history.push('/providerChat');
+      }, 1500);
+    } catch (err) {
+      setToast({ 
+        kind: 'withdraw', 
+        message: err.message || err.response?.data?.message || 'Ocurrió un error al crear el proveedor' 
+      });
+    }
   };
 
   const togglePaymentMethod = (pm) => {
@@ -63,15 +73,15 @@ export default function ProviderForm() {
         try {
           const response = await findByEMail(auth.email);
           if (response) {
-            setShowLoader(true);
-            setTimeout(() => {
-              history.push('/providerChat');
-            }, 3000);
+            history.push('/providerChat');
           } else {
             setShowTermsDialog(true);
           }
         } catch (err) {
           console.error("Error en findByEMail:", err);
+          if (err.message) {
+            setToast({ kind: 'withdraw', message: err.message });
+          }
         }
       }
     };
@@ -104,16 +114,7 @@ export default function ProviderForm() {
           Completa tu informacion para activar tu perfil de proveedor.
         </p>
   
-        {provider && (
-          <div className="mb-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-            Proveedor creado exitosamente.
-          </div>
-        )}
-        {error && (
-          <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error.message || 'Ocurrió un error'}
-          </div>
-        )}
+
   
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -243,17 +244,7 @@ export default function ProviderForm() {
         </form>
       </div>
   
-      {showLoader && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className={modalCardClass}>
-            <h3 className={modalTitleClass}>Bienvenido</h3>
-            <div className={modalBodyClass}>
-              <span className={`inline-block h-12 w-12 animate-spin rounded-full border-4 border-t-transparent ${'border-sky-200'}`} />
-              <p className="text-center text-lg font-medium">Baya, ya eres un proveedor. ¡Te queremos!</p>
-            </div>
-          </div>
-        </div>
-      )}
+
   
       {showTermsDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -285,6 +276,8 @@ export default function ProviderForm() {
           </div>
         </div>
       )}
+
+      <TransactionToast toast={toast} onClose={() => setToast(null)} />
     </>
   );
 }

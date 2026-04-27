@@ -10,10 +10,10 @@ import { User, UserDocument } from '../user/schemas/user.schema';
 import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 import { Provider, ProviderDocument } from '../providers/schemas/provider.schema';
 import { Chat, ChatDocument } from '../providers/schemas/chat-schema/chat.schema';
+import { Transaction, TransactionDocument } from '../transaction/schemas/transaction.schema';
 import { default as EscrowQueueType } from './queue/types.queue';
 
 const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true';
-
 
 @Injectable()
 export class EscrowService {
@@ -23,11 +23,92 @@ export class EscrowService {
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     @InjectModel(Provider.name) private providerModel: Model<ProviderDocument>,
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+    @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>,
     @InjectQueue(EscrowQueueType.ESCROW_FUNDING) private escrowFundingQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_RELEASE) private escrowReleaseQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_STATUS_EVENTS) private escrowStatusQueue: Queue,
   ) {}
 
+  private async registerRefundTransaction(order: any, refundTxHash: string | null) {
+    const coin = String(order.coin || '').toUpperCase();
+    const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase();
+    const chainId = Number(order.chainId);
+
+    const txHashToUse = refundTxHash || `internal-refund-${order.orderId}`;
+
+    const existing = await this.transactionModel.findOne({ txHash: txHashToUse });
+    if (existing) {
+      return existing;
+    }
+
+    const walletData = await this.userModel.aggregate([
+      { $match: { email: order.sellerEmail } },
+      { $unwind: '$wallets' },
+      { $project: { _id: 0 } },
+      {
+        $lookup: {
+          from: 'wallets',
+          localField: 'wallets',
+          foreignField: '_id',
+          as: 'walletsData',
+          pipeline: [
+            { $match: { coin: order.coin } }
+          ]
+        }
+      }
+    ]).exec();
+
+    let wallet = null;
+    if (walletData && walletData.length > 0) {
+      const walletEntry = walletData.find(w => w.walletsData.length > 0);
+      if (walletEntry) {
+        wallet = walletEntry.walletsData[0];
+      }
+    }
+
+    if (!wallet) return null;
+
+    const isInternal = !refundTxHash;
+    const transaction = new this.transactionModel({
+      nature: 1, // Deposit
+      amount: Number(order.amount || 0),
+      created_at: Date.now(),
+      status: isInternal ? 3 : 1, // Completed if internal, pending if on-chain
+      confirmations: 0,
+      txHash: txHashToUse,
+      to: order.sellerWalletAddress
+    });
+    await transaction.save();
+
+    await this.walletModel.updateOne(
+      { _id: new Types.ObjectId(wallet._id) },
+      { $addToSet: { transactions: transaction._id } }
+    );
+
+    if (!isInternal) {
+      const { Queue: BullMQQueue } = require('../../../config/bullmq');
+      const depositsQueue = new BullMQQueue(`${coin.toLowerCase()}-deposits`);
+      await depositsQueue.add('deposit', {
+        walletAddress: order.sellerWalletAddress,
+        transactionHash: txHashToUse,
+        chainId,
+        coin,
+        transactionId: transaction._id.toString()
+      }, {
+        attempts: 20,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: true,
+        removeOnFail: 50
+      });
+    } else {
+      await this.walletModel.updateOne(
+        { _id: new Types.ObjectId(wallet._id) },
+        { $inc: { balance: order.amount } }
+      );
+    }
+
+    return transaction;
+  }
 
   // Create a new escrow P2P order
   async createOrder(dto: CreateEscrowOrderDto) {
@@ -100,7 +181,7 @@ export class EscrowService {
       exactGasFee = parseFloat(formatUnits(totalGasWei.toString(), decimals));
       console.log(`[ESCROW] Exact gas fee estimated: ${exactGasFee} ${dto.coin}`);
     } catch (err) {
-      console.error('[ESCROW] Failed to estimate gas, using fallback fee:', err.message);
+      console.error('[ESCROW] Failed to estimate gas, using fallback fee:', (err as Error).message);
       exactGasFee = 0; // Don't use coinInfo.fee for gas fallback if we can't estimate
     }
 
@@ -181,7 +262,6 @@ export class EscrowService {
     };
   }
 
-
   // Get orders where user is the seller
   async getMyOrders(email: string) {
     return this.escrowOrderModel
@@ -191,7 +271,6 @@ export class EscrowService {
       .exec();
   }
 
-
   // Get orders where user is the provider
   async getProviderOrders(email: string) {
     return this.escrowOrderModel
@@ -200,7 +279,6 @@ export class EscrowService {
       .lean()
       .exec();
   }
-
 
   // Get a single order by orderId, only if user is involved
   async getOrder(orderId: string, email: string) {
@@ -213,7 +291,6 @@ export class EscrowService {
     }
     return order;
   }
-
 
   // Provider confirms they received the external payment
   async confirmPayment(orderId: string, email: string) {
@@ -244,7 +321,6 @@ export class EscrowService {
 
     return { orderId, status: 'buyer_paid' };
   }
-
 
   // Seller releases funds to the provider after confirming external payment receipt
   async releaseFunds(orderId: string, email: string) {
@@ -295,7 +371,6 @@ export class EscrowService {
     return { orderId, status: 'released' };
   }
 
-
   // Either party can open a dispute
   async openDispute(orderId: string, email: string, reason: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
@@ -317,6 +392,20 @@ export class EscrowService {
     order.disputeOpenedBy = email;
     await order.save();
 
+    if (order.escrowTxHash && USE_ESCROW_CONTRACT) {
+      try {
+        const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+        const interactor = new EscrowContractInteractor(order.chainId);
+        const contractAvailable = await interactor.isContractAvailable();
+        if (contractAvailable) {
+          console.log(`[ESCROW] Marking order ${orderId} as disputed on-chain...`);
+          await interactor.markDisputedOnChain(orderId);
+        }
+      } catch (err) {
+        console.warn(`[ESCROW] Failed to mark disputed on-chain:`, (err as Error).message);
+      }
+    }
+
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'disputed',
@@ -328,7 +417,6 @@ export class EscrowService {
 
     return { orderId, status: 'disputed' };
   }
-
 
   // Cancel order - only if funded and funds haven't moved
   async cancelOrder(orderId: string, email: string) {
@@ -346,6 +434,8 @@ export class EscrowService {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 
+    let refundTxHash = null;
+
     // Refund on-chain when escrow was already funded
     if (order.escrowTxHash) {
       try {
@@ -360,61 +450,37 @@ export class EscrowService {
         if (USE_ESCROW_CONTRACT && contractAvailable) {
           try {
             console.log(`[ESCROW-CANCEL] Refunding order ${orderId} via escrow contract...`);
-            await interactor.refundFundsOnChain(orderId);
-            refunded = true;
-            console.log(`[ESCROW-CANCEL] Contract refund successful.`);
+            const receipt = await interactor.refundFundsOnChain(orderId);
+            if (receipt && receipt.status) {
+              refunded = true;
+              refundTxHash = receipt.transactionHash;
+              console.log(`[ESCROW-CANCEL] Contract refund successful.`);
+            }
           } catch (contractRefundError) {
-            console.warn(`[ESCROW-CANCEL] Contract refund failed, trying escrow wallet fallback:`, contractRefundError.message);
+            console.warn(`[ESCROW-CANCEL] Contract refund failed, trying escrow wallet fallback:`, (contractRefundError as Error).message);
           }
         }
 
         if (!refunded) {
           console.log(`[ESCROW-CANCEL] Refunding order ${orderId} from escrow wallet...`);
-          await interactor.refundFundsFromEscrowWallet(orderId, order.sellerWalletAddress, amountWei);
-          refunded = true;
-          console.log(`[ESCROW-CANCEL] Escrow wallet refund successful.`);
+          const receipt = await interactor.refundFundsFromEscrowWallet(orderId, order.sellerWalletAddress, amountWei);
+          if (receipt && receipt.status) {
+            refunded = true;
+            refundTxHash = receipt.transactionHash;
+            console.log(`[ESCROW-CANCEL] Escrow wallet refund successful.`);
+          }
         }
 
         if (!refunded) {
           throw new Error('No refund strategy succeeded');
         }
       } catch (err) {
-        console.error(`[ESCROW-CANCEL] Failed to refund on-chain:`, err.message);
+        console.error(`[ESCROW-CANCEL] Failed to refund on-chain:`, (err as Error).message);
         throw new BadRequestException('Failed to refund funds on-chain. Please try again.');
       }
     }
 
-    // Refund the seller's wallet
-    const walletData = await this.userModel.aggregate([
-      { $match: { email: order.sellerEmail } },
-      { $unwind: '$wallets' },
-      { $project: { _id: 0 } },
-      {
-        $lookup: {
-          from: 'wallets',
-          localField: 'wallets',
-          foreignField: '_id',
-          as: 'walletsData',
-          pipeline: [
-            { $match: { coin: order.coin } }
-          ]
-        }
-      }
-    ]).exec();
-
-    if (walletData && walletData.length > 0) {
-      const walletEntry = walletData.find(w => w.walletsData.length > 0);
-      if (walletEntry) {
-        const wallet = walletEntry.walletsData[0];
-        // Only refund the principal amount, as the gas fee was consumed by network transactions
-        const totalRefund = order.amount;
-
-        await this.walletModel.updateOne(
-          { _id: new Types.ObjectId(wallet._id) },
-          { $inc: { balance: totalRefund } }
-        );
-      }
-    }
+    await this.registerRefundTransaction(order, refundTxHash);
 
     order.status = 'cancelled';
     await order.save();
@@ -428,7 +494,6 @@ export class EscrowService {
 
     return { orderId, status: 'cancelled' };
   }
-
 
   // Mark order as completed (called by the release worker after successful transfer)
   async markCompleted(orderId: string, releaseTxHash?: string) {
@@ -460,7 +525,6 @@ export class EscrowService {
     }, { removeOnComplete: true, removeOnFail: 50 });
   }
 
-
   // Mark expired orders (called by expiry worker)
   async expireOrders() {
     const expiredOrders = await this.escrowOrderModel.find({
@@ -469,6 +533,8 @@ export class EscrowService {
     }).exec();
 
     for (const order of expiredOrders) {
+      let refundTxHash = null;
+
       // Refund on-chain when escrow was already funded
       if (order.escrowTxHash) {
         try {
@@ -483,61 +549,37 @@ export class EscrowService {
           if (USE_ESCROW_CONTRACT && contractAvailable) {
             try {
               console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);
-              await interactor.refundFundsOnChain(order.orderId);
-              refunded = true;
-              console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
+              const receipt = await interactor.refundFundsOnChain(order.orderId);
+              if (receipt && receipt.status) {
+                refunded = true;
+                refundTxHash = receipt.transactionHash;
+                console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
+              }
             } catch (contractRefundError) {
-              console.warn(`[ESCROW-EXPIRE] Contract refund failed, trying escrow wallet fallback:`, contractRefundError.message);
+              console.warn(`[ESCROW-EXPIRE] Contract refund failed, trying escrow wallet fallback:`, (contractRefundError as Error).message);
             }
           }
 
           if (!refunded) {
             console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} from escrow wallet...`);
-            await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
-            refunded = true;
-            console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
+            const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
+            if (receipt && receipt.status) {
+                refunded = true;
+                refundTxHash = receipt.transactionHash;
+                console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
+            }
           }
 
           if (!refunded) {
             throw new Error('No refund strategy succeeded');
           }
         } catch (err) {
-          console.error(`[ESCROW-EXPIRE] Failed to refund on-chain:`, err.message);
+          console.error(`[ESCROW-EXPIRE] Failed to refund on-chain:`, (err as Error).message);
           continue; // Skip DB refund if on-chain fails to avoid state mismatch
         }
       }
 
-      // Refund to seller wallet
-      const walletData = await this.userModel.aggregate([
-        { $match: { email: order.sellerEmail } },
-        { $unwind: '$wallets' },
-        { $project: { _id: 0 } },
-        {
-          $lookup: {
-            from: 'wallets',
-            localField: 'wallets',
-            foreignField: '_id',
-            as: 'walletsData',
-            pipeline: [
-              { $match: { coin: order.coin } }
-            ]
-          }
-        }
-      ]).exec();
-
-      if (walletData && walletData.length > 0) {
-        const walletEntry = walletData.find(w => w.walletsData.length > 0);
-        if (walletEntry) {
-          const wallet = walletEntry.walletsData[0];
-          // Only refund the principal amount, as the gas fee was consumed by network transactions
-          const totalRefund = order.amount;
-
-          await this.walletModel.updateOne(
-            { _id: new Types.ObjectId(wallet._id) },
-            { $inc: { balance: totalRefund } }
-          );
-        }
-      }
+      await this.registerRefundTransaction(order, refundTxHash);
 
       order.status = 'expired';
       await order.save();

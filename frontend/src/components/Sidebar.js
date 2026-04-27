@@ -13,7 +13,7 @@ import {
   Typography,
 } from "../ui/material";
 import { ChevronLeft } from "../ui/icons";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../hooks/AuthContext";
 import useAuth from "../hooks/useAuth";
@@ -107,11 +107,11 @@ const LogoutIcon = (props) => (
 );
 
 const menuItems = [
-  { text: "Dashboard", icon: DashboardIcon, path: "/" },
-  { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets" },
-  { text: "P2P Trading", icon: P2PIcon, path: "/p2p" },
-  { text: "Proveedor P2P", icon: ProviderIcon, path: "/create" },
-  { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome" },
+  { text: "Dashboard", icon: DashboardIcon, path: "/", matchPaths: ["/"] },
+  { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
+  { text: "P2P Trading", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
+  { text: "Proveedor P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
+  { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome", matchPaths: ["/welcome"] },
 ];
 
 const bottomItems = [
@@ -121,6 +121,7 @@ const bottomItems = [
 
 export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const history = useHistory();
+  const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   
@@ -198,6 +199,16 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     marginBottom: "4px",
   });
 
+  const checkIsActive = (item) => {
+    if (item.matchPaths) {
+      if (item.path === "/") {
+        return location.pathname === "/";
+      }
+      return item.matchPaths.some(p => location.pathname.startsWith(p));
+    }
+    return location.pathname === item.path;
+  };
+
   const sidebarContent = (
     <Box
       className="hide-scrollbar"
@@ -259,7 +270,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
 
       {/* Navigation Items */}
       <List style={{ flex: 1, padding: "12px", listStyle: "none", margin: 0 }}>
-        {menuItems.map((item) => (
+        {menuItems.map((item) => {
+          const isActive = checkIsActive(item);
+          return (
           <Tooltip
             key={item.text}
             title={!open ? item.text : ""}
@@ -267,9 +280,13 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           >
             <ListItem
               onClick={() => handleNavigation(item)}
-              style={getListItemStyle()}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+              style={getListItemStyle(isActive)}
+              onMouseOver={(e) => {
+                if (!isActive) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)";
+              }}
+              onMouseOut={(e) => {
+                if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <ListItemIcon style={{ color: "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
                 <item.icon style={{ fontSize: 18 }} />
@@ -282,7 +299,8 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               )}
             </ListItem>
           </Tooltip>
-        ))}
+          );
+        })}
       </List>
 
       {/* Bottom Items (Settings & Logout) */}
@@ -290,7 +308,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         padding: "12px", 
         borderTop: "1px solid rgba(255,255,255,0.1)",
       }}>
-        {bottomItems.map((item) => (
+        {bottomItems.map((item) => {
+          const isActive = checkIsActive(item);
+          return (
           <Tooltip
             key={item.text}
             title={!open ? item.text : ""}
@@ -299,12 +319,16 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
             <ListItem
               onClick={() => handleNavigation(item)}
               style={{
-                ...getListItemStyle(),
+                ...getListItemStyle(isActive),
                 color: item.color || "white",
                 opacity: item.path === "logout" && isLoggingOut ? 0.7 : 1,
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.15)" : "rgba(255,255,255,0.15)"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+              onMouseOver={(e) => {
+                if (!isActive) e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.15)" : "rgba(255,255,255,0.15)";
+              }}
+              onMouseOut={(e) => {
+                if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <ListItemIcon style={{ color: item.color || "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
                 <item.icon style={{ fontSize: 18 }} />
@@ -317,7 +341,8 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               )}
             </ListItem>
           </Tooltip>
-        ))}
+          );
+        })}
 
         {/* Version - Only when expanded */}
         {open && (

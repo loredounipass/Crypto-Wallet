@@ -21,13 +21,104 @@ const { parseUnits } = require('ethers')
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const User = require(`${appRoot}/config/models/User`)
+const Transaction = require(`${appRoot}/config/models/Transaction`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 const coins = require(`${appRoot}/config/coins/info`)
 const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const POLL_INTERVAL_MS = 60000 // Check every 60 seconds
 
+const registerEscrowRefundTransaction = async (order, refundTxHash) => {
+    const coin = String(order.coin || '').toUpperCase()
+    const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
+    const chainId = Number(order.chainId)
+
+    let txHashToUse = refundTxHash || `internal-refund-${order.orderId}`
+
+    const existing = await Transaction.findOne({ txHash: txHashToUse })
+    if (existing) {
+        console.log('[ESCROW-EXPIRY] Existing transaction found for refund, skipping registration:', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: existing._id.toString()
+        })
+        return existing
+    }
+
+    const wallet = await Wallet.findOne({
+        address: new RegExp(`^${sellerAddress}$`, 'i'),
+        coin,
+        chainId
+    })
+
+    if (!wallet) {
+        console.warn('[ESCROW-EXPIRY] Seller wallet not found for refund registration:', {
+            orderId: order.orderId,
+            sellerAddress,
+            coin,
+            chainId
+        })
+        return null
+    }
+
+    // Si hay txHash (on-chain), se marca pendiente (status 1). Si es interna, se marca completada (status 3).
+    const isInternal = !refundTxHash
+    const transaction = new Transaction({
+        nature: 1, // Deposit (Refund)
+        amount: Number(order.amount || 0),
+        created_at: Date.now(),
+        status: isInternal ? 3 : 1,
+        confirmations: 0,
+        txHash: txHashToUse,
+        to: order.sellerWalletAddress
+    })
+    await transaction.save()
+
+    await Wallet.updateOne(
+        { _id: ObjectId(wallet._id) },
+        { $addToSet: { transactions: transaction._id } }
+    )
+
+    if (!isInternal) {
+        // Enviar a la cola de depósitos para confirmación
+        const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
+        await depositsQueue.add('deposit', {
+            walletAddress: order.sellerWalletAddress,
+            transactionHash: txHashToUse,
+            chainId,
+            coin,
+            transactionId: transaction._id.toString()
+        }, {
+            attempts: 20,
+            backoff: { type: 'exponential', delay: 5000 },
+            removeOnComplete: true,
+            removeOnFail: 50
+        })
+        console.log('[ESCROW-EXPIRY] Registered refund tx for confirmation tracking:', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: transaction._id.toString()
+        })
+    } else {
+        // Reembolso interno inmediato
+        await Wallet.updateOne(
+            { _id: ObjectId(wallet._id) },
+            { $inc: { balance: order.amount } }
+        )
+        console.log('[ESCROW-EXPIRY] DB internal refund complete:', {
+            orderId: order.orderId,
+            amount: order.amount,
+            coin: order.coin,
+            seller: order.sellerEmail
+        })
+    }
+
+    return transaction
+}
+
 const refundSellerWallet = async (order) => {
+    let refundTxHash = null;
+
     // 1. If order was funded on-chain, refund via smart contract
     if (order.escrowTxHash) {
         try {
@@ -43,9 +134,10 @@ const refundSellerWallet = async (order) => {
                     const receipt = await interactor.refundFundsOnChain(order.orderId)
                     if (receipt && receipt.status) {
                         refunded = true
+                        refundTxHash = receipt.transactionHash
                         console.log('[ESCROW-EXPIRY] Contract refund successful:', {
                             orderId: order.orderId,
-                            txHash: receipt.transactionHash
+                            txHash: refundTxHash
                         })
                     }
                 } catch (contractError) {
@@ -57,9 +149,10 @@ const refundSellerWallet = async (order) => {
                 const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
                 if (receipt && receipt.status) {
                     refunded = true
+                    refundTxHash = receipt.transactionHash
                     console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
                         orderId: order.orderId,
-                        txHash: receipt.transactionHash
+                        txHash: refundTxHash
                     })
                 }
             }
@@ -73,40 +166,8 @@ const refundSellerWallet = async (order) => {
         }
     }
 
-    // 2. Refund seller's wallet balance in DB
-    const walletData = await User.aggregate([
-        { $match: { email: order.sellerEmail } },
-        { $unwind: '$wallets' },
-        { $project: { _id: 0 } },
-        {
-            $lookup: {
-                from: 'wallets',
-                localField: 'wallets',
-                foreignField: '_id',
-                as: 'walletsData',
-                pipeline: [
-                    { $match: { coin: order.coin } }
-                ]
-            }
-        }
-    ]).exec()
-
-    if (walletData && walletData.length > 0) {
-        const walletEntry = walletData.find(w => w.walletsData.length > 0)
-        if (walletEntry) {
-            const wallet = walletEntry.walletsData[0]
-            await Wallet.updateOne(
-                { _id: ObjectId(wallet._id) },
-                { $inc: { balance: order.amount } }
-            )
-            console.log('[ESCROW-EXPIRY] DB refund complete:', {
-                orderId: order.orderId,
-                amount: order.amount,
-                coin: order.coin,
-                seller: order.sellerEmail
-            })
-        }
-    }
+    // 2. Refund seller's wallet balance using Transaction queue (or internal if no hash)
+    await registerEscrowRefundTransaction(order, refundTxHash)
 }
 
 const checkExpiredOrders = async () => {
