@@ -204,8 +204,10 @@ export default function Register() {
           className="!mt-6 !mb-4 !text-white !font-semibold"
           style={{
             width: '100%',
-            padding: '10px 0',
+            padding: '12px 16px',
             borderRadius: '12px',
+            textTransform: 'none',
+            fontSize: '16px',
             background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
             boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
           }}

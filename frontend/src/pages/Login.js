@@ -157,17 +157,19 @@ export default function Login() {
             className="!mt-6 !mb-4 !text-white !font-semibold"
             style={{
               width: '100%',
-              padding: '10px 0',
+              padding: '12px 16px',
               borderRadius: '12px',
+              textTransform: 'none',
+              fontSize: '16px',
               background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
               boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
             }}
             disabled={loading}
           >
             {loading ? (
-              <Box style={{ display: 'flex', alignItems: 'center' }}>
+              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                 <CircularProgress size={20} style={{ color: '#FFFFFF' }} />
-                <Typography style={{ marginLeft: '8px', color: '#FFFFFF', fontSize: '0.875rem' }}>
+                <Typography style={{ marginLeft: '10px', color: '#FFFFFF', fontSize: '16px', fontWeight: 600 }}>
                   Iniciando sesión...
                 </Typography>
               </Box>
