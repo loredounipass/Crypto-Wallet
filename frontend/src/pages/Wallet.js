@@ -60,6 +60,12 @@ const CopyIcon = ({ size = 20, color = "currentColor" }) => (
     </WalletIconBase>
 );
 
+const CheckIcon = ({ size = 20, color = "currentColor" }) => (
+    <WalletIconBase size={size} color={color}>
+        <path d="M5 12l4 4L19 6" />
+    </WalletIconBase>
+);
+
 export default function Wallet() {
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
@@ -282,24 +288,67 @@ export default function Wallet() {
                 Tu direccion ({walletInfo?.coin || walletId} - {getNetworkName(walletInfo?.chainId || defaultNetworkId)})
             </div>
             
-            <div style={{ marginBottom: "16px", position: "relative" }}>
+            <div style={{ marginBottom: "8px", position: "relative" }}>
                 <input 
                     type="text" 
                     value={walletInfo?.address || ''} 
                     readOnly 
-                    style={{ ...styles.input, fontFamily: "monospace", paddingRight: "52px" }}
+                    style={{ 
+                        ...styles.input, 
+                        fontFamily: "monospace", 
+                        paddingRight: "64px", 
+                        color: copied ? "#4CAF50" : "#FFFFFF",
+                        transition: "color 0.3s ease",
+                        borderColor: copied ? "rgba(76, 175, 80, 0.5)" : "#2D2D44"
+                    }}
                 />
                 <CopyToClipboard
                     text={walletInfo?.address || ''}
                     onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                 >
-                    <button type="button" style={styles.inputActionButton} aria-label="Copiar dirección">
-                        <CopyIcon size={16} color="#9CA3AF" />
+                    <button 
+                        type="button" 
+                        style={{
+                            ...styles.inputActionButton,
+                            backgroundColor: copied ? "rgba(76, 175, 80, 0.15)" : "rgba(33, 134, 235, 0.1)",
+                            border: copied ? "1px solid rgba(76, 175, 80, 0.3)" : "1px solid rgba(33, 134, 235, 0.3)",
+                            transition: "all 0.2s ease",
+                            minWidth: "48px",
+                            height: "36px",
+                            padding: "0"
+                        }} 
+                        onMouseEnter={(e) => {
+                            if (!copied) {
+                                e.currentTarget.style.backgroundColor = "rgba(33, 134, 235, 0.2)";
+                                e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!copied) {
+                                e.currentTarget.style.backgroundColor = "rgba(33, 134, 235, 0.1)";
+                                e.currentTarget.style.transform = "translateY(-50%) scale(1)";
+                            }
+                        }}
+                        aria-label="Copiar dirección"
+                        title="Copiar dirección"
+                    >
+                        {copied ? <CheckIcon size={18} color="#4CAF50" /> : <CopyIcon size={18} color="#2186EB" />}
                     </button>
                 </CopyToClipboard>
             </div>
             
-            {copied && <div style={{ color: "#4CAF50", fontSize: "14px", marginBottom: "16px" }}>Direccion copiada!</div>}
+            <div style={{ 
+                height: "20px", 
+                color: "#4CAF50", 
+                fontSize: "13px", 
+                marginBottom: "16px", 
+                opacity: copied ? 1 : 0, 
+                transition: "opacity 0.3s ease",
+                fontWeight: 500,
+                paddingLeft: "4px"
+            }}>
+                ¡Dirección copiada exitosamente!
+            </div>
 
             <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
                 <div 
