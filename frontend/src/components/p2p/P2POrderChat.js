@@ -9,6 +9,22 @@ import P2PDisputeModal from './P2PDisputeModal';
 
 import { get } from '../../api/http';
 
+const ChatBubbleIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const FileTextIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+);
+
 export default function P2POrderChat() {
   const { orderId } = useParams();
   const { auth } = useContext(AuthContext);
@@ -23,6 +39,7 @@ export default function P2POrderChat() {
   const [showDispute, setShowDispute] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
   const [counterpartId, setCounterpartId] = useState(null);
+  const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'details'
   const fileInputRef = useRef(null);
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
@@ -149,7 +166,7 @@ export default function P2POrderChat() {
   return (
     <div className="p2p-chat-layout" style={{ display: 'grid', gap: 16, height: 'calc(100dvh - 16px)', minHeight: 'calc(100dvh - 16px)', width: '100%', overflow: 'hidden', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 420px)' }}>
       {/* LEFT: Chat */}
-      <div className="p2p-chat-panel" style={{
+      <div className={`p2p-chat-panel ${activeMobileTab !== 'chat' ? 'hide-on-mobile' : ''}`} style={{
         minWidth: 0,
         height: '100%',
         minHeight: 0,
@@ -314,9 +331,10 @@ export default function P2POrderChat() {
       </div>
 
       {/* RIGHT: Order Panel */}
-      <div className="p2p-order-panel p2p-order-scroll-hidden" style={{
+      <div className={`p2p-order-panel p2p-order-scroll-hidden ${activeMobileTab !== 'details' ? 'hide-on-mobile' : ''}`} style={{
         minWidth: 0,
-        minHeight: 'calc(100dvh - 16px)',
+        height: '100%',
+        minHeight: 0,
         display: 'flex', flexDirection: 'column', gap: 16,
         overflowY: 'auto', overflowX: 'hidden',
       }}>
@@ -488,6 +506,35 @@ export default function P2POrderChat() {
         </div>
       </div>
 
+      {/* Mobile Bottom Nav */}
+      <div className="mobile-bottom-nav" style={{
+        display: 'none', // hidden by default, shown via CSS
+        justifyContent: 'space-around', alignItems: 'center',
+        backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: 16,
+        padding: '10px 0', margin: '0',
+      }}>
+        <button 
+          onClick={() => setActiveMobileTab('chat')}
+          style={{
+            background: 'none', border: 'none', color: activeMobileTab === 'chat' ? '#2186EB' : '#94A3B8',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
+            flex: 1
+          }}>
+          <ChatBubbleIcon />
+          <span style={{ fontSize: 12, fontWeight: 600 }}>Chat</span>
+        </button>
+        <button 
+          onClick={() => setActiveMobileTab('details')}
+          style={{
+            background: 'none', border: 'none', color: activeMobileTab === 'details' ? '#2186EB' : '#94A3B8',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
+            flex: 1
+          }}>
+          <FileTextIcon />
+          <span style={{ fontSize: 12, fontWeight: 600 }}>Detalles</span>
+        </button>
+      </div>
+
       {/* Dispute Modal */}
       <P2PDisputeModal
         open={showDispute}
@@ -525,15 +572,25 @@ export default function P2POrderChat() {
         @media (max-width: 1200px) {
           .p2p-chat-layout {
             grid-template-columns: 1fr !important;
-            height: auto !important;
+            grid-template-rows: 1fr auto !important;
+            height: calc(100dvh - 16px) !important;
             min-height: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
+          }
+          .hide-on-mobile {
+            display: none !important;
+          }
+          .mobile-bottom-nav {
+            display: flex !important;
           }
           .p2p-order-panel {
-            overflow: visible !important;
+            overflow: auto !important;
+            height: 100% !important;
+            min-height: 0 !important;
           }
           .p2p-chat-panel {
-            min-height: 740px;
+            min-height: 0 !important;
+            height: 100% !important;
           }
         }
       `}</style>
