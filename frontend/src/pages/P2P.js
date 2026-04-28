@@ -14,7 +14,7 @@ const TABS = [
 
 export default function P2P() {
   const history = useHistory();
-
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [activeTab, setActiveTab] = useState('marketplace');
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -35,6 +35,12 @@ export default function P2P() {
     getMyOrders();
     getProviderOrders();
   }, [fetchProviders, getMyOrders, getProviderOrders]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSelectProvider = (provider) => {
     setSelectedProvider(provider);
@@ -71,10 +77,12 @@ export default function P2P() {
 
       {/* Tabs */}
       <div style={{
-        display: 'flex', gap: 0,
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 8 : 0,
         borderRadius: 12, overflow: 'hidden',
-        border: '1px solid #2D2D44',
-        backgroundColor: '#0F0F1A',
+        border: isMobile ? 'none' : '1px solid #2D2D44',
+        backgroundColor: isMobile ? 'transparent' : '#0F0F1A',
         marginBottom: 20,
       }}>
         {TABS.map((tab) => (
@@ -83,10 +91,11 @@ export default function P2P() {
             onClick={() => setActiveTab(tab.key)}
             style={{
               flex: 1, padding: '12px 20px', border: 'none',
+              borderRadius: isMobile ? 8 : 0,
               fontSize: 14, fontWeight: 600, cursor: 'pointer',
               backgroundColor: activeTab === tab.key
                 ? ('#2186EB')
-                : 'transparent',
+                : (isMobile ? '#1A1A2E' : 'transparent'),
               color: activeTab === tab.key ? '#FFF' : '#64748B',
               transition: 'all 0.2s',
             }}
