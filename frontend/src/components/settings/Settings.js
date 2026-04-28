@@ -47,16 +47,16 @@ function Settings() {
 
     return (
         <div
-            className={`min-h-screen ${isMobile ? 'p-4' : isTablet ? 'p-6' : 'p-10'} settings-bg`}
+            className={`min-h-screen ${isMobile ? 'p-0 py-2' : isTablet ? 'p-6' : 'p-10'} settings-bg`}
         >
             <div
-                className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col' : 'flex-row'} settings-border settings-card min-h-[75vh]`}
+                className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col min-h-[82vh]' : 'flex-row min-h-[75vh]'} settings-border settings-card`}
             >
                 {/* Sidebar */}
                 <div
                     role="navigation"
                     aria-label="Settings navigation"
-                    className={`flex gap-2 ${isMobile ? 'w-full flex-row overflow-x-auto border-b p-4' : 'min-w-[280px] flex-col border-r px-6 py-8'} settings-border settings-sidebar`}
+                    className={`flex gap-2 ${isMobile ? 'w-full flex-row overflow-x-auto border-b p-3 hide-scrollbar' : 'min-w-[280px] flex-col border-r px-6 py-8'} settings-border settings-sidebar`}
                 >
                     <ul className={`m-0 flex w-full list-none gap-2 p-0 ${isMobile ? 'flex-row' : 'flex-col'}`}>
                         {sections.map(({ id, label, icon }) => (
@@ -84,8 +84,8 @@ function Settings() {
                 </div>
 
                 {/* Main Content */}
-                <div className={`flex-1 flex flex-col overflow-y-auto ${isMobile ? 'px-4 py-6' : 'p-10'}`}>
-                    <div className="mb-8 flex items-center gap-3 border-b pb-5 settings-border">
+                <div className={`flex-1 flex flex-col overflow-y-auto ${isMobile ? 'px-3 py-5' : 'p-10'}`}>
+                    <div className="mb-6 flex items-center gap-3 border-b pb-4 settings-border">
                         <SettingsIcon style={{ color: 'var(--settings-primary)', fontSize: '32px' }} />
                         <h1 className={`m-0 font-bold ${isMobile ? 'text-[22px]' : 'text-[28px]'}`} style={{ color: 'var(--settings-text)' }}>
                             {t('settings_title')}

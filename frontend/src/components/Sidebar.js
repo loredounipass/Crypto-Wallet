@@ -379,18 +379,18 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         sx={{
           zIndex: 1200,
           '& .MuiDrawer-paper': {
-            backgroundColor: '#0F0F1A !important',
-            background: 'linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%) !important',
-            border: 'none !important',
-            boxShadow: 'none !important',
-            padding: '0 !important',
-            margin: '0 !important',
-            borderRadius: '0 !important',
-            height: '100dvh !important',
-            width: `${DRAWER_WIDTH_EXPANDED}px !important`,
-            top: '0 !important',
-            left: '0 !important',
-            maxWidth: '100% !important',
+            backgroundColor: '#0F0F1A',
+            background: 'linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)',
+            border: 'none',
+            boxShadow: 'none',
+            padding: '0',
+            margin: '0',
+            borderRadius: '0',
+            height: '100dvh',
+            width: `${DRAWER_WIDTH_EXPANDED}px`,
+            top: '0',
+            left: '0',
+            maxWidth: '100%',
           }
         }}
       >

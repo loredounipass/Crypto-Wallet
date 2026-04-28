@@ -11,6 +11,7 @@ import PublicRoute from './components/route-control/PublicRoute'
 import PrivateRoute from './components/route-control/PrivateRoute'
 import Register from './pages/Register'
 import Sidebar, { DRAWER_WIDTH_EXPANDED, DRAWER_WIDTH_COLLAPSED } from './components/Sidebar'
+import Logo from './components/Logo'
 import Wallets from './pages/Wallets'
 import Wallet from './pages/Wallet'
 import WelcomeTemplate from './pages/welcometemplate'
@@ -65,7 +66,7 @@ function AppContent() {
         marginLeft: (isAuthenticated && !isPublicRoute && !isMobile) ? (sidebarOpen ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED) : 0,
         transition: 'margin-left 0.3s ease-in-out',
         minHeight: '100vh',
-        padding: isMobile ? '16px' : '24px',
+        padding: isMobile && isAuthenticated && !isPublicRoute ? '80px 16px 16px 16px' : (isMobile ? '16px' : '24px'),
         width: (isAuthenticated && !isPublicRoute) ? undefined : '100%',
         minWidth: 0,
         boxSizing: 'border-box',
@@ -87,20 +88,34 @@ function AppContent() {
                     )}
 
                     {isAuthenticated && !isPublicRoute && isMobile && (
-                        <IconButton
-                            onClick={handleMobileOpen}
+                        <Box
                             style={{
                                 position: 'fixed',
-                                top: 12,
-                                left: 12,
-                                zIndex: 80,
-                                color: '#FFFFFF',
-                                backgroundColor: 'rgba(45,45,68,0.9)',
-                                border: `1px solid ${'#2D2D44'}`,
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '64px',
+                                zIndex: 1100,
+                                backgroundColor: 'rgba(26, 26, 46, 0.85)',
+                                backdropFilter: 'blur(12px)',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '0 16px',
+                                boxShadow: '0 4px 30px rgba(0,0,0,0.3)'
                             }}
                         >
-                            <MenuIcon />
-                        </IconButton>
+                            <IconButton
+                                onClick={handleMobileOpen}
+                                style={{
+                                    color: '#FFFFFF',
+                                    marginRight: '12px'
+                                }}
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                            <Logo variant="sidebar-expanded" />
+                        </Box>
                     )}
 
                     <Box

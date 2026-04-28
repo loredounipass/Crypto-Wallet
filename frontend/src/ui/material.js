@@ -283,14 +283,25 @@ export const ListItemIcon = ({ children, sx, style, ...props }) => (
   </span>
 );
 
-export const Drawer = ({ open, onClose, children }) =>
-  open ? (
-    <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose}>
-      <div className="h-full w-60 bg-white p-2 shadow-xl" onClick={(e) => e.stopPropagation()}>
+export const Drawer = ({ open, onClose, children, sx, style, PaperProps = {} }) => {
+  if (!open) return null;
+
+  const rootSx = { ...sx };
+  const paperSx = { ...PaperProps.sx };
+
+  if (rootSx['& .MuiDrawer-paper']) {
+    Object.assign(paperSx, rootSx['& .MuiDrawer-paper']);
+    delete rootSx['& .MuiDrawer-paper'];
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 bg-black/40" style={mergeStyles(rootSx, style)} onClick={onClose}>
+      <div className="h-full bg-white shadow-xl overflow-hidden" style={{ width: 240, ...sxToStyle(paperSx) }} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
-  ) : null;
+  );
+};
 
 export const Menu = ({ open, anchorEl, children, onClose, sx, style }) => {
   if (!open) return null;

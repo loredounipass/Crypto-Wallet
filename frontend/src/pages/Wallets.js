@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useAllWallets from '../hooks/useAllWallets';
+import useCoinPrice from '../hooks/useCoinPrice';
 import { ArrowBack } from '../ui/icons';
 import {
     getCoinList,
@@ -11,11 +12,28 @@ import {
 } from '../components/utils/Chains';
 import { getDisplayableAddress } from '../components/utils/Display';
 import { useHistory } from 'react-router-dom';
-import robotImage from '../assets/robot.png';
-import { useTranslation } from 'react-i18next';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Filler,
+  LineController
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Filler,
+  LineController
+);
 
 const Wallets = () => {
-    const { t } = useTranslation();
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
@@ -23,8 +41,92 @@ const Wallets = () => {
     const { walletBalance, allWalletInfo } = useAllWallets();
     const defaultCoin = getDefaultCoin();
     const [selectedCoin, setSelectedCoin] = useState(defaultCoin);
+    const { coinPrice } = useCoinPrice(selectedCoin);
     const [isCoinMenuOpen, setIsCoinMenuOpen] = useState(false);
     const coinMenuRef = useRef(null);
+
+    const [chartDataValues, setChartDataValues] = useState([]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchHistoricalData = async () => {
+            try {
+                const res = await fetch(`https://min-api.cryptocompare.com/data/v2/histohour?fsym=${selectedCoin.toUpperCase()}&tsym=USD&limit=24`);
+                const json = await res.json();
+                if (json && json.Data && json.Data.Data) {
+                    const prices = json.Data.Data.map(item => item.close);
+                    if (isMounted) setChartDataValues(prices);
+                }
+            } catch (err) {
+                console.error("Failed to fetch historical chart data", err);
+            }
+        };
+        fetchHistoricalData();
+        return () => { isMounted = false; };
+    }, [selectedCoin]);
+
+    const chartData = useMemo(() => ({
+        labels: Array.from({ length: chartDataValues.length || 24 }, (_, i) => i.toString()),
+        datasets: [
+            {
+                data: chartDataValues,
+                fill: true,
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                    gradient.addColorStop(0, "rgba(99, 102, 241, 0.4)");
+                    gradient.addColorStop(1, "rgba(99, 102, 241, 0.0)");
+                    return gradient;
+                },
+                borderColor: "#6366F1",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0.4
+            }
+        ]
+    }), [chartDataValues]);
+
+    const chartOptions = useMemo(() => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+        },
+        scales: {
+            x: { display: false },
+            y: {
+                display: false,
+                min: chartDataValues.length > 0 ? Math.min(...chartDataValues) * 0.99 : 0,
+                max: chartDataValues.length > 0 ? Math.max(...chartDataValues) * 1.01 : 100
+            }
+        },
+        layout: {
+            padding: 0
+        }
+    }), [chartDataValues]);
+
+    const canvasRef = useRef(null);
+    const chartInstance = useRef(null);
+
+    useEffect(() => {
+        if (canvasRef.current) {
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
+            }
+            chartInstance.current = new ChartJS(canvasRef.current, {
+                type: 'line',
+                data: chartData,
+                options: chartOptions
+            });
+        }
+        return () => {
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
+            }
+        };
+    }, [chartData, chartOptions]);
 
     const handleCreateWallet = () => history.push(`/wallet/${selectedCoin}`);
     const handleBack = () => history.push('/');
@@ -32,28 +134,6 @@ const Wallets = () => {
     const selectedWalletExists = allWalletInfo.some(
         (wallet) => String(wallet.coin || '').toLowerCase() === String(selectedCoin || '').toLowerCase()
     );
-    
-    const texts = useMemo(() => [
-        t('p2p_service_wallets'),
-        t('rpc_description'),
-        t('password_security_wallets'),
-        t('evm_wallet_description')
-    ], [t]);
-
-    const [textIndex, setTextIndex] = useState(0);
-    const [visibleText, setVisibleText] = useState(texts[0]);
-
-    useEffect(() => {
-        const displayDuration = textIndex === 1 ? 8000 : 5000;
-        const timeout = setTimeout(() => {
-            setTextIndex((prev) => (prev + 1) % texts.length);
-        }, displayDuration);
-        return () => clearTimeout(timeout);
-    }, [textIndex, texts]);
-
-    useEffect(() => {
-        setVisibleText(texts[textIndex]);
-    }, [textIndex, texts]);
 
     useEffect(() => {
         const onResize = () => {
@@ -166,7 +246,7 @@ const Wallets = () => {
         createWalletCard: {
             background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
             borderRadius: "16px",
-            padding: isMobile ? "14px" : "24px",
+            padding: isMobile ? "14px" : "20px",
             border: "1px solid #2D2D44",
             boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
             minWidth: 0,
@@ -316,14 +396,14 @@ const Wallets = () => {
             {/* Create Wallet */}
             <div className="grid gap-3 md:gap-6" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "12px" : "24px", marginBottom: isMobile ? "12px" : "32px" }}>
                 <div style={styles.createWalletCard}>
-                    <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "20px" }}>
+                    <h2 style={{ color: "#FFFFFF", fontSize: isMobile ? "18px" : "20px", fontWeight: 600, marginBottom: "8px" }}>
                         Crear Nueva Billetera
                     </h2>
-                    <p style={styles.sectionSubtleText}>
+                    <p style={{ ...styles.sectionSubtleText, marginBottom: "16px" }}>
                         Elige la red y crea tu wallet en segundos con configuracion segura.
                     </p>
                     
-                    <label style={{ display: "block", color: "#9CA3AF", fontSize: "14px", marginBottom: "8px" }}>
+                    <label style={{ display: "block", color: "#9CA3AF", fontSize: "13px", marginBottom: "6px" }}>
                         Selecciona una moneda
                     </label>
                     <div style={styles.coinPickerWrap}>
@@ -405,14 +485,9 @@ const Wallets = () => {
 
                     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                         {selectedWalletExists ? (
-                            <>
-                                <button onClick={handleCreateWallet} style={styles.button(true)}>
-                                    Depositar
-                                </button>
-                                <button onClick={handleCreateWallet} style={styles.button(true)}>
-                                    Retirar
-                                </button>
-                            </>
+                            <button onClick={handleCreateWallet} style={styles.button(true)}>
+                                Depositar / Retirar
+                            </button>
                         ) : (
                             <button onClick={handleCreateWallet} style={styles.button(true)}>
                                 Crear
@@ -421,12 +496,48 @@ const Wallets = () => {
                     </div>
                 </div>
 
-                <div style={styles.gradientCard}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-                        <img src={robotImage} alt="Robot" style={{ width: isMobile ? 56 : 80 }} />
-                        <span style={{ color: "white", fontSize: isMobile ? "14px" : "16px", fontWeight: 500 }}>
-                            {visibleText}
-                        </span>
+                <div style={{
+                    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+                    borderRadius: "16px",
+                    border: "1px solid #2D2D44",
+                    boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    minHeight: "200px"
+                }}>
+                    <div style={{
+                        position: "absolute",
+                        top: "-20%",
+                        right: "-10%",
+                        width: "200px",
+                        height: "200px",
+                        background: "radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%)",
+                        filter: "blur(20px)",
+                        zIndex: 0
+                    }} />
+                    
+                    <div style={{ padding: isMobile ? "16px" : "20px", paddingBottom: "0", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span style={{ color: "#9CA3AF", fontSize: isMobile ? "12px" : "13px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
+                                Mercado • {selectedCoin.toUpperCase()}
+                            </span>
+                            <span style={{ 
+                                color: "white", 
+                                fontSize: isMobile ? "24px" : "32px", 
+                                fontWeight: 700,
+                                background: "linear-gradient(135deg, #FFFFFF 0%, #E0E7FF 100%)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent"
+                            }}>
+                                {coinPrice ? `$${coinPrice.toLocaleString()}` : '---'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div style={{ flex: 1, width: "100%", height: "100%", position: "relative", zIndex: 1 }}>
+                        <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
                     </div>
                 </div>
             </div>
