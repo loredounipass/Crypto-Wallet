@@ -297,27 +297,30 @@ export default function CoinTransactions({
                                         </td>
                                     )}
                                     <td style={styles.td}>
-                                        <span style={{ color: "#2186EB", fontFamily: "monospace", fontWeight: 600 }}>
+                                        <span style={{ color: "#2186EB", fontFamily: "monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
                                             {getDisplayableTxHash(transaction.txHash)}
                                         </span>
                                     </td>
                                     <td style={styles.td}>
-                                        <span style={styles.amount(transaction.nature)}>
+                                        <span style={{ ...styles.amount(transaction.nature), whiteSpace: "nowrap" }}>
                                             {transaction.nature === 1 && transaction.status > 1 ? '+' : ''}
                                             {formatAmount(transaction.amount, transaction)}
                                         </span>
                                     </td>
                                     <td style={styles.td}>
                                         <span style={{
-                                            padding: isCompact ? "3px 8px" : "4px 12px",
+                                            padding: isCompact ? "4px 8px" : "4px 12px",
                                             borderRadius: "20px",
                                             fontSize: isCompact ? "10px" : "12px",
-                                            fontWeight: 500,
+                                            fontWeight: 600,
                                             backgroundColor: styles.statusBadge(transaction.status).bg,
                                             color: styles.statusBadge(transaction.status).text,
+                                            display: "inline-block",
+                                            whiteSpace: "nowrap",
+                                            textAlign: "center"
                                         }}>
                                             {transaction.status === 2 && transaction.confirmations > 0 
-                                                ? `Confirmacion ${transaction.confirmations}/12` 
+                                                ? (isCompact ? `Conf. ${transaction.confirmations}/12` : `Confirmación ${transaction.confirmations}/12`)
                                                 : getStatusName(transaction.status)}
                                         </span>
                                     </td>
