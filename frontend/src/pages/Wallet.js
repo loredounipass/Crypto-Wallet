@@ -19,6 +19,17 @@ import createWallet from '../hooks/createWallet';
 import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
 import TransactionToast from '../components/TransactionToast';
+import QRScannerModal from '../components/QRScannerModal';
+
+const ScanIcon = ({ size = 20, color = "currentColor" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+        <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+    </svg>
+);
 
 const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
     <svg
@@ -58,6 +69,7 @@ export default function Wallet() {
     const [withdrawAddress, setWithdrawAddress] = useState('');
     const [error, setError] = useState('');
     const [activeAction, setActiveAction] = useState('deposit');
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
@@ -303,13 +315,18 @@ export default function Wallet() {
             </h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <input 
-                    type="text"
-                    value={withdrawAddress}
-                    onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
-                    placeholder={`Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`}
-                    style={styles.input}
-                />
+                <div style={{ position: "relative" }}>
+                    <input 
+                        type="text"
+                        value={withdrawAddress}
+                        onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
+                        placeholder={`Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`}
+                        style={{ ...styles.input, paddingRight: "58px" }}
+                    />
+                    <button type="button" onClick={() => setIsScannerOpen(true)} style={styles.inputActionButton} aria-label="Escanear QR">
+                        <ScanIcon size={16} />
+                    </button>
+                </div>
                 
                 <div style={{ position: "relative" }}>
                     <input 
@@ -477,6 +494,25 @@ export default function Wallet() {
                 </div>
             ) : null}
             <TransactionToast toast={toast} onClose={dismissToast} />
+            <QRScannerModal 
+                isOpen={isScannerOpen} 
+                onClose={() => setIsScannerOpen(false)} 
+                onScan={(data) => {
+                    // some wallets encode URLs like ethereum:0x..., handle that
+                    let address = data;
+                    if (data.includes(':')) {
+                        const parts = data.split(':');
+                        if (parts.length > 1) {
+                            address = parts[1];
+                        }
+                    }
+                    if (address.includes('?')) {
+                        address = address.split('?')[0];
+                    }
+                    setWithdrawAddress(address);
+                    setError('');
+                }} 
+            />
         </div>
     );
 }
