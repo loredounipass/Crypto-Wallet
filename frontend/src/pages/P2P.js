@@ -6,10 +6,34 @@ import P2PProviderList from '../components/p2p/P2PProviderList';
 import P2PCreateOrderModal from '../components/p2p/P2PCreateOrderModal';
 import P2PMyOrders from '../components/p2p/P2PMyOrders';
 
+const StorefrontIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const FileTextIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+);
+
+const BriefcaseIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  </svg>
+);
+
 const TABS = [
-  { key: 'marketplace', label: 'Marketplace' },
-  { key: 'my-orders', label: 'Mis Órdenes' },
-  { key: 'provider-orders', label: 'Órdenes como Proveedor' },
+  { key: 'marketplace', label: 'Marketplace', icon: StorefrontIcon },
+  { key: 'my-orders', label: 'Mis Órdenes', icon: FileTextIcon },
+  { key: 'provider-orders', label: 'Proveedor', icon: BriefcaseIcon },
 ];
 
 export default function P2P() {
@@ -58,7 +82,7 @@ export default function P2P() {
   };
 
   return (
-    <div>
+    <div style={{ paddingBottom: isMobile ? 80 : 0 }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{
@@ -75,53 +99,52 @@ export default function P2P() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', 
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 8 : 0,
-        borderRadius: 12, overflow: 'hidden',
-        border: isMobile ? 'none' : '1px solid #2D2D44',
-        backgroundColor: isMobile ? 'transparent' : '#0F0F1A',
-        marginBottom: 20,
-      }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              flex: 1, padding: '12px 20px', border: 'none',
-              borderRadius: isMobile ? 8 : 0,
-              fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              backgroundColor: activeTab === tab.key
-                ? ('#2186EB')
-                : (isMobile ? '#1A1A2E' : 'transparent'),
-              color: activeTab === tab.key ? '#FFF' : '#64748B',
-              transition: 'all 0.2s',
-            }}
-          >
-            {tab.label}
-            {tab.key === 'my-orders' && orders.length > 0 && (
-              <span style={{
-                marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
-                color: activeTab === tab.key ? '#FFF' : '#2186EB',
-              }}>
-                {orders.length}
-              </span>
-            )}
-            {tab.key === 'provider-orders' && providerOrders.length > 0 && (
-              <span style={{
-                marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
-                color: activeTab === tab.key ? '#FFF' : '#2186EB',
-              }}>
-                {providerOrders.length}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Tabs Desktop */}
+      {!isMobile && (
+        <div style={{
+          display: 'flex', 
+          flexDirection: 'row',
+          borderRadius: 12, overflow: 'hidden',
+          border: '1px solid #2D2D44',
+          backgroundColor: '#0F0F1A',
+          marginBottom: 20,
+        }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1, padding: '12px 20px', border: 'none',
+                borderRadius: 0,
+                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                backgroundColor: activeTab === tab.key ? '#2186EB' : 'transparent',
+                color: activeTab === tab.key ? '#FFF' : '#64748B',
+                transition: 'all 0.2s',
+              }}
+            >
+              {tab.label}
+              {tab.key === 'my-orders' && orders.length > 0 && (
+                <span style={{
+                  marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#2186EB',
+                }}>
+                  {orders.length}
+                </span>
+              )}
+              {tab.key === 'provider-orders' && providerOrders.length > 0 && (
+                <span style={{
+                  marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#2186EB',
+                }}>
+                  {providerOrders.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Content Card */}
       <div style={{
@@ -155,6 +178,48 @@ export default function P2P() {
         onSubmit={handleCreateOrder}
         isLoading={escrowLoading}
       />
+
+      {/* Mobile Bottom Nav */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          backgroundColor: '#1A1A2E', borderTop: '1px solid #2D2D44',
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+          padding: '10px 0', zIndex: 100, margin: 0,
+        }}>
+          {TABS.map((tab) => {
+            const IconComponent = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button 
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  background: 'none', border: 'none', color: isActive ? '#2186EB' : '#94A3B8',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
+                  flex: 1, position: 'relative'
+                }}>
+                <IconComponent />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
+                {tab.key === 'my-orders' && orders.length > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -5, right: '15%',
+                    padding: '2px 6px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                    backgroundColor: '#EF4444', color: '#FFF',
+                  }}>{orders.length}</span>
+                )}
+                {tab.key === 'provider-orders' && providerOrders.length > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -5, right: '15%',
+                    padding: '2px 6px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                    backgroundColor: '#EF4444', color: '#FFF',
+                  }}>{providerOrders.length}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

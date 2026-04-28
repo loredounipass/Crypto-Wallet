@@ -40,6 +40,7 @@ export default function P2POrderChat() {
   const [actionLoading, setActionLoading] = useState('');
   const [counterpartId, setCounterpartId] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'details'
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
@@ -101,20 +102,20 @@ export default function P2POrderChat() {
   }, [allMessages, counterpartId, auth?._id]);
 
   const handleSendMessage = async () => {
-    if (!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending) return;
+    if (!counterpartId || (!messageContent.trim() && !selectedFile) || isSending) return;
     setIsSending(true);
     setChatError('');
     try {
-      const file = fileInputRef.current?.files[0];
       const payload = {
         receiverId: counterpartId,
         content: messageContent,
-        type: file ? 'image' : 'text',
+        type: selectedFile ? 'image' : 'text',
       };
 
-      if (file) {
-        const uploaded = await uploadMessage(file, payload);
+      if (selectedFile) {
+        const uploaded = await uploadMessage(selectedFile, payload);
         if (!uploaded) throw new Error('uploadMessage failed');
+        setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
         const created = await createMessage(payload);
@@ -268,6 +269,35 @@ export default function P2POrderChat() {
 
         {/* Input */}
         <div style={{ padding: 12, borderTop: `1px solid ${borderColor}` }}>
+          {selectedFile && (
+            <div style={{
+              marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 12px', backgroundColor: '#1E1E2E', borderRadius: 8,
+              border: `1px solid ${borderColor}`
+            }}>
+              <span style={{ fontSize: 18 }}>🖼️</span>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <span style={{ fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {selectedFile.name}
+                </span>
+                <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                  {(selectedFile.size / 1024).toFixed(1)} KB
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  setSelectedFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444',
+                  cursor: 'pointer', width: 28, height: 28, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
+                }}>
+                ✕
+              </button>
+            </div>
+          )}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 6px 6px 16px', borderRadius: 24,
@@ -291,20 +321,21 @@ export default function P2POrderChat() {
                 ref={fileInputRef} 
                 style={{ display: 'none' }} 
                 accept="image/*"
-                onChange={() => {
-                  // just focus input or show some indicator if we wanted, 
-                  // but we will rely on the input ref directly for sending
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setSelectedFile(e.target.files[0]);
+                  }
                 }}
               />
               <span style={{ fontSize: 18, color: '#94A3B8', marginRight: 4 }}>📎</span>
             </label>
             <button
               onClick={handleSendMessage}
-              disabled={!counterpartId || (!messageContent.trim() && !fileInputRef.current?.files[0]) || isSending}
+              disabled={!counterpartId || (!messageContent.trim() && !selectedFile) || isSending}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none',
-                background: (counterpartId && (messageContent.trim() || fileInputRef.current?.files[0])) ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
-                color: '#FFF', cursor: (counterpartId && (messageContent.trim() || fileInputRef.current?.files[0])) ? 'pointer' : 'not-allowed',
+                background: (counterpartId && (messageContent.trim() || selectedFile)) ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
+                color: '#FFF', cursor: (counterpartId && (messageContent.trim() || selectedFile)) ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
               }}
