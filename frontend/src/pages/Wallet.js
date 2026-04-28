@@ -70,6 +70,7 @@ export default function Wallet() {
     const [error, setError] = useState('');
     const [activeAction, setActiveAction] = useState('deposit');
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
@@ -301,7 +302,26 @@ export default function Wallet() {
             {copied && <div style={{ color: "#4CAF50", fontSize: "14px", marginBottom: "16px" }}>Direccion copiada!</div>}
 
             <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
-                <div style={{ padding: isMobile ? "10px" : "16px", backgroundColor: "white", borderRadius: "12px" }}>
+                <div 
+                    onClick={() => setIsQRModalOpen(true)}
+                    style={{ 
+                        padding: isMobile ? "10px" : "16px", 
+                        backgroundColor: "white", 
+                        borderRadius: "16px",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(33, 134, 235, 0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                    }}
+                    title="Toca para ampliar el código QR"
+                >
                     <QRCode value={walletInfo?.address || ''} size={isMobile ? 140 : 180} />
                 </div>
             </div>
@@ -513,6 +533,82 @@ export default function Wallet() {
                     setError('');
                 }} 
             />
+
+            {/* Enlarged QR Modal */}
+            {isQRModalOpen && (
+                <div 
+                    style={{
+                        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+                        backgroundColor: "rgba(0,0,0,0.85)", zIndex: 9999,
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                        backdropFilter: "blur(4px)",
+                        animation: "fadeIn 0.2s ease-out"
+                    }}
+                    onClick={() => setIsQRModalOpen(false)}
+                >
+                    <style>
+                        {`
+                            @keyframes slideUp {
+                                from { transform: translateY(50px) scale(0.95); opacity: 0; }
+                                to { transform: translateY(0) scale(1); opacity: 1; }
+                            }
+                            @keyframes fadeIn {
+                                from { opacity: 0; }
+                                to { opacity: 1; }
+                            }
+                        `}
+                    </style>
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            backgroundColor: "white",
+                            padding: isMobile ? "24px" : "32px",
+                            borderRadius: "24px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            boxShadow: "0 25px 50px -12px rgba(33, 134, 235, 0.25)",
+                            animation: "slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                        }}
+                    >
+                        <QRCode value={walletInfo?.address || ''} size={isMobile ? 240 : 320} />
+                        <div style={{ 
+                            marginTop: "24px", 
+                            color: "#1A1A2E", 
+                            fontWeight: 600, 
+                            fontSize: isMobile ? "14px" : "16px", 
+                            wordBreak: "break-all", 
+                            textAlign: "center", 
+                            maxWidth: isMobile ? "240px" : "320px",
+                            padding: "12px",
+                            backgroundColor: "#F3F4F6",
+                            borderRadius: "12px"
+                        }}>
+                            {walletInfo?.address}
+                        </div>
+                        <button 
+                            onClick={() => setIsQRModalOpen(false)}
+                            style={{
+                                marginTop: "24px",
+                                backgroundColor: "#2186EB",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "12px",
+                                padding: "14px 24px",
+                                fontWeight: 600,
+                                fontSize: "16px",
+                                cursor: "pointer",
+                                width: "100%",
+                                transition: "background-color 0.2s"
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1A6BBD"}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#2186EB"}
+                        >
+                            Listo
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
