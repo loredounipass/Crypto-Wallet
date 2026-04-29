@@ -73,6 +73,10 @@
             "browserslist": "4.28.1",
             "node-notifier": "8.0.1",
             "eslint": "8.45.0"
-        }
+        },
+        "onlyBuiltDependencies": [
+            "core-js",
+            "core-js-pure"
+        ]
     }
 }

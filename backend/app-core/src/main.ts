@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['https://redesigned-telegram-9rq7959q4xwc7gwj-3000.app.github.dev'],
+    origin: ['https://upgraded-halibut-qj97q4q9prr299vp-3000.app.github.dev'],
     credentials: true
   })
 

@@ -9,7 +9,7 @@ import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
 
-@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://redesigned-telegram-9rq7959q4xwc7gwj-3000.app.github.dev'], credentials: true } })
+@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://upgraded-halibut-qj97q4q9prr299vp-3000.app.github.dev'], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
