@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'https://effective-enigma-6qr9g5grw79hrgqp-4000.app.github.dev';
+        const fallbackBaseApi = 'https://redesigned-telegram-9rq7959q4xwc7gwj-4000.app.github.dev';
         const socketOrigin = (() => {
             try { 
                 return new URL(process.env.REACT_APP_API_BASE_URL).origin; 

@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['https://effective-enigma-6qr9g5grw79hrgqp-3000.app.github.dev'],
+    origin: ['https://redesigned-telegram-9rq7959q4xwc7gwj-3000.app.github.dev'],
     credentials: true
   })
 
