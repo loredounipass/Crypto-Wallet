@@ -5,7 +5,9 @@ import {
     createProvider,
     findByEMail,
     getAllProviders,
-    updateProviderApi
+    updateProviderApi,
+    checkTermsApi,
+    acceptTermsApi
 } from '../api/http';
 
 export default class Provider {
@@ -26,6 +28,16 @@ export default class Provider {
 
     static async updateProvider(body) {
         const { data } = await patch(updateProviderApi, body)
+        return data
+    }
+
+    static async checkTerms() {
+        const { data } = await get(checkTermsApi)
+        return data
+    }
+
+    static async acceptTerms() {
+        const { data } = await post(acceptTermsApi)
         return data
     }
 

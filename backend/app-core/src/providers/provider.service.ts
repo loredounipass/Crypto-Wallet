@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Provider, ProviderDocument } from './schemas/provider.schema';
+import { ProviderTerms, ProviderTermsDocument } from './provider-terms.schema';
 import { Chat, ChatDocument } from './schemas/chat-schema/chat.schema';
 import { Message, MessageDocument } from './schemas/chat-schema/message.schema';
 import { CreateChatDto } from './dto/chat.dto';
@@ -15,6 +16,9 @@ export class ProviderService {
   constructor(
     @InjectModel(Provider.name)
     private readonly providerModel: Model<ProviderDocument>,
+
+    @InjectModel(ProviderTerms.name)
+    private readonly providerTermsModel: Model<ProviderTermsDocument>,
 
     @InjectModel(Chat.name)
     private readonly chatModel: Model<ChatDocument>,
@@ -40,6 +44,21 @@ export class ProviderService {
 
   async findAllProviders(): Promise<Provider[]> {
     return this.providerModel.find({ isValid: true }).exec();
+  }
+
+  async acceptTerms(email: string): Promise<ProviderTerms> {
+    const existing = await this.providerTermsModel.findOne({ email }).exec();
+    if (existing) {
+      existing.accepted = true;
+      return existing.save();
+    }
+    const newTerms = new this.providerTermsModel({ email, accepted: true });
+    return newTerms.save();
+  }
+
+  async checkTerms(email: string): Promise<boolean> {
+    const terms = await this.providerTermsModel.findOne({ email }).exec();
+    return terms ? terms.accepted : false;
   }
 
 

@@ -16,7 +16,15 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
         textAlign: 'center', padding: '60px 20px',
         color: '#64748B', fontSize: 15,
       }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+          </div>
+        </div>
         No hay proveedores P2P disponibles
       </div>
     );
@@ -40,7 +48,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 <div style={{
                   width: 44, height: 44, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, #2186EB, #1A6BC7)',
+                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
                   color: '#FFF', fontSize: 18, fontWeight: 700, flexShrink: 0,
                 }}>
                   {provider.firstName?.charAt(0)?.toUpperCase()}
@@ -92,11 +100,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
                 border: 'none',
                 background: provider.walletAddress
-                  ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)'
+                  ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
                   : ('#2D2D44'),
                 color: provider.walletAddress ? '#FFF' : '#94A3B8',
                 cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
-                boxShadow: provider.walletAddress ? '0 4px 12px rgba(33,134,235,0.25)' : 'none',
+                boxShadow: provider.walletAddress ? '0 4px 12px rgba(139,92,246,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -135,7 +143,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             transition: 'background-color 0.15s',
             minWidth: 600,
           }}
-          onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(33,134,235,0.04)'}
+          onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(139,92,246,0.08)'}
           onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           {/* Provider Info */}
@@ -143,7 +151,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, #2186EB, #1A6BC7)',
+              background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
               color: '#FFF', fontSize: 16, fontWeight: 700, flexShrink: 0,
             }}>
               {provider.firstName?.charAt(0)?.toUpperCase()}
@@ -205,11 +213,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                 border: 'none',
                 background: provider.walletAddress
-                  ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)'
+                  ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
                   : ('#2D2D44'),
                 color: provider.walletAddress ? '#FFF' : '#94A3B8',
                 cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
-                boxShadow: provider.walletAddress ? '0 2px 8px rgba(33,134,235,0.25)' : 'none',
+                boxShadow: provider.walletAddress ? '0 2px 8px rgba(139,92,246,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >

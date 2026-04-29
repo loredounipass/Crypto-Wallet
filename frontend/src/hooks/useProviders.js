@@ -62,6 +62,26 @@ export default function useProviders() {
     }
   }, []);
 
+  const checkTerms = useCallback(async () => {
+    try {
+      const res = await Provider.checkTerms();
+      return res?.accepted || false;
+    } catch (err) {
+      console.error('Error checking terms:', err);
+      return false;
+    }
+  }, []);
+
+  const acceptTerms = useCallback(async () => {
+    try {
+      const res = await Provider.acceptTerms();
+      return res?.accepted || false;
+    } catch (err) {
+      console.error('Error accepting terms:', err);
+      throw err;
+    }
+  }, []);
+
   return {
     providers,
     provider,
@@ -70,5 +90,7 @@ export default function useProviders() {
     createNewProvider,
     findByEMail,
     getAllProviders,
+    checkTerms,
+    acceptTerms,
   };
 }

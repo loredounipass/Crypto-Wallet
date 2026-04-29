@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LocalStorageProvider } from 'src/storage/local.storage.provider';
 import { MultimediaRepository } from 'src/repositories/multimedia.repository';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 import * as fsPromises from 'fs/promises';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -19,7 +19,7 @@ export class MultimediaProcessor {
     private readonly storage: LocalStorageProvider,
     private readonly multimediaRepository: MultimediaRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   private get multimediaModel() {
     return this.multimediaRepository;
@@ -28,7 +28,8 @@ export class MultimediaProcessor {
   @Process('process')
   async handle(job: Job) {
     const { stagingKey, multimediaId } = job.data;
-    
+    console.log(`[MultimediaProcessor] ▶ Job started | multimediaId=${multimediaId} | stagingKey=${stagingKey} | messageId=${job.data.messageId}`);
+
     // download object from storage provider (staging)
     // Prefer stream download when available to avoid buffering large files entirely in RAM
     const tmpDir = os.tmpdir();
@@ -37,7 +38,7 @@ export class MultimediaProcessor {
     const hasDownloadStream = typeof (this.storage as any).downloadStream === 'function';
     if (hasDownloadStream) {
       // stream to temp file
-      await fsPromises.mkdir(path.dirname(tempIn), { recursive: true }).catch(() => {});
+      await fsPromises.mkdir(path.dirname(tempIn), { recursive: true }).catch(() => { });
       const read = (this.storage as any).downloadStream(stagingKey) as NodeJS.ReadableStream;
       const write = fs.createWriteStream(tempIn);
       read.pipe(write);
@@ -49,7 +50,8 @@ export class MultimediaProcessor {
 
     // determine mime
     const mime = job.data.mimeType || 'application/octet-stream';
-    
+    console.log(`[MultimediaProcessor] 📁 File downloaded to temp | mime=${mime} | tempIn=${tempIn}`);
+
 
     try {
       // simple branching by mime
@@ -68,6 +70,7 @@ export class MultimediaProcessor {
         await sharp(tempIn).resize({ width: 200 }).toFile(thumbPath);
         const meta = await sharp(tempIn).metadata();
         metadata = { width: meta.width, height: meta.height, format: meta.format };
+        console.log(`[MultimediaProcessor] 🖼️ Sharp processing done | width=${meta.width} height=${meta.height} format=${meta.format}`);
 
         // upload optimized and thumbnail using stream upload if available
         if (typeof (this.storage as any).uploadStream === 'function') {
@@ -86,8 +89,8 @@ export class MultimediaProcessor {
           finalKey = uploadRes.key;
         }
         // cleanup temp files
-        try { await fsPromises.unlink(optPath); } catch (_) {}
-        try { await fsPromises.unlink(thumbPath); } catch (_) {}
+        try { await fsPromises.unlink(optPath); } catch (_) { }
+        try { await fsPromises.unlink(thumbPath); } catch (_) { }
       } else if (mime.startsWith('video/')) {
         throw new Error('Video processing is disabled');
       } else if (mime.startsWith('audio/')) {
@@ -100,7 +103,7 @@ export class MultimediaProcessor {
           uploadRes = await this.storage.upload(buf, finalKey, mime);
         }
         metadata = {};
-        try { await fsPromises.unlink(tempIn); } catch (_) {}
+        try { await fsPromises.unlink(tempIn); } catch (_) { }
         finalKey = uploadRes.key;
       }
 
@@ -116,11 +119,12 @@ export class MultimediaProcessor {
         status: 'ready',
         ...metadata,
       }).exec();
+      console.log(`[MultimediaProcessor] ✅ DB updated to ready | multimediaId=${multimediaId} | publicUrl=${publicUrl} | encodedUrl=${encodedUrl}`);
 
       // emit event so realtime clients can update (thumbnail, url, metadata)
       try {
         // log for debugging so dev can confirm the final public URL
-        try { console.log(`[MultimediaProcessor] multimedia.ready url=${publicUrl} encoded=${encodedUrl} messageId=${job.data.messageId}`); } catch (_) {}
+        try { console.log(`[MultimediaProcessor] multimedia.ready url=${publicUrl} encoded=${encodedUrl} messageId=${job.data.messageId}`); } catch (_) { }
         void this.eventEmitter.emit('multimedia.ready', {
           multimediaId: multimediaId,
           messageId: job.data.messageId,
@@ -128,15 +132,17 @@ export class MultimediaProcessor {
           thumbnailUrl: encodedThumbnail,
           metadata,
         });
-      } catch (_) {}
+      } catch (_) { }
 
       // delete staging
-      try { await this.storage.delete(stagingKey); } catch (_) {}
+      try { await this.storage.delete(stagingKey); } catch (_) { }
 
     } catch (err) {
+      console.error(`[MultimediaProcessor] ❌ Job FAILED | multimediaId=${multimediaId} | error=${err?.message || err}`);
+      console.error(`[MultimediaProcessor] ❌ Stack:`, err?.stack);
       const errorPayload: any = { status: 'failed' };
       try { errorPayload.lastError = err && err.message ? err.message : String(err); } catch (_) { errorPayload.lastError = 'unknown'; }
-      try { errorPayload.lastErrorStack = err && err.stack ? err.stack : undefined; } catch (_) {}
+      try { errorPayload.lastErrorStack = err && err.stack ? err.stack : undefined; } catch (_) { }
       await this.multimediaModel.findByIdAndUpdate(multimediaId, errorPayload as any).exec();
       throw err;
     } finally {
@@ -148,10 +154,10 @@ export class MultimediaProcessor {
         path.join(tmpDir, `thumb-${baseName}.jpg`),
       ];
       for (const p of candidates) {
-        try { await fsPromises.unlink(p); } catch (_) {}
+        try { await fsPromises.unlink(p); } catch (_) { }
       }
     }
-    
+
   }
 }
 

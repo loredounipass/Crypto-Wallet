@@ -21,7 +21,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('multimedia') private readonly multimediaQueue: Queue,
     private readonly storage: LocalStorageProvider,
-  ) {}
+  ) { }
 
   // Listen for multimedia processing events to keep message.multimediaStatus in sync
   onModuleInit() {
@@ -34,29 +34,29 @@ export class MessagesAndMultimediaService implements OnModuleInit {
               multimediaStatus: 'ready',
             }, { new: true });
 
-          if (updated) {
-                // In newer Mongoose versions, the updated document is wrapped in a value property
-                const updatedDoc: any = (updated as any).value ?? updated;
-                const out = {
-                  _id: updatedDoc._id?.toString(),
-                  content: updatedDoc.content,
-                  type: updatedDoc.type,
-                  sender: updatedDoc.sender?.toString(),
-                  receiver: updatedDoc.receiver?.toString(),
-                  multimediaId: updatedDoc.multimediaId,
-                  multimediaStatus: updatedDoc.multimediaStatus,
-                  // Include the URL coming from the multimedia processor payload so clients can load it
-                  multimediaUrl: payload.url,
-                  thumbnailUrl: payload.thumbnailUrl,
-                  duration: payload.metadata?.duration,
-                  status: updatedDoc.status,
-                  createdAt: (updatedDoc as any).createdAt,
-                  updatedAt: (updatedDoc as any).updatedAt,
-                };
-                void this.eventEmitter.emit('message.updated', out);
-              }
+            if (updated) {
+              // In newer Mongoose versions, the updated document is wrapped in a value property
+              const updatedDoc: any = (updated as any).value ?? updated;
+              const out = {
+                _id: updatedDoc._id?.toString(),
+                content: updatedDoc.content,
+                type: updatedDoc.type,
+                sender: updatedDoc.sender?.toString(),
+                receiver: updatedDoc.receiver?.toString(),
+                multimediaId: updatedDoc.multimediaId,
+                multimediaStatus: updatedDoc.multimediaStatus,
+                // Include the URL coming from the multimedia processor payload so clients can load it
+                multimediaUrl: payload.url,
+                thumbnailUrl: payload.thumbnailUrl,
+                duration: payload.metadata?.duration,
+                status: updatedDoc.status,
+                createdAt: (updatedDoc as any).createdAt,
+                updatedAt: (updatedDoc as any).updatedAt,
+              };
+              void this.eventEmitter.emit('message.updated', out);
+            }
           }
-        } catch (_) {}
+        } catch (_) { }
       });
 
       this.eventEmitter.on('multimedia.failed', async (payload: any) => {
@@ -84,9 +84,9 @@ export class MessagesAndMultimediaService implements OnModuleInit {
               void this.eventEmitter.emit('message.updated', out);
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       });
-    } catch (_) {}
+    } catch (_) { }
   }
 
 
@@ -135,7 +135,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     return payload;
   }
 
-  
+
 
   // Get messages for a user
   async getMessagesByUser(userId: string) {
@@ -177,7 +177,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     const multimediaMap: Map<string, any> = new Map();
     if (multimediaIds.length > 0) {
       const uniq = Array.from(new Set(multimediaIds));
-    const mDocs = await this.multimediaRepository.find({ _id: { $in: uniq } }).select('_id url thumbnailUrl status duration').lean().exec();
+      const mDocs = await this.multimediaRepository.find({ _id: { $in: uniq } }).select('_id url thumbnailUrl status duration').lean().exec();
       for (const m of mDocs) multimediaMap.set(m._id?.toString(), m);
     }
 
@@ -239,6 +239,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     // upload to staging (temporary storage) - use a crypto UUID for uniqueness under concurrency
     const stagingKey = `staging/${crypto.randomUUID()}-${file.originalname}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);
+    console.log(`[MessagesService] 📤 File uploaded to staging | key=${stagingKey} | url=${uploadResult.url} | size=${uploadResult.size}`);
 
     // Create multimedia doc with status uploading
     const multimediaDoc = await this.multimediaRepository.create({
@@ -250,6 +251,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
       size: uploadResult.size,
       status: 'uploading',
     });
+    console.log(`[MessagesService] 📄 Multimedia doc created | id=${multimediaDoc._id} | type=${dto.type} | mimeType=${uploadResult.mimeType}`);
 
     // Create message referencing multimedia and mark it as processing for UI
     const messageDoc = await this.messageRepository.create({
@@ -265,6 +267,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     await this.multimediaRepository.updateOne({ _id: multimediaDoc._id }, {
       $set: { message: messageDoc._id, status: 'processing', url: uploadResult.url }
     }).exec();
+    console.log(`[MessagesService] 📝 Message created & multimedia linked | messageId=${messageDoc._id} | multimediaId=${multimediaDoc._id}`);
 
     // enqueue processing job (non-blocking)
     await this.multimediaQueue.add('process', {
@@ -274,6 +277,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
       ownerId: senderId,
       mimeType: file.mimetype,
     });
+    console.log(`[MessagesService] 📨 Job enqueued to 'multimedia' queue | stagingKey=${stagingKey} | multimediaId=${multimediaDoc._id} | messageId=${messageDoc._id}`);
 
     const payload = {
       _id: messageDoc._id?.toString(),
@@ -294,5 +298,6 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     return payload;
   }
 
-  
+
 }
+

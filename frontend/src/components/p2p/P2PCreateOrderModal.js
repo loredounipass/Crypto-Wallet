@@ -129,7 +129,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               Vender P2P
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
-              Proveedor: <span style={{ color: '#2186EB', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
+              Proveedor: <span style={{ color: '#8B5CF6', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
             </p>
           </div>
           <button onClick={onClose} style={{
@@ -161,7 +161,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             Cantidad a vender
             {selectedWallet && (
               <span style={{ float: 'right', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
-                Disponible: <span style={{ color: '#2186EB' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
+                Disponible: <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
               </span>
             )}
           </label>
@@ -182,7 +182,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               style={{
                 border: `1px solid ${'#2D2D44'}`,
                 backgroundColor: '#0F0F1A',
-                color: '#2186EB',
+                color: '#8B5CF6',
                 borderRadius: 10,
                 padding: '0 14px',
                 fontWeight: 700,
@@ -237,11 +237,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 onClick={() => setPaymentMethod(pm)}
                 style={{
                   padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                  border: paymentMethod === pm ? '2px solid #2186EB' : `1px solid ${'#2D2D44'}`,
+                  border: paymentMethod === pm ? '2px solid #8B5CF6' : `1px solid ${'#2D2D44'}`,
                   backgroundColor: paymentMethod === pm
-                    ? ('rgba(33,134,235,0.15)')
+                    ? ('rgba(139,92,246,0.15)')
                     : 'transparent',
-                  color: paymentMethod === pm ? '#2186EB' : ('#94A3B8'),
+                  color: paymentMethod === pm ? '#8B5CF6' : ('#94A3B8'),
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}
               >
@@ -255,8 +255,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         {coin && parseFloat(amount) > 0 && (
           <div style={{
             padding: 16, borderRadius: 12, marginBottom: 20,
-            backgroundColor: 'rgba(33,134,235,0.08)',
-            border: `1px solid ${'rgba(33,134,235,0.2)'}`,
+            backgroundColor: 'rgba(139,92,246,0.08)',
+            border: `1px solid ${'rgba(139,92,246,0.2)'}`,
           }}>
             <p style={{ margin: 0, fontSize: 13, color: '#94A3B8' }}>
               Resumen de la orden
@@ -265,7 +265,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               {amount} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
             </p>
             {paymentMethod && (
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#2186EB' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8B5CF6' }}>
                 vía {paymentMethod}
               </p>
             )}
@@ -292,11 +292,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             style={{
               flex: 2, padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700,
               border: 'none',
-              background: isValid ? 'linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)' : ('#2D2D44'),
+              background: isValid ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' : ('#2D2D44'),
               color: isValid ? '#FFF' : '#94A3B8',
               cursor: isValid ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,
-              boxShadow: isValid ? '0 4px 14px rgba(33,134,235,0.3)' : 'none',
+              boxShadow: isValid ? '0 4px 14px rgba(139,92,246,0.3)' : 'none',
               transition: 'all 0.2s',
             }}
           >

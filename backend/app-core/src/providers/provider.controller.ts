@@ -23,6 +23,20 @@ export class ProviderController {
   }
 
   @UseGuards(AuthenticatedGuard)
+  @Post('terms/accept')
+  async acceptTerms(@Request() req): Promise<any> {
+    const terms = await this.providerService.acceptTerms(req.user.email);
+    return { accepted: terms.accepted };
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('terms/check')
+  async checkTerms(@Request() req): Promise<{ accepted: boolean }> {
+    const accepted = await this.providerService.checkTerms(req.user.email);
+    return { accepted };
+  }
+
+  @UseGuards(AuthenticatedGuard)
   @Get('findByEMail/:email')
   findProviderByEmail(@Param('email') email: string): Promise<Provider> {
     return this.providerService.findProviderByEmail(email);

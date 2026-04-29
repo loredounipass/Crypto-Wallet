@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const fallbackBaseApi = 'https://redesigned-telegram-9rq7959q4xwc7gwj-4000.app.github.dev/secure/api';
+const fallbackBaseApi = 'https://effective-enigma-6qr9g5grw79hrgqp-4000.app.github.dev/secure/api';
 const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
 
 const baseApi = configuredBaseApi;
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
 const apiOrigin = (() => {
-    try { return new URL(baseApi).origin; } catch (_) { return 'https://orange-spoon-5j4gqrq49prf7j6r-4000.app.github.dev'; }
+    try { return new URL(baseApi).origin; } catch (_) { return 'https://redesigned-telegram-9rq7959q4xwc7gwj-4000.app.github.dev'; }
 })();
 const mediaBase = `${apiOrigin}/uploads`;
 
@@ -61,6 +61,8 @@ const createProvider = `${baseApi}/providers/create`
 const findByEMail = `${baseApi}/providers/findByEMail/:email`
 const getAllProviders = `${baseApi}/providers/allProviders`
 const updateProviderApi = `${baseApi}/providers/update`
+const checkTermsApi = `${baseApi}/providers/terms/check`
+const acceptTermsApi = `${baseApi}/providers/terms/accept`
 
 // Endpoints escrow P2P
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
@@ -146,6 +148,8 @@ export {
     findByEMail,
     getAllProviders,
     updateProviderApi,
+    checkTermsApi,
+    acceptTermsApi,
     messagesApi,
     messagesUploadApi,
     myMessagesApi,

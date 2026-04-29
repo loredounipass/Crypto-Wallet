@@ -7,7 +7,7 @@ import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import P2POrderStatus from './P2POrderStatus';
 import P2PDisputeModal from './P2PDisputeModal';
 
-import { get } from '../../api/http';
+import { get, apiOrigin } from '../../api/http';
 
 const ChatBubbleIcon = (props) => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -155,7 +155,14 @@ export default function P2POrderChat() {
   if (!currentOrder && !isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 60, color: '#94A3B8' }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+        </div>
         Cargando orden...
       </div>
     );
@@ -183,7 +190,7 @@ export default function P2POrderChat() {
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2186EB, #1A6BC7)',
+            background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#FFF', fontSize: 14, fontWeight: 700,
           }}>
@@ -226,15 +233,15 @@ export default function P2POrderChat() {
                     <div style={{
                       maxWidth: '70%', padding: '10px 14px', borderRadius: 14,
                       backgroundColor: isMe
-                        ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' 
+                        ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' 
                         : ('#1E1E2E'),
-                      background: isMe ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : undefined,
+                      background: isMe ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : undefined,
                       color: isMe ? '#FFF' : ('#E2E8F0'),
                       border: isMe ? 'none' : `1px solid ${borderColor}`,
                       boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     }}>
                       {!isMe && (
-                        <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#2186EB' }}>
+                        <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#8B5CF6' }}>
                           {counterpartEmail}
                         </p>
                       )}
@@ -242,14 +249,15 @@ export default function P2POrderChat() {
                       {/* Multimedia handling */}
                       {msg.multimediaUrl && msg.type === 'image' && (
                         <img 
-                          src={msg.multimediaUrl} 
+                          src={msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`} 
                           alt="adjunto" 
-                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block' }} 
+                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block', cursor: 'pointer' }} 
+                          onClick={() => window.open(msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`, '_blank')}
                         />
                       )}
                       {msg.multimediaUrl && msg.type === 'video' && (
                         <video 
-                          src={msg.multimediaUrl} 
+                          src={msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`} 
                           controls 
                           style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block' }} 
                         />
@@ -334,7 +342,7 @@ export default function P2POrderChat() {
               disabled={!counterpartId || (!messageContent.trim() && !selectedFile) || isSending}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none',
-                background: (counterpartId && (messageContent.trim() || selectedFile)) ? 'linear-gradient(135deg, #2186EB, #1A6BC7)' : ('#2D2D44'),
+                background: (counterpartId && (messageContent.trim() || selectedFile)) ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : ('#2D2D44'),
                 color: '#FFF', cursor: (counterpartId && (messageContent.trim() || selectedFile)) ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
@@ -441,10 +449,10 @@ export default function P2POrderChat() {
                 disabled={actionLoading === 'release'}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-                  background: 'linear-gradient(135deg, #2186EB, #1A6BC7)',
+                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
                   color: '#FFF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   opacity: actionLoading === 'release' ? 0.7 : 1,
-                  boxShadow: '0 4px 14px rgba(33,134,235,0.3)',
+                  boxShadow: '0 4px 14px rgba(139,92,246,0.3)',
                 }}
               >
                 {actionLoading === 'release' ? 'Liberando...' : '🔓 Liberar Fondos'}
@@ -547,7 +555,7 @@ export default function P2POrderChat() {
         <button 
           onClick={() => setActiveMobileTab('chat')}
           style={{
-            background: 'none', border: 'none', color: activeMobileTab === 'chat' ? '#2186EB' : '#94A3B8',
+            background: 'none', border: 'none', color: activeMobileTab === 'chat' ? '#8B5CF6' : '#94A3B8',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
             flex: 1
           }}>
@@ -557,7 +565,7 @@ export default function P2POrderChat() {
         <button 
           onClick={() => setActiveMobileTab('details')}
           style={{
-            background: 'none', border: 'none', color: activeMobileTab === 'details' ? '#2186EB' : '#94A3B8',
+            background: 'none', border: 'none', color: activeMobileTab === 'details' ? '#8B5CF6' : '#94A3B8',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
             flex: 1
           }}>

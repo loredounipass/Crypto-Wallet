@@ -53,10 +53,10 @@ export default function P2POrderStatus({ status }) {
                     width: 28, height: 28, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
-                    backgroundColor: isActive ? '#2186EB' : ('#2D2D44'),
+                    backgroundColor: isActive ? '#8B5CF6' : ('#2D2D44'),
                     color: isActive ? '#FFF' : ('#64748B'),
-                    border: isCurrent ? '2px solid #2186EB' : 'none',
-                    boxShadow: isCurrent ? '0 0 0 4px rgba(33,134,235,0.2)' : 'none',
+                    border: isCurrent ? '2px solid #8B5CF6' : 'none',
+                    boxShadow: isCurrent ? '0 0 0 4px rgba(139,92,246,0.2)' : 'none',
                     transition: 'all 0.3s ease',
                   }}>
                     {isActive && i < activeStep ? '✓' : i + 1}
@@ -71,7 +71,7 @@ export default function P2POrderStatus({ status }) {
                 {i < STEPS.length - 1 && (
                   <div style={{
                     flex: 1, height: 2, marginTop: -16,
-                    backgroundColor: i < activeStep ? '#2186EB' : ('#2D2D44'),
+                    backgroundColor: i < activeStep ? '#8B5CF6' : ('#2D2D44'),
                     transition: 'background-color 0.3s ease',
                   }} />
                 )}

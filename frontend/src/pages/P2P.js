@@ -117,7 +117,8 @@ export default function P2P() {
                 flex: 1, padding: '12px 20px', border: 'none',
                 borderRadius: 0,
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                backgroundColor: activeTab === tab.key ? '#2186EB' : 'transparent',
+                backgroundColor: 'transparent',
+                background: activeTab === tab.key ? 'linear-gradient(90deg, #8B5CF6, #6366F1)' : 'transparent',
                 color: activeTab === tab.key ? '#FFF' : '#64748B',
                 transition: 'all 0.2s',
               }}
@@ -126,8 +127,8 @@ export default function P2P() {
               {tab.key === 'my-orders' && orders.length > 0 && (
                 <span style={{
                   marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
-                  color: activeTab === tab.key ? '#FFF' : '#2186EB',
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#8B5CF6',
                 }}>
                   {orders.length}
                 </span>
@@ -135,8 +136,8 @@ export default function P2P() {
               {tab.key === 'provider-orders' && providerOrders.length > 0 && (
                 <span style={{
                   marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(33,134,235,0.15)',
-                  color: activeTab === tab.key ? '#FFF' : '#2186EB',
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#8B5CF6',
                 }}>
                   {providerOrders.length}
                 </span>
@@ -195,7 +196,7 @@ export default function P2P() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  background: 'none', border: 'none', color: isActive ? '#2186EB' : '#94A3B8',
+                  background: 'none', border: 'none', color: isActive ? '#8B5CF6' : '#94A3B8',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
                   flex: 1, position: 'relative'
                 }}>

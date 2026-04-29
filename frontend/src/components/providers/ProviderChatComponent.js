@@ -122,7 +122,7 @@ const ProviderChatComponent = () => {
                   alignSelf: 'flex-start',
                   borderRadius: 10,
                   border: 'none',
-                  background: 'linear-gradient(135deg, #2186EB, #1A6BC7)',
+                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
                   color: '#FFF',
                   padding: '10px 16px',
                   fontSize: 13,
