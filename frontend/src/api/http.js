@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
 const apiOrigin = (() => {
-    try { return new URL(baseApi).origin; } catch (_) { return 'https://upgraded-halibut-qj97q4q9prr299vp-4000.app.github.dev'; }
+    try { return new URL(baseApi).origin; } catch (_) { return 'https://effective-journey-rqr4g6grxrghv57-4000.app.github.dev'; }
 })();
 const mediaBase = `${apiOrigin}/uploads`;
 

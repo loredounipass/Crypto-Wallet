@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import useAllWallets from '../../hooks/useAllWallets';
 import Price from '../../services/price';
-import { getCoinFee } from '../utils/Chains';
 
 const PAYMENT_METHODS = [
   'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
@@ -27,11 +26,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
   const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
   const balance = selectedWallet?.balance || 0;
-  const commission = useMemo(() => (coin ? getCoinFee(coin.toUpperCase()) : 0), [coin]);
-  
-  // Note: We leave a small margin (e.g. 0.005) for dynamic on-chain gas since the exact amount is estimated on the backend
-  const gasBuffer = useMemo(() => (coin ? (commission > 0 ? commission * 0.5 : 0.001) : 0), [commission, coin]);
-  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0) - Number(commission || 0) - Number(gasBuffer || 0)), [balance, commission, gasBuffer]);
+  // Gas buffer: pequeño margen para el gas on-chain estimado en el backend
+  const gasBuffer = useMemo(() => (coin ? 0.001 : 0), [coin]);
+  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0) - Number(gasBuffer || 0)), [balance, gasBuffer]);
 
   const truncateToDecimals = (value, decimals = 8) => {
     const numeric = Number(value);
@@ -195,9 +192,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             </button>
           </div>
           {selectedWallet && (
-            <p style={{ color: '#94A3B8', fontSize: 12, margin: '6px 0 0' }}>
+          <p style={{ color: '#94A3B8', fontSize: 12, margin: '6px 0 0' }}>
               Balance: {truncateToDecimals(balance, 8).toFixed(8)} {coin?.toUpperCase()} <br/>
-              Comisión: {truncateToDecimals(commission, 8).toFixed(8)} {coin?.toUpperCase()} + Gas Estimado
+              Gas reservado: ~{gasBuffer.toFixed(6)} {coin?.toUpperCase()} (estimado)
             </p>
           )}
           {parseFloat(amount) > availableAfterFee && availableAfterFee >= 0 && (

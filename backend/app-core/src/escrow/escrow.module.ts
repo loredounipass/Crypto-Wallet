@@ -32,6 +32,9 @@ import { default as EscrowQueueType } from './queue/types.queue';
     BullModule.registerQueue({
       name: EscrowQueueType.ESCROW_STATUS_EVENTS,
     }),
+    BullModule.registerQueue({
+      name: EscrowQueueType.ESCROW_CANCEL,
+    }),
   ],
   controllers: [EscrowController],
   providers: [EscrowService, EscrowGateway, EscrowStatusProcessor],
