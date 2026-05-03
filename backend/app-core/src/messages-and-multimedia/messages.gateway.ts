@@ -9,7 +9,7 @@ import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
 
-@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://upgraded-halibut-qj97q4q9prr299vp-3000.app.github.dev'], credentials: true } })
+@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://effective-journey-rqr4g6grxrghv57-3000.app.github.dev'], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(helmet());
   
   app.enableCors({
-    origin: ['https://upgraded-halibut-qj97q4q9prr299vp-3000.app.github.dev'],
+    origin: ['https://effective-journey-rqr4g6grxrghv57-3000.app.github.dev'],
     credentials: true
   })
 

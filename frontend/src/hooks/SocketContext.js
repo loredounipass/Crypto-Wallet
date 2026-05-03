@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'https://upgraded-halibut-qj97q4q9prr299vp-4000.app.github.dev';
+        const fallbackBaseApi = 'https://effective-journey-rqr4g6grxrghv57-4000.app.github.dev';
         const socketOrigin = (() => {
             try { 
                 return new URL(process.env.REACT_APP_API_BASE_URL).origin; 
