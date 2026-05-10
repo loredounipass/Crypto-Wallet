@@ -1,4 +1,4 @@
-import { post, get, messagesApi, messagesUploadApi, myMessagesApi } from '../api/http';
+import { post, get, messagesApi, messagesUploadApi, myMessagesApi, apiOrigin } from '../api/http';
 
 /**
  * Messages and Multimedia service.
@@ -33,5 +33,12 @@ export default class MessagesAndMultimedia {
 	 */
 	static async getMyMessages() {
 		return await get(myMessagesApi, {});
+	}
+
+	/**
+	 * Get the base API origin for media resolution
+	 */
+	static getApiOrigin() {
+		return apiOrigin;
 	}
 }

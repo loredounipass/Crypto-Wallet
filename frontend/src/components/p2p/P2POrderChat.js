@@ -1,98 +1,20 @@
-import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+// Force Webpack recompile
 import { useParams } from 'react-router-dom';
-import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useEscrow from '../../hooks/useEscrow';
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import { useSocket } from '../../hooks/SocketContext';
-import P2POrderStatus from './P2POrderStatus';
 import P2PDisputeModal from './P2PDisputeModal';
+import { ChatBubbleIcon, FileTextIcon } from './ChatIcons';
 
-import { get, apiOrigin } from '../../api/http';
-
-const ChatBubbleIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const FileTextIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <polyline points="10 9 9 9 8 9" />
-  </svg>
-);
-
-const MicIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-    <line x1="8" y1="23" x2="16" y2="23" />
-  </svg>
-);
-
-const TrashIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-
-const PaperclipIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-  </svg>
-);
-
-const SecureAudio = ({ url, ...props }) => {
-  const [blobUrl, setBlobUrl] = useState(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    if (!url) return;
-
-    get(url, null, { responseType: 'blob' })
-      .then(res => {
-        if (active && res && res.data) {
-          setBlobUrl(URL.createObjectURL(res.data));
-        }
-      })
-      .catch(err => {
-        console.error('Failed to load secure audio:', err);
-        if (active) setError(true);
-      });
-
-    return () => {
-      active = false;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
-
-  if (error) {
-    return (
-      <div style={{ width: '240px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#F87171', borderRadius: '12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-        ⚠️ Error al cargar el audio.
-      </div>
-    );
-  }
-
-  if (!blobUrl) {
-    return (
-      <div style={{ width: '240px', padding: '12px 16px', background: 'rgba(139, 92, 246, 0.1)', color: '#A78BFA', borderRadius: '24px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#A78BFA', animation: 'pulse 1.5s infinite' }} />
-        Descargando audio...
-      </div>
-    );
-  }
-
-  return <audio src={blobUrl} {...props} />;
-};
+import P2POrderDetailsPanel from './P2POrderDetailsPanel';
+import P2PChatMessagesList from './P2PChatMessagesList';
+import P2PChatInputArea from './P2PChatInputArea';
+import P2PChatHeader from './P2PChatHeader';
+import useP2PAudioRecorder from '../../hooks/useP2PAudioRecorder';
+import useCounterpart from '../../hooks/useCounterpart';
+import useP2PChatState from '../../hooks/useP2PChatState';
 
 export default function P2POrderChat() {
   const { orderId } = useParams();
@@ -100,34 +22,13 @@ export default function P2POrderChat() {
   
   
   const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading } = useEscrow();
-  const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat } = useMessagesAndMultimedia();
+  const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat, apiOrigin } = useMessagesAndMultimedia();
 
-  const [messageContent, setMessageContent] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [chatError, setChatError] = useState('');
   const [showDispute, setShowDispute] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
-  const [counterpartId, setCounterpartId] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'details'
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-
-  const fileInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
-  const prevMessagesLength = useRef(0);
-  const typingTimeoutRef = useRef(null);
-  const isCurrentlyTypingRef = useRef(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const recordingTimerRef = useRef(null);
 
   const { socket } = useSocket();
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
   const isSeller = currentOrder?.sellerEmail === auth?.email;
@@ -143,30 +44,7 @@ export default function P2POrderChat() {
     fetchOrder();
   }, [fetchOrder]);
 
-  // Fetch the counterpart user's ID
-  useEffect(() => {
-    const fetchCounterpart = async () => {
-      if (!counterpartEmail) return;
-      try {
-        const res = await get('/user/search', { q: counterpartEmail });
-        const users = Array.isArray(res?.data?.data)
-          ? res.data.data
-          : (Array.isArray(res?.data) ? res.data : []);
-        if (users.length > 0) {
-          setCounterpartId(users[0]._id);
-          setChatError('');
-        } else {
-          setCounterpartId(null);
-          setChatError('No se encontró el usuario contraparte para esta orden.');
-        }
-      } catch (e) {
-        console.error('Failed to fetch counterpart user', e);
-        setCounterpartId(null);
-        setChatError('No se pudo resolver la contraparte. Intenta recargar la página.');
-      }
-    };
-    fetchCounterpart();
-  }, [counterpartEmail]);
+  const { counterpartId, counterpartError } = useCounterpart(counterpartEmail);
 
   // Join socket room and fetch initial messages when counterpart is known
   useEffect(() => {
@@ -176,160 +54,39 @@ export default function P2POrderChat() {
     }
   }, [counterpartId, auth?._id, joinChat, fetchMyMessages]);
 
-  // Filter messages for this conversation and sort chronologically
-  const messages = useMemo(() => {
-    if (!allMessages || !counterpartId || !auth?._id) return [];
-    return allMessages
-      .filter(m => 
-        (m.sender === auth._id && m.receiver === counterpartId) ||
-        (m.sender === counterpartId && m.receiver === auth._id)
-      )
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }, [allMessages, counterpartId, auth?._id]);
+  const chatState = useP2PChatState({
+    socket,
+    authId: auth?._id,
+    counterpartId,
+    allMessages,
+    fetchMyMessages,
+    createMessage,
+    uploadMessage
+  });
 
-  // Listen for typing events
-  useEffect(() => {
-    if (!socket) return;
-    const handleTyping = (data) => {
-      // Accept typing from counterpart (compare as strings to avoid ObjectId mismatch)
-      if (String(data.senderId) === String(counterpartId)) {
-        setIsCounterpartTyping(data.isTyping);
-      }
-    };
-    socket.on('typing', handleTyping);
-    return () => socket.off('typing', handleTyping);
-  }, [socket, counterpartId]);
+  const {
+    messages,
+    messageContent,
+    setMessageContent,
+    selectedFile,
+    setSelectedFile,
+    chatError,
+    setChatError,
+    isCounterpartTyping,
+    fileInputRef,
+    messagesEndRef,
+    typingTimeoutRef,
+    isCurrentlyTypingRef,
+    handleSendMessage,
+    handleSendAudio
+  } = chatState;
 
-  // Auto-scroll to bottom only when a new message is added (length increases)
-  useEffect(() => {
-    if (messages.length > prevMessagesLength.current) {
-      scrollToBottom();
-    }
-    prevMessagesLength.current = messages.length;
-  }, [messages]);
+  const { isRecording, recordingTime, startRecording, stopRecording } = useP2PAudioRecorder(
+    handleSendAudio, 
+    setChatError
+  );
 
-  const handleSendMessage = async () => {
-    if (!counterpartId || (!messageContent.trim() && !selectedFile) || isSending) return;
-    
-    // Instant feedback
-    const content = messageContent;
-    const file = selectedFile;
-    setMessageContent('');
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    
-    // Instantly cancel typing state on send
-    if (socket) {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socket.emit('typing', { receiverId: counterpartId, isTyping: false });
-      isCurrentlyTypingRef.current = false;
-    }
-    
-    setIsSending(true);
-    setChatError('');
-    const hadFile = !!file;
-    try {
-      const payload = {
-        receiverId: counterpartId,
-        content: content,
-        type: file ? 'image' : 'text',
-      };
-
-      if (file) {
-        const uploaded = await uploadMessage(file, payload);
-        if (!uploaded) throw new Error('uploadMessage failed');
-      } else {
-        const created = await createMessage(payload);
-        if (!created) throw new Error('createMessage failed');
-      }
-      await fetchMyMessages();
-      // If a file was uploaded, re-fetch after a short delay so the processed
-      // multimedia URL from the worker is captured (race-condition workaround)
-      if (hadFile) {
-        setTimeout(() => fetchMyMessages(), 3000);
-      }
-    } catch (e) {
-      console.error('Failed to send message', e);
-      setChatError('No se pudo enviar el mensaje. Verifica la conexión e intenta de nuevo.');
-    } finally { 
-      setIsSending(false); 
-    }
-  };
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
-      
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-      
-      mediaRecorderRef.current.onstop = () => {
-        if (!mediaRecorderRef.current?.cancelRecording) {
-          const mimeType = mediaRecorderRef.current.mimeType;
-          let extension = 'webm';
-          if (mimeType.includes('mp4')) extension = 'mp4';
-          else if (mimeType.includes('ogg')) extension = 'ogg';
-          else if (mimeType.includes('wav')) extension = 'wav';
-
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-          const file = new File([audioBlob], `audio_${Date.now()}.${extension}`, { type: mimeType });
-          handleSendAudio(file);
-        }
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-      
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } catch (err) {
-      console.error('Microphone access denied:', err);
-      setChatError('Permiso de micrófono denegado o no disponible.');
-    }
-  };
-
-  const stopRecording = (cancel = false) => {
-    if (mediaRecorderRef.current && isRecording) {
-      if (cancel) {
-        mediaRecorderRef.current.cancelRecording = true;
-      } else {
-        mediaRecorderRef.current.cancelRecording = false;
-      }
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      clearInterval(recordingTimerRef.current);
-    }
-  };
-
-  const handleSendAudio = async (audioFile) => {
-    if (!counterpartId || isSending) return;
-    setIsSending(true);
-    setChatError('');
-    try {
-      const payload = { receiverId: counterpartId, content: '', type: 'audio' };
-      const uploaded = await uploadMessage(audioFile, payload);
-      if (!uploaded) throw new Error('uploadMessage failed');
-      await fetchMyMessages();
-      setTimeout(() => fetchMyMessages(), 3000);
-    } catch (e) {
-      console.error('Failed to send audio', e);
-      setChatError('No se pudo enviar el audio.');
-    } finally {
-      setIsSending(false);
-    }
-  };
+  const displayError = chatError || counterpartError;
 
   const handleAction = async (action) => {
     setActionLoading(action);
@@ -382,29 +139,11 @@ export default function P2POrderChat() {
         borderRadius: 16, border: `1px solid ${borderColor}`,
         backgroundColor: cardBg, overflow: 'hidden',
       }}>
-        {/* Chat Header */}
-        <div style={{
-          padding: '14px 20px',
-          borderBottom: `1px solid ${borderColor}`,
-          display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#FFF', fontSize: 14, fontWeight: 700,
-          }}>
-            {(isProvider ? currentOrder?.sellerEmail : currentOrder?.providerEmail)?.charAt(0)?.toUpperCase()}
-          </div>
-          <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#F1F5F9' }}>
-              Chat P2P
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
-              {isProvider ? currentOrder?.sellerEmail : currentOrder?.providerEmail}
-            </p>
-          </div>
-        </div>
+        <P2PChatHeader 
+          currentOrder={currentOrder} 
+          isProvider={isProvider} 
+          borderColor={borderColor} 
+        />
 
         {/* Messages */}
         <div className="p2p-chat-messages-scroll" style={{
@@ -423,147 +162,14 @@ export default function P2POrderChat() {
           margin: '0 auto',
           width: '100%',
           }}>
-          {messages.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 40 }}>
-              Aún no hay mensajes. Coordina el pago con tu contraparte.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              {messages.map((msg, i) => {
-                const isMe = msg.sender === auth?._id;
-                const text = msg.content || msg.message || '';
-                const isMediaMsg = msg.type === 'image' || msg.type === 'video' || msg.type === 'audio';
-                const hasNoText = isMediaMsg && (!text.trim() || text.trim() === '📎adjunto');
-                
-                const isFirstInGroup = i === 0 || messages[i - 1].sender !== msg.sender;
-                const showName = !isMe && isFirstInGroup;
-                const marginTop = i === 0 ? 0 : (isFirstInGroup ? 16 : 4);
-
-                return (
-                  <div key={i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginTop }}>
-                    <div style={{
-                      maxWidth: '70%', minWidth: 40, padding: '10px 14px', borderRadius: 14,
-                      backgroundColor: isMe
-                        ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' 
-                        : ('#1E1E2E'),
-                      background: isMe ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : undefined,
-                      color: isMe ? '#FFF' : ('#E2E8F0'),
-                      border: isMe ? 'none' : `1px solid ${borderColor}`,
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                      overflow: 'hidden', // Ensures images flush with edges stay rounded
-                    }}>
-                      {showName && (
-                        <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 600, color: '#8B5CF6' }}>
-                          {counterpartEmail}
-                        </p>
-                      )}
-                      
-                      {/* Multimedia handling */}
-                      {(() => {
-                        // Resolve the multimedia URL from various possible shapes
-                        const resolvedUrl = msg.multimediaUrl
-                          || (msg.multimedia && typeof msg.multimedia === 'object' ? msg.multimedia.url : null)
-                          || null;
-                        const fullUrl = resolvedUrl
-                          ? (resolvedUrl.startsWith('http') ? resolvedUrl : `${apiOrigin}${resolvedUrl}`)
-                          : null;
-                        const mediaReady = msg.multimediaStatus === 'ready' || (!msg.multimediaStatus && resolvedUrl);
-
-                        // If the message is purely media, we expand it to touch the bubble edges
-                        const imageMargin = hasNoText 
-                          ? (isMe ? '-10px -14px' : '8px -14px -10px -14px') 
-                          : '0 0 8px 0';
-                        const imageRadius = hasNoText ? 0 : 8; // Wrapper handles outer rounding
-
-                        return (
-                          <>
-                            {/* Image */}
-                            {isMediaMsg && msg.type === 'image' && fullUrl && mediaReady && (
-                              <img 
-                                src={fullUrl} 
-                                alt="imagen" 
-                                style={{ 
-                                  width: hasNoText ? 'calc(100% + 28px)' : '100%', 
-                                  maxWidth: hasNoText ? 'calc(100% + 28px)' : '100%', 
-                                  maxHeight: 240, 
-                                  borderRadius: imageRadius, 
-                                  margin: imageMargin, 
-                                  display: 'block', 
-                                  cursor: 'pointer', 
-                                  objectFit: 'cover' 
-                                }} 
-                                onClick={() => window.open(fullUrl, '_blank')}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.style.display = 'none';
-                                  e.target.insertAdjacentHTML('afterend', '<p style="font-size:12px;color:#F59E0B;margin:4px 0 8px;">⚠️ No se pudo cargar la imagen</p>');
-                                }}
-                              />
-                            )}
-                            {/* Video */}
-                            {isMediaMsg && msg.type === 'video' && fullUrl && mediaReady && (
-                              <video 
-                                src={fullUrl} 
-                                controls 
-                                style={{ 
-                                  width: hasNoText ? 'calc(100% + 28px)' : '100%', 
-                                  maxWidth: hasNoText ? 'calc(100% + 28px)' : '100%', 
-                                  borderRadius: imageRadius, 
-                                  margin: imageMargin, 
-                                  display: 'block' 
-                                }} 
-                              />
-                            )}
-                            {/* Audio */}
-                            {isMediaMsg && msg.type === 'audio' && fullUrl && mediaReady && (
-                              <SecureAudio 
-                                url={fullUrl} 
-                                controls 
-                                style={{ 
-                                  width: '240px', 
-                                  maxWidth: '100%', 
-                                  margin: hasNoText ? '0' : '0 0 8px 0', 
-                                  display: 'block' 
-                                }} 
-                              />
-                            )}
-                            {/* Processing / uploading states */}
-                            {isMediaMsg && (msg.multimediaStatus === 'uploading' || msg.multimediaStatus === 'processing' || (!mediaReady && !fullUrl)) && (
-                              <div style={{
-                                display: 'flex', alignItems: 'center', gap: 8,
-                                padding: '12px 16px', borderRadius: 8, marginBottom: 8,
-                                backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
-                              }}>
-                                <span style={{
-                                  width: 18, height: 18,
-                                  border: '2px solid #8B5CF6', borderTop: '2px solid transparent',
-                                  borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-                                  display: 'inline-block', flexShrink: 0,
-                                }} />
-                                <span style={{ fontSize: 12, color: '#A78BFA' }}>
-                                  {msg.multimediaStatus === 'uploading' ? 'Subiendo archivo...' : 'Procesando imagen...'}
-                                </span>
-                              </div>
-                            )}
-                            {/* Failed state */}
-                            {isMediaMsg && msg.multimediaStatus === 'failed' && (
-                              <p style={{ fontSize: 12, color: '#EF4444', margin: '4px 0 8px' }}>❌ Error al procesar el archivo</p>
-                            )}
-                          </>
-                        );
-                      })()}
-
-                      {/* Text content — hide placeholder text for media messages that have a resolved URL */}
-                      {!hasNoText && text && (
-                        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{text}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+          <P2PChatMessagesList
+            messages={messages}
+            authId={auth?._id}
+            counterpartEmail={counterpartEmail}
+            apiOrigin={apiOrigin}
+            messagesEndRef={messagesEndRef}
+            borderColor={borderColor}
+          />
           </div>
         </div>
 
@@ -594,331 +200,36 @@ export default function P2POrderChat() {
         </div>
 
         {/* Input */}
-        <div style={{ padding: 12, borderTop: `1px solid ${borderColor}` }}>
-          {selectedFile && (
-            <div style={{
-              marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 12px', backgroundColor: '#1E1E2E', borderRadius: 8,
-              border: `1px solid ${borderColor}`
-            }}>
-              <span style={{ fontSize: 18 }}>🖼️</span>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <span style={{ fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {selectedFile.name}
-                </span>
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                  {(selectedFile.size / 1024).toFixed(1)} KB
-                </span>
-              </div>
-              <button 
-                onClick={() => {
-                  setSelectedFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444',
-                  cursor: 'pointer', width: 28, height: 28, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
-                }}>
-                ✕
-              </button>
-            </div>
-          )}
-          {isRecording ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '6px 12px', borderRadius: 24,
-              border: `1px solid #EF4444`,
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              flex: 1, height: 52
-            }}>
-              <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1.5s infinite' }} />
-              <span style={{ color: '#EF4444', fontWeight: '500', flex: 1, fontSize: 14 }}>Grabando... {formatTime(recordingTime)}</span>
-              <button 
-                onClick={() => stopRecording(true)}
-                style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 8 }}
-                title="Cancelar"
-              >
-                <TrashIcon />
-              </button>
-              <button 
-                onClick={() => stopRecording(false)}
-                style={{ 
-                  width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: '#10B981', color: '#FFF', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-                title="Enviar audio"
-              >
-                <SendIcon style={{ fontSize: 16 }} />
-              </button>
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '6px 6px 6px 16px', borderRadius: 24,
-              border: `1px solid ${borderColor}`,
-              backgroundColor: '#0F0F1A',
-            }}>
-              <input
-                style={{
-                  flex: 1, border: 'none', outline: 'none', fontSize: 14,
-                  backgroundColor: 'transparent',
-                  color: '#E2E8F0',
-                }}
-                placeholder="Escribe tu mensaje..."
-                value={messageContent}
-                onChange={e => {
-                  setMessageContent(e.target.value);
-                  if (socket && counterpartId) {
-                    if (!isCurrentlyTypingRef.current) {
-                      socket.emit('typing', { receiverId: counterpartId, isTyping: true });
-                      isCurrentlyTypingRef.current = true;
-                    }
-                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => {
-                      socket.emit('typing', { receiverId: counterpartId, isTyping: false });
-                      isCurrentlyTypingRef.current = false;
-                    }, 2000);
-                  }
-                }}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-              />
-              <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  style={{ display: 'none' }} 
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setSelectedFile(e.target.files[0]);
-                    }
-                  }}
-                />
-                <div 
-                  style={{ display: 'flex', padding: 6, color: '#94A3B8', transition: 'color 0.2s', borderRadius: '50%' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#C084FC'; e.currentTarget.style.backgroundColor = 'rgba(192, 132, 252, 0.1)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                >
-                  <PaperclipIcon />
-                </div>
-              </label>
-              <button
-                onClick={() => {
-                  if (messageContent.trim() || selectedFile) {
-                    handleSendMessage();
-                  } else {
-                    startRecording();
-                  }
-                }}
-                disabled={!counterpartId}
-                style={{
-                  width: 38, height: 38, borderRadius: '50%', border: 'none',
-                  background: counterpartId ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : '#2D2D44',
-                  color: '#FFF', cursor: counterpartId ? 'pointer' : 'not-allowed',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                  boxShadow: counterpartId ? '0 4px 14px 0 rgba(139, 92, 246, 0.39)' : 'none',
-                  transform: 'scale(1)'
-                }}
-                onMouseEnter={e => { if (counterpartId) e.currentTarget.style.transform = 'scale(1.05)' }}
-                onMouseLeave={e => { if (counterpartId) e.currentTarget.style.transform = 'scale(1)' }}
-              >
-                {messageContent.trim() || selectedFile ? <SendIcon style={{ fontSize: 18, marginLeft: 2 }} /> : <MicIcon style={{ fontSize: 18 }} />}
-              </button>
-            </div>
-          )}
-          <div style={{ minHeight: 18, margin: '8px 8px 0' }}>
-            {chatError && (
-              <p style={{ margin: 0, fontSize: 12, color: '#F87171' }}>
-                {chatError}
-              </p>
-            )}
-            {!chatError && !counterpartId && (
-              <p style={{ margin: 0, fontSize: 12, color: '#F59E0B' }}>
-                No se pudo identificar la contraparte de esta orden. Reintenta en unos segundos.
-              </p>
-            )}
-          </div>
-        </div>
+        <P2PChatInputArea
+          isRecording={isRecording}
+          recordingTime={recordingTime}
+          stopRecording={stopRecording}
+          startRecording={startRecording}
+          messageContent={messageContent}
+          setMessageContent={setMessageContent}
+          selectedFile={selectedFile}
+          setSelectedFile={setSelectedFile}
+          fileInputRef={fileInputRef}
+          handleSendMessage={handleSendMessage}
+          socket={socket}
+          counterpartId={counterpartId}
+          isCurrentlyTypingRef={isCurrentlyTypingRef}
+          typingTimeoutRef={typingTimeoutRef}
+          borderColor={borderColor}
+          chatError={displayError}
+        />
       </div>
 
       {/* RIGHT: Order Panel */}
-      <div className={`p2p-order-panel p2p-order-scroll-hidden ${activeMobileTab !== 'details' ? 'hide-on-mobile' : ''}`} style={{
-        minWidth: 0,
-        height: '100%',
-        minHeight: 0,
-        display: 'flex', flexDirection: 'column', gap: 16,
-        overflowY: 'auto', overflowX: 'hidden',
-      }}>
-        {/* Order Status Card */}
-        <div style={{
-          borderRadius: 16, padding: 24,
-          border: `1px solid ${borderColor}`, backgroundColor: cardBg,
-        }}>
-          <h3 style={{
-            margin: '0 0 16px', fontSize: 16, fontWeight: 700,
-            color: '#F1F5F9',
-          }}>
-            Estado de la Orden
-          </h3>
-          <P2POrderStatus status={currentOrder?.status} />
-        </div>
-
-        {/* Order Details Card */}
-        <div className="p2p-order-scroll-hidden" style={{
-          borderRadius: 16, padding: 24,
-          border: `1px solid ${borderColor}`, backgroundColor: cardBg,
-          flex: 1, minHeight: 0, overflowY: 'auto',
-        }}>
-          <h3 style={{
-            margin: '0 0 16px', fontSize: 16, fontWeight: 700,
-            color: '#F1F5F9',
-          }}>
-            Detalles
-          </h3>
-
-          {[
-            { label: 'Cantidad', value: `${currentOrder?.amount} ${currentOrder?.coin}` },
-            { label: 'Monto USD', value: `$${currentOrder?.fiatAmount}` },
-            { label: 'Método de Pago', value: currentOrder?.paymentMethod },
-            { label: 'Tu rol', value: isSeller ? '🏷️ Vendedor' : '🏪 Proveedor' },
-            { label: 'Orden ID', value: currentOrder?.orderId?.slice(0, 12) + '...' },
-          ].map((item, i) => (
-            <div key={i} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 0',
-              borderBottom: i < 4 ? `1px solid ${'#1E1E2E'}` : 'none',
-            }}>
-              <span style={{ fontSize: 13, color: '#94A3B8' }}>{item.label}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>
-                {item.value}
-              </span>
-            </div>
-          ))}
-
-          {/* Action Buttons */}
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {/* Provider: Confirm Payment */}
-            {isProvider && currentOrder?.status === 'funded' && (
-              <button
-                onClick={() => handleAction('confirm')}
-                disabled={actionLoading === 'confirm'}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-                  background: 'linear-gradient(135deg, #10B981, #059669)',
-                  color: '#FFF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  opacity: actionLoading === 'confirm' ? 0.7 : 1,
-                  boxShadow: '0 4px 14px rgba(16,185,129,0.3)',
-                }}
-              >
-                {actionLoading === 'confirm' ? 'Confirmando...' : '✅ Confirmar Pago Recibido'}
-              </button>
-            )}
-
-            {/* Seller: Release Funds */}
-            {isSeller && currentOrder?.status === 'buyer_paid' && (
-              <button
-                onClick={() => handleAction('release')}
-                disabled={actionLoading === 'release'}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
-                  color: '#FFF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  opacity: actionLoading === 'release' ? 0.7 : 1,
-                  boxShadow: '0 4px 14px rgba(139,92,246,0.3)',
-                }}
-              >
-                {actionLoading === 'release' ? 'Liberando...' : '🔓 Liberar Fondos'}
-              </button>
-            )}
-
-            {/* Dispute - both can open */}
-            {['funded', 'buyer_paid'].includes(currentOrder?.status) && (
-              <button
-                onClick={() => setShowDispute(true)}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10,
-                  border: `1px solid ${'#2D2D44'}`,
-                  backgroundColor: 'transparent',
-                  color: '#EF4444', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                ⚠️ Abrir Disputa
-              </button>
-            )}
-
-            {/* Seller: Cancel */}
-            {isSeller && currentOrder?.status === 'funded' && (
-              <button
-                onClick={() => handleAction('cancel')}
-                disabled={actionLoading === 'cancel'}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10,
-                  border: `1px solid ${'#2D2D44'}`,
-                  backgroundColor: 'transparent',
-                  color: '#94A3B8',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  opacity: actionLoading === 'cancel' ? 0.7 : 1,
-                }}
-              >
-                {actionLoading === 'cancel' ? 'Cancelando...' : 'Cancelar Orden'}
-              </button>
-            )}
-
-            {/* Completed message */}
-            {currentOrder?.status === 'completed' && (
-              <div style={{
-                padding: 16, borderRadius: 12, textAlign: 'center',
-                backgroundColor: 'rgba(16,185,129,0.08)',
-                border: '1px solid rgba(16,185,129,0.2)',
-              }}>
-                <p style={{ margin: 0, fontSize: 20, marginBottom: 4 }}>🎉</p>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#10B981' }}>
-                  ¡Orden completada exitosamente!
-                </p>
-              </div>
-            )}
-
-            {/* Disputed message */}
-            {currentOrder?.status === 'disputed' && (
-              <div style={{
-                padding: 16, borderRadius: 12,
-                backgroundColor: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.2)',
-              }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#EF4444' }}>
-                  Disputa abierta
-                </p>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
-                  {currentOrder?.disputeReason}
-                </p>
-                <p style={{ margin: '4px 0 0', fontSize: 11, color: '#94A3B8' }}>
-                  Por: {currentOrder?.disputeOpenedBy}
-                </p>
-              </div>
-            )}
-
-            {/* Waiting messages */}
-            {isSeller && currentOrder?.status === 'funded' && (
-              <p style={{ textAlign: 'center', fontSize: 13, color: '#F59E0B', margin: 0 }}>
-                ⏳ Esperando que el proveedor confirme el pago externo...
-              </p>
-            )}
-            {isProvider && currentOrder?.status === 'buyer_paid' && (
-              <p style={{ textAlign: 'center', fontSize: 13, color: '#3B82F6', margin: 0 }}>
-                ⏳ Esperando que el vendedor libere los fondos...
-              </p>
-            )}
-            {currentOrder?.status === 'released' && (
-              <p style={{ textAlign: 'center', fontSize: 13, color: '#8B5CF6', margin: 0 }}>
-                ⏳ Procesando liberación de fondos on-chain...
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+      <P2POrderDetailsPanel 
+        activeMobileTab={activeMobileTab}
+        currentOrder={currentOrder}
+        isProvider={isProvider}
+        isSeller={isSeller}
+        actionLoading={actionLoading}
+        handleAction={handleAction}
+        setShowDispute={setShowDispute}
+      />
 
       {/* Mobile Bottom Nav */}
       <div className="mobile-bottom-nav" style={{

@@ -74,5 +74,6 @@ export default function useMessagesAndMultimedia() {
     createMessage,
     uploadMessage,
     joinChat,
+    apiOrigin: MessagesAndMultimedia.getApiOrigin(),
   };
 }
