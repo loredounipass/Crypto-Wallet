@@ -264,20 +264,64 @@ export class EscrowService {
 
   // Get orders where user is the seller
   async getMyOrders(email: string) {
-    return this.escrowOrderModel
+    const orders = await this.escrowOrderModel
       .find({ sellerEmail: email })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
+
+    for (const order of orders) {
+      if (!order.providerEmail) {
+        (order as any).counterpartName = 'Desconocido';
+        continue;
+      }
+
+      const provider = await this.providerModel.findOne({ 
+        email: { $regex: new RegExp(`^${order.providerEmail.trim()}$`, 'i') } 
+      }).lean().exec();
+      
+      if (provider && (provider.firstName || provider.lastName)) {
+        (order as any).counterpartName = `${provider.firstName || ''} ${provider.lastName || ''}`.trim();
+      } else {
+        (order as any).counterpartName = order.providerEmail;
+      }
+    }
+    return orders;
   }
 
   // Get orders where user is the provider
   async getProviderOrders(email: string) {
-    return this.escrowOrderModel
+    const orders = await this.escrowOrderModel
       .find({ providerEmail: email })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
+
+    for (const order of orders) {
+      if (!order.sellerEmail) {
+        (order as any).counterpartName = 'Desconocido';
+        continue;
+      }
+
+      // Buscar de forma insensible a mayúsculas
+      let user: any = await this.userModel.findOne({ 
+        email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
+      }).lean().exec();
+
+      // Si por alguna razón no está en User, buscar en Provider
+      if (!user) {
+        user = await this.providerModel.findOne({ 
+          email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
+        }).lean().exec();
+      }
+
+      if (user && (user.firstName || user.lastName)) {
+        (order as any).counterpartName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      } else {
+        (order as any).counterpartName = order.sellerEmail;
+      }
+    }
+    return orders;
   }
 
   // Get a single order by orderId, only if user is involved

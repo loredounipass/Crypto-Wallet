@@ -25,6 +25,13 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
   
   const history = useHistory();
 
+  const formatName = (nameStr) => {
+    if (!nameStr || nameStr.includes('@')) return nameStr;
+    return nameStr.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   if (!orders || orders.length === 0) {
     return (
       <div style={{
@@ -52,7 +59,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
         {orders.map((order) => {
           const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
           const statusLabel = STATUS_LABELS[order.status] || order.status;
-          const counterparty = role === 'seller' ? order.providerEmail : order.sellerEmail;
+          const counterparty = order.counterpartName ? formatName(order.counterpartName) : (role === 'seller' ? order.providerEmail : order.sellerEmail);
           const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
           }) : '';
@@ -152,7 +159,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
       {orders.map((order) => {
         const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
         const statusLabel = STATUS_LABELS[order.status] || order.status;
-        const counterparty = role === 'seller' ? order.providerEmail : order.sellerEmail;
+        const counterparty = order.counterpartName ? formatName(order.counterpartName) : (role === 'seller' ? order.providerEmail : order.sellerEmail);
         const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
         }) : '';

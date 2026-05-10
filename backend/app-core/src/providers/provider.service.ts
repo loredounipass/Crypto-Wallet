@@ -42,8 +42,12 @@ export class ProviderService {
 
   
 
-  async findAllProviders(): Promise<Provider[]> {
-    return this.providerModel.find({ isValid: true }).exec();
+  async findAllProviders(currentUserEmail?: string): Promise<Provider[]> {
+    const filter: any = { isValid: true };
+    if (currentUserEmail) {
+      filter.email = { $ne: currentUserEmail };
+    }
+    return this.providerModel.find(filter).exec();
   }
 
   async acceptTerms(email: string): Promise<ProviderTerms> {

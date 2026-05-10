@@ -67,12 +67,23 @@ export default function useMessagesAndMultimedia() {
     }
   }, [auth?._id]);
 
+  /* ── Fetch a secure media blob ────────────────────────────────── */
+  const getSecureMedia = useCallback(async (url) => {
+    try {
+      return await MessagesAndMultimedia.getSecureMedia(url);
+    } catch (err) {
+      console.error('[useMessagesAndMultimedia] getSecureMedia', err);
+      throw err;
+    }
+  }, []);
+
   return {
     messages,
     connected,
     fetchMyMessages,
     createMessage,
     uploadMessage,
+    getSecureMedia,
     joinChat,
     apiOrigin: MessagesAndMultimedia.getApiOrigin(),
   };

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import EmojiPicker from 'emoji-picker-react';
 import { Send as SendIcon } from '../../ui/icons';
 import { TrashIcon, PaperclipIcon, MicIcon } from './ChatIcons';
 
@@ -20,27 +21,80 @@ export default function P2PChatInputArea({
   borderColor,
   chatError
 }) {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
+
+  const onEmojiClick = (emojiObject) => {
+    setMessageContent((prev) => prev + emojiObject.emoji);
+  };
+
   return (
-    <div style={{ padding: 12, borderTop: `1px solid ${borderColor}` }}>
+    <div style={{ padding: 12, borderTop: `1px solid ${borderColor}`, position: 'relative' }}>
+      {showEmojiPicker && (
+        <div ref={emojiPickerRef} style={{ position: 'absolute', bottom: '100%', left: 16, zIndex: 50, marginBottom: 8 }}>
+          <EmojiPicker 
+            onEmojiClick={onEmojiClick} 
+            theme="dark"
+            autoFocusSearch={false}
+          />
+        </div>
+      )}
       {selectedFile && (
         <div style={{
-          marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 12px', backgroundColor: '#1E1E2E', borderRadius: 8,
-          border: `1px solid ${borderColor}`
+          marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10,
+          padding: '8px 10px', backgroundColor: '#1A1A2E', borderRadius: 12,
+          border: `1px solid rgba(139,92,246,0.2)`
         }}>
-          <span style={{ fontSize: 18 }}>🖼️</span>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <span style={{ fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {/* Image thumbnail */}
+          {selectedFile.type?.startsWith('image/') ? (
+            <div style={{
+              width: 48, height: 48, borderRadius: 8, overflow: 'hidden',
+              flexShrink: 0, backgroundColor: '#0F0F1A',
+            }}>
+              <img
+                src={URL.createObjectURL(selectedFile)}
+                alt="preview"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+          ) : (
+            <div style={{
+              width: 48, height: 48, borderRadius: 8, flexShrink: 0,
+              background: 'rgba(139,92,246,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: 22 }}>📎</span>
+            </div>
+          )}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {selectedFile.name}
             </span>
-            <span style={{ fontSize: 11, color: '#94A3B8' }}>
-              {(selectedFile.size / 1024).toFixed(1)} KB
+            <span style={{ fontSize: 11, color: '#8B5CF6', fontWeight: 500 }}>
+              {selectedFile.size < 1024 * 1024
+                ? `${(selectedFile.size / 1024).toFixed(1)} KB`
+                : `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`
+              }
             </span>
           </div>
           <button 
@@ -50,10 +104,17 @@ export default function P2PChatInputArea({
             }}
             style={{
               background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444',
-              cursor: 'pointer', width: 28, height: 28, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
-            }}>
-            ✕
+              cursor: 'pointer', width: 30, height: 30, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s', flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
       )}
@@ -137,6 +198,27 @@ export default function P2PChatInputArea({
               <PaperclipIcon />
             </div>
           </label>
+          
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              display: 'flex', padding: 6, color: showEmojiPicker ? '#C084FC' : '#94A3B8', 
+              transition: 'color 0.2s', borderRadius: '50%',
+              backgroundColor: showEmojiPicker ? 'rgba(192, 132, 252, 0.1)' : 'transparent'
+            }}
+            onMouseEnter={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#C084FC'; e.currentTarget.style.backgroundColor = 'rgba(192, 132, 252, 0.1)'; } }}
+            onMouseLeave={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; } }}
+            title="Añadir emoji"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+          </button>
+
           <button
             onClick={() => {
               if (messageContent.trim() || selectedFile) {

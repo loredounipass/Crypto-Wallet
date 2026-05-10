@@ -44,7 +44,16 @@ export default function P2POrderChat() {
     fetchOrder();
   }, [fetchOrder]);
 
-  const { counterpartId, counterpartError } = useCounterpart(counterpartEmail);
+  const { counterpartId, counterpartUser, counterpartError } = useCounterpart(counterpartEmail);
+
+  const formatName = (name) => {
+    if (!name) return '';
+    return name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  };
+
+  const counterpartName = counterpartUser?.firstName 
+    ? formatName(`${counterpartUser.firstName} ${counterpartUser.lastName || ''}`.trim()) 
+    : counterpartEmail;
 
   // Join socket room and fetch initial messages when counterpart is known
   useEffect(() => {
@@ -140,9 +149,10 @@ export default function P2POrderChat() {
         backgroundColor: cardBg, overflow: 'hidden',
       }}>
         <P2PChatHeader 
-          currentOrder={currentOrder} 
-          isProvider={isProvider} 
           borderColor={borderColor} 
+          counterpartName={counterpartName}
+          isProvider={isProvider}
+          isSeller={isSeller}
         />
 
         {/* Messages */}
@@ -165,7 +175,7 @@ export default function P2POrderChat() {
           <P2PChatMessagesList
             messages={messages}
             authId={auth?._id}
-            counterpartEmail={counterpartEmail}
+            counterpartName={counterpartName}
             apiOrigin={apiOrigin}
             messagesEndRef={messagesEndRef}
             borderColor={borderColor}
@@ -229,6 +239,8 @@ export default function P2POrderChat() {
         actionLoading={actionLoading}
         handleAction={handleAction}
         setShowDispute={setShowDispute}
+        authEmail={auth?.email}
+        counterpartName={counterpartName}
       />
 
       {/* Mobile Bottom Nav */}

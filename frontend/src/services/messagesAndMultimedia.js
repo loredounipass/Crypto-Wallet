@@ -41,4 +41,12 @@ export default class MessagesAndMultimedia {
 	static getApiOrigin() {
 		return apiOrigin;
 	}
+
+	/**
+	 * Fetch secure media as a blob
+	 * @param {string} url - The URL to fetch the media from
+	 */
+	static async getSecureMedia(url) {
+		return await get(url, null, { responseType: 'blob' });
+	}
 }

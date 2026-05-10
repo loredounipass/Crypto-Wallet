@@ -57,9 +57,6 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                   <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#F1F5F9' }}>
                     {provider.firstName} {provider.lastName}
                   </p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
-                    {provider.email}
-                  </p>
                 </div>
               </div>
               <div style={{
@@ -162,9 +159,6 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 color: '#F1F5F9',
               }}>
                 {provider.firstName} {provider.lastName}
-              </p>
-              <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
-                {provider.email}
               </p>
             </div>
           </div>

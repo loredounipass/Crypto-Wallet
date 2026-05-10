@@ -42,11 +42,11 @@ export class ProviderController {
     return this.providerService.findProviderByEmail(email);
   }
 
-@UseGuards(AuthenticatedGuard)
-@Get('allProviders')
-findAllProviders(): Promise<Provider[]> {
-  return this.providerService.findAllProviders();
-}
+  @UseGuards(AuthenticatedGuard)
+  @Get('allProviders')
+  findAllProviders(@Request() req): Promise<Provider[]> {
+    return this.providerService.findAllProviders(req.user.email);
+  }
 
   @UseGuards(AuthenticatedGuard)
   @Patch('update')
