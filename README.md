@@ -7,6 +7,7 @@
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
 ![Hardhat](https://img.shields.io/badge/Hardhat-FFF100?style=for-the-badge&logo=hardhat&logoColor=000)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
@@ -25,63 +26,49 @@ $ export NODE_OPTIONS=--openssl-legacy-provider
 # Start frontend
 ```
 $ cd frontend  
-$ npm install
-```
-# if error
-```
-$ npm install --force
+$ pnpm install
 ```
 ```
-$ npm start
+$ pnpm start
 ```
 # Install backend dependencies
 ```
 $ cd backend  
-$ npm install
-$ npm install -g pm2  
-$ npm install -g solc
+$ pnpm install
+$ pnpm install -g solc
 ```
 
 # Start app-core
 ```
 $ cd backend/app-core  
-$ npm i -g @nestjs/cli  
-$ npm install
+$ pnpm i -g @nestjs/cli  
+$ pnpm install
 ```
-# if error 
 ```
-$ npm install --force
 $ nest start --watch (listening mode)  
 $ nest start
 ```
 
-# Start Deamons and Workers
+# Start Daemons and Workers (via Docker)
 ```
-$ pm2 start process.json  
-$ pm2 monit  
-$ pm2 stop process.json
+$ docker-compose up backend-daemons-workers
+$ docker-compose logs -f backend-daemons-workers
+$ docker-compose down
 ```
 
-# start Instances
+# Start all instances with Docker
 ```
 $ docker-compose up  
-
-$ docker compose down
-
-$ docker compose up --build -d
-
-docker compose logs -f backend-daemons-workers
-
-$ download Redis server  
-$ download MongoDB server  
-$ redis-server  
-$ mongod --port --
+$ docker-compose down
+$ docker-compose up --build -d
+$ docker-compose logs -f backend-daemons-workers
 ```
+All services (Redis, MongoDB, Backend, Frontend) will be running in Docker containers.
 
 # Deploy smart contract and generate wallets 
 ```
 $ cd backend/tasks/+
-$ npm install -g hardhat  
+$ pnpm install -g hardhat  
 $ hardhat run scripts/deploy.js --network (--network name--)  
 $ node generate.js (--number of wallets--) + (--network ID--)
 ```
