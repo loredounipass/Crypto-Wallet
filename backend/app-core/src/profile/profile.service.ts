@@ -7,6 +7,19 @@ import { LocalStorageProvider } from '../storage/local.storage.provider';
 import sharp from 'sharp';
 import * as crypto from 'crypto';
 
+/** Lightweight interface matching the Multer file shape used by NestJS. */
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+  destination?: string;
+  filename?: string;
+  path?: string;
+}
+
 @Injectable()
 export class ProfileService {
   constructor(
@@ -72,7 +85,7 @@ export class ProfileService {
   }
 
   // Uploads and processes profile image.
-  async uploadImage(userId: string, file: Express.Multer.File, type: 'profile') {
+  async uploadImage(userId: string, file: MulterFile, type: 'profile') {
     if (!file) throw new BadRequestException('File missing');
     if (!userId || !Types.ObjectId.isValid(userId)) throw new BadRequestException('Invalid user id');
 

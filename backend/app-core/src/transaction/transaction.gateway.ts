@@ -25,7 +25,7 @@ type TransactionStatusEvent = {
 
 @WebSocketGateway({
   namespace: '/transactions',
-  cors: { origin: ['https://effective-journey-rqr4g6grxrghv57-3000.app.github.dev'], credentials: true },
+  cors: { origin: ['https://fuzzy-space-computing-machine-v9g6vrvg5r4fxxx-3000.app.github.dev'], credentials: true },
 })
 export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

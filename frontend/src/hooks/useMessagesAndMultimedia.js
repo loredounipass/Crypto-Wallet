@@ -4,7 +4,7 @@
  * Consumes the shared SocketContext (singleton socket) and wraps the
  * HTTP service calls for messages/multimedia. No socket is created here.
  */
-import { useContext } from 'react';
+import { useContext, useCallback } from 'react';
 import MessagesAndMultimedia from '../services/messagesAndMultimedia';
 import { AuthContext } from './AuthContext';
 import { useSocket } from './SocketContext';
@@ -14,7 +14,7 @@ export default function useMessagesAndMultimedia() {
   const { connected, messages, setMessages, joinChat } = useSocket();
 
   /* ── Fetch all messages for the current user ─────────────────── */
-  const fetchMyMessages = async () => {
+  const fetchMyMessages = useCallback(async () => {
     try {
       const resp = await MessagesAndMultimedia.getMyMessages();
       const data = resp?.data;
@@ -39,10 +39,10 @@ export default function useMessagesAndMultimedia() {
       console.error('[useMessagesAndMultimedia] fetchMyMessages', err);
       return null;
     }
-  };
+  }, [setMessages]);
 
   /* ── Create a text / metadata-only message ───────────────────── */
-  const createMessage = async (dto) => {
+  const createMessage = useCallback(async (dto) => {
     try {
       if (!auth?._id) return null;
       const payload = { ...dto, senderId: dto?.senderId || auth._id };
@@ -52,10 +52,10 @@ export default function useMessagesAndMultimedia() {
       console.error('[useMessagesAndMultimedia] createMessage', err);
       return null;
     }
-  };
+  }, [auth?._id]);
 
   /* ── Upload a file and create message ────────────────────────── */
-  const uploadMessage = async (file, dto = {}) => {
+  const uploadMessage = useCallback(async (file, dto = {}) => {
     try {
       if (!auth?._id) return null;
       const payload = { ...dto, senderId: dto?.senderId || auth._id };
@@ -65,7 +65,7 @@ export default function useMessagesAndMultimedia() {
       console.error('[useMessagesAndMultimedia] uploadMessage', err);
       return null;
     }
-  };
+  }, [auth?._id]);
 
   return {
     messages,

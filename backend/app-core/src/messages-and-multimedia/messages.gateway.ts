@@ -179,4 +179,23 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     client.join(room);
     this.logger.log(`Socket ${client.id} joined chat room ${room}`);
   }
+
+  @SubscribeMessage('typing')
+  handleTyping(client: Socket, payload: { receiverId: string, isTyping: boolean }) {
+    if (!client.data?.user || !client.data.user._id) return;
+    const senderId = client.data.user._id.toString();
+    const receiverId = payload?.receiverId;
+    if (!receiverId) return;
+
+    this.logger.log(`Typing event: ${senderId} -> ${receiverId} | isTyping=${payload.isTyping}`);
+
+    const typingPayload = { senderId, isTyping: !!payload.isTyping };
+
+    // Broadcast to the chat room (excludes sender)
+    const room = this.makeChatRoom(senderId, receiverId);
+    client.to(room).emit('typing', typingPayload);
+
+    // Also emit to the receiver's user room for redundancy
+    void this.server.to(`user:${receiverId}`).emit('typing', typingPayload);
+  }
 }

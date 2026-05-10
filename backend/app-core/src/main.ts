@@ -18,10 +18,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security headers with Helmet
-  app.use(helmet());
+  // crossOriginResourcePolicy must be 'cross-origin' so the frontend (different origin/port)
+  // can load static assets (uploaded images) served by this API.
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
   
   app.enableCors({
-    origin: ['https://effective-journey-rqr4g6grxrghv57-3000.app.github.dev'],
+    origin: ['https://fuzzy-space-computing-machine-v9g6vrvg5r4fxxx-3000.app.github.dev'],
     credentials: true
   })
 

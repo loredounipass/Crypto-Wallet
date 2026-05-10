@@ -5,6 +5,19 @@ import { AuthenticatedGuard } from 'src/guard/auth/authenticated.guard';
 import { CurrentUser } from 'src/guard/auth/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
+/** Lightweight interface matching the Multer file shape used by NestJS. */
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+  destination?: string;
+  filename?: string;
+  path?: string;
+}
+
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly service: ProfileService) {}
@@ -29,7 +42,7 @@ export class ProfileController {
   @UseGuards(AuthenticatedGuard)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   @Post('upload/profile-photo')
-  async uploadProfilePhoto(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: any) {
+  async uploadProfilePhoto(@UploadedFile() file: MulterFile, @CurrentUser() user: any) {
     return this.service.uploadImage(user._id.toString(), file, 'profile');
   }
 

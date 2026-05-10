@@ -15,7 +15,7 @@ export const SocketProvider = ({ children }) => {
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
-        if (!auth?.token) {
+        if (!auth?._id) {
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
@@ -42,8 +42,16 @@ export const SocketProvider = ({ children }) => {
             setConnected(true);
         });
 
-        newSocket.on('disconnect', () => {
+        newSocket.on('disconnect', (reason) => {
             setConnected(false);
+        });
+
+        newSocket.on('connect_error', (err) => {
+            console.error('[SocketContext] ⚠️ Connection error:', err.message);
+        });
+
+        newSocket.on('error', (err) => {
+            console.error('[SocketContext] ⚠️ Socket error:', err);
         });
 
         newSocket.on('receiveMessage', (message) => {
@@ -64,13 +72,17 @@ export const SocketProvider = ({ children }) => {
             });
         });
 
+        newSocket.on('typing', (data) => {
+            console.log('[SocketContext] ⌨️ typing event:', data);
+        });
+
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [auth?.token]);
+    }, [auth?._id]);
 
     const joinChat = useCallback((otherUserId) => {
         if (socket && otherUserId) {

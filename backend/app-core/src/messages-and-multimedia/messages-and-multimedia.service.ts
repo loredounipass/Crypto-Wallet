@@ -12,6 +12,19 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { LocalStorageProvider } from 'src/storage/local.storage.provider';
 
+/** Lightweight interface matching the Multer file shape used by NestJS. */
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+  destination?: string;
+  filename?: string;
+  path?: string;
+}
+
 @Injectable()
 export class MessagesAndMultimediaService implements OnModuleInit {
   constructor(
@@ -147,12 +160,12 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     // Use two targeted queries so each can use its respective index (sender+createdAt, receiver+createdAt)
     const [sentDocs, receivedDocs] = await Promise.all([
       this.messageRepository.find({ sender: id })
-        .select('_id content type sender receiver multimediaId status duration createdAt updatedAt')
+        .select('_id content type sender receiver multimediaId multimediaStatus status duration createdAt updatedAt')
         .sort({ createdAt: -1 })
         .lean()
         .exec(),
       this.messageRepository.find({ receiver: id })
-        .select('_id content type sender receiver multimediaId status duration createdAt updatedAt')
+        .select('_id content type sender receiver multimediaId multimediaStatus status duration createdAt updatedAt')
         .sort({ createdAt: -1 })
         .lean()
         .exec(),
@@ -221,7 +234,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
   // Process an uploaded file buffer and create multimedia + message atomically
   // file: Express.Multer.File
   // New: upload file to staging storage, create Multimedia (uploading) and Message, enqueue processing job
-  async createMessageWithFile(file: Express.Multer.File, dto: CreateMessageDto, senderId: string) {
+  async createMessageWithFile(file: MulterFile, dto: CreateMessageDto, senderId: string) {
     if (!file) throw new BadRequestException('File is required');
     if (file.mimetype?.startsWith('video/')) {
       throw new BadRequestException('Video processing is disabled');

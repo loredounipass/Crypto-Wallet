@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const fallbackBaseApi = 'https://effective-journey-rqr4g6grxrghv57-4000.app.github.dev/secure/api';
+const fallbackBaseApi = 'https://fuzzy-space-computing-machine-v9g6vrvg5r4fxxx-4000.app.github.dev/secure/api';
 const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
 
 const baseApi = configuredBaseApi;
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Base origin for non-API assets (media). Derived from baseApi origin.
 const apiOrigin = (() => {
-    try { return new URL(baseApi).origin; } catch (_) { return 'https://effective-journey-rqr4g6grxrghv57-4000.app.github.dev'; }
+    try { return new URL(baseApi).origin; } catch (_) { return 'https://fuzzy-space-computing-machine-v9g6vrvg5r4fxxx-4000.app.github.dev'; }
 })();
 const mediaBase = `${apiOrigin}/uploads`;
 

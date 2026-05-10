@@ -5,6 +5,19 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { AuthenticatedGuard } from 'src/guard/auth/authenticated.guard';
 import { CurrentUser } from 'src/guard/auth/current-user.decorator';
 
+/** Lightweight interface matching the Multer file shape used by NestJS. */
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+  destination?: string;
+  filename?: string;
+  path?: string;
+}
+
 @Controller('messages')
 export class MessagesAndMultimediaController {
   constructor(private readonly service: MessagesAndMultimediaService) {}
@@ -21,7 +34,7 @@ export class MessagesAndMultimediaController {
   // Limit uploads increased to allow longer videos (configurable): 250MB
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 250 * 1024 * 1024 } }))
   @Post('upload')
-  async createWithFile(@UploadedFile() file: Express.Multer.File, @Body() body: any, @CurrentUser() user: any) {
+  async createWithFile(@UploadedFile() file: MulterFile, @Body() body: any, @CurrentUser() user: any) {
     // Delegate validation and processing to the service
     const dto: CreateMessageDto = {
       content: body.content || '',

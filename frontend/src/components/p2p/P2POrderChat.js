@@ -4,6 +4,7 @@ import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useEscrow from '../../hooks/useEscrow';
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
+import { useSocket } from '../../hooks/SocketContext';
 import P2POrderStatus from './P2POrderStatus';
 import P2PDisputeModal from './P2PDisputeModal';
 
@@ -41,7 +42,19 @@ export default function P2POrderChat() {
   const [counterpartId, setCounterpartId] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'details'
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+
   const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const prevMessagesLength = useRef(0);
+  const typingTimeoutRef = useRef(null);
+  const isCurrentlyTypingRef = useRef(false);
+
+  const { socket } = useSocket();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const isProvider = currentOrder?.providerEmail === auth?.email;
   const isSeller = currentOrder?.sellerEmail === auth?.email;
@@ -101,28 +114,67 @@ export default function P2POrderChat() {
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [allMessages, counterpartId, auth?._id]);
 
+  // Listen for typing events
+  useEffect(() => {
+    if (!socket) return;
+    const handleTyping = (data) => {
+      // Accept typing from counterpart (compare as strings to avoid ObjectId mismatch)
+      if (String(data.senderId) === String(counterpartId)) {
+        setIsCounterpartTyping(data.isTyping);
+      }
+    };
+    socket.on('typing', handleTyping);
+    return () => socket.off('typing', handleTyping);
+  }, [socket, counterpartId]);
+
+  // Auto-scroll to bottom only when a new message is added (length increases)
+  useEffect(() => {
+    if (messages.length > prevMessagesLength.current) {
+      scrollToBottom();
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages]);
+
   const handleSendMessage = async () => {
     if (!counterpartId || (!messageContent.trim() && !selectedFile) || isSending) return;
+    
+    // Instant feedback
+    const content = messageContent;
+    const file = selectedFile;
+    setMessageContent('');
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    
+    // Instantly cancel typing state on send
+    if (socket) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socket.emit('typing', { receiverId: counterpartId, isTyping: false });
+      isCurrentlyTypingRef.current = false;
+    }
+    
     setIsSending(true);
     setChatError('');
+    const hadFile = !!file;
     try {
       const payload = {
         receiverId: counterpartId,
-        content: messageContent,
-        type: selectedFile ? 'image' : 'text',
+        content: content,
+        type: file ? 'image' : 'text',
       };
 
-      if (selectedFile) {
-        const uploaded = await uploadMessage(selectedFile, payload);
+      if (file) {
+        const uploaded = await uploadMessage(file, payload);
         if (!uploaded) throw new Error('uploadMessage failed');
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
         const created = await createMessage(payload);
         if (!created) throw new Error('createMessage failed');
       }
-      setMessageContent('');
       await fetchMyMessages();
+      // If a file was uploaded, re-fetch after a short delay so the processed
+      // multimedia URL from the worker is captured (race-condition workaround)
+      if (hadFile) {
+        setTimeout(() => fetchMyMessages(), 3000);
+      }
     } catch (e) {
       console.error('Failed to send message', e);
       setChatError('No se pudo enviar el mensaje. Verifica la conexión e intenta de nuevo.');
@@ -219,19 +271,30 @@ export default function P2POrderChat() {
           flexDirection: 'column',
           minHeight: '100%',
           justifyContent: 'flex-end',
+          maxWidth: 900,
+          margin: '0 auto',
+          width: '100%',
           }}>
           {messages.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 40 }}>
               Aún no hay mensajes. Coordina el pago con tu contraparte.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               {messages.map((msg, i) => {
                 const isMe = msg.sender === auth?._id;
+                const text = msg.content || msg.message || '';
+                const isMediaMsg = msg.type === 'image' || msg.type === 'video';
+                const hasNoText = isMediaMsg && (!text.trim() || text.trim() === '📎adjunto');
+                
+                const isFirstInGroup = i === 0 || messages[i - 1].sender !== msg.sender;
+                const showName = !isMe && isFirstInGroup;
+                const marginTop = i === 0 ? 0 : (isFirstInGroup ? 16 : 4);
+
                 return (
-                  <div key={i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginTop }}>
                     <div style={{
-                      maxWidth: '70%', padding: '10px 14px', borderRadius: 14,
+                      maxWidth: '70%', minWidth: 40, padding: '10px 14px', borderRadius: 14,
                       backgroundColor: isMe
                         ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' 
                         : ('#1E1E2E'),
@@ -239,40 +302,134 @@ export default function P2POrderChat() {
                       color: isMe ? '#FFF' : ('#E2E8F0'),
                       border: isMe ? 'none' : `1px solid ${borderColor}`,
                       boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                      overflow: 'hidden', // Ensures images flush with edges stay rounded
                     }}>
-                      {!isMe && (
-                        <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#8B5CF6' }}>
+                      {showName && (
+                        <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 600, color: '#8B5CF6' }}>
                           {counterpartEmail}
                         </p>
                       )}
                       
                       {/* Multimedia handling */}
-                      {msg.multimediaUrl && msg.type === 'image' && (
-                        <img 
-                          src={msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`} 
-                          alt="adjunto" 
-                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block', cursor: 'pointer' }} 
-                          onClick={() => window.open(msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`, '_blank')}
-                        />
-                      )}
-                      {msg.multimediaUrl && msg.type === 'video' && (
-                        <video 
-                          src={msg.multimediaUrl.startsWith('http') ? msg.multimediaUrl : `${apiOrigin}${msg.multimediaUrl}`} 
-                          controls 
-                          style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8, display: 'block' }} 
-                        />
-                      )}
-                      {msg.multimediaStatus === 'uploading' && <p style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.8 }}>Subiendo archivo...</p>}
-                      {msg.multimediaStatus === 'processing' && <p style={{ fontSize: 12, fontStyle: 'italic', opacity: 0.8 }}>Procesando archivo...</p>}
+                      {(() => {
+                        // Resolve the multimedia URL from various possible shapes
+                        const resolvedUrl = msg.multimediaUrl
+                          || (msg.multimedia && typeof msg.multimedia === 'object' ? msg.multimedia.url : null)
+                          || null;
+                        const fullUrl = resolvedUrl
+                          ? (resolvedUrl.startsWith('http') ? resolvedUrl : `${apiOrigin}${resolvedUrl}`)
+                          : null;
+                        const mediaReady = msg.multimediaStatus === 'ready' || (!msg.multimediaStatus && resolvedUrl);
 
-                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{msg.content || msg.message}</p>
+                        // If the message is purely media, we expand it to touch the bubble edges
+                        const imageMargin = hasNoText 
+                          ? (isMe ? '-10px -14px' : '8px -14px -10px -14px') 
+                          : '0 0 8px 0';
+                        const imageRadius = hasNoText ? 0 : 8; // Wrapper handles outer rounding
+
+                        return (
+                          <>
+                            {/* Image */}
+                            {isMediaMsg && msg.type === 'image' && fullUrl && mediaReady && (
+                              <img 
+                                src={fullUrl} 
+                                alt="imagen" 
+                                style={{ 
+                                  width: hasNoText ? 'calc(100% + 28px)' : '100%', 
+                                  maxWidth: hasNoText ? 'calc(100% + 28px)' : '100%', 
+                                  maxHeight: 240, 
+                                  borderRadius: imageRadius, 
+                                  margin: imageMargin, 
+                                  display: 'block', 
+                                  cursor: 'pointer', 
+                                  objectFit: 'cover' 
+                                }} 
+                                onClick={() => window.open(fullUrl, '_blank')}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  e.target.insertAdjacentHTML('afterend', '<p style="font-size:12px;color:#F59E0B;margin:4px 0 8px;">⚠️ No se pudo cargar la imagen</p>');
+                                }}
+                              />
+                            )}
+                            {/* Video */}
+                            {isMediaMsg && msg.type === 'video' && fullUrl && mediaReady && (
+                              <video 
+                                src={fullUrl} 
+                                controls 
+                                style={{ 
+                                  width: hasNoText ? 'calc(100% + 28px)' : '100%', 
+                                  maxWidth: hasNoText ? 'calc(100% + 28px)' : '100%', 
+                                  borderRadius: imageRadius, 
+                                  margin: imageMargin, 
+                                  display: 'block' 
+                                }} 
+                              />
+                            )}
+                            {/* Processing / uploading states */}
+                            {isMediaMsg && (msg.multimediaStatus === 'uploading' || msg.multimediaStatus === 'processing' || (!mediaReady && !fullUrl)) && (
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '12px 16px', borderRadius: 8, marginBottom: 8,
+                                backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
+                              }}>
+                                <span style={{
+                                  width: 18, height: 18,
+                                  border: '2px solid #8B5CF6', borderTop: '2px solid transparent',
+                                  borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                                  display: 'inline-block', flexShrink: 0,
+                                }} />
+                                <span style={{ fontSize: 12, color: '#A78BFA' }}>
+                                  {msg.multimediaStatus === 'uploading' ? 'Subiendo archivo...' : 'Procesando imagen...'}
+                                </span>
+                              </div>
+                            )}
+                            {/* Failed state */}
+                            {isMediaMsg && msg.multimediaStatus === 'failed' && (
+                              <p style={{ fontSize: 12, color: '#EF4444', margin: '4px 0 8px' }}>❌ Error al procesar el archivo</p>
+                            )}
+                          </>
+                        );
+                      })()}
+
+                      {/* Text content — hide placeholder text for media messages that have a resolved URL */}
+                      {!hasNoText && text && (
+                        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{text}</p>
+                      )}
                     </div>
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </div>
           )}
           </div>
+        </div>
+
+        {/* Typing indicator - centered below chat */}
+        <div style={{ 
+          minHeight: 24, display: 'flex', justifyContent: 'center', alignItems: 'center',
+          backgroundColor: '#0F0F1A',
+          borderTop: isCounterpartTyping ? 'none' : 'none',
+        }}>
+          {isCounterpartTyping && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
+              <style>
+                {`
+                  @keyframes typingDot {
+                    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+                    30% { transform: translateY(-3px); opacity: 1; }
+                  }
+                `}
+              </style>
+              <span style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 500 }}>escribiendo</span>
+              <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginLeft: 2 }}>
+                <div style={{ width: 4, height: 4, backgroundColor: '#FFFFFF', borderRadius: '50%', animation: 'typingDot 1.4s infinite ease-in-out both' }} />
+                <div style={{ width: 4, height: 4, backgroundColor: '#FFFFFF', borderRadius: '50%', animation: 'typingDot 1.4s infinite ease-in-out both', animationDelay: '0.2s' }} />
+                <div style={{ width: 4, height: 4, backgroundColor: '#FFFFFF', borderRadius: '50%', animation: 'typingDot 1.4s infinite ease-in-out both', animationDelay: '0.4s' }} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -320,7 +477,23 @@ export default function P2POrderChat() {
               }}
               placeholder="Escribe tu mensaje..."
               value={messageContent}
-              onChange={e => setMessageContent(e.target.value)}
+              onChange={e => {
+                setMessageContent(e.target.value);
+                if (socket && counterpartId) {
+                  // Only emit to server if we aren't already considered typing
+                  if (!isCurrentlyTypingRef.current) {
+                    socket.emit('typing', { receiverId: counterpartId, isTyping: true });
+                    isCurrentlyTypingRef.current = true;
+                  }
+                  
+                  // Reset the timeout on every keystroke
+                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                  typingTimeoutRef.current = setTimeout(() => {
+                    socket.emit('typing', { receiverId: counterpartId, isTyping: false });
+                    isCurrentlyTypingRef.current = false;
+                  }, 2000);
+                }
+              }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
             />
             <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
@@ -339,7 +512,7 @@ export default function P2POrderChat() {
             </label>
             <button
               onClick={handleSendMessage}
-              disabled={!counterpartId || (!messageContent.trim() && !selectedFile) || isSending}
+              disabled={!counterpartId || (!messageContent.trim() && !selectedFile)}
               style={{
                 width: 38, height: 38, borderRadius: '50%', border: 'none',
                 background: (counterpartId && (messageContent.trim() || selectedFile)) ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : ('#2D2D44'),
@@ -348,10 +521,7 @@ export default function P2POrderChat() {
                 transition: 'all 0.2s',
               }}
             >
-              {isSending
-                ? <span style={{ width: 16, height: 16, border: '2px solid #FFF', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                : <SendIcon style={{ fontSize: 18 }} />
-              }
+              <SendIcon style={{ fontSize: 18 }} />
             </button>
           </div>
           <div style={{ minHeight: 18, margin: '8px 8px 0' }}>
