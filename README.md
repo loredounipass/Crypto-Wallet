@@ -5,7 +5,8 @@
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![Truffle](https://img.shields.io/badge/Truffle-5E464D?style=for-the-badge&logo=truffle&logoColor=white)
+![Hardhat](https://img.shields.io/badge/Hardhat-FFF100?style=for-the-badge&logo=hardhat&logoColor=000)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
@@ -80,8 +81,8 @@ $ mongod --port --
 # Deploy smart contract and generate wallets 
 ```
 $ cd backend/tasks/+
-$ npm install -g truffle  
-$ truffle deploy --network (--network name--)  
+$ npm install -g hardhat  
+$ hardhat run scripts/deploy.js --network (--network name--)  
 $ node generate.js (--number of wallets--) + (--network ID--)
 ```
 
@@ -112,4 +113,13 @@ $ node generate.js (--number of wallets--) + (--network ID--)
 ![Transa](frontend/src/assets/screenshots/history.png)  
 
 # Dashboard wallets  
-![Wallet](frontend/src/assets/screenshots/wallet.png)  
+![Wallet](frontend/src/assets/screenshots/wallet.png)
+
+# P2P Trading
+![Trading P2P](frontend/src/assets/screenshots/trading-p2p.png)
+
+# P2P Orders
+![P2P Orders](frontend/src/assets/screenshots/p2p-orders.png)
+
+# P2P Chat
+![P2P Chat](frontend/src/assets/screenshots/p2p-chat.png)  
