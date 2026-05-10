@@ -1,5 +1,6 @@
-# BlockVault  still in development
+# BlockVault
 
+BlockVault is a comprehensive cryptocurrency wallet platform designed to facilitate secure and efficient transfers across multiple EVM-compatible blockchain networks. Built with modern technologies including NestJS, React, and Hardhat, it enables seamless peer-to-peer (P2P) transactions, multi-chain wallet management, P2P trading, and decentralized escrow operations through smart contracts. The platform features a robust P2P marketplace where users can securely exchange cryptocurrencies directly with built-in chat functionality, order management, and advanced security features including two-factor authentication.
 
 ## 🛠️ Technology Stack
 
