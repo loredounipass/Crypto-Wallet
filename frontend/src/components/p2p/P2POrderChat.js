@@ -26,6 +26,74 @@ const FileTextIcon = (props) => (
   </svg>
 );
 
+const MicIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
+  </svg>
+);
+
+const TrashIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+const PaperclipIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+  </svg>
+);
+
+const SecureAudio = ({ url, ...props }) => {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!url) return;
+
+    get(url, null, { responseType: 'blob' })
+      .then(res => {
+        if (active && res && res.data) {
+          setBlobUrl(URL.createObjectURL(res.data));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load secure audio:', err);
+        if (active) setError(true);
+      });
+
+    return () => {
+      active = false;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
+
+  if (error) {
+    return (
+      <div style={{ width: '240px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#F87171', borderRadius: '12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        ⚠️ Error al cargar el audio.
+      </div>
+    );
+  }
+
+  if (!blobUrl) {
+    return (
+      <div style={{ width: '240px', padding: '12px 16px', background: 'rgba(139, 92, 246, 0.1)', color: '#A78BFA', borderRadius: '24px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#A78BFA', animation: 'pulse 1.5s infinite' }} />
+        Descargando audio...
+      </div>
+    );
+  }
+
+  return <audio src={blobUrl} {...props} />;
+};
+
 export default function P2POrderChat() {
   const { orderId } = useParams();
   const { auth } = useContext(AuthContext);
@@ -43,12 +111,17 @@ export default function P2POrderChat() {
   const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'details'
   const [selectedFile, setSelectedFile] = useState(null);
   const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const prevMessagesLength = useRef(0);
   const typingTimeoutRef = useRef(null);
   const isCurrentlyTypingRef = useRef(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
 
   const { socket } = useSocket();
 
@@ -183,6 +256,81 @@ export default function P2POrderChat() {
     }
   };
 
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      
+      mediaRecorderRef.current.onstop = () => {
+        if (!mediaRecorderRef.current?.cancelRecording) {
+          const mimeType = mediaRecorderRef.current.mimeType;
+          let extension = 'webm';
+          if (mimeType.includes('mp4')) extension = 'mp4';
+          else if (mimeType.includes('ogg')) extension = 'ogg';
+          else if (mimeType.includes('wav')) extension = 'wav';
+
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          const file = new File([audioBlob], `audio_${Date.now()}.${extension}`, { type: mimeType });
+          handleSendAudio(file);
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      setChatError('Permiso de micrófono denegado o no disponible.');
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (cancel) {
+        mediaRecorderRef.current.cancelRecording = true;
+      } else {
+        mediaRecorderRef.current.cancelRecording = false;
+      }
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  const handleSendAudio = async (audioFile) => {
+    if (!counterpartId || isSending) return;
+    setIsSending(true);
+    setChatError('');
+    try {
+      const payload = { receiverId: counterpartId, content: '', type: 'audio' };
+      const uploaded = await uploadMessage(audioFile, payload);
+      if (!uploaded) throw new Error('uploadMessage failed');
+      await fetchMyMessages();
+      setTimeout(() => fetchMyMessages(), 3000);
+    } catch (e) {
+      console.error('Failed to send audio', e);
+      setChatError('No se pudo enviar el audio.');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleAction = async (action) => {
     setActionLoading(action);
     try {
@@ -284,7 +432,7 @@ export default function P2POrderChat() {
               {messages.map((msg, i) => {
                 const isMe = msg.sender === auth?._id;
                 const text = msg.content || msg.message || '';
-                const isMediaMsg = msg.type === 'image' || msg.type === 'video';
+                const isMediaMsg = msg.type === 'image' || msg.type === 'video' || msg.type === 'audio';
                 const hasNoText = isMediaMsg && (!text.trim() || text.trim() === '📎adjunto');
                 
                 const isFirstInGroup = i === 0 || messages[i - 1].sender !== msg.sender;
@@ -362,6 +510,19 @@ export default function P2POrderChat() {
                                   maxWidth: hasNoText ? 'calc(100% + 28px)' : '100%', 
                                   borderRadius: imageRadius, 
                                   margin: imageMargin, 
+                                  display: 'block' 
+                                }} 
+                              />
+                            )}
+                            {/* Audio */}
+                            {isMediaMsg && msg.type === 'audio' && fullUrl && mediaReady && (
+                              <SecureAudio 
+                                url={fullUrl} 
+                                controls 
+                                style={{ 
+                                  width: '240px', 
+                                  maxWidth: '100%', 
+                                  margin: hasNoText ? '0' : '0 0 8px 0', 
                                   display: 'block' 
                                 }} 
                               />
@@ -463,67 +624,111 @@ export default function P2POrderChat() {
               </button>
             </div>
           )}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 6px 6px 16px', borderRadius: 24,
-            border: `1px solid ${borderColor}`,
-            backgroundColor: '#0F0F1A',
-          }}>
-            <input
-              style={{
-                flex: 1, border: 'none', outline: 'none', fontSize: 14,
-                backgroundColor: 'transparent',
-                color: '#E2E8F0',
-              }}
-              placeholder="Escribe tu mensaje..."
-              value={messageContent}
-              onChange={e => {
-                setMessageContent(e.target.value);
-                if (socket && counterpartId) {
-                  // Only emit to server if we aren't already considered typing
-                  if (!isCurrentlyTypingRef.current) {
-                    socket.emit('typing', { receiverId: counterpartId, isTyping: true });
-                    isCurrentlyTypingRef.current = true;
-                  }
-                  
-                  // Reset the timeout on every keystroke
-                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                  typingTimeoutRef.current = setTimeout(() => {
-                    socket.emit('typing', { receiverId: counterpartId, isTyping: false });
-                    isCurrentlyTypingRef.current = false;
-                  }, 2000);
-                }
-              }}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-            />
-            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                style={{ display: 'none' }} 
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setSelectedFile(e.target.files[0]);
+          {isRecording ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '6px 12px', borderRadius: 24,
+              border: `1px solid #EF4444`,
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              flex: 1, height: 52
+            }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1.5s infinite' }} />
+              <span style={{ color: '#EF4444', fontWeight: '500', flex: 1, fontSize: 14 }}>Grabando... {formatTime(recordingTime)}</span>
+              <button 
+                onClick={() => stopRecording(true)}
+                style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 8 }}
+                title="Cancelar"
+              >
+                <TrashIcon />
+              </button>
+              <button 
+                onClick={() => stopRecording(false)}
+                style={{ 
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: '#10B981', color: '#FFF', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+                title="Enviar audio"
+              >
+                <SendIcon style={{ fontSize: 16 }} />
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 6px 6px 16px', borderRadius: 24,
+              border: `1px solid ${borderColor}`,
+              backgroundColor: '#0F0F1A',
+            }}>
+              <input
+                style={{
+                  flex: 1, border: 'none', outline: 'none', fontSize: 14,
+                  backgroundColor: 'transparent',
+                  color: '#E2E8F0',
+                }}
+                placeholder="Escribe tu mensaje..."
+                value={messageContent}
+                onChange={e => {
+                  setMessageContent(e.target.value);
+                  if (socket && counterpartId) {
+                    if (!isCurrentlyTypingRef.current) {
+                      socket.emit('typing', { receiverId: counterpartId, isTyping: true });
+                      isCurrentlyTypingRef.current = true;
+                    }
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => {
+                      socket.emit('typing', { receiverId: counterpartId, isTyping: false });
+                      isCurrentlyTypingRef.current = false;
+                    }, 2000);
                   }
                 }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
               />
-              <span style={{ fontSize: 18, color: '#94A3B8', marginRight: 4 }}>📎</span>
-            </label>
-            <button
-              onClick={handleSendMessage}
-              disabled={!counterpartId || (!messageContent.trim() && !selectedFile)}
-              style={{
-                width: 38, height: 38, borderRadius: '50%', border: 'none',
-                background: (counterpartId && (messageContent.trim() || selectedFile)) ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : ('#2D2D44'),
-                color: '#FFF', cursor: (counterpartId && (messageContent.trim() || selectedFile)) ? 'pointer' : 'not-allowed',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-            >
-              <SendIcon style={{ fontSize: 18 }} />
-            </button>
-          </div>
+              <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSelectedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div 
+                  style={{ display: 'flex', padding: 6, color: '#94A3B8', transition: 'color 0.2s', borderRadius: '50%' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#C084FC'; e.currentTarget.style.backgroundColor = 'rgba(192, 132, 252, 0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <PaperclipIcon />
+                </div>
+              </label>
+              <button
+                onClick={() => {
+                  if (messageContent.trim() || selectedFile) {
+                    handleSendMessage();
+                  } else {
+                    startRecording();
+                  }
+                }}
+                disabled={!counterpartId}
+                style={{
+                  width: 38, height: 38, borderRadius: '50%', border: 'none',
+                  background: counterpartId ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : '#2D2D44',
+                  color: '#FFF', cursor: counterpartId ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  boxShadow: counterpartId ? '0 4px 14px 0 rgba(139, 92, 246, 0.39)' : 'none',
+                  transform: 'scale(1)'
+                }}
+                onMouseEnter={e => { if (counterpartId) e.currentTarget.style.transform = 'scale(1.05)' }}
+                onMouseLeave={e => { if (counterpartId) e.currentTarget.style.transform = 'scale(1)' }}
+              >
+                {messageContent.trim() || selectedFile ? <SendIcon style={{ fontSize: 18, marginLeft: 2 }} /> : <MicIcon style={{ fontSize: 18 }} />}
+              </button>
+            </div>
+          )}
           <div style={{ minHeight: 18, margin: '8px 8px 0' }}>
             {chatError && (
               <p style={{ margin: 0, fontSize: 12, color: '#F87171' }}>
