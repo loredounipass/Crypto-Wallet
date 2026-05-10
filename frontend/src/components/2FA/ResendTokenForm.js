@@ -7,8 +7,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  useTheme,
-  useMediaQuery,
 } from '../../ui/material';
 
 import Logo from '../Logo';
@@ -17,8 +15,6 @@ const ResendTokenForm = () => {
     const { resendToken, error, successMessage } = useAuth();
     const history = useHistory();
     const location = useLocation();
-    const muiTheme = useTheme();
-    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
     const [email, setEmail] = useState(() => location.state?.email || '');
     const [loading, setLoading] = useState(false);
@@ -87,13 +83,25 @@ const ResendTokenForm = () => {
                     disabled={loading}
                     className="!mt-6 !mb-4 !text-white !font-semibold"
                     style={{
-                        padding: isMobile ? '12px 14px' : '14px 16px',
+                        width: '100%',
+                        padding: '12px 16px',
                         borderRadius: '12px',
+                        textTransform: 'none',
+                        fontSize: '16px',
                         background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
                         boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
                     }}
                 >
-                    {loading ? <CircularProgress size={24} style={{ color: '#FFFFFF' }} /> : 'Reenviar Código'}
+                    {loading ? (
+                        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                            <CircularProgress size={20} style={{ color: '#FFFFFF' }} />
+                            <Typography style={{ marginLeft: '10px', color: '#FFFFFF', fontSize: '16px', fontWeight: 600 }}>
+                                Reenviando...
+                            </Typography>
+                        </Box>
+                    ) : (
+                        'Reenviar Código'
+                    )}
                 </Button>
 
                 <Box style={{ textAlign: 'center', marginTop: '10px' }}>

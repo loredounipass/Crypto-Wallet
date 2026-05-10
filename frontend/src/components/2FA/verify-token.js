@@ -7,8 +7,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  useTheme,
-  useMediaQuery,
   Link,
 } from '../../ui/material';
 import Logo from '../Logo';
@@ -21,8 +19,6 @@ const VerifyToken = () => {
     const [success, setSuccess] = useState(null);
     const history = useHistory();
     const location = useLocation();
-    const muiTheme = useTheme();
-    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
     // Keep email in navigation state only; avoid persisting PII in localStorage
     const email = location.state?.email;
@@ -136,13 +132,25 @@ const VerifyToken = () => {
                     disabled={loading}
                     className="!mt-6 !mb-4 !text-white !font-semibold"
                     style={{
-                        padding: isMobile ? '12px 14px' : '14px 16px',
+                        width: '100%',
+                        padding: '12px 16px',
                         borderRadius: '12px',
+                        textTransform: 'none',
+                        fontSize: '16px',
                         background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
                         boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
                     }}
                 >
-                    {loading ? <CircularProgress size={24} style={{ color: '#FFFFFF' }} /> : 'Verificar'}
+                    {loading ? (
+                        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                            <CircularProgress size={20} style={{ color: '#FFFFFF' }} />
+                            <Typography style={{ marginLeft: '10px', color: '#FFFFFF', fontSize: '16px', fontWeight: 600 }}>
+                                Verificando...
+                            </Typography>
+                        </Box>
+                    ) : (
+                        'Verificar'
+                    )}
                 </Button>
 
                 <Box className="text-center mt-6">

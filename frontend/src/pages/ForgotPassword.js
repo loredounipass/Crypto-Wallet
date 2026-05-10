@@ -8,8 +8,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  useTheme,
-  useMediaQuery,
   Link,
 } from '../ui/material';
 
@@ -23,9 +21,6 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false)
   const history = useHistory()
   const isMounted = useRef(true)
-
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
     const submit = async (e) => {
     e.preventDefault()
@@ -105,13 +100,25 @@ export default function ForgotPassword() {
                    disabled={loading}
                    className="!mt-6 !mb-4 !text-white !font-semibold"
                    style={{
-                       padding: isMobile ? '12px 14px' : '14px 16px',
+                       width: '100%',
+                       padding: '12px 16px',
                        borderRadius: '12px',
+                       textTransform: 'none',
+                       fontSize: '16px',
                        background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)',
                        boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
                    }}
                >
-                   {loading ? <CircularProgress size={24} style={{ color: '#FFFFFF' }} /> : 'Enviar enlace'}
+                   {loading ? (
+                       <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                           <CircularProgress size={20} style={{ color: '#FFFFFF' }} />
+                           <Typography style={{ marginLeft: '10px', color: '#FFFFFF', fontSize: '16px', fontWeight: 600 }}>
+                               Enviando enlace...
+                           </Typography>
+                       </Box>
+                   ) : (
+                       'Enviar enlace'
+                   )}
                </Button>
 
                <Box className="text-center mt-6">
