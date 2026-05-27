@@ -15,6 +15,7 @@ BlockVault is a comprehensive cryptocurrency wallet platform designed to facilit
 
 # Setup env node
 
+
 Windows
 ```
 $ set NODE_OPTIONS=--openssl-legacy-provider
