@@ -25,7 +25,7 @@ async function bootstrap() {
   }));
   
   app.enableCors({
-    origin: ['https://fuzzy-space-computing-machine-v9g6vrvg5r4fxxx-3000.app.github.dev'],
+    origin: ['https://legendary-space-engine-qj97q4q9x9qh99q4-3000.app.github.dev'],
     credentials: true
   })
 

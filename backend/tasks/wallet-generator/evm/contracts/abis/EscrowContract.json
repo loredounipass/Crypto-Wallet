@@ -273,8 +273,8 @@
   ],
   "networks": {
     "11155111": {
-      "address": "0x44Bd2368565d6F2760c970531266F322Ec83bDDa",
-      "transactionHash": "0x8bf811452e7616864a731f4db270ca9fee2a407eaef5da6e32300f27a253e9cb"
+      "address": "0xabE225CbED88D12D19660a51F963Af301F438fAE",
+      "transactionHash": "0x98887f29cf6a06421aa892f732f4da433b0d35d3fb274120d8a8aa21cdf543ff"
     }
   }
 }
