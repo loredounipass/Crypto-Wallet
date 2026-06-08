@@ -17,7 +17,7 @@ import Wallet from './pages/Wallet'
 import WelcomeTemplate from './pages/welcometemplate'
 import ProviderCard from './components/providers/ProviderCard'
 import CreateProvider from './pages/Create';
-import Nextmain from './pages/Nextmain'
+import Landing from './pages/Landing'
 import VerifyToken from './components/2FA/verify-token'
 import Settings from './components/settings/Settings'
 import ResendTokenForm from './components/2FA/ResendTokenForm'
@@ -33,7 +33,7 @@ import P2P from './pages/P2P'
 import P2POrderChat from './components/p2p/P2POrderChat'
 import { Menu as MenuIcon } from './ui/icons';
 
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/nextmain', '/verifytoken', '/resendtoken'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
 
 function AppContent() {
     const { auth, setAuth, loading } = useFindUser();
@@ -66,7 +66,7 @@ function AppContent() {
         marginLeft: (isAuthenticated && !isPublicRoute && !isMobile) ? (sidebarOpen ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED) : 0,
         transition: 'margin-left 0.3s ease-in-out',
         minHeight: '100vh',
-        padding: isMobile && isAuthenticated && !isPublicRoute ? '80px 16px 16px 16px' : (isMobile ? '16px' : '24px'),
+        padding: isPublicRoute ? 0 : (isMobile && isAuthenticated ? '80px 16px 16px 16px' : (isMobile ? '16px' : '24px')),
         width: (isAuthenticated && !isPublicRoute) ? undefined : '100%',
         minWidth: 0,
         boxSizing: 'border-box',
@@ -140,7 +140,7 @@ function AppContent() {
                                 <PublicRoute exact path='/register' component={Register} />
                                 <PublicRoute exact path='/forgot-password' component={ForgotPassword} />
                                 <PublicRoute exact path='/reset-password' component={ResetPassword} />
-                                <PublicRoute exact path='/nextmain' component={Nextmain}/>
+                                <PublicRoute exact path='/landing' component={Landing}/>
                                 <PublicRoute exact path='/verifytoken' component={VerifyToken} />
                                 <PublicRoute exact path='/resendtoken' component={ResendTokenForm}/>
                             </Switch>
