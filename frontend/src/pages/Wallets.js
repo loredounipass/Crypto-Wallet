@@ -157,7 +157,7 @@ const Wallets = () => {
     const styles = {
         container: {
             padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
-            maxWidth: "1200px",
+            maxWidth: "960px",
             margin: "0 auto",
             width: "100%",
             boxSizing: "border-box",
@@ -246,9 +246,9 @@ const Wallets = () => {
         createWalletCard: {
             background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
             borderRadius: "16px",
-            padding: isMobile ? "14px" : "20px",
+            padding: isMobile ? "12px" : "16px",
             border: "1px solid #2D2D44",
-            boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
             minWidth: 0,
             boxSizing: "border-box",
         },
@@ -394,16 +394,16 @@ const Wallets = () => {
             </div>
 
             {/* Create Wallet */}
-            <div className="grid gap-3 md:gap-6" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "12px" : "24px", marginBottom: isMobile ? "12px" : "32px" }}>
+            <div className="grid gap-3 md:gap-6" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "12px" : "16px", marginBottom: isMobile ? "12px" : "24px" }}>
                 <div style={styles.createWalletCard}>
                     <h2 style={{ color: "#FFFFFF", fontSize: isMobile ? "18px" : "20px", fontWeight: 600, marginBottom: "8px" }}>
                         Crear Nueva Billetera
                     </h2>
-                    <p style={{ ...styles.sectionSubtleText, marginBottom: "16px" }}>
+                    <p style={{ ...styles.sectionSubtleText, marginBottom: "12px" }}>
                         Elige la red y crea tu wallet en segundos con configuracion segura.
                     </p>
                     
-                    <label style={{ display: "block", color: "#9CA3AF", fontSize: "13px", marginBottom: "6px" }}>
+                    <label style={{ display: "block", color: "#9CA3AF", fontSize: "12px", marginBottom: "4px" }}>
                         Selecciona una moneda
                     </label>
                     <div style={styles.coinPickerWrap}>
@@ -505,7 +505,7 @@ const Wallets = () => {
                     display: "flex",
                     flexDirection: "column",
                     position: "relative",
-                    minHeight: "200px"
+                    minHeight: "150px"
                 }}>
                     <div style={{
                         position: "absolute",
@@ -518,7 +518,7 @@ const Wallets = () => {
                         zIndex: 0
                     }} />
                     
-                    <div style={{ padding: isMobile ? "16px" : "20px", paddingBottom: "0", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ padding: isMobile ? "12px" : "16px", paddingBottom: "0", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ color: "#9CA3AF", fontSize: isMobile ? "12px" : "13px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
                                 Mercado • {selectedCoin.toUpperCase()}
