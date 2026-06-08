@@ -39,6 +39,13 @@
       "request": "2.88.2",
       "secp256k1": "4.0.4",
       "eth-lib": "0.2.8"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "keccak",
+      "msgpackr-extract",
+      "secp256k1",
+      "utf-8-validate"
+    ]
   }
 }
