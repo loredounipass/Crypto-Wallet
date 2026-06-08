@@ -17,6 +17,10 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Trust proxy for secure cookies
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
   // Security headers with Helmet
   // crossOriginResourcePolicy must be 'cross-origin' so the frontend (different origin/port)
   // can load static assets (uploaded images) served by this API.

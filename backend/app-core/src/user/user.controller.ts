@@ -184,15 +184,6 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
 }
 
 
-  // Search users endpoint used by frontend (e.g. /user/search?q=...)
-  @UseGuards(ThrottlerGuard, AuthenticatedGuard)
-  @Get('search')
-  async searchUsers(@Request() req) {
-    const q = typeof req.query === 'object' ? req.query.q : undefined;
-    const results = await this.userService.searchUsers(q);
-    return { data: results };
-  }
-
 
 // Route for handling the forgot password functionality. It accepts an email address in the request body and calls the requestPasswordReset method of the ForgotPasswordService to initiate the password reset process. If successful, it returns a message indicating that a reset email has been sent; otherwise, it throws a BadRequestException with an error message.
   @UseGuards(EmailThrottlerGuard)
