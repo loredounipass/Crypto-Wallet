@@ -35,8 +35,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px' }}>
         {providers.map((provider) => (
           <div key={provider._id} style={{
-            backgroundColor: '#0F0F1A',
-            border: '1px solid #2D2D44',
+            backgroundColor: '#080811',
+            border: '1px solid #1F1F33',
             borderRadius: 16,
             padding: 16,
             display: 'flex',
@@ -78,7 +78,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                     padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
                     backgroundColor: '#1E1E2E',
                     color: '#94A3B8',
-                    border: '1px solid #2D2D44',
+                    border: '1px solid #1F1F33',
                   }}>
                     {pm}
                   </span>
@@ -98,7 +98,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 border: 'none',
                 background: provider.walletAddress
                   ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
-                  : ('#2D2D44'),
+                  : ('#1F1F33'),
                 color: provider.walletAddress ? '#FFF' : '#94A3B8',
                 cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
                 boxShadow: provider.walletAddress ? '0 4px 12px rgba(139,92,246,0.25)' : 'none',
@@ -183,7 +183,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
                 backgroundColor: '#1E1E2E',
                 color: '#94A3B8',
-                border: `1px solid ${'#2D2D44'}`,
+                border: `1px solid ${'#1F1F33'}`,
               }}>
                 {pm}
               </span>
@@ -208,7 +208,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 border: 'none',
                 background: provider.walletAddress
                   ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
-                  : ('#2D2D44'),
+                  : ('#1F1F33'),
                 color: provider.walletAddress ? '#FFF' : '#94A3B8',
                 cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
                 boxShadow: provider.walletAddress ? '0 2px 8px rgba(139,92,246,0.25)' : 'none',

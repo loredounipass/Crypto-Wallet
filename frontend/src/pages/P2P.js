@@ -105,8 +105,8 @@ export default function P2P() {
           display: 'flex', 
           flexDirection: 'row',
           borderRadius: 12, overflow: 'hidden',
-          border: '1px solid #2D2D44',
-          backgroundColor: '#0F0F1A',
+          border: '1px solid #1F1F33',
+          backgroundColor: '#080811',
           marginBottom: 20,
         }}>
           {TABS.map((tab) => (
@@ -150,10 +150,10 @@ export default function P2P() {
       {/* Content Card */}
       <div style={{
         borderRadius: 16,
-        border: '1px solid #2D2D44',
-        backgroundColor: '#1A1A2E',
+        border: '1px solid #1F1F33',
+        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
         overflow: 'hidden',
-        boxShadow: 'none',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
       }}>
         {activeTab === 'marketplace' && (
           <P2PProviderList
@@ -184,7 +184,7 @@ export default function P2P() {
       {isMobile && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          backgroundColor: '#1A1A2E', borderTop: '1px solid #2D2D44',
+          backgroundColor: '#080811', borderTop: '1px solid #1F1F33',
           display: 'flex', justifyContent: 'space-around', alignItems: 'center',
           padding: '10px 0', zIndex: 100, margin: 0,
         }}>

@@ -14,9 +14,9 @@
 }
 
 html.dark {
-  --settings-bg: #0F0F1A;
-  --settings-card: #1A1A2E;
-  --settings-border: #2D2D44;
+  --settings-bg: #080811;
+  --settings-card: #0C0C17;
+  --settings-border: #1F1F33;
   --settings-text: #FFFFFF;
   --settings-muted: #9CA3AF;
   --settings-primary: #2186EB;
@@ -47,7 +47,7 @@ html.dark {
 }
 
 .settings-sidebar {
-  background-color: #12121D;
+  background-color: #080811;
 }
 
 .settings-form-card {

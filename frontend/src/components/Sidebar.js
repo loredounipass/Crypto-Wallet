@@ -199,19 +199,28 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     return colors[name.charCodeAt(0) % colors.length];
   };
 
-  const getListItemStyle = (isActive = false) => ({
-    color: "white",
-    minHeight: "44px",
-    display: "flex",
-    alignItems: "center",
-    padding: open ? "10px 12px" : "10px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    justifyContent: open ? "flex-start" : "center",
-    backgroundColor: isActive ? "rgba(255,255,255,0.2)" : "transparent",
-    transition: "background-color 0.2s",
-    marginBottom: "4px",
-  });
+  const getListItemStyle = (isActive = false, itemColor) => {
+    const isDanger = itemColor === "#FF6B6B";
+    const activeColor = isDanger ? "#FF6B6B" : "#2186EB";
+    const activeBg = isDanger ? "rgba(255, 107, 107, 0.1)" : "rgba(33, 134, 235, 0.1)";
+    const activeBorder = isDanger ? "rgba(255, 107, 107, 0.2)" : "rgba(33, 134, 235, 0.2)";
+    const defaultColor = isDanger ? "#FF6B6B" : "#8F95A3";
+
+    return {
+      color: isActive ? activeColor : defaultColor,
+      minHeight: "48px",
+      display: "flex",
+      alignItems: "center",
+      padding: open ? "10px 16px" : "10px",
+      borderRadius: "12px",
+      cursor: "pointer",
+      justifyContent: open ? "flex-start" : "center",
+      backgroundColor: isActive ? activeBg : "transparent",
+      border: isActive ? `1px solid ${activeBorder}` : "1px solid transparent",
+      transition: "all 0.2s ease",
+      marginBottom: "8px",
+    };
+  };
 
   const checkIsActive = (item) => {
     if (item.matchPaths) {
@@ -230,14 +239,15 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       display: "flex", 
       flexDirection: "column", 
       height: "100%", 
-      background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
+      background: "#080811",
       width: isMobile ? "100%" : (open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED),
       transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
       overflowX: "hidden",
       overflowY: "auto",
+      borderRight: "1px solid #1A1A2E",
     }}>
        {/* Logo Section */}
-       <Box className="p-4 flex items-center justify-between min-h-[64px] border-b border-white/10">
+       <Box className="p-4 flex items-center justify-between min-h-[64px]" style={{ borderBottom: "1px solid #1A1A2E" }}>
          {open || isMobile ? (
            <>
              <Logo variant="sidebar-expanded" />
@@ -256,13 +266,13 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
        {/* User Info - Only when expanded */}
       {open && auth && (
         <Box style={{ 
-          padding: "8px", 
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          padding: "16px", 
+          borderBottom: "1px solid #1A1A2E",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "6px",
-          textAlign: "center",
+          gap: "10px",
+          textAlign: "left",
         }}>
           <Avatar 
             style={{ 
@@ -276,7 +286,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           >
             {auth.firstName.charAt(0)}
           </Avatar>
-          <Typography style={{ color: "white", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <Typography style={{ color: "#E2E8F0", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {auth.firstName} {auth.lastName || ''}
           </Typography>
         </Box>
@@ -296,19 +306,20 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               onClick={() => handleNavigation(item)}
               style={getListItemStyle(isActive)}
               onMouseOver={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.15)";
+                if (!isActive) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)";
               }}
               onMouseOut={(e) => {
                 if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              <ListItemIcon style={{ color: "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
-                <item.icon style={{ fontSize: 18 }} />
+              <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
+                <item.icon style={{ fontSize: 20 }} />
               </ListItemIcon>
               { (open || isMobile) && (
                 <ListItemText 
                   primary={item.text} 
-                  style={{ fontSize: "14px", fontWeight: 500, color: "white" }} 
+                  style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
+                  disableTypography
                 />
               )}
             </ListItem>
@@ -320,7 +331,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       {/* Bottom Items (Settings & Logout) */}
       <Box style={{ 
         padding: "12px", 
-        borderTop: "1px solid rgba(255,255,255,0.1)",
+        borderTop: "1px solid #1A1A2E",
       }}>
         {bottomItems.map((item) => {
           const isActive = checkIsActive(item);
@@ -333,24 +344,24 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
             <ListItem
               onClick={() => handleNavigation(item)}
               style={{
-                ...getListItemStyle(isActive),
-                color: item.color || "white",
+                ...getListItemStyle(isActive, item.color),
                 opacity: item.path === "logout" && isLoggingOut ? 0.7 : 1,
               }}
               onMouseOver={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.15)" : "rgba(255,255,255,0.15)";
+                if (!isActive) e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.05)" : "rgba(255,255,255,0.03)";
               }}
               onMouseOut={(e) => {
                 if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              <ListItemIcon style={{ color: item.color || "white", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
-                <item.icon style={{ fontSize: 18 }} />
+              <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
+                <item.icon style={{ fontSize: 20 }} />
               </ListItemIcon>
               { (open || isMobile) && (
                 <ListItemText 
                   primary={item.text} 
-                  style={{ fontSize: "14px", fontWeight: 500, color: item.color || "white" }} 
+                  style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
+                  disableTypography
                 />
               )}
             </ListItem>
@@ -379,9 +390,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         sx={{
           zIndex: 1200,
           '& .MuiDrawer-paper': {
-            backgroundColor: '#0F0F1A',
-            background: 'linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)',
-            border: 'none',
+            backgroundColor: '#080811',
+            background: '#080811',
+            borderRight: '1px solid #1A1A2E',
             boxShadow: 'none',
             padding: '0',
             margin: '0',
@@ -415,7 +426,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
        <div style={{ 
          height: "100vh", 
          width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
-         background: "linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%)",
+         background: "#080811",
          transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
        }}>
         {sidebarContent}

@@ -62,14 +62,14 @@ export default function P2PChatInputArea({
       {selectedFile && (
         <div style={{
           marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10,
-          padding: '8px 10px', backgroundColor: '#1A1A2E', borderRadius: 12,
+          padding: '8px 10px', backgroundColor: '#080811', borderRadius: 12,
           border: `1px solid rgba(139,92,246,0.2)`
         }}>
           {/* Image thumbnail */}
           {selectedFile.type?.startsWith('image/') ? (
             <div style={{
               width: 48, height: 48, borderRadius: 8, overflow: 'hidden',
-              flexShrink: 0, backgroundColor: '#0F0F1A',
+              flexShrink: 0, backgroundColor: '#080811',
             }}>
               <img
                 src={URL.createObjectURL(selectedFile)}
@@ -152,7 +152,7 @@ export default function P2PChatInputArea({
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 6px 6px 16px', borderRadius: 24,
           border: `1px solid ${borderColor}`,
-          backgroundColor: '#0F0F1A',
+          backgroundColor: '#080811',
         }}>
           <input
             style={{
@@ -230,7 +230,7 @@ export default function P2PChatInputArea({
             disabled={!counterpartId}
             style={{
               width: 38, height: 38, borderRadius: '50%', border: 'none',
-              background: counterpartId ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : '#2D2D44',
+              background: counterpartId ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : '#1F1F33',
               color: '#FFF', cursor: counterpartId ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s ease',

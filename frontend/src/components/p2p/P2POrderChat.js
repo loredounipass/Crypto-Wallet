@@ -134,8 +134,8 @@ export default function P2POrderChat() {
     );
   }
 
-  const cardBg = '#1A1A2E';
-  const borderColor = '#2D2D44';
+  const cardBg = '#080811';
+  const borderColor = '#1F1F33';
 
   return (
     <div className="p2p-chat-layout" style={{ display: 'grid', gap: 16, height: 'calc(100dvh - 16px)', minHeight: 'calc(100dvh - 16px)', width: '100%', overflow: 'hidden', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 420px)' }}>
@@ -161,7 +161,7 @@ export default function P2POrderChat() {
           minHeight: 0,
           overflowY: 'auto',
           padding: 16,
-          backgroundColor: '#0F0F1A',
+          backgroundColor: 'transparent',
         }}>
           <div style={{
           display: 'flex',
@@ -186,7 +186,7 @@ export default function P2POrderChat() {
         {/* Typing indicator - centered below chat */}
         <div style={{ 
           minHeight: 24, display: 'flex', justifyContent: 'center', alignItems: 'center',
-          backgroundColor: '#0F0F1A',
+          backgroundColor: 'transparent',
           borderTop: isCounterpartTyping ? 'none' : 'none',
         }}>
           {isCounterpartTyping && (

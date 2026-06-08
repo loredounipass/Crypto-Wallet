@@ -14,7 +14,7 @@ export default function P2POrderDetailsPanel({
   counterpartName
 }) {
   const history = useHistory();
-  const borderColor = '#2D2D44';
+  const borderColor = '#1F1F33';
 
   // Shared button styles
   const primaryBtnBase = {
@@ -43,8 +43,7 @@ export default function P2POrderDetailsPanel({
       <div style={{
         borderRadius: 16, padding: 20,
         border: `1px solid ${borderColor}`,
-        backgroundColor: '#1A1A2E',
-        background: 'linear-gradient(135deg, #1A1A2E 0%, rgba(139,92,246,0.03) 100%)',
+        background: 'linear-gradient(135deg, #131327 0%, rgba(139,92,246,0.05) 100%)',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
@@ -73,7 +72,7 @@ export default function P2POrderDetailsPanel({
       <div className="p2p-order-scroll-hidden" style={{
         borderRadius: 16, padding: 20,
         border: `1px solid ${borderColor}`,
-        backgroundColor: '#1A1A2E',
+        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
         flex: 1, minHeight: 0, overflowY: 'auto',
       }}>
         <div style={{
@@ -291,7 +290,7 @@ export default function P2POrderDetailsPanel({
         onClick={() => history.push(isProvider ? '/providerChat' : '/p2p')}
         style={{
           width: '100%', padding: '13px', borderRadius: 12,
-          border: '1px solid #2D2D44',
+          border: '1px solid #1F1F33',
           backgroundColor: 'transparent',
           color: '#94A3B8', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', transition: 'all 0.2s',
@@ -304,7 +303,7 @@ export default function P2POrderDetailsPanel({
           e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.05)';
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.borderColor = '#2D2D44';
+          e.currentTarget.style.borderColor = '#1F1F33';
           e.currentTarget.style.color = '#94A3B8';
           e.currentTarget.style.backgroundColor = 'transparent';
         }}

@@ -62,7 +62,7 @@ const Dashboard = () => {
 
   const containerStyle = {
     padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
-    maxWidth: "1400px",
+    maxWidth: "960px",
     margin: "0 auto",
     width: "100%",
     boxSizing: "border-box",
@@ -83,10 +83,11 @@ const Dashboard = () => {
   };
 
   const statCardStyle = (color) => ({
-    backgroundColor: "#1A1A2E",
+    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
     borderRadius: "16px",
-    padding: isMobile ? "12px" : "24px",
-    border: "1px solid #2D2D44",
+    padding: isMobile ? "16px" : "24px",
+    border: "1px solid #1F1F33",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
     position: "relative",
     overflow: "hidden",
     display: "flex",
@@ -105,10 +106,11 @@ const Dashboard = () => {
   });
 
   const sectionStyle = {
-    backgroundColor: "#1A1A2E",
+    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
     borderRadius: "16px",
     padding: isMobile ? "0" : "24px",
-    border: "1px solid #2D2D44",
+    border: "1px solid #1F1F33",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
     overflow: "hidden",
   };
 

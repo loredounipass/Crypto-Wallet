@@ -127,13 +127,13 @@ export default function ProviderForm() {
   // Design Tokens
   const sectionTitleClass = "text-xl font-bold text-white mb-6 text-center";
   const labelClass = 'mb-1.5 block text-sm font-medium text-slate-300';
-  const inputClass = 'w-full rounded-xl border border-slate-600 bg-slate-800/50 px-4 py-3 text-slate-100 outline-none transition-all duration-200 placeholder:text-slate-500 hover:bg-slate-800 focus:border-blue-500 focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20';
-  const modalCardClass = 'w-full max-w-md transform overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl transition-all';
-  const btnPrimary = "group relative flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-[1px] transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] disabled:cursor-not-allowed disabled:opacity-50";
-  const btnSecondary = "rounded-xl border border-slate-600 bg-slate-800 px-6 py-3 font-medium text-slate-300 transition-all hover:bg-slate-700 hover:text-white";
+  const inputClass = 'w-full rounded-xl border border-[#1F1F33] bg-[#080811] px-4 py-3 text-slate-100 outline-none transition-all duration-200 placeholder:text-slate-500 hover:bg-[#0A0A14] focus:border-[#2186EB] focus:bg-[#0A0A14] focus:ring-2 focus:ring-[#2186EB]/20';
+  const modalCardClass = 'w-full max-w-md transform overflow-hidden rounded-2xl border border-[#1F1F33] bg-gradient-to-b from-[#131327] to-[#0C0C17] p-6 shadow-2xl transition-all';
+  const btnPrimary = "group relative flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] p-[1px] transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:cursor-not-allowed disabled:opacity-50";
+  const btnSecondary = "rounded-xl border border-[#1F1F33] bg-[#1A1A2E] px-6 py-3 font-medium text-slate-300 transition-all hover:bg-[#2D2D44] hover:text-white";
 
   return (
-    <div className="min-h-screen bg-slate-950 py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+    <div className="min-h-screen bg-[#080811] py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
       <div className="mx-auto w-full max-w-2xl">
         
         {/* Header Section */}
@@ -178,7 +178,7 @@ export default function ProviderForm() {
           ))}
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900/80 shadow-2xl backdrop-blur-sm mt-8">
+        <div className="overflow-hidden rounded-3xl border border-[#1F1F33] bg-gradient-to-b from-[#131327] to-[#0C0C17] shadow-2xl backdrop-blur-sm mt-8">
           <form onSubmit={handleSubmit} className="p-6 sm:p-10">
             
             {/* Step 1: Información Personal */}
@@ -250,8 +250,8 @@ export default function ProviderForm() {
                         onClick={() => togglePaymentMethod(pm)}
                         className={`group relative flex items-center justify-center rounded-xl border p-3 text-sm font-medium transition-all duration-200 ${
                           selectedPaymentMethods.includes(pm)
-                            ? 'border-blue-500 bg-blue-500/10 text-blue-300'
-                            : 'border-slate-700 bg-slate-800/40 text-slate-400 hover:border-slate-500 hover:bg-slate-800 hover:text-slate-200'
+                            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-[#8B5CF6]'
+                            : 'border-[#1F1F33] bg-[#0A0A14] text-slate-400 hover:border-[#8B5CF6] hover:bg-[#0A0A14] hover:text-slate-200'
                         }`}
                       >
                         {selectedPaymentMethods.includes(pm) && (
@@ -277,7 +277,7 @@ export default function ProviderForm() {
 
               {step < 3 ? (
                 <button type="button" onClick={handleNextStep} className={btnPrimary}>
-                  <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-bold text-white transition-all group-hover:from-blue-500 group-hover:to-cyan-400">
+                  <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] px-6 py-3 font-bold text-white transition-all group-hover:from-[#7C3AED] group-hover:to-[#4F46E5]">
                     Siguiente →
                   </div>
                 </button>
@@ -287,7 +287,7 @@ export default function ProviderForm() {
                   disabled={selectedPaymentMethods.length === 0}
                   className={btnPrimary}
                 >
-                  <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-8 py-3 font-bold text-white transition-all group-hover:from-blue-500 group-hover:to-cyan-400">
+                  <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] px-8 py-3 font-bold text-white transition-all group-hover:from-[#7C3AED] group-hover:to-[#4F46E5]">
                     Completar Registro
                   </div>
                 </button>

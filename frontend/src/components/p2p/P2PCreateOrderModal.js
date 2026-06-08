@@ -92,8 +92,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
   const inputStyle = {
     width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-    border: `1px solid ${'#2D2D44'}`,
-    backgroundColor: '#0F0F1A',
+    border: `1px solid ${'#1F1F33'}`,
+    backgroundColor: '#080811',
     color: '#E2E8F0',
     outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
   };
@@ -114,8 +114,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     }}>
       <div style={{
         width: '100%', maxWidth: 500, borderRadius: 16, padding: 28,
-        backgroundColor: '#1E1E2E',
-        border: `1px solid ${'#2D2D44'}`,
+        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
+        border: `1px solid ${'#1F1F33'}`,
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         maxHeight: '90vh', overflowY: 'auto',
       }}>
@@ -177,8 +177,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               onClick={handleSetMax}
               disabled={!coin || availableAfterFee <= 0}
               style={{
-                border: `1px solid ${'#2D2D44'}`,
-                backgroundColor: '#0F0F1A',
+                border: `1px solid ${'#1F1F33'}`,
+                backgroundColor: '#080811',
                 color: '#8B5CF6',
                 borderRadius: 10,
                 padding: '0 14px',
@@ -234,7 +234,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 onClick={() => setPaymentMethod(pm)}
                 style={{
                   padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                  border: paymentMethod === pm ? '2px solid #8B5CF6' : `1px solid ${'#2D2D44'}`,
+                  border: paymentMethod === pm ? '2px solid #8B5CF6' : `1px solid ${'#1F1F33'}`,
                   backgroundColor: paymentMethod === pm
                     ? ('rgba(139,92,246,0.15)')
                     : 'transparent',
@@ -276,7 +276,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             disabled={isLoading}
             style={{
               flex: 1, padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-              border: `1px solid ${'#2D2D44'}`,
+              border: `1px solid ${'#1F1F33'}`,
               backgroundColor: 'transparent',
               color: '#94A3B8', cursor: 'pointer',
             }}
@@ -289,7 +289,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             style={{
               flex: 2, padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700,
               border: 'none',
-              background: isValid ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' : ('#2D2D44'),
+              background: isValid ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' : ('#1F1F33'),
               color: isValid ? '#FFF' : '#94A3B8',
               cursor: isValid ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,
