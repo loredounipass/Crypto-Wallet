@@ -71,7 +71,7 @@ All services (Redis, MongoDB, Backend, Frontend) will be running in Docker conta
 ```
 $ cd backend/tasks/+
 $ pnpm install -g hardhat  
-$ hardhat run scripts/deploy.js --network (--network name--)  
+$ npx hardhat run scripts/deploy.js --network (--network name--)  
 $ node generate.js (--number of wallets--) + (--network ID--)
 ```
 
