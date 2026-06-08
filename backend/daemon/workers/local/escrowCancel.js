@@ -76,7 +76,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
     await transaction.save()
 
     await Wallet.updateOne(
-        { _id: ObjectId(wallet._id) },
+        { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
     )
 
@@ -101,7 +101,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
         })
     } else {
         await Wallet.updateOne(
-            { _id: ObjectId(wallet._id) },
+            { _id: new ObjectId(wallet._id) },
             { $inc: { balance: order.amount } }
         )
         console.log('[ESCROW-CANCEL-WORKER] DB internal refund complete:', {

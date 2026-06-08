@@ -9,6 +9,4 @@ const uri = `mongodb://${dbHost}:${dbPort}/${process.env.DB_NAME}`
 const mongoose = require('mongoose')
 mongoose.set('strictQuery', false)
 
-module.exports = mongoose.connect(uri,
-    { useNewUrlParser: true, useUnifiedTopology: true }
-)
+module.exports = mongoose.connect(uri)

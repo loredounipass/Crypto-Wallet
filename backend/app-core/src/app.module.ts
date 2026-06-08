@@ -21,17 +21,13 @@ import { EscrowModule } from './escrow/escrow.module';
   imports: [
     ConfigModule.forRoot(),
     ThrottlerModule.forRoot({
-      ttl: parseInt(process.env.RATE_LIMIT_TTL),
-      limit: parseInt(process.env.RATE_LIMIT),
+      throttlers: [{
+        ttl: parseInt(process.env.RATE_LIMIT_TTL),
+        limit: parseInt(process.env.RATE_LIMIT),
+      }],
     }),
     
-    MongooseModule.forRoot(
-      process.env.DB_URI,
-      {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      }
-    ),
+    MongooseModule.forRoot(process.env.DB_URI ? process.env.DB_URI.split('?')[0] : process.env.DB_URI),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST,

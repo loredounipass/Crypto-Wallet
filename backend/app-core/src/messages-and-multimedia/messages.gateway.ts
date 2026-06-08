@@ -5,9 +5,8 @@ import type { MessageCreatedEvent } from './events/message-created.event';
 import { Server, Socket } from 'socket.io';
 // DTOs are used by controllers/services; gateway only emits socket events on domain events
 
-import * as connectRedis from 'connect-redis';
-import Redis from 'ioredis';
-import * as session from 'express-session';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 
 @WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://legendary-space-engine-qj97q4q9x9qh99q4-3000.app.github.dev'], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -18,12 +17,21 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   // reuse Redis session store to validate session on handshake
   private redisStore: any;
+  private redisClient: any;
 
   constructor() {
-    const RedisStore = connectRedis.default || connectRedis;
-    const RedisStoreClass = RedisStore(session);
-    const redisClient = new Redis({ host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT || '6379') });
-    this.redisStore = new RedisStoreClass({ client: redisClient as any });
+
+    const redisClient = createClient({
+      socket: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    });
+    redisClient.connect().catch(err => {
+      this.logger.error('Failed to connect to Redis:', err);
+    });
+    this.redisClient = redisClient;
+    this.redisStore = new RedisStore({ client: redisClient });
   }
 
   private parseCookies(cookieHeader: string | undefined) {
@@ -86,13 +94,16 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
-  private getSession(sid: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.redisStore.get(sid, (err: any, sess: any) => {
-        if (err) return reject(err);
-        resolve(sess);
-      });
-    });
+  private async getSession(sid: string): Promise<any> {
+    try {
+      const sessionKey = `sess:${sid}`;
+      const sessionData = await this.redisClient.get(sessionKey);
+      if (!sessionData) return null;
+      return JSON.parse(sessionData);
+    } catch (err) {
+      this.logger.error(`Error retrieving session ${sid}:`, err);
+      return null;
+    }
   }
 
   handleDisconnect(client: Socket) {

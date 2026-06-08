@@ -298,7 +298,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     try {
       const ids = users.map((u: any) => u._id).filter(Boolean);
       if (ids.length > 0) {
-        const profiles = await this.profileRepository.find({ owner: { $in: ids } }).select('owner profilePhotoUrl').lean().exec();
+        const profiles = await this.profileRepository.find({ owner: { $in: ids } }).select('owner profilePhotoUrl').lean().exec() as any[];
         const photoMap: Record<string, string> = {};
         for (const p of profiles) {
           if (p && p.owner) photoMap[p.owner.toString()] = (p as any).profilePhotoUrl || '';

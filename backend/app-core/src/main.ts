@@ -4,11 +4,11 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import { join } from 'path';
 
-import * as connectRedis from 'connect-redis';
-import Redis from 'ioredis'
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 
-import * as session from 'express-session';
-import * as passport from 'passport';
+import session from 'express-session';
+import passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 
@@ -43,18 +43,12 @@ async function bootstrap() {
   
 
   // Configure session management using Redis as the session store
-  const RedisStore = connectRedis.default || connectRedis;
-  const RedisStoreClass = RedisStore(session);
-  const redisClient = new Redis({
-    host: process.env.REDIS_HOST!,
-    port: parseInt(process.env.REDIS_PORT!),
-    maxRetriesPerRequest: 3,
-    retryStrategy(times: number) {
-      const delay = Math.min(times * 50, 2000);
-      console.log(`[Redis] Retry attempt ${times}, delay: ${delay}ms`);
-      return delay;
+
+  const redisClient = createClient({
+    socket: {
+      host: process.env.REDIS_HOST!,
+      port: parseInt(process.env.REDIS_PORT!),
     },
-    lazyConnect: true,
   });
 
   redisClient.on('error', (err) => {
@@ -64,6 +58,8 @@ async function bootstrap() {
   redisClient.on('connect', () => {
     console.log('[Redis] Connected successfully');
   });
+
+  await redisClient.connect();
 
   const isProduction = process.env.NODE_ENV === 'production';
   const sessionCookie = {
@@ -76,7 +72,7 @@ async function bootstrap() {
 
   app.use(
     session({
-      store: new RedisStoreClass({ client: redisClient as any }),
+      store: new RedisStore({ client: redisClient as any }),
       secret: process.env.TOKEN_SECRET!,
       resave: false,
       saveUninitialized: false,

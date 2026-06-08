@@ -73,8 +73,9 @@ export class UserController {
     
     try {
       await this.twoFactorAuthService.resendToken(email);
-    } catch (err) {
-      console.error('resendToken error:', err.message || err);
+    } catch (err: unknown) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      console.error('resendToken error:', e.message);
     }
     // Always return the same message to prevent email enumeration
     return { message: 'Si el correo existe, se ha enviado un código de verificación.' };
@@ -153,8 +154,9 @@ export class UserController {
     try {
         const result = await this.userService.verifyEmail(userEmail, body.token);
         return { message: 'Correo electrónico verificado con éxito.' };
-    } catch (error) {
-        throw new BadRequestException(error.message || 'El correo electrónico no pudo ser verificado.');
+    } catch (error: unknown) {
+        const e = error instanceof Error ? error : new Error(String(error));
+        throw new BadRequestException(e.message || 'El correo electrónico no pudo ser verificado.');
     }
 }
 
@@ -166,8 +168,9 @@ async sendVerificationEmail(@Request() req): Promise<{ message: string }> {
     try {
         const result = await this.userService.sendVerificationEmail(email);
         return { message: 'Correo de verificación enviado con éxito.' };
-    } catch (error) {
-        throw new BadRequestException(error.message || 'No se pudo enviar el correo de verificación.');
+    } catch (error: unknown) {
+        const e = error instanceof Error ? error : new Error(String(error));
+        throw new BadRequestException(e.message || 'No se pudo enviar el correo de verificación.');
     }
 }
 
@@ -199,8 +202,9 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
     try {
       await this.forgotPasswordService.requestPasswordReset(email);
       return { message: 'Correo de restablecimiento enviado si el usuario existe.' };
-    } catch (error) {
-      throw new BadRequestException(error.message || 'No se pudo procesar la solicitud.');
+    } catch (error: unknown) {
+      const e = error instanceof Error ? error : new Error(String(error));
+      throw new BadRequestException(e.message || 'No se pudo procesar la solicitud.');
     }
   }
 
@@ -211,8 +215,9 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
     const { email, token, newPassword, confirmNewPassword } = body;
     try {
       return await this.forgotPasswordService.resetPassword(email, token, newPassword, confirmNewPassword);
-    } catch (error) {
-      throw new BadRequestException(error.message || 'No se pudo restableer la contraseña.');
+    } catch (error: unknown) {
+      const e = error instanceof Error ? error : new Error(String(error));
+      throw new BadRequestException(e.message || 'No se pudo restableer la contraseña.');
     }
   }
 }

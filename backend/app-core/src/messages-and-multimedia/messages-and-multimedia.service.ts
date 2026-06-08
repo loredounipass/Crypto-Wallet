@@ -190,7 +190,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     const multimediaMap: Map<string, any> = new Map();
     if (multimediaIds.length > 0) {
       const uniq = Array.from(new Set(multimediaIds));
-      const mDocs = await this.multimediaRepository.find({ _id: { $in: uniq } }).select('_id url thumbnailUrl status duration').lean().exec();
+      const mDocs = await this.multimediaRepository.find({ _id: { $in: uniq } }).select('_id url thumbnailUrl status duration').lean().exec() as any[];
       for (const m of mDocs) multimediaMap.set(m._id?.toString(), m);
     }
 

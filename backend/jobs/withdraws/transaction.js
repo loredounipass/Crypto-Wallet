@@ -30,7 +30,7 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
     if (fee !== undefined)
         upsert.fee = fee
 
-    await Transaction.updateOne({ _id: ObjectId(transactionId) }, {
+    await Transaction.updateOne({ _id: new ObjectId(transactionId) }, {
         $set: upsert
     })
 
@@ -85,7 +85,7 @@ const sendTransaction = async (valueWei, toAddress) => {
 const sendWithdraw = async ({
     walletId, transactionId, amount, withdrawAddress
 }) => {
-    const wallet = await Wallet.findOne({ _id: ObjectId(walletId) },
+    const wallet = await Wallet.findOne({ _id: new ObjectId(walletId) },
         { transactions: 0 })
 
     if (wallet && 'coin' in wallet) {

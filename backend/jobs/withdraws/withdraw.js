@@ -36,7 +36,7 @@ const _updateTransactionState = async (tId, status, confirmations) => {
     if (confirmations !== undefined && confirmations !== null)
         upsert.confirmations = confirmations
 
-    await Transaction.updateOne({ _id: ObjectId(tId) }, {
+    await Transaction.updateOne({ _id: new ObjectId(tId) }, {
         $set: upsert
     })
 
@@ -51,9 +51,9 @@ const _checkConfirmation = async (address, txHash, value, coin, chainId, transac
     var result = await web3.eth.getTransactionReceipt(txHash)
     if (result && 'status' in result && result.status) {
         await _updateTransactionState(transactionId, 3)
-        const wallet = await Wallet.findOne({ transactions: ObjectId(transactionId) })
+        const wallet = await Wallet.findOne({ transactions: new ObjectId(transactionId) })
         if (wallet) {
-            const user = await User.findOne({ wallets: ObjectId(wallet._id) })
+            const user = await User.findOne({ wallets: new ObjectId(wallet._id) })
             if (user && user.email) {
                 try {
                     await sendWithdrawEmail(toCoinAmount(value, coin), coin, address, txHash, user.email)
@@ -76,7 +76,7 @@ const processWithdraw = async ({
     walletAddress, transactionHash, transactionId, chainId, coin
 }) => {
     web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
-    var result = await Transaction.findOne({ _id: ObjectId(transactionId) })
+    var result = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (result) {
         const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {

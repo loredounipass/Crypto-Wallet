@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LocalStorageProvider } from 'src/storage/local.storage.provider';
 import { MultimediaRepository } from 'src/repositories/multimedia.repository';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import * as fsPromises from 'fs/promises';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -137,12 +137,13 @@ export class MultimediaProcessor {
       // delete staging
       try { await this.storage.delete(stagingKey); } catch (_) { }
 
-    } catch (err) {
-      console.error(`[MultimediaProcessor] ❌ Job FAILED | multimediaId=${multimediaId} | error=${err?.message || err}`);
-      console.error(`[MultimediaProcessor] ❌ Stack:`, err?.stack);
+    } catch (err: unknown) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      console.error(`[MultimediaProcessor] ❌ Job FAILED | multimediaId=${multimediaId} | error=${e.message}`);
+      console.error(`[MultimediaProcessor] ❌ Stack:`, e.stack);
       const errorPayload: any = { status: 'failed' };
-      try { errorPayload.lastError = err && err.message ? err.message : String(err); } catch (_) { errorPayload.lastError = 'unknown'; }
-      try { errorPayload.lastErrorStack = err && err.stack ? err.stack : undefined; } catch (_) { }
+      try { errorPayload.lastError = e.message; } catch (_) { errorPayload.lastError = 'unknown'; }
+      try { errorPayload.lastErrorStack = e.stack; } catch (_) { }
       await this.multimediaModel.findByIdAndUpdate(multimediaId, errorPayload as any).exec();
       throw err;
     } finally {

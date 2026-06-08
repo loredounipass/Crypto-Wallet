@@ -46,7 +46,7 @@ const _updateTransactionState = async (tId, status, value, confirmations) => {
         upsert.amount = Number(value)
     }
 
-    await Transaction.updateOne({ _id: ObjectId(tId) }, {
+    await Transaction.updateOne({ _id: new ObjectId(tId) }, {
         $set: upsert
     })
 
@@ -74,10 +74,10 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
     if (result) {
         await _updateTransactionState(transactionId, 3, value)
         const wallet = await Wallet.findOne({
-            transactions: ObjectId(transactionId)
+            transactions: new ObjectId(transactionId)
         })
         const user = await User.findOne({
-            wallets: ObjectId(wallet._id)
+            wallets: new ObjectId(wallet._id)
         })
         if (user && user.email) {
             try {
@@ -125,7 +125,7 @@ const processDeposit = async (
         coin
     })
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
-    let trackedTransaction = await Transaction.findOne({ _id: ObjectId(transactionId) })
+    let trackedTransaction = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (trackedTransaction) {
         const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
@@ -181,7 +181,7 @@ const processDeposit = async (
                 }
             }
 
-            trackedTransaction = await Transaction.findOne({ _id: ObjectId(transactionId) })
+            trackedTransaction = await Transaction.findOne({ _id: new ObjectId(transactionId) })
             await _sleep(POLL_INTERVAL_MS)
         }
 

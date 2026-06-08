@@ -9,7 +9,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
-import * as connectRedis from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
 import { Transaction, TransactionDocument } from './schemas/transaction.schema';
@@ -42,13 +42,12 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
   ) {
-    const RedisStore = connectRedis.default || connectRedis;
-    const RedisStoreClass = RedisStore(session);
+
     const redisClient = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
     });
-    this.redisStore = new RedisStoreClass({ client: redisClient as any });
+    this.redisStore = new RedisStore({ client: redisClient as any });
   }
 
   private parseCookies(cookieHeader: string | undefined) {
@@ -149,7 +148,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
           })
           .lean(),
         this.walletModel.findOne(
-          { transactions: transactionObjectId },
+          { transactions: transactionObjectId } as any,
           { _id: 1, coin: 1, chainId: 1 },
         ).lean(),
       ]);

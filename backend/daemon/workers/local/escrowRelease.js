@@ -80,7 +80,7 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
     await transaction.save()
 
     await Wallet.updateOne(
-        { _id: ObjectId(wallet._id) },
+        { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
     )
 

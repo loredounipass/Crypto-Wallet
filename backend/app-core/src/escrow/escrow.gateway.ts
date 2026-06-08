@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import * as connectRedis from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 import Redis from 'ioredis';
 import * as session from 'express-session';
 import { InjectModel } from '@nestjs/mongoose';
@@ -37,13 +37,12 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>
   ) {
-    const RedisStore = connectRedis.default || connectRedis;
-    const RedisStoreClass = RedisStore(session);
+
     const redisClient = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
     });
-    this.redisStore = new RedisStoreClass({ client: redisClient as any });
+    this.redisStore = new RedisStore({ client: redisClient as any });
   }
 
   private parseCookies(cookieHeader: string | undefined) {
