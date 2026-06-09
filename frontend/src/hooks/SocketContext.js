@@ -24,14 +24,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const fallbackBaseApi = 'https://legendary-space-engine-qj97q4q9x9qh99q4-4000.app.github.dev';
-        const socketOrigin = (() => {
-            try { 
-                return new URL(process.env.REACT_APP_API_BASE_URL).origin; 
-            } catch (_) { 
-                return fallbackBaseApi; 
-            }
-        })();
+        const socketOrigin = new URL(process.env.REACT_APP_API_BASE_URL).origin;
 
         const newSocket = io(`${socketOrigin}/messages`, {
             withCredentials: true,

@@ -29,7 +29,7 @@ async function bootstrap() {
   }));
   
   app.enableCors({
-    origin: ['https://legendary-space-engine-qj97q4q9x9qh99q4-3000.app.github.dev'],
+    origin: [process.env.CORS_ORIGIN],
     credentials: true
   })
 

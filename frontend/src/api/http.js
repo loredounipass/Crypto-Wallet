@@ -1,19 +1,13 @@
 import axios from 'axios'
 
-const fallbackBaseApi = 'https://legendary-space-engine-qj97q4q9x9qh99q4-4000.app.github.dev/secure/api';
-const configuredBaseApi = process.env.REACT_APP_API_BASE_URL || fallbackBaseApi;
-
-const baseApi = configuredBaseApi;
+const baseApi = process.env.REACT_APP_API_BASE_URL;
 const api = axios.create({
     baseURL: baseApi,
     withCredentials: true,
     timeout: 10000,
 });
 
-// Base origin for non-API assets (media). Derived from baseApi origin.
-const apiOrigin = (() => {
-    try { return new URL(baseApi).origin; } catch (_) { return 'https://legendary-space-engine-qj97q4q9x9qh99q4-4000.app.github.dev'; }
-})();
+const apiOrigin = new URL(baseApi).origin;
 const mediaBase = `${apiOrigin}/uploads`;
 
 

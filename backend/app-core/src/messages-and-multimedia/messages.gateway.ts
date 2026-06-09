@@ -8,7 +8,7 @@ import { Server, Socket } from 'socket.io';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 
-@WebSocketGateway({ namespace: '/messages', cors: { origin: ['https://legendary-space-engine-qj97q4q9x9qh99q4-3000.app.github.dev'], credentials: true } })
+@WebSocketGateway({ namespace: '/messages', cors: { origin: [process.env.CORS_ORIGIN], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

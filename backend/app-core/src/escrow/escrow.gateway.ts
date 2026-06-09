@@ -25,7 +25,7 @@ type EscrowStatusEvent = {
 
 @WebSocketGateway({
   namespace: '/escrow',
-  cors: { origin: ['https://legendary-space-engine-qj97q4q9x9qh99q4-3000.app.github.dev'], credentials: true },
+  cors: { origin: [process.env.CORS_ORIGIN], credentials: true },
 })
 export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
