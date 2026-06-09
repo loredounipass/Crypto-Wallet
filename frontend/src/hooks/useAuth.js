@@ -38,32 +38,27 @@ export default function useAuth() {
             if (data) {
                 history.push('/login');
             } else {
-                setError(data.error);
+                setError(data?.error || data?.message);
             }
         } catch (err) {
-            let msg = err.response?.data?.message || err.response?.data?.error || err.message;
-            if (Array.isArray(msg)) msg = msg.join('. ');
-            setError(msg);
+            setError(err.message);
         }
     };
 
     const loginUser = async (body) => {
         try {
             const { data } = await User.login(body);
-            if (data && 'msg' in data) {
-                if (data.msg === 'Logged in!') {
+            if (data && ('msg' in data || 'message' in data)) {
+                if (data.msg === 'Logged in!' || data.message === 'Logged in!') {
                     await setUserContext();
                 }
                 return data;
             } else {
-                const errMsg = data?.error || 'Credenciales incorrectas.';
-                setError(errMsg);
+                setError(data?.error || data?.message);
                 return null;
             }
         } catch (err) {
-            let msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Credenciales incorrectas.';
-            if (Array.isArray(msg)) msg = msg.join('. ');
-            setError(msg);
+            setError(err.message);
             return null;
         }
     };
@@ -71,25 +66,25 @@ export default function useAuth() {
     const verifyToken = async (body) => {
         try {
             const { data } = await User.verifyToken(body);
-            if (data && data.msg === 'Logged in!') {
+            if (data && (data.msg === 'Logged in!' || data.message === 'Logged in!')) {
                 await setUserContext();
-            } else if (data && data.msg === 'Código de verificación enviado a tu correo electrónico.') {
+            } else if (data && (data.msg || data.message)) {
                 return data;
             } else {
-                setError(data.error || 'Código de verificación inválido.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
-            setError('Token incorrecto verifica tu correo electrónico.');
+            setError(err.message);
         }
     };
 
     const resendToken = async (body) => {
         try {
             const { data } = await User.resendToken(body);
-            if (data && data.message) {
-                setSuccessMessage(data.message);
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
             } else {
-                setError(data.error || 'Error al reenviar el código de verificación.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
             setError(err.message);
@@ -99,8 +94,8 @@ export default function useAuth() {
     const changePassword = async (body) => {
         try {
             const { data } = await User.changePassword(body);
-            if (data && data.message === 'Contraseña actualizada con éxito') {
-                setSuccessMessage('Contraseña actualizada con éxito');
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
                 try {
                     const infoResp = await User.getInfo();
                     const user = infoResp?.data?.data;
@@ -109,7 +104,7 @@ export default function useAuth() {
                     // ignore refresh errors
                 }
             } else {
-                setError(data.error || 'Error al cambiar la contraseña.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
             setError(err.message);
@@ -120,10 +115,10 @@ export default function useAuth() {
         try {
             const response = await User.updateTokenStatus(body);
             const { data } = response || {};
-            if (data && data.msg === 'Seguridad de la cuenta actualizada con éxito.') {
-                setSuccessMessage('Seguridad de la cuenta actualizada con éxito.');
-            } else {
-                setError(data?.error || 'Error al actualizar el estado de seguridad.');
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
+            } else if (data?.error) {
+                setError(data.error);
             }
             return data;
         } catch (err) {
@@ -135,8 +130,8 @@ export default function useAuth() {
     const updateUserProfile = async (body) => {
         try {
             const { data } = await User.updateProfile(body);
-            if (data && data.message === 'Perfil actualizado con éxito') {
-                setSuccessMessage(data.message);
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
                 try {
                     const infoResp = await User.getInfo();
                     const user = infoResp?.data?.data;
@@ -145,22 +140,20 @@ export default function useAuth() {
                     // ignore refresh errors; UI will still show success
                 }
             } else {
-                setError(data.error || 'Error al actualizar el perfil.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
-            let msg = err.response?.data?.message || err.response?.data?.error || err.message;
-            if (Array.isArray(msg)) msg = msg.join('. ');
-            setError(msg);
+            setError(err.message);
         }
     };
 
     const verifyEmail = async (token) => {
         try {
             const { data } = await User.verifyEmail({ token });
-            if (data && data.message === 'Correo electrónico verificado con éxito.') {
-                setSuccessMessage(data.message);
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
             } else {
-                setError(data.error || 'Error: el correo ya está verificado.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
             setError(err.message);
@@ -170,10 +163,10 @@ export default function useAuth() {
     const sendVerificationEmail = async () => {
         try {
             const { data } = await User.sendVerificationEmail({});
-            if (data && data.message === 'Correo de verificación enviado con éxito.') {
-                setSuccessMessage(data.message);
+            if (data && (data.message || data.msg)) {
+                setSuccessMessage(data.message || data.msg);
             } else {
-                setError(data.error || 'Error al enviar el correo de verificación.');
+                setError(data?.error || data?.message);
             }
         } catch (err) {
             setError(err.message);

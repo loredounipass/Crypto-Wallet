@@ -111,7 +111,7 @@ function UserProfileComponent() {
 
             setSuccessMsg('¡Perfil actualizado correctamente!');
         } catch (e) {
-            setErrorMsg(e?.response?.data?.message || 'Error al guardar los cambios.');
+            setErrorMsg(e.message);
         } finally {
             setIsSubmitting(false);
         }

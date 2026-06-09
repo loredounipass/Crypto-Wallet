@@ -13,7 +13,7 @@ import './Settings.css';
 
 const VerifyEmailComponent = () => {
     const { auth } = useContext(AuthContext); 
-    const { sendVerificationEmail, isEmailVerified, error } = useAuth(); 
+    const { sendVerificationEmail, isEmailVerified, error, successMessage } = useAuth();
     
     
 
@@ -28,29 +28,22 @@ const VerifyEmailComponent = () => {
     useEffect(() => {
         const checkEmailVerification = async () => {
             setLocalError(null); 
-            try {
-                const isVerified = await isEmailVerified(); 
-
-                if (isVerified) {
-                    setVerificationStatus({
-                        verified: true,
-                        message: 'Correo electrónico verificado',
-                    });
-                    setEmailVerified(true);
-                } else {
-                    setVerificationStatus({
-                        verified: false,
-                        message: 'El correo electrónico no está verificado.',
-                    });
-                    setEmailVerified(false);
-                }
-            } catch (err) {
-                setLocalError(err.message || 'Error al verificar el correo.');
-                setVerificationStatus(null); 
-            } finally {
-                setLoading(false); 
-                setHasCheckedVerification(true); 
+            const isVerified = await isEmailVerified(); 
+            if (isVerified) {
+                setVerificationStatus({
+                    verified: true,
+                    message: 'Correo electrónico verificado',
+                });
+                setEmailVerified(true);
+            } else {
+                setVerificationStatus({
+                    verified: false,
+                    message: 'El correo electrónico no está verificado.',
+                });
+                setEmailVerified(false);
             }
+            setLoading(false); 
+            setHasCheckedVerification(true); 
         };
 
         if (auth && auth.email && !hasCheckedVerification) {
@@ -64,22 +57,20 @@ const VerifyEmailComponent = () => {
     const handleSendVerificationEmail = async () => {
         if (auth && auth.email) {
             setSending(true); 
-            try {
-                await sendVerificationEmail();
-                setSnackbar({ open: true, message: "Correo de verificación enviado.", severity: "success" });
-            } catch (error) {
-                const msg = error.message || 'Error al enviar el correo de verificación.';
-                setLocalError(msg);
-                setSnackbar({ open: true, message: msg, severity: "error" });
-            } finally {
-                setSending(false); 
-            }
+            await sendVerificationEmail();
+            setSending(false); 
         }
     };
 
     const handleCloseSnackbar = useCallback(() => {
         setSnackbar(prev => ({ ...prev, open: false }));
     }, []);
+
+    useEffect(() => {
+        if (successMessage) {
+            setSnackbar({ open: true, message: successMessage, severity: "success" });
+        }
+    }, [successMessage]);
 
     useEffect(() => {
         if (snackbar.open) {

@@ -36,7 +36,7 @@ export default function ForgotPassword() {
     } catch (err) {
       if (isMounted.current) {
         setSnackbarSeverity('error')
-        setSnackbarMessage(err?.response?.data?.message || 'Error al enviar el correo')
+        setSnackbarMessage(err.message)
         setOpenSnackbar(true)
       }
     } finally {

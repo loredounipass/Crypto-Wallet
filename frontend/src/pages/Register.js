@@ -231,7 +231,7 @@ export default function Register() {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-          {error || 'Ha ocurrido un error al registrarse.'}
+          {error}
         </Alert>
       </Snackbar>
     </Box>

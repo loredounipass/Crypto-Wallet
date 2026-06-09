@@ -15,7 +15,7 @@ export default function useProviders() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -31,10 +31,9 @@ export default function useProviders() {
         setError(null);
         return res;
       }
-      setError({ message: 'No se encontraron proveedores.' });
       return [];
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       setProviders([]);
       throw err;
     } finally {
@@ -51,10 +50,9 @@ export default function useProviders() {
         setError(null);
         return res;
       }
-      setError({ message: 'Perfil de proveedor no encontrado. Por favor, completa el formulario de registro para activar tu cuenta P2P.' });
       return null;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       setProvider(null);
       throw err;
     } finally {

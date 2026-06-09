@@ -61,7 +61,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -76,7 +76,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -91,7 +91,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       setProviderOrders([]);
     } finally {
       setIsLoading(false);
@@ -106,7 +106,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -120,7 +120,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -134,7 +134,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -148,7 +148,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);
@@ -162,7 +162,7 @@ export default function useEscrow() {
       setError(null);
       return res;
     } catch (err) {
-      setError(err.response?.data || err);
+      setError(err.message);
       throw err;
     } finally {
       setIsLoading(false);

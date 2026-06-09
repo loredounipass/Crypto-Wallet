@@ -72,7 +72,7 @@ const VerifyToken = () => {
             }
         } catch (err) {
             if (isMounted.current) {
-                setError('Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.');
+                setError(err.message);
             }
         } finally {
             if (isMounted.current) setLoading(false);

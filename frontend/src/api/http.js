@@ -9,7 +9,41 @@ const api = axios.create({
 
 const apiOrigin = new URL(baseApi).origin;
 const mediaBase = `${apiOrigin}/uploads`;
+const csrfTokenApi = `${apiOrigin}/csrf-token`;
 
+// Interceptor global para unificar errores del backend
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        let msg = 'Ocurrió un error inesperado.';
+        if (error.response?.data?.message) {
+            msg = error.response.data.message;
+        } else if (error.response?.data?.error) {
+            msg = error.response.data.error;
+        } else if (error.message) {
+            msg = error.message;
+        }
+
+        if (Array.isArray(msg)) msg = msg.join('. ');
+
+        error.message = msg;
+        return Promise.reject(error);
+    }
+);
+
+// Fetch and set CSRF token globally
+async function fetchCsrfToken() {
+    try {
+        const response = await axios.get(csrfTokenApi, { withCredentials: true });
+        const { csrfToken } = response.data;
+        if (csrfToken) {
+            // Attach token to all future requests from this 'api' instance
+            api.defaults.headers.common['x-csrf-token'] = csrfToken;
+        }
+    } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+    }
+}
 
 // Endpoints usuario
 const loginApi = `${baseApi}/user/login`
@@ -114,6 +148,7 @@ export {
     post,
     postMultipart,
     patch,
+    fetchCsrfToken,
     priceApi,
     mediaBase,
     apiOrigin,

@@ -13,7 +13,7 @@ import './Settings.css';
 
 const TwoFactorAuthComponent = () => {
   const { auth } = useContext(AuthContext);
-  const { updateTokenStatus } = useAuth();
+  const { updateTokenStatus, error: authError } = useAuth();
   
   
 
@@ -42,9 +42,7 @@ const TwoFactorAuthComponent = () => {
                           err.name === 'AbortError' || 
                           err.code === 'ERR_CANCELED' ||
                           err.message?.includes('canceled');
-        if (!isCanceled) {
-          setError(err.message || 'Error fetching token status');
-        }
+          setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -69,21 +67,27 @@ const TwoFactorAuthComponent = () => {
     setLoading(true);
     try {
       const res = await updateTokenStatus({ isTokenEnabled: newStatus });
-      setSnackbar({ 
-        open: true, 
-        message: newStatus ? 'Autenticación de dos factores activada.' : 'Autenticación de dos factores desactivada.', 
-        severity: 'success' 
-      });
+      if (res) {
+        setSnackbar({ 
+          open: true, 
+          message: res.message || res.msg, 
+          severity: 'success' 
+        });
+      } else {
+        setIsTokenEnabled(previousStatus);
+        setShowWarning(!previousStatus);
+      }
       return res;
-    } catch (err) {
-      setIsTokenEnabled(previousStatus);
-      setShowWarning(!previousStatus);
-      setError(err?.message || 'No se pudo actualizar el estado.');
-      return null;
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
 
   const handleConfirmDialogClose = (confirm) => {
     setConfirmDialogOpen(false);

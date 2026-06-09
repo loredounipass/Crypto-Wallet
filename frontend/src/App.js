@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Switch, useLocation } from 'react-router-dom'
 import { AuthContext } from './hooks/AuthContext'
 import { SocketProvider } from './hooks/SocketContext'
 import useFindUser from './hooks/useFindUser'
+import { fetchCsrfToken } from './api/http'
 
 import Login from "./pages/Login"
 import { Box, Container, CssBaseline, IconButton, useMediaQuery, useTheme } from './ui/material'
@@ -36,6 +37,10 @@ import { Menu as MenuIcon } from './ui/icons';
 const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
 
 function AppContent() {
+    useEffect(() => {
+        fetchCsrfToken();
+    }, []);
+
     const { auth, setAuth, loading } = useFindUser();
     
     const location = useLocation();

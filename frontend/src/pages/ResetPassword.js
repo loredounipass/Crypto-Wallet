@@ -70,14 +70,14 @@ export default function ResetPassword() {
       const res = await post(resetPasswordApi, body)
       if (isMounted.current) {
         setSnackbarSeverity('success')
-        setSnackbarMessage(res?.data?.message || 'Contraseña restablecida con éxito')
+        setSnackbarMessage(res?.data?.message || res?.data?.msg)
         setOpenSnackbar(true)
         setTimeout(() => history.push('/login'), 1500)
       }
     } catch (err) {
       if (isMounted.current) {
         setSnackbarSeverity('error')
-        setSnackbarMessage(err?.response?.data?.message || 'Error al restablecer la contraseña')
+        setSnackbarMessage(err.message)
         setOpenSnackbar(true)
       }
     } finally {

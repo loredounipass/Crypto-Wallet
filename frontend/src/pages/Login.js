@@ -209,7 +209,7 @@ export default function Login() {
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
           <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-            {error || 'Ha ocurrido un error al iniciar sesión.'}
+            {error}
           </Alert>
         </Snackbar>
       </Box>
