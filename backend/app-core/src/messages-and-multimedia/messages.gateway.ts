@@ -1,12 +1,9 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { OnEvent } from '@nestjs/event-emitter';
 import type { MessageCreatedEvent } from './events/message-created.event';
 import { Server, Socket } from 'socket.io';
-// DTOs are used by controllers/services; gateway only emits socket events on domain events
-
-import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
+import { REDIS_CLIENT } from '../redis/redis.module';
 
 @WebSocketGateway({ namespace: '/messages', cors: { origin: [process.env.CORS_ORIGIN], credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -15,24 +12,9 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   private logger = new Logger('MessagesGateway');
 
-  // reuse Redis session store to validate session on handshake
-  private redisStore: any;
-  private redisClient: any;
-
-  constructor() {
-
-    const redisClient = createClient({
-      socket: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-    });
-    redisClient.connect().catch(err => {
-      this.logger.error('Failed to connect to Redis:', err);
-    });
-    this.redisClient = redisClient;
-    this.redisStore = new RedisStore({ client: redisClient });
-  }
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: any,
+  ) {}
 
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';

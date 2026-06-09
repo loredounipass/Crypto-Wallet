@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -9,9 +9,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
-import { RedisStore } from 'connect-redis';
-import Redis from 'ioredis';
-import * as session from 'express-session';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import { Transaction, TransactionDocument } from './schemas/transaction.schema';
 import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 import { User, UserDocument } from '../user/schemas/user.schema';
@@ -32,23 +30,16 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
   server: Server;
 
   private readonly logger = new Logger('TransactionGateway');
-  private readonly redisStore: any;
 
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: any,
     @InjectModel(Transaction.name)
     private readonly transactionModel: Model<TransactionDocument>,
     @InjectModel(Wallet.name)
     private readonly walletModel: Model<WalletDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
-  ) {
-
-    const redisClient = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-    });
-    this.redisStore = new RedisStore({ client: redisClient as any });
-  }
+  ) {}
 
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';
@@ -67,13 +58,9 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
       }, {});
   }
 
-  private getSession(sid: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.redisStore.get(sid, (err: any, sess: any) => {
-        if (err) return reject(err);
-        resolve(sess);
-      });
-    });
+  private async getSession(sid: string): Promise<any> {
+    const data = await this.redisClient.get(`sess:${sid}`);
+    return data ? JSON.parse(data) : null;
   }
 
   async handleConnection(client: Socket) {

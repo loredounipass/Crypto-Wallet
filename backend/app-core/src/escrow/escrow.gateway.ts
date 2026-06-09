@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -7,11 +7,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { RedisStore } from 'connect-redis';
-import Redis from 'ioredis';
-import * as session from 'express-session';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
 
 type EscrowStatusEvent = {
@@ -32,18 +30,11 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger('EscrowGateway');
-  private readonly redisStore: any;
 
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: any,
     @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>
-  ) {
-
-    const redisClient = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-    });
-    this.redisStore = new RedisStore({ client: redisClient as any });
-  }
+  ) {}
 
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';
@@ -62,13 +53,9 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }, {});
   }
 
-  private getSession(sid: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.redisStore.get(sid, (err: any, sess: any) => {
-        if (err) return reject(err);
-        resolve(sess);
-      });
-    });
+  private async getSession(sid: string): Promise<any> {
+    const data = await this.redisClient.get(`sess:${sid}`);
+    return data ? JSON.parse(data) : null;
   }
 
   async handleConnection(client: Socket) {

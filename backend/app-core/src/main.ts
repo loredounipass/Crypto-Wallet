@@ -5,12 +5,12 @@ import * as express from 'express';
 import { join } from 'path';
 
 import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
 
 import session from 'express-session';
 import passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { REDIS_CLIENT } from './redis/redis.module';
 
 
 // This is the main entry point of the application. It sets up the NestJS application, configures CORS, global prefix, validation pipes, session management with Redis, and initializes Passport for authentication. Finally, it starts the application on the specified port.
@@ -48,22 +48,7 @@ async function bootstrap() {
 
   // Configure session management using Redis as the session store
 
-  const redisClient = createClient({
-    socket: {
-      host: process.env.REDIS_HOST!,
-      port: parseInt(process.env.REDIS_PORT!),
-    },
-  });
-
-  redisClient.on('error', (err) => {
-    console.error('[Redis] Connection error:', err.message);
-  });
-
-  redisClient.on('connect', () => {
-    console.log('[Redis] Connected successfully');
-  });
-
-  await redisClient.connect();
+  const redisClient = app.get(REDIS_CLIENT);
 
   const isProduction = process.env.NODE_ENV === 'production';
   const sessionCookie = {
