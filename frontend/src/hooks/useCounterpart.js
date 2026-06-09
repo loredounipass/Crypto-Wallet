@@ -26,7 +26,7 @@ export default function useCounterpart(counterpartEmail) {
       } catch (e) {
         console.error('Failed to fetch counterpart user', e);
         setCounterpartId(null);
-        setCounterpartError('No se pudo resolver la contraparte. Intenta recargar la página.');
+        setCounterpartError(e.message);
       }
     };
     fetchCounterpart();

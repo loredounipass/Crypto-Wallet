@@ -94,7 +94,7 @@ export default function useP2PChatState({
       }
     } catch (e) {
       console.error('Failed to send message', e);
-      setChatError('No se pudo enviar el mensaje. Verifica la conexión e intenta de nuevo.');
+      setChatError(e.message);
     } finally { 
       setIsSending(false); 
     }
@@ -112,7 +112,7 @@ export default function useP2PChatState({
       setTimeout(() => fetchMyMessages(), 3000);
     } catch (e) {
       console.error('Failed to send audio', e);
-      setChatError('No se pudo enviar el audio.');
+      setChatError(e.message);
     } finally {
       setIsSending(false);
     }

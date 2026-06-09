@@ -37,7 +37,7 @@ const ChatComponent = () => {
                     setLocalError('Proveedor no encontrado en el sistema.');
                 }
             } catch (err) {
-                setLocalError('Error al buscar el proveedor.');
+                setLocalError(err.message);
             }
         };
         fetchCounterpart();
@@ -84,7 +84,7 @@ const ChatComponent = () => {
             setMessageContent('');
             await fetchMyMessages();
         } catch (error) {
-            setLocalError('No se pudo enviar el mensaje. Intenta de nuevo.');
+            setLocalError(error.message);
         } finally {
             setIsSending(false);
         }

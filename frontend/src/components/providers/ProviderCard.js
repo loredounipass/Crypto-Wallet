@@ -45,7 +45,7 @@ export default function ProviderCard() {
     <div className="p-3">
       {error && (
         <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error.message || 'Ocurrió un error al cargar los proveedores.'}
+          {error.message}
         </div>
       )}
 

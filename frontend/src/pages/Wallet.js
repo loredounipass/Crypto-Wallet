@@ -144,10 +144,10 @@ export default function Wallet() {
                 setWithdrawAddress('');
                 setError('');
             } else {
-                setError(result?.msg || 'Error al procesar el retiro.');
+                setError(result?.msg || result?.message);
             }
         } catch (err) {
-            setError(err?.message || 'Error al procesar el retiro.');
+            setError(err.message);
         } finally {
             setWithdrawLoading(false);
         }

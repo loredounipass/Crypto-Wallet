@@ -100,7 +100,7 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
             } catch (err) {
                 console.error("Camera access error:", err);
                 if (isComponentMounted) {
-                    setError("No se pudo acceder a la cámara o cambiar de lente. Asegúrate de dar permisos.");
+                    setError(err.message);
                 }
             }
         };

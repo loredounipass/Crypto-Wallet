@@ -79,7 +79,7 @@ export default function ProviderForm() {
     } catch (err) {
       setToast({ 
         kind: 'withdraw', 
-        message: err.message || err.response?.data?.message || 'Ocurrió un error al crear el proveedor' 
+        message: err.message
       });
     }
   };
@@ -120,7 +120,7 @@ export default function ProviderForm() {
       await acceptTerms();
       setShowTermsDialog(false);
     } catch (err) {
-      setToast({ kind: 'withdraw', message: 'Error al aceptar los términos' });
+      setToast({ kind: 'withdraw', message: err.message });
     }
   };
 
