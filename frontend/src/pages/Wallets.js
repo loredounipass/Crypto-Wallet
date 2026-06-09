@@ -40,7 +40,11 @@ const Wallets = () => {
 
     const { walletBalance, allWalletInfo } = useAllWallets();
     const defaultCoin = getDefaultCoin();
-    const [selectedCoin, setSelectedCoin] = useState(defaultCoin);
+    const [selectedCoin, setSelectedCoin] = useState(() => {
+        const saved = localStorage.getItem('selectedWalletCoin');
+        if (saved && getCoinList().includes(saved)) return saved;
+        return defaultCoin;
+    });
     const { coinPrice } = useCoinPrice(selectedCoin);
     const [isCoinMenuOpen, setIsCoinMenuOpen] = useState(false);
     const coinMenuRef = useRef(null);
@@ -162,6 +166,10 @@ const Wallets = () => {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('selectedWalletCoin', selectedCoin);
+    }, [selectedCoin]);
 
     useEffect(() => {
         const onClickOutside = (event) => {
