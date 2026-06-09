@@ -69,7 +69,6 @@ async function bootstrap() {
     })
   );
 
-  // Initialize Passport before CSRF
   app.use(passport.initialize());
   app.use(passport.session());
 

@@ -19,17 +19,15 @@ export class EmailThrottlerGuard implements CanActivate {
     const limit = 10;
     const windowSeconds = 900;
 
-    const results = await this.redisClient.multi().incr(key).ttl(key).exec() as [[null, number], [null, number]];
+    const results = await this.redisClient
+      .multi()
+      .incr(key)
+      .expire(key, windowSeconds)
+      .exec() as [[null, number], [null, number]];
     const currentRequests = results[0][1];
-    const ttl = results[1][1];
-
-    if (ttl === -1 || currentRequests === 1) {
-      await this.redisClient.expire(key, windowSeconds);
-    }
 
     if (currentRequests > limit) {
-      const remainingTime = ttl > 0 ? ttl : windowSeconds;
-      const minutes = Math.ceil(remainingTime / 60);
+      const minutes = Math.ceil(windowSeconds / 60);
 
       throw new HttpException(
         {
