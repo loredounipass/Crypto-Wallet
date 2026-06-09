@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.4d372f29.css",
-    "main.js": "/static/js/main.3c893c5d.js",
+    "main.js": "/static/js/main.bee53b5f.js",
     "static/media/web3_network_nodes_1780904477811.png": "/static/media/web3_network_nodes_1780904477811.c489bebe6d8cde246ffb.png",
     "static/media/hero_crypto_coins_1780904442089.png": "/static/media/hero_crypto_coins_1780904442089.17a641353820e7de817f.png",
     "static/media/p2p_security_lock_1780904458349.png": "/static/media/p2p_security_lock_1780904458349.baceb6a468478715c423.png",
@@ -10,6 +10,6 @@
   },
   "entrypoints": [
     "static/css/main.4d372f29.css",
-    "static/js/main.3c893c5d.js"
+    "static/js/main.bee53b5f.js"
   ]
 }

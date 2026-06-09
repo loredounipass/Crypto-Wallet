@@ -48,13 +48,31 @@ const Wallets = () => {
     const [chartDataValues, setChartDataValues] = useState([]);
 
     useEffect(() => {
+        const COINGECKO_IDS = {
+            bnb: 'binancecoin',
+            avax: 'avalanche-2',
+            ftm: 'fantom',
+            eth: 'ethereum',
+            matic: 'matic-network',
+            op: 'optimism',
+        };
+        function getCoinId(coin) {
+            const key = String(coin || '').trim().toLowerCase();
+            return COINGECKO_IDS[key] || key;
+        }
+
         let isMounted = true;
         const fetchHistoricalData = async () => {
             try {
-                const res = await fetch(`https://min-api.cryptocompare.com/data/v2/histohour?fsym=${selectedCoin.toUpperCase()}&tsym=USD&limit=24`);
+                const id = getCoinId(selectedCoin);
+                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=1`);
+                if (!res.ok) {
+                    console.warn("CoinGecko API responded with", res.status);
+                    return;
+                }
                 const json = await res.json();
-                if (json && json.Data && json.Data.Data) {
-                    const prices = json.Data.Data.map(item => item.close);
+                if (json && Array.isArray(json.prices) && json.prices.length > 1) {
+                    const prices = json.prices.map(p => p[1]);
                     if (isMounted) setChartDataValues(prices);
                 }
             } catch (err) {
@@ -72,8 +90,9 @@ const Wallets = () => {
                 data: chartDataValues,
                 fill: true,
                 backgroundColor: (context) => {
-                    const ctx = context.chart.ctx;
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                    const { ctx, chartArea } = context.chart;
+                    if (!chartArea) return "rgba(99, 102, 241, 0.3)";
+                    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                     gradient.addColorStop(0, "rgba(99, 102, 241, 0.4)");
                     gradient.addColorStop(1, "rgba(99, 102, 241, 0.0)");
                     return gradient;
@@ -252,6 +271,10 @@ const Wallets = () => {
             boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
             minWidth: 0,
             boxSizing: "border-box",
+            minHeight: "220px",
+            height: "220px",
+            display: "flex",
+            flexDirection: "column",
         },
         sectionSubtleText: {
             color: "#9CA3AF",
@@ -457,43 +480,24 @@ const Wallets = () => {
                                 </div>
                             )}
                         </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                backgroundColor: "#0F0F1A",
-                                border: "1px solid #2D2D44",
-                                borderRadius: "12px",
-                                padding: isMobile ? "8px 10px" : "10px 12px",
-                                minWidth: isMobile ? "92px" : "110px",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <img
-                                src={getCoinLogo(selectedCoin)}
-                                alt={selectedCoin}
-                                onError={(e) => {
-                                    e.currentTarget.src = getCoinFallbackLogo(selectedCoin);
-                                }}
-                                style={{ width: isMobile ? 20 : 22, height: isMobile ? 20 : 22, borderRadius: "50%" }}
-                            />
-                            <span style={{ color: "#FFFFFF", fontSize: isMobile ? "12px" : "13px", fontWeight: 600 }}>
-                                {selectedCoin.toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                        {selectedWalletExists ? (
-                            <button onClick={handleCreateWallet} style={styles.button(true)}>
-                                Depositar / Retirar
-                            </button>
-                        ) : (
-                            <button onClick={handleCreateWallet} style={styles.button(true)}>
-                                Crear
-                            </button>
-                        )}
+                        <button onClick={handleCreateWallet} style={{
+                            backgroundColor: "#2186EB",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "10px",
+                            padding: isMobile ? "8px 14px" : "8px 18px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            fontSize: isMobile ? "12px" : "13px",
+                            whiteSpace: "nowrap",
+                            height: isMobile ? 36 : 40,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                        }}>
+                            {selectedWalletExists ? "Depositar / Retirar" : "Crear"}
+                        </button>
                     </div>
                 </div>
 
@@ -506,7 +510,8 @@ const Wallets = () => {
                     display: "flex",
                     flexDirection: "column",
                     position: "relative",
-                    minHeight: "150px"
+                    minHeight: "220px",
+                    height: "220px"
                 }}>
                     <div style={{
                         position: "absolute",
@@ -537,7 +542,7 @@ const Wallets = () => {
                         </div>
                     </div>
                     
-                    <div style={{ flex: 1, width: "100%", height: "100%", position: "relative", zIndex: 1 }}>
+                    <div style={{ flex: 1, width: "100%", minHeight: 0, position: "relative", zIndex: 1 }}>
                         <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
                     </div>
                 </div>

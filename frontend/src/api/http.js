@@ -72,7 +72,7 @@ const escrowCancelOrderApi = `${baseApi}/escrow/cancel-order`
 
 
 
-const priceApi = 'https://min-api.cryptocompare.com/data/price?tsyms=USD&fsym='
+const priceApi = 'https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids='
 
 async function get(url, body, config = {}) {
     return await api.get(url, {
