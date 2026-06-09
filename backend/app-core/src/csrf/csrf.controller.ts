@@ -1,8 +1,6 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { csrfSync } from 'csrf-sync';
 import type { Request } from 'express';
-
-const { generateToken } = csrfSync();
+import { generateToken } from './csrf.config';
 
 @Controller()
 export class CsrfController {

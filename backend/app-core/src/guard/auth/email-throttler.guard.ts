@@ -19,15 +19,25 @@ export class EmailThrottlerGuard implements CanActivate {
     const limit = 10;
     const windowSeconds = 900;
 
-    const results = await this.redisClient
+    const rawResults = await this.redisClient
       .multi()
+      .set(key, 0, 'EX', windowSeconds, 'NX')
       .incr(key)
-      .expire(key, windowSeconds)
-      .exec() as [[null, number], [null, number]];
-    const currentRequests = results[0][1];
+      .ttl(key)
+      .exec();
+
+    // Normalizamos el resultado para soportar tanto ioredis [[err, val], [err, val]] como node-redis [val, val, val]
+    const parsedResults = rawResults.map((res: any) => (Array.isArray(res) ? res[1] : res));
+    
+    // index 0: resultado del SET (no lo necesitamos)
+    // index 1: resultado del INCR
+    // index 2: resultado del TTL
+    const currentRequests = parsedResults[1] as number;
+    const currentTtl = parsedResults[2] as number;
 
     if (currentRequests > limit) {
-      const minutes = Math.ceil(windowSeconds / 60);
+      const remainingSeconds = currentTtl > 0 ? currentTtl : windowSeconds;
+      const minutes = Math.ceil(remainingSeconds / 60);
 
       throw new HttpException(
         {

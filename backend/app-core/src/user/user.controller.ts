@@ -43,7 +43,7 @@ export class UserController {
 
 
   // Route for user login. It uses the LocalAuthGuard to authenticate the user based on the provided credentials in the LoginUserDto. If authentication is successful, it calls the login method of the AuthService to generate a JWT token and handle two-factor authentication if enabled.
-  @UseGuards(ThrottlerGuard, LocalAuthGuard)
+  @UseGuards(ThrottlerGuard, EmailThrottlerGuard, LocalAuthGuard)
   @Post('login')
   async loginUser(@Request() req) {
     // Passport has already validated credentials and populated `req.user`.
@@ -201,6 +201,7 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
 
 
   // Route for resetting the user's password. It accepts an email address, a reset token, a new password, and a confirmation of the new password in the request body. It calls the resetPassword method of the ForgotPasswordService to update the user's password. If successful, it returns a success message; otherwise, it throws a BadRequestException with an error message.
+  @UseGuards(EmailThrottlerGuard)
   @Post('reset-password')
   async resetPassword(@Body() body: { email: string; token: string; newPassword: string; confirmNewPassword: string }) {
     const { email, token, newPassword, confirmNewPassword } = body;
