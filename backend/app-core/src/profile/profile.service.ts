@@ -80,7 +80,7 @@ export class ProfileService {
   async upsert(userId: string, dto: UpdateProfileDto) {
     if (!userId || !Types.ObjectId.isValid(userId)) throw new BadRequestException('Invalid user id');
     const data: any = { ...dto };
-    const res = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, data, { upsert: true, new: true });
+    const res = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, data, { upsert: true, returnDocument: 'after' });
     return res;
   }
 
@@ -104,7 +104,7 @@ export class ProfileService {
     const update: any = {};
     if (type === 'profile') update.profilePhotoUrl = publicUrl;
 
-    const profile = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, { $set: update }, { upsert: true, new: true });
+    const profile = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, { $set: update }, { upsert: true, returnDocument: 'after' });
 
     return { profile, url: publicUrl, thumbnailUrl: thumbRes.url };
   }

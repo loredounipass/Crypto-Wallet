@@ -68,7 +68,8 @@ export class WalletService {
       // no tiene wallet
       const data = await this.walletContractModel.findOneAndUpdate(
         { chainId: createWalletDto.chainId, reserved: false },
-        { reserved: true }
+        { reserved: true },
+        { returnDocument: 'after' }
       );
 
       if (data) {

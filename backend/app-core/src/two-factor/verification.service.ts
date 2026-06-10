@@ -59,7 +59,7 @@ export class TwoFactorAuthService {
       const updated = await this.tokenRepository.findOneAndUpdate(
         { _id: tokenEntry._id, isValid: false, attempts: { $lt: this.MAX_ATTEMPTS } },
         { $set: { isValid: true } },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (!updated) {

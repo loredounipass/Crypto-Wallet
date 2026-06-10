@@ -45,7 +45,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
             // Update only the multimediaStatus on the message (schema doesn't include multimediaUrl)
             const updated = await this.messageRepository.findByIdAndUpdate(payload.messageId, {
               multimediaStatus: 'ready',
-            }, { new: true });
+            }, { returnDocument: 'after' });
 
             if (updated) {
               // In newer Mongoose versions, the updated document is wrapped in a value property
@@ -78,7 +78,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
             const updated = await this.messageRepository.findByIdAndUpdate(payload.messageId, {
               multimediaStatus: 'ready',
               duration: payload.metadata?.duration,
-            }, { new: true });
+            }, { returnDocument: 'after' });
             if (updated) {
               const updatedDoc: any = (updated as any).value ?? updated;
               const out = {
