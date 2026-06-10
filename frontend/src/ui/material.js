@@ -77,6 +77,7 @@ export const Toolbar = ({ sx, style, children, ...props }) => (
 
 export const Typography = ({ component, variant = "body1", color, sx, style, children, ...props }) => {
   const Component = component || (variant.startsWith("h") ? variant : "p");
+  const { gutterBottom, align, noWrap, fontWeight, paragraph, ...domProps } = props;
   const variantClass = {
     h4: "text-3xl font-semibold",
     h5: "text-2xl font-semibold",
@@ -87,7 +88,7 @@ export const Typography = ({ component, variant = "body1", color, sx, style, chi
     subtitle1: "text-lg",
   }[variant] || "text-base";
   return (
-    <Component className={variantClass} style={{ color, ...mergeStyles(sx, style) }} {...props}>
+    <Component className={variantClass} style={{ color, ...mergeStyles(sx, style) }} {...domProps}>
       {children}
     </Component>
   );
@@ -103,6 +104,7 @@ export const Link = ({ component: Component, href, to, sx, style, children, ...p
 };
 
 export const Button = ({ variant = "contained", color = "primary", fullWidth, sx, style, children, ...props }) => {
+  const { disableElevation, startIcon, endIcon, size, component, ...domProps } = props;
   const colorMap = {
     primary: "bg-blue-600 text-white border-blue-600",
     secondary: "bg-slate-700 text-white border-slate-700",
@@ -118,7 +120,7 @@ export const Button = ({ variant = "contained", color = "primary", fullWidth, sx
       ? "bg-transparent border-transparent"
       : colorMap[color] || colorMap.primary;
   return (
-    <button className={cx(base, variantClass, fullWidth && "w-full")} style={mergeStyles(sx, style)} {...props}>
+    <button className={cx(base, variantClass, fullWidth && "w-full")} style={mergeStyles(sx, style)} {...domProps}>
       {children}
     </button>
   );
@@ -171,6 +173,7 @@ export const CardHeader = ({ title, sx, style, ...props }) => (
 );
 
 export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, direction, alignItems, justifyContent, wrap, children, sx, style, ...props }) => {
+  const { rowSpacing, columnSpacing, zeroMinWidth, ...domProps } = props;
   const gap = `${Number(spacing || 0) * 8}px`;
   const widthPct = (n) => `${(Number(n || 12) / 12) * 100}%`;
   const itemStyle = item
@@ -191,7 +194,7 @@ export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, direction, 
         ...itemStyle,
         ...mergeStyles(sx, style),
       }}
-      {...props}
+      {...domProps}
     >
       {children}
     </div>
@@ -344,6 +347,7 @@ export const TextField = ({
   helperText,
   ...props
 }) => {
+  const { variant, margin, size, color, focused, hiddenLabel, ...domProps } = props;
   const inputStyle = mergeStyles(InputProps.sx, {});
   return (
     <label className={cx("block", fullWidth && "w-full")} style={mergeStyles(sx, style)}>
@@ -361,7 +365,7 @@ export const TextField = ({
             placeholder={placeholder}
             className={cx("w-full rounded border px-3 py-2", error ? "border-red-500" : "border-slate-300")}
             style={inputStyle}
-            {...props}
+            {...domProps}
           />
         ) : (
           <input
@@ -371,7 +375,7 @@ export const TextField = ({
             placeholder={placeholder}
             className={cx("w-full rounded border px-3 py-2", error ? "border-red-500" : "border-slate-300")}
             style={inputStyle}
-            {...props}
+            {...domProps}
           />
         )}
         {InputProps.endAdornment && <span className="absolute right-2 top-1/2 -translate-y-1/2">{InputProps.endAdornment}</span>}

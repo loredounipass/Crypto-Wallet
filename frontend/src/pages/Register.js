@@ -15,6 +15,7 @@ import { Visibility, VisibilityOff } from '../ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
 import Logo from '../components/Logo';
+import TransactionToast from '../components/TransactionToast';
 
 export default function Register() {
   const { registerUser, error } = useAuth();
@@ -224,16 +225,10 @@ export default function Register() {
         </Box>
       </Box>
 
-      <Snackbar 
-        open={openSnackbar} 
-        autoHideDuration={6000} 
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
+      <TransactionToast 
+        toast={openSnackbar ? { kind: 'error', message: error || 'Las contraseñas no coinciden' } : null} 
+        onClose={handleCloseSnackbar} 
+      />
     </Box>
   );
 }

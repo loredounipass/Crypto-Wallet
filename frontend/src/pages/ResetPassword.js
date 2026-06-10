@@ -14,6 +14,7 @@ import {
 } from '../ui/material';
 import { Visibility, VisibilityOff } from '../ui/icons';
 import Logo from '../components/Logo';
+import TransactionToast from '../components/TransactionToast';
 
 export default function ResetPassword() {
   const location = useLocation()
@@ -51,10 +52,11 @@ export default function ResetPassword() {
   }, [location.search, location.state, history])
 
   useEffect(() => {
+    isMounted.current = true;
     return () => {
-      isMounted.current = false
-    }
-  }, [])
+      isMounted.current = false;
+    };
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault()
@@ -242,15 +244,11 @@ export default function ResetPassword() {
                  Inicia sesión
                </Link>
              </Box>
-
-            {openSnackbar && (
-                <Box style={{ textAlign: 'center', marginTop: '10px' }}>
-                    <Typography style={{ color: snackbarSeverity === 'success' ? '#7fffd4' : '#ff7b7b' }} variant="body2">
-                        {snackbarMessage}
-                    </Typography>
-                </Box>
-            )}
         </Box>
+        <TransactionToast 
+          toast={openSnackbar ? { kind: snackbarSeverity, message: snackbarMessage } : null} 
+          onClose={() => setOpenSnackbar(false)} 
+        />
     </Box>
   )
 }

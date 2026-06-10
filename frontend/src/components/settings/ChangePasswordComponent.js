@@ -6,6 +6,7 @@ import {
 } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
+import TransactionToast from '../TransactionToast';
 
 import './Settings.css';
 
@@ -13,6 +14,16 @@ import './Settings.css';
 function ChangePasswordComponent() {
     const { changePassword, successMessage, error } = useAuth();
     const { auth } = useContext(AuthContext);
+    
+    const [toast, setToast] = useState(null);
+
+    React.useEffect(() => {
+        if (successMessage) setToast({ kind: 'success', message: successMessage });
+    }, [successMessage]);
+
+    React.useEffect(() => {
+        if (error) setToast({ kind: 'error', message: error });
+    }, [error]);
     
     
 
@@ -49,12 +60,12 @@ function ChangePasswordComponent() {
 
     const handleChangePassword = async () => {
         if (passwords.newPassword !== passwords.confirmNewPassword) {
-            alert('Las nuevas contraseñas no coinciden.');
+            setToast({ kind: 'error', message: 'Las nuevas contraseñas no coinciden.' });
             return;
         }
 
         if (passwords.currentPassword === passwords.newPassword) {
-            alert('La nueva contraseña no puede ser igual a la actual.');
+            setToast({ kind: 'error', message: 'La nueva contraseña no puede ser igual a la actual.' });
             return;
         }
 
@@ -156,26 +167,9 @@ function ChangePasswordComponent() {
                             No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
                         </div>
                     )}
-                    {successMessage && (
-                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
-                            border: '1px solid rgba(34,197,94,0.2)', 
-                            backgroundColor: 'rgba(34,197,94,0.1)', 
-                            color: 'var(--settings-success)' 
-                        }}>
-                            {successMessage}
-                        </div>
-                    )}
-                    {error && (
-                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
-                            border: '1px solid rgba(239,68,68,0.2)', 
-                            backgroundColor: 'rgba(239,68,68,0.1)', 
-                            color: 'var(--settings-danger)' 
-                        }}>
-                            {error}
-                        </div>
-                    )}
                 </form>
             </div>
+            <TransactionToast toast={toast} onClose={() => setToast(null)} />
         </div>
     );
 }

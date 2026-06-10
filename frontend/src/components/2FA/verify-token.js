@@ -26,6 +26,7 @@ const VerifyToken = () => {
     // Track mounted state to prevent state updates after unmount
     const isMounted = React.useRef(true);
     useEffect(() => {
+        isMounted.current = true;
         return () => { isMounted.current = false; };
     }, []);
 

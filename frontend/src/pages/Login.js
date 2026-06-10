@@ -5,8 +5,6 @@ import {
   Button,
   TextField,
   Link,
-  Snackbar,
-  Alert,
   IconButton,
   InputAdornment,
   CircularProgress,
@@ -19,6 +17,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
 
 import Logo from '../components/Logo';
+
+import TransactionToast from '../components/TransactionToast';
 
 export default function Login() {
   const { loginUser, error } = useAuth();
@@ -40,12 +40,9 @@ export default function Login() {
     try {
       const responseMessage = await loginUser(data);
       if (isMounted.current) {
-        if (
-          responseMessage &&
-          responseMessage.msg === 'Código de verificación enviado a tu correo electrónico.'
-        ) {
+        if (responseMessage && responseMessage.requires2FA) {
           history.push({ pathname: '/verifytoken', state: { email: data.email } });
-        } else if (responseMessage && responseMessage.msg === 'Logged in!') {
+        } else if (responseMessage && (responseMessage.msg === 'Logged in!' || responseMessage.message === 'Logged in!')) {
           history.push('/');
         } else {
           setOpenSnackbar(true);
@@ -61,6 +58,14 @@ export default function Login() {
   const handleCloseSnackbar = () => setOpenSnackbar(false);
 
   useEffect(() => {
+    if (openSnackbar) {
+      const timer = setTimeout(() => setOpenSnackbar(false), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [openSnackbar]);
+
+  useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };
@@ -202,16 +207,10 @@ export default function Login() {
           </Box>
         </Box>
 
-        <Snackbar 
-          open={openSnackbar} 
-          autoHideDuration={6000} 
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-            {error}
-          </Alert>
-        </Snackbar>
+        <TransactionToast 
+          toast={openSnackbar ? { kind: 'error', message: error || 'Error al iniciar sesión' } : null} 
+          onClose={handleCloseSnackbar} 
+        />
       </Box>
     );
 }

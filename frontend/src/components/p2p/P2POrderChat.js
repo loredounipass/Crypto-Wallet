@@ -7,6 +7,7 @@ import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import { useSocket } from '../../hooks/SocketContext';
 import P2PDisputeModal from './P2PDisputeModal';
 import { ChatBubbleIcon, FileTextIcon } from './ChatIcons';
+import TransactionToast from '../TransactionToast';
 
 import P2POrderDetailsPanel from './P2POrderDetailsPanel';
 import P2PChatMessagesList from './P2PChatMessagesList';
@@ -20,8 +21,7 @@ export default function P2POrderChat() {
   const { orderId } = useParams();
   const { auth } = useContext(AuthContext);
   
-  
-  const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading } = useEscrow();
+  const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading, toast, dismissToast } = useEscrow();
   const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat, apiOrigin } = useMessagesAndMultimedia();
 
   const [showDispute, setShowDispute] = useState(false);
@@ -279,6 +279,8 @@ export default function P2POrderChat() {
         onSubmit={handleDispute}
         isLoading={actionLoading === 'dispute'}
       />
+
+      <TransactionToast toast={toast} onClose={dismissToast} />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

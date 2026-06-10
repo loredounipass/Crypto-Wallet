@@ -16,7 +16,9 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         let msg = 'Ocurrió un error inesperado.';
-        if (error.response?.data?.message) {
+        if (error.response?.data?.msg) {
+            msg = error.response.data.msg;
+        } else if (error.response?.data?.message) {
             msg = error.response.data.message;
         } else if (error.response?.data?.error) {
             msg = error.response.data.error;
@@ -24,7 +26,11 @@ api.interceptors.response.use(
             msg = error.message;
         }
 
-        if (Array.isArray(msg)) msg = msg.join('. ');
+        if (Array.isArray(msg)) {
+            msg = msg.join('. ');
+        } else if (typeof msg === 'object' && msg !== null) {
+            msg = JSON.stringify(msg);
+        }
 
         error.message = msg;
         return Promise.reject(error);

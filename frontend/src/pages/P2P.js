@@ -5,6 +5,7 @@ import useProviders from '../hooks/useProviders';
 import P2PProviderList from '../components/p2p/P2PProviderList';
 import P2PCreateOrderModal from '../components/p2p/P2PCreateOrderModal';
 import P2PMyOrders from '../components/p2p/P2PMyOrders';
+import TransactionToast from '../components/TransactionToast';
 
 const StorefrontIcon = (props) => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -44,7 +45,7 @@ export default function P2P() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { getAllProviders } = useProviders();
-  const { orders, providerOrders, getMyOrders, getProviderOrders, createOrder, isLoading: escrowLoading } = useEscrow();
+  const { orders, providerOrders, getMyOrders, getProviderOrders, createOrder, isLoading: escrowLoading, toast, dismissToast } = useEscrow();
   const [providers, setProviders] = useState([]);
 
   const fetchProviders = useCallback(async () => {
@@ -221,6 +222,8 @@ export default function P2P() {
           })}
         </div>
       )}
+      
+      <TransactionToast toast={toast} onClose={dismissToast} />
     </div>
   );
 }

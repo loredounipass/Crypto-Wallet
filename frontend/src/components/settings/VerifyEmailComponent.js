@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
+import TransactionToast from '../TransactionToast';
 import {
     EmailOutlined as EmailOutlinedIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
@@ -23,7 +24,7 @@ const VerifyEmailComponent = () => {
     const [emailVerified, setEmailVerified] = useState(false);
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false); 
     const [sending, setSending] = useState(false); 
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
         const checkEmailVerification = async () => {
@@ -49,7 +50,7 @@ const VerifyEmailComponent = () => {
         if (auth && auth.email && !hasCheckedVerification) {
             checkEmailVerification(); 
         } else if (!auth || !auth.email) {
-            setLocalError('No se ha encontrado un correo electrónico autenticado.');
+            setToast({ kind: 'error', message: 'No se ha encontrado un correo electrónico autenticado.' });
             setLoading(false); 
         }
     }, [auth, isEmailVerified, hasCheckedVerification]); 
@@ -62,22 +63,17 @@ const VerifyEmailComponent = () => {
         }
     };
 
-    const handleCloseSnackbar = useCallback(() => {
-        setSnackbar(prev => ({ ...prev, open: false }));
-    }, []);
-
     useEffect(() => {
         if (successMessage) {
-            setSnackbar({ open: true, message: successMessage, severity: "success" });
+            setToast({ kind: 'success', message: successMessage });
         }
     }, [successMessage]);
 
     useEffect(() => {
-        if (snackbar.open) {
-            const timer = setTimeout(handleCloseSnackbar, 4000);
-            return () => clearTimeout(timer);
+        if (error) {
+            setToast({ kind: 'error', message: error });
         }
-    }, [snackbar.open, handleCloseSnackbar]);
+    }, [error]);
 
     return (
         <div className="flex w-full flex-col border-0 bg-transparent p-0 shadow-none">
@@ -101,16 +97,6 @@ const VerifyEmailComponent = () => {
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {localError && (
-                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
-                          border: '1px solid rgba(239,68,68,0.2)', 
-                          backgroundColor: 'rgba(239,68,68,0.1)', 
-                          color: 'var(--settings-danger)' 
-                        }}>
-                            {localError}
-                        </div>
-                    )}
-
                     {verificationStatus && (
                         <div className={`flex items-center gap-3 rounded-xl border px-4 py-4 font-medium ${verificationStatus.verified 
                                 ? 'settings-verify-status-success' 
@@ -150,28 +136,7 @@ const VerifyEmailComponent = () => {
                 </div>
             )}
 
-            {/* Custom Snackbar */}
-            {(snackbar.open || error) && (
-                <div className="fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)]" style={{ 
-                  backgroundColor: 'var(--settings-card)', 
-                  color: 'var(--settings-text)', 
-                  borderColor: 'var(--settings-border)',
-                  borderLeft: `4px solid ${(snackbar.severity === 'success' && !error) ? 'var(--settings-success)' : 'var(--settings-danger)'}`
-                }}>
-                    <span>{snackbar.open ? snackbar.message : error}</span>
-                    <button 
-                        onClick={() => {
-                            handleCloseSnackbar();
-                        }}
-                        className="flex items-center justify-center rounded-full border-0 p-1"
-                        style={{ color: 'var(--settings-muted)', backgroundColor: 'transparent' }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--settings-bg)'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                        <CloseIcon fontSize="small" />
-                    </button>
-                </div>
-            )}
+            <TransactionToast toast={toast} onClose={() => setToast(null)} />
         </div>
     );
 }

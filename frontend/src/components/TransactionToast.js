@@ -1,19 +1,28 @@
 import React from 'react';
-import { CheckCircle, Close } from '../ui/icons';
+import { CheckCircle, Close, WarningAmber } from '../ui/icons';
 
 
 export default function TransactionToast({ toast, onClose }) {
     
-    
 
     if (!toast) return null;
 
-    const isDeposit = toast.kind === 'deposit';
+    const isDeposit = toast.kind === 'deposit' || toast.kind === 'success';
     const accent = isDeposit ? '#22C55E' : '#EF4444';
     const background = '#1A1A2E';
     const border = '#2D2D44';
     const text = '#FFFFFF';
-    const subtitle = isDeposit ? 'Entrada confirmada en tu wallet' : 'Salida confirmada en tu wallet';
+    
+    let subtitle = toast.subtitle;
+    if (!subtitle) {
+        if (toast.kind === 'deposit') subtitle = 'Entrada confirmada en tu wallet';
+        else if (toast.kind === 'withdraw') subtitle = 'Salida confirmada en tu wallet';
+        else if (toast.kind === 'success') subtitle = 'Operación exitosa';
+        else if (toast.kind === 'error') subtitle = 'Se produjo un error';
+        else subtitle = 'Notificación';
+    }
+
+    const Icon = isDeposit ? CheckCircle : WarningAmber;
 
     return (
         <div
@@ -35,7 +44,7 @@ export default function TransactionToast({ toast, onClose }) {
                 boxShadow: '0 10px 24px rgba(0,0,0,0.45)'
             }}
         >
-            <CheckCircle sx={{ color: accent, fontSize: 22 }} />
+            <Icon sx={{ color: accent, fontSize: 22 }} />
             <div style={{ flex: 1 }}>
                 <div style={{ color: text, fontSize: '14px', fontWeight: 700 }}>
                     {toast.message}

@@ -3,6 +3,7 @@ import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
 import * as profileService from '../../services/profile';
+import TransactionToast from '../TransactionToast';
 
 import './Settings.css';
 
@@ -51,6 +52,7 @@ function UserProfileComponent() {
     const [errorMsg, setErrorMsg]         = useState('');
     const [successMsg, setSuccessMsg]     = useState('');
     const [initialized, setInitialized]   = useState(false);
+    const [toast, setToast]               = useState(null);
 
     // Cooldown guard
     const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -76,8 +78,8 @@ function UserProfileComponent() {
 
     // Sync auth hook messages
     useEffect(() => {
-        if (authSuccess) setSuccessMsg(authSuccess);
-        if (authError)   setErrorMsg(authError);
+        if (authSuccess) setToast({ kind: 'success', message: authSuccess });
+        if (authError) setToast({ kind: 'error', message: authError });
     }, [authSuccess, authError]);
 
     /* ── single save handler ── */
@@ -86,7 +88,7 @@ function UserProfileComponent() {
         setSuccessMsg('');
 
         if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-            setErrorMsg('Nombre, apellido y correo son obligatorios.');
+            setToast({ kind: 'error', message: 'Nombre, apellido y correo son obligatorios.' });
             return;
         }
 
@@ -109,9 +111,9 @@ function UserProfileComponent() {
                 lastName:  lastName.trim(),
             });
 
-            setSuccessMsg('¡Perfil actualizado correctamente!');
+            setToast({ kind: 'success', message: '¡Perfil actualizado correctamente!' });
         } catch (e) {
-            setErrorMsg(e.message);
+            setToast({ kind: 'error', message: e.message });
         } finally {
             setIsSubmitting(false);
         }
@@ -194,18 +196,9 @@ function UserProfileComponent() {
                             Espera {remainingMinutes} minuto(s) antes de volver a cambiar tu cuenta.
                         </div>
                     )}
-                    {successMsg && <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
-                        border: '1px solid rgba(34,197,94,0.2)', 
-                        backgroundColor: 'rgba(34,197,94,0.1)', 
-                        color: 'var(--settings-success)' 
-                    }}>{successMsg}</div>}
-                    {errorMsg   && <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ 
-                        border: '1px solid rgba(239,68,68,0.2)', 
-                        backgroundColor: 'rgba(239,68,68,0.1)', 
-                        color: 'var(--settings-danger)' 
-                    }}>{errorMsg}</div>}
                 </form>
             </div>
+            <TransactionToast toast={toast} onClose={() => setToast(null)} />
         </div>
     );
 }

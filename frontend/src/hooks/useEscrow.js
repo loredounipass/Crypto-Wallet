@@ -9,6 +9,9 @@ export default function useEscrow() {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const dismissToast = useCallback(() => setToast(null), []);
 
   // WebSocket Connection for Real-time Escrow Updates
   useEffect(() => {
@@ -26,6 +29,8 @@ export default function useEscrow() {
     socket.on('escrowStatusUpdated', (event) => {
       console.log('[Escrow Socket] Actualización recibida:', event);
       
+      setToast({ kind: 'success', message: `Orden ${event.orderId} actualizada a ${event.status}` });
+
       // Actualizar currentOrder si estamos viéndola
       setCurrentOrder((prev) => {
         if (prev && prev.orderId === event.orderId) {
@@ -59,9 +64,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.createOrder(body);
       setError(null);
+      setToast({ kind: 'success', message: 'Orden creada exitosamente' });
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al crear orden' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -77,6 +84,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al obtener mis órdenes' });
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -92,6 +100,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al obtener órdenes del proveedor' });
       setProviderOrders([]);
     } finally {
       setIsLoading(false);
@@ -107,6 +116,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al obtener orden' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -118,9 +128,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.confirmPayment(orderId);
       setError(null);
+      setToast({ kind: 'success', message: 'Pago confirmado' });
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al confirmar pago' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -132,9 +144,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.releaseFunds(orderId);
       setError(null);
+      setToast({ kind: 'success', message: 'Fondos liberados' });
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al liberar fondos' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -146,9 +160,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.openDispute(orderId, reason);
       setError(null);
+      setToast({ kind: 'success', message: 'Disputa abierta' });
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al abrir disputa' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -160,9 +176,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.cancelOrder(orderId);
       setError(null);
+      setToast({ kind: 'success', message: 'Orden cancelada' });
       return res;
     } catch (err) {
       setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al cancelar orden' });
       throw err;
     } finally {
       setIsLoading(false);
@@ -175,6 +193,8 @@ export default function useEscrow() {
     currentOrder,
     error,
     isLoading,
+    toast,
+    dismissToast,
     createOrder,
     getMyOrders,
     getProviderOrders,

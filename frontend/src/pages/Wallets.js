@@ -48,6 +48,14 @@ const Wallets = () => {
     const { coinPrice } = useCoinPrice(selectedCoin);
     const [isCoinMenuOpen, setIsCoinMenuOpen] = useState(false);
     const coinMenuRef = useRef(null);
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     const [chartDataValues, setChartDataValues] = useState([]);
 

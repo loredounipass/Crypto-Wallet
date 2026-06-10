@@ -3,6 +3,8 @@ import { Check as CheckIcon, Language as LanguageIcon } from '../../ui/icons';
 import { useLanguage } from '../../hooks/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
+import TransactionToast from '../TransactionToast';
+import { useState } from 'react';
 
 import './Settings.css';
 
@@ -10,6 +12,7 @@ import './Settings.css';
 function LanguageSelectorComponent() {
     const { language, handleLanguageChange } = useLanguage();
     const { t } = useTranslation();
+    const [toast, setToast] = useState(null);
     
     
 
@@ -30,6 +33,7 @@ function LanguageSelectorComponent() {
         handleLanguageChange(langKey);
         i18n.changeLanguage(langKey);
         localStorage.setItem('language', langKey);
+        setToast({ kind: 'success', message: t('language_changed', 'Idioma cambiado exitosamente') });
     };
 
     return (
@@ -75,6 +79,7 @@ function LanguageSelectorComponent() {
                     );
                 })}
             </div>
+            <TransactionToast toast={toast} onClose={() => setToast(null)} />
         </div>
     );
 }

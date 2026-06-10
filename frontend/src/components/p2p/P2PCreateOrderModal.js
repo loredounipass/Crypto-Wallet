@@ -9,8 +9,15 @@ const PAYMENT_METHODS = [
 ];
 
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
-  
-  
+  const isMounted = React.useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const { allWalletInfo: wallets } = useAllWallets();
   const shouldRender = Boolean(open && provider);
 

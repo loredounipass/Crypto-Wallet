@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../hooks/AuthContext';
 import User from '../../services/user';
 import useAuth from '../../hooks/useAuth';
+import TransactionToast from '../TransactionToast';
 import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
@@ -21,7 +22,7 @@ const TwoFactorAuthComponent = () => {
   const [loading, setLoading] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+  const [toast, setToast] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -42,7 +43,9 @@ const TwoFactorAuthComponent = () => {
                           err.name === 'AbortError' || 
                           err.code === 'ERR_CANCELED' ||
                           err.message?.includes('canceled');
+        if (!isCanceled) {
           setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -68,10 +71,9 @@ const TwoFactorAuthComponent = () => {
     try {
       const res = await updateTokenStatus({ isTokenEnabled: newStatus });
       if (res) {
-        setSnackbar({ 
-          open: true, 
-          message: res.message || res.msg, 
-          severity: 'success' 
+        setToast({ 
+          kind: 'success', 
+          message: res.message || res.msg 
         });
       } else {
         setIsTokenEnabled(previousStatus);
@@ -85,9 +87,16 @@ const TwoFactorAuthComponent = () => {
 
   useEffect(() => {
     if (authError) {
-      setError(authError);
+      setToast({ kind: 'error', message: authError });
     }
   }, [authError]);
+
+  useEffect(() => {
+    if (error && error !== 'canceled') {
+      setToast({ kind: 'error', message: error });
+      setError(null);
+    }
+  }, [error]);
 
   const handleConfirmDialogClose = (confirm) => {
     setConfirmDialogOpen(false);
@@ -95,15 +104,6 @@ const TwoFactorAuthComponent = () => {
       updateTokenStatusOnly(false);
     }
   };
-
-  const handleCloseSnackbar = () => setSnackbar((prev) => ({ ...prev, open: false }));
-
-  useEffect(() => {
-    if (snackbar.open) {
-      const timer = setTimeout(handleCloseSnackbar, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [snackbar.open]);
 
   // Components
   const Switch = ({ checked, onChange, disabled }) => (
@@ -192,29 +192,7 @@ const TwoFactorAuthComponent = () => {
         </div>
       )}
 
-      {/* Custom Snackbar */}
-          {(snackbar.open || error) && (
-            <div className="fixed bottom-6 left-1/2 z-[1001] flex -translate-x-1/2 items-center gap-4 rounded-xl border px-5 py-3 text-sm font-medium shadow-[0_4px_12px_rgba(0,0,0,0.15)]" style={{ 
-              backgroundColor: 'var(--settings-card)', 
-              color: 'var(--settings-text)', 
-              borderColor: 'var(--settings-border)',
-              borderLeft: `4px solid ${(snackbar.severity === 'success' && !error) ? 'var(--settings-success)' : 'var(--settings-danger)'}`
-            }}>
-               <span>{snackbar.open ? snackbar.message : error}</span>
-               <button 
-                 onClick={() => {
-                     if(error) setError(null);
-                     else handleCloseSnackbar();
-                 }}
-                 className="flex items-center justify-center rounded-full border-0 p-1"
-                 style={{ color: 'var(--settings-muted)', backgroundColor: 'transparent' }}
-                 onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--settings-bg)'}
-                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-               >
-                 <CloseIcon fontSize="small" />
-               </button>
-             </div>
-           )}
+      <TransactionToast toast={toast} onClose={() => setToast(null)} />
          </div>
        </div>
      </div>
