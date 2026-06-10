@@ -184,7 +184,7 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
 }
 
 // Search users endpoint used by frontend (e.g. /user/search?q=...)
-  @UseGuards(ThrottlerGuard, AuthenticatedGuard)
+  @UseGuards(EmailThrottlerGuard, AuthenticatedGuard)
   @Get('search')
   async searchUsers(@Request() req) {
     const q = typeof req.query === 'object' ? req.query.q : undefined;
