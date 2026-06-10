@@ -6,8 +6,6 @@ import {
   TextField,
   Grid,
   Link,
-  Snackbar,
-  Alert,
   IconButton,
   InputAdornment,
 } from '../ui/material';

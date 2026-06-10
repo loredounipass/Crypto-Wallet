@@ -49,8 +49,6 @@ function UserProfileComponent() {
 
     // UI state
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errorMsg, setErrorMsg]         = useState('');
-    const [successMsg, setSuccessMsg]     = useState('');
     const [initialized, setInitialized]   = useState(false);
     const [toast, setToast]               = useState(null);
 
@@ -84,8 +82,6 @@ function UserProfileComponent() {
 
     /* ── single save handler ── */
     const handleSave = async () => {
-        setErrorMsg('');
-        setSuccessMsg('');
 
         if (!firstName.trim() || !lastName.trim() || !email.trim()) {
             setToast({ kind: 'error', message: 'Nombre, apellido y correo son obligatorios.' });

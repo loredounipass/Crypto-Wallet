@@ -68,13 +68,18 @@ export default function useAuth() {
             const { data } = await User.verifyToken(body);
             if (data && (data.msg === 'Logged in!' || data.message === 'Logged in!')) {
                 await setUserContext();
+                return true;
             } else if (data && (data.msg || data.message)) {
                 return data;
             } else {
-                setError(data?.error || data?.message);
+                const errorMessage = data?.error || data?.message || 'Error en la verificación';
+                setError(errorMessage);
+                return { error: errorMessage };
             }
         } catch (err) {
-            setError(err.message);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
+            setError(errorMessage);
+            return { error: errorMessage };
         }
     };
 

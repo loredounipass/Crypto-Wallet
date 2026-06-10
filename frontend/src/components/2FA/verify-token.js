@@ -10,13 +10,13 @@ import {
   Link,
 } from '../../ui/material';
 import Logo from '../Logo';
+import TransactionToast from '../TransactionToast';
 
 const VerifyToken = () => {
     const [formValues, setFormValues] = useState({ token: '' });
-    const { verifyToken } = useAuth();
+    const { verifyToken, error: authError } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
+    const [toast, setToast] = useState(null);
     const history = useHistory();
     const location = useLocation();
 
@@ -32,48 +32,49 @@ const VerifyToken = () => {
 
     const handleChange = (e) => {
         setFormValues({ ...formValues, [e.target.name]: e.target.value });
-        if (error) setError(null);
-        if (success) setSuccess(null);
+        setToast(null);
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         if (!email) {
-            setError('No se encontró el correo electrónico. Por favor, inicia sesión nuevamente.');
+            setToast({ kind: 'error', message: 'No se encontró el correo electrónico. Por favor, inicia sesión nuevamente.' });
             return;
         }
 
         if (!formValues.token || formValues.token.trim().length === 0) {
-            setError('Por favor, ingresa el código de verificación.');
+            setToast({ kind: 'error', message: 'Por favor, ingresa el código de verificación.' });
             return;
         }
 
         if (formValues.token.length < 6) {
-            setError('El código debe tener al menos 6 dígitos.');
+            setToast({ kind: 'error', message: 'El código debe tener al menos 6 dígitos.' });
             return;
         }
 
         setLoading(true);
-        setError(null);
-        setSuccess(null);
+        setToast(null);
 
         try {
             const result = await verifyToken({ email, token: formValues.token });
             
             if (!isMounted.current) return;
 
-            // verifyToken returns undefined on success (setUserContext handles navigation)
-            // It returns data if 2FA code was resent, or sets error internally
-            if (result === undefined) {
-                // Success case - setUserContext already navigated to '/'
-                setSuccess('¡Verificación exitosa! Redirigiendo...');
-            } else if (result?.error) {
-                setError(result.error);
+            // verifyToken returns true on success (and handles navigation)
+            // It returns false on failure, or an object with an error message
+            if (result === true) {
+                setToast({ kind: 'success', message: '¡Verificación exitosa! Redirigiendo...' });
+            } else if (result && (result.msg || result.message)) {
+                setToast({ kind: 'success', message: result.message || result.msg });
+            } else if (result && result.error) {
+                setToast({ kind: 'error', message: result.error });
+            } else if (result === false) {
+                setToast({ kind: 'error', message: authError || 'Error al verificar el token' });
             }
         } catch (err) {
             if (isMounted.current) {
-                setError(err.message);
+                setToast({ kind: 'error', message: err.message });
             }
         } finally {
             if (isMounted.current) setLoading(false);
@@ -159,12 +160,9 @@ const VerifyToken = () => {
                     Reenviar Token
                   </Link>
                 </Box>
-
-                <Box style={{ textAlign: 'center', marginTop: '10px' }}>
-                    {error && <Typography color="error" variant="body2">{error}</Typography>}
-                    {success && <Typography style={{ color: '#7fffd4' }} variant="body2">{success}</Typography>}
-                </Box>
             </Box>
+            
+            <TransactionToast toast={toast} onClose={() => setToast(null)} />
         </Box>
     );
 };

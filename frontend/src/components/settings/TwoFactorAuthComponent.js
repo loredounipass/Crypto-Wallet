@@ -6,7 +6,6 @@ import TransactionToast from '../TransactionToast';
 import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
-  Close as CloseIcon,
 } from '../../ui/icons';
 
 import './Settings.css';

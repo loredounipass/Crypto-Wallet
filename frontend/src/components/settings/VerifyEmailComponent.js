@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
 import TransactionToast from '../TransactionToast';
@@ -6,7 +6,6 @@ import {
     EmailOutlined as EmailOutlinedIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
     WarningAmber as WarningAmberIcon,
-    Close as CloseIcon,
 } from '../../ui/icons';
 
 import './Settings.css';
@@ -20,7 +19,6 @@ const VerifyEmailComponent = () => {
 
     const [verificationStatus, setVerificationStatus] = useState(null);
     const [loading, setLoading] = useState(true); 
-    const [localError, setLocalError] = useState(null);
     const [emailVerified, setEmailVerified] = useState(false);
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false); 
     const [sending, setSending] = useState(false); 
@@ -28,7 +26,6 @@ const VerifyEmailComponent = () => {
 
     useEffect(() => {
         const checkEmailVerification = async () => {
-            setLocalError(null); 
             const isVerified = await isEmailVerified(); 
             if (isVerified) {
                 setVerificationStatus({

@@ -130,23 +130,6 @@ export default function ResetPassword() {
                 margin="normal"
                 required
                 fullWidth
-                id="token"
-                label="Token de recuperación"
-                name="token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                InputProps={{ sx: inputSx }}
-                InputLabelProps={{
-                  shrink: true,
-                  style: { color: '#A5B4FC' },
-                }}
-                sx={labelSx}
-            />
-
-            <TextField
-                margin="normal"
-                required
-                fullWidth
                 name="newPassword"
                 label="Nueva contraseña"
                 type={showPassword ? 'text' : 'password'}
