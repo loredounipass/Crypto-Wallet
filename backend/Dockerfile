@@ -20,6 +20,6 @@ RUN chown -R node:node /usr/src/app
 USER node
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
-    CMD pgrep -f "start-all.js" > /dev/null && pgrep -c -f "subscriptions\|workers" > /dev/null || exit 1
+    CMD pgrep -f "start-all.js" > /dev/null && pgrep -f "subscriptions" > /dev/null && pgrep -f "workers" > /dev/null || exit 1
 
 CMD ["node", "start-all.js"]
