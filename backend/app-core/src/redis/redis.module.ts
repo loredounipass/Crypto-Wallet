@@ -14,6 +14,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
             host: process.env.REDIS_HOST || '127.0.0.1',
             port: parseInt(process.env.REDIS_PORT || '6379'),
           },
+          password: process.env.REDIS_PASS || undefined,
         });
         client.on('error', (err) => console.error('[Redis Global] Error:', err.message));
         await client.connect();

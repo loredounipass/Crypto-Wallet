@@ -1,40 +1,150 @@
 services:
   mongodb:
-    image: mongo
+    image: mongo:7
     ports:
-      - "27020:27017"
+      - "127.0.0.1:27020:27017"
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - backend-mongodb:/data/db
     networks:
       - backend
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: Miranda23&&
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok", "-u", "admin", "-p", "Miranda23&&"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+
   redis:
-    image: 'redis:alpine'
+    image: 'redis:7-alpine'
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     volumes:
       - 'backend-redis:/data'
     networks:
       - backend
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "Miranda23&&"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "Miranda23&&", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
 
   backend-daemons-workers:
     build:
       context: ./backend
       dockerfile: Dockerfile
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - ./backend/config/.env
-    volumes:
-      - ./backend/config/.env:/usr/src/app/config/.env
     networks:
       - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  app-core:
+    build:
+      context: ./backend/app-core
+      dockerfile: Dockerfile
+    expose:
+      - "4000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./backend/app-core/.env
+    networks:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      app-core:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+
+  backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    volumes:
+      - backend-backups:/backups
+      - backend-redis:/data:ro
+    environment:
+      MONGO_ROOT_PASSWORD: Miranda23&&
+      REDIS_PASSWORD: Miranda23&&
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+
 networks:
   backend:
     driver: bridge
+
 volumes:
   backend-mongodb:
     driver: local
   backend-redis:
+    driver: local
+  backend-backups:
     driver: local

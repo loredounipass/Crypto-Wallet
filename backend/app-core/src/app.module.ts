@@ -30,11 +30,12 @@ import { CsrfMiddleware } from './csrf/csrf.middleware';
       }],
     }),
     
-    MongooseModule.forRoot(process.env.DB_URI ? process.env.DB_URI.split('?')[0] : process.env.DB_URI),
+    MongooseModule.forRoot(process.env.DB_URI),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT)
+        port: parseInt(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASS || undefined,
       }
     }),
     RedisModule,

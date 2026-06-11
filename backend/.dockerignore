@@ -7,3 +7,8 @@ node_modules
 cache
 artifacts
 coverage
+app-core/node_modules
+app-core/dist
+.vscode
+README.md
+diagrama.png

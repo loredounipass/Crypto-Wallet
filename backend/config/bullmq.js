@@ -7,7 +7,8 @@ const redisHost = isLocalRun && process.env.REDIS_HOST === 'redis'
 
 const connection = {
     host: redisHost || 'localhost',
-    port: parseInt(process.env.REDIS_PORT) || 6379
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASS || undefined,
 }
 
 class CustomWorker extends Worker {

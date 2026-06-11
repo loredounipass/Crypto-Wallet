@@ -1,13 +1,25 @@
-FROM node:20
+FROM node:20-alpine
+
+RUN apk add --no-cache wget && \
+    npm install -g pnpm
 
 WORKDIR /usr/src/app
 
-RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
 
 COPY . .
 
-ENV CI=true
+ENV NODE_ENV=production \
+    CI=true
 
-RUN pnpm install
+RUN chown -R node:node /usr/src/app
+
+USER node
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
+    CMD pgrep -f "start-all.js" > /dev/null && pgrep -c -f "subscriptions\|workers" > /dev/null || exit 1
 
 CMD ["node", "start-all.js"]
