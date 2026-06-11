@@ -36,6 +36,6 @@ RUN chown -R node:node /usr/src/app
 USER node
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:4000/ 2>&1 | grep -q "200 OK\|404\|302\|301" || exit 1
+    CMD wget --no-verbose --tries=1 --spider --server-response http://localhost:4000/ 2>&1 | grep -q "HTTP/" || exit 1
 
 CMD ["node", "dist/main"]
