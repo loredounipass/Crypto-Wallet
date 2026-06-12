@@ -43,7 +43,7 @@ export class EmailThrottlerGuard implements CanActivate {
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
           error: 'Too Many Requests',
-          message: `Demasiados intentos. Por favor, vuelve a intentar en ${minutes} minuto(s).`,
+          message: `Too many attempts. Please try again in ${minutes} minute(s).`,
         },
         HttpStatus.TOO_MANY_REQUESTS
       );

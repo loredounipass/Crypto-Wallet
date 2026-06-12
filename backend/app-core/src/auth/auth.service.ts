@@ -32,12 +32,12 @@ export class AuthService {
   // This avoids re-querying the database and re-checking the password.
   async login(user: any, req: any): Promise<any> {
     if (!user) {
-      throw new UnauthorizedException('Credenciales incorrectas.');
+      throw new UnauthorizedException('Invalid credentials.');
     }
     if ((user as any).isTokenEnabled) {
       // send token for 2FA flow
       await this.twoFactorAuthService.sendToken((user as any).email);
-      return { requires2FA: true, msg: 'Código de verificación enviado a tu correo electrónico.' };
+      return { requires2FA: true, msg: 'Verification code sent to your email.' };
     }
 
     return this.performLogin(user, req);
@@ -48,12 +48,12 @@ export class AuthService {
   async verifyAndLogin(verifyTokenDto: VerifyTokenDto, req: any): Promise<any> {
     const { email, token } = verifyTokenDto;
     const user = await this.userService.getUserByEmail(email);
-    if (!user) throw new UnauthorizedException('Usuario no encontrado.');
-    if (!user.isTokenEnabled) throw new UnauthorizedException('2FA no está activado.');
+    if (!user) throw new UnauthorizedException('User not found.');
+    if (!user.isTokenEnabled) throw new UnauthorizedException('2FA is not enabled.');
 
     const { isValid, message } = await this.twoFactorAuthService.verifyToken(email, token);
     if (!isValid) {
-      throw new UnauthorizedException(message || 'Código inválido o expirado.');
+      throw new UnauthorizedException(message || 'Invalid or expired code.');
     }
 
     return this.performLogin(user, req);
@@ -64,7 +64,7 @@ export class AuthService {
   private performLogin(user: any, req: any) {
     return new Promise((resolve, reject) => {
       req.login(user, async (err) => {
-        if (err) return reject(new UnauthorizedException('Error al iniciar sesión.'));
+        if (err) return reject(new UnauthorizedException('Error logging in.'));
 
         void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
 

@@ -26,7 +26,7 @@ export class EmailService {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: toEmail,
-      subject: 'Token de verificación para iniciar sesión',
+      subject: 'Verification token to log in',
       html: `
         <html>
         <head>
@@ -52,28 +52,28 @@ export class EmailService {
                     <h1>BlockVault</h1>
                 </div>
                 <div class="content">
-                    <p>Hola,</p>
-                    <p>Ingresa los siguientes datos para confirmar que eres tú:</p>
+                    <p>Hello,</p>
+                    <p>Enter the following data to confirm your identity:</p>
 
                     <div class="token">
                      <span>TOKEN:</span> <strong>${token}</strong>
                     </div>
 
-                    <p class="important">Token expirará en 5 minutos.</p>
+                    <p class="important">Token will expire in 5 minutes.</p>
                     <div class="security-tips">
-                        <h4>Consejos para proteger tus fondos:</h4>
+                        <h4>Tips to protect your funds:</h4>
                         <ul>
-                            <li>Utiliza contraseñas fuertes y únicas para tu cuenta.</li>
-                            <li>Activa la autenticación de dos factores (2FA) siempre que sea posible.</li>
-                            <li>No compartas tus claves privadas ni contraseñas con nadie.</li>
-                            <li>Revisa regularmente tus transacciones y saldos.</li>
-                            <li>Desconfía de enlaces y correos electrónicos sospechosos.</li>
+                            <li>Use strong and unique passwords for your account.</li>
+                            <li>Enable two-factor authentication (2FA) whenever possible.</li>
+                            <li>Do not share your private keys or passwords with anyone.</li>
+                            <li>Regularly review your transactions and balances.</li>
+                            <li>Be wary of suspicious links and emails.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="footer">
-                    <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
-                    <p>Gracias por usar BlockVault.</p>
+                    <p>If you have any questions, do not hesitate to contact us.</p>
+                    <p>Thank you for using BlockVault.</p>
                 </div>
             </div>
         </body>
@@ -84,7 +84,7 @@ export class EmailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Error al enviar el correo:', error);
+      console.error('Error sending email:', error);
     }
   }
 
@@ -100,7 +100,7 @@ export class EmailService {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
-      subject: 'Verifica tu correo electrónico',
+      subject: 'Verify your email',
       html: `
         <html>
         <head>
@@ -125,21 +125,21 @@ export class EmailService {
               <h1>BlockVault</h1>
             </div>
             <div class="content">
-              <p class="lead">Hola,</p>
-              <p>Por favor verifica tu correo electrónico haciendo clic en el botón de abajo para activar tu cuenta.</p>
+              <p class="lead">Hello,</p>
+              <p>Please verify your email by clicking the button below to activate your account.</p>
 
               <p style="text-align:center; margin:24px 0"> 
-                <a class="button" href="${verificationUrl}">Verificar correo</a>
+                <a class="button" href="${verificationUrl}">Verify email</a>
               </p>
 
-              <p class="muted">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+              <p class="muted">If the button does not work, copy and paste this link into your browser:</p>
               <p class="muted"><a href="${verificationUrl}">${verificationUrl}</a></p>
 
-              <p class="muted">Este enlace expirará en 60 minutos. Si no solicitaste esta verificación, ignora este correo.</p>
+              <p class="muted">This link will expire in 60 minutes. If you did not request this verification, ignore this email.</p>
             </div>
               <div class="footer">
-              <div>Consejos para proteger tu cuenta: utiliza 2FA y no compartas tus credenciales.</div>
-              <div style="margin-top:8px">Gracias por usar BlockVault.</div>
+              <div>Tips to protect your account: use 2FA and do not share your credentials.</div>
+              <div style="margin-top:8px">Thank you for using BlockVault.</div>
             </div>
           </div>
         </body>
@@ -150,7 +150,7 @@ export class EmailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Error al enviar el correo de verificación:', error);
+      console.error('Error sending verification email:', error);
     }
   }
 
@@ -162,7 +162,7 @@ export class EmailService {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
-      subject: 'Restablece tu contraseña',
+      subject: 'Reset your password',
       html: `
         <html>
         <head>
@@ -187,21 +187,21 @@ export class EmailService {
               <h1>BlockVault</h1>
             </div>
             <div class="content">
-              <p class="lead">Hola,</p>
-              <p>Has solicitado restablecer tu contraseña. Haz clic en el botón de abajo para crear una nueva contraseña.</p>
+              <p class="lead">Hello,</p>
+              <p>You have requested to reset your password. Click the button below to create a new password.</p>
 
               <p style="text-align:center; margin:24px 0"> 
-                <a class="button" href="${resetUrl}">Restablecer contraseña</a>
+                <a class="button" href="${resetUrl}">Reset password</a>
               </p>
 
-              <p class="muted">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+              <p class="muted">If the button does not work, copy and paste this link into your browser:</p>
               <p class="muted"><a href="${resetUrl}">${resetUrl}</a></p>
 
-              <p class="muted">Este enlace expirará en 60 minutos. Si no solicitaste este restablecimiento, ignora este correo.</p>
+              <p class="muted">This link will expire in 60 minutes. If you did not request this reset, ignore this email.</p>
             </div>
             <div class="footer">
-              <div>Consejos para proteger tu cuenta: utiliza 2FA y no compartas tus credenciales.</div>
-              <div style="margin-top:8px">Gracias por usar BlockVault.</div>
+              <div>Tips to protect your account: use 2FA and do not share your credentials.</div>
+              <div style="margin-top:8px">Thank you for using BlockVault.</div>
             </div>
           </div>
         </body>
@@ -212,7 +212,7 @@ export class EmailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Error al enviar el correo de restablecimiento de contraseña:', error);
+      console.error('Error sending password reset email:', error);
     }
   }
 
@@ -220,7 +220,7 @@ export class EmailService {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: toEmail,
-      subject: 'Notificación de Inicio de sesión',
+      subject: 'Login notification',
       html: `
         <html>
         <head>
@@ -245,24 +245,24 @@ export class EmailService {
                   <h1>BlockVault</h1>
                 </div>
                 <div class="content">
-                    <p>Hola,</p>
-                    <p>Hemos registrado un inicio de sesión en tu cuenta.</p>
-                    <p>Si no reconoces esta actividad, por favor, contacta con nuestro soporte.</p>
-                    <div class="important">IMPORTANTE: Protege tu cuenta</div>
+                    <p>Hello,</p>
+                    <p>We have recorded a login to your account.</p>
+                    <p>If you do not recognize this activity, please contact our support.</p>
+                    <div class="important">IMPORTANT: Protect your account</div>
                     <div class="security-tips">
-                        <h4>Consejos para proteger tus fondos:</h4>
+                        <h4>Tips to protect your funds:</h4>
                         <ul>
-                            <li>Utiliza contraseñas fuertes y únicas para tu cuenta.</li>
-                            <li>Activa la autenticación de dos factores (2FA) siempre que sea posible.</li>
-                            <li>No compartas tus claves privadas ni contraseñas con nadie.</li>
-                            <li>Revisa regularmente tus transacciones y saldos.</li>
-                            <li>Desconfía de enlaces y correos electrónicos sospechosos.</li>
+                            <li>Use strong and unique passwords for your account.</li>
+                            <li>Enable two-factor authentication (2FA) whenever possible.</li>
+                            <li>Do not share your private keys or passwords with anyone.</li>
+                            <li>Regularly review your transactions and balances.</li>
+                            <li>Be wary of suspicious links and emails.</li>
                         </ul>
                     </div>
                 </div>
                 <div class="footer">
-                  <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
-                  <p>Gracias por usar BlockVault.</p>
+                  <p>If you have any questions, do not hesitate to contact us.</p>
+                  <p>Thank you for using BlockVault.</p>
                 </div>
             </div>
         </body>
@@ -273,7 +273,7 @@ export class EmailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Error al enviar el correo:', error);
+      console.error('Error sending email:', error);
     }
   }
 }

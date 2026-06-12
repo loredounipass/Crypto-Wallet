@@ -7,7 +7,7 @@ import { randomInt } from 'crypto';
 @Injectable()
 export class TwoFactorAuthService {
   private readonly TOKEN_EXPIRY_MS = 5 * 60 * 1000; // 5 minutos
-  private readonly COOLDOWN_MS = 60 * 1000; // 1 minuto entre envíos
+  private readonly COOLDOWN_MS = 60 * 1000; // 1 minute between sends
   private readonly MAX_ATTEMPTS = 5;
 
   constructor(
@@ -34,15 +34,15 @@ export class TwoFactorAuthService {
       if (!tokenEntry) {
         // Perform a dummy compare to mitigate timing attacks
         await bcrypt.compare(token, DUMMY_HASH);
-        return { isValid: false, message: 'Token inválido o expirado' };
+        return { isValid: false, message: 'Invalid or expired token' };
       }
 
       if (tokenEntry.isValid) {
-        return { isValid: false, message: 'Token ya validado' };
+        return { isValid: false, message: 'Token already validated' };
       }
 
       if ((tokenEntry.attempts || 0) >= this.MAX_ATTEMPTS) {
-        return { isValid: false, message: 'Demasiados intentos. Intenta más tarde.' };
+        return { isValid: false, message: 'Too many attempts. Try again later.' };
       }
 
       const isMatch = await bcrypt.compare(token, tokenEntry.tokenHash);
@@ -52,7 +52,7 @@ export class TwoFactorAuthService {
           { _id: tokenEntry._id, isValid: false, attempts: { $lt: this.MAX_ATTEMPTS } },
           { $inc: { attempts: 1 } }
         );
-        return { isValid: false, message: 'Token inválido o expirado' };
+        return { isValid: false, message: 'Invalid or expired token' };
       }
 
       // Try to atomically mark token as used. Only one request will succeed.
@@ -63,13 +63,13 @@ export class TwoFactorAuthService {
       );
 
       if (!updated) {
-        return { isValid: false, message: 'Token ya validado o inválido' };
+        return { isValid: false, message: 'Token already validated or invalid' };
       }
 
-      return { isValid: true, message: 'Token validado correctamente' };
+      return { isValid: true, message: 'Token validated successfully' };
     } catch (error) {
-      console.error('Error en la verificación del token', error);
-      throw new InternalServerErrorException('Error en la verificación del token.');
+      console.error('Error in token verification', error);
+      throw new InternalServerErrorException('Error verifying token.');
     }
   }
 
@@ -90,7 +90,7 @@ export class TwoFactorAuthService {
       if (existing && existing.lastSentAt && (now - existing.lastSentAt) < this.COOLDOWN_MS) {
         const remainingMs = this.COOLDOWN_MS - (now - existing.lastSentAt);
         const remainingSec = Math.ceil(remainingMs / 1000);
-        throw new BadRequestException(`Debes esperar ${remainingSec} segundos antes de solicitar otro token.`);
+        throw new BadRequestException(`You must wait ${remainingSec} seconds before requesting another token.`);
       }
 
       // Generate a 6-digit token using cryptographically secure random
@@ -114,11 +114,11 @@ export class TwoFactorAuthService {
 
       await this.emailService.sendTokenLogin(toEmail, token);
 
-      return { message: 'Token enviado correctamente' };
+      return { message: 'Token sent successfully' };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      console.error('Error al crear/enviar token', error);
-      throw new InternalServerErrorException('Error al enviar el token.');
+      console.error('Error creating/sending token', error);
+      throw new InternalServerErrorException('Error sending the token.');
     }
   }
 }

@@ -18,7 +18,7 @@ export class ForgotPasswordService {
   async requestPasswordReset(email: string): Promise<boolean> {
     const user = await this.userRepository.findOne({ email });
     if (!user) {
-      throw new BadRequestException('Usuario no encontrado');
+      throw new BadRequestException('User not found');
     }
 
     // Rate limit: only allow one reset request every 2 minutes
@@ -27,7 +27,7 @@ export class ForgotPasswordService {
     if (user.resetPasswordLastSentAt && (now - user.resetPasswordLastSentAt) < RATE_LIMIT_MS) {
       const remainingMs = RATE_LIMIT_MS - (now - user.resetPasswordLastSentAt);
       const remainingSec = Math.ceil(remainingMs / 1000);
-      throw new BadRequestException(`Debes esperar ${remainingSec} segundos antes de solicitar otro restablecimiento.`);
+      throw new BadRequestException(`You must wait ${remainingSec} seconds before requesting another reset.`);
     }
 // Generate a secure random token and save its hash to the user document
     const token = randomBytes(20).toString('hex');
@@ -52,37 +52,37 @@ export class ForgotPasswordService {
   async resetPassword(email: string, token: string, newPassword: string, confirmNewPassword: string) {
     const user = await this.userRepository.findOne({ email });
     if (!user) {
-      throw new BadRequestException('Usuario no encontrado');
+      throw new BadRequestException('User not found');
     }
 
     if (!user.resetPasswordTokenHash || !user.resetPasswordExpires || !user.resetPasswordTokenPurpose) {
-      throw new BadRequestException('No hay solicitud de restablecimiento válida');
+      throw new BadRequestException('No valid reset request');
     }
 
     if (user.resetPasswordTokenPurpose !== 'reset_password') {
-      throw new BadRequestException('Token no válido para esta operación');
+      throw new BadRequestException('Token not valid for this operation');
     }
 
     if (user.resetPasswordTokenUsed) {
-      throw new BadRequestException('Token ya utilizado');
+      throw new BadRequestException('Token already used');
     }
 
     const isMatch = await this.hashService.comparePassword(token, user.resetPasswordTokenHash);
     if (!isMatch) {
-      throw new BadRequestException('Token inválido');
+      throw new BadRequestException('Invalid token');
     }
 
     // Reject token if password was changed after token was issued
     if (user.lastPasswordChange && user.resetPasswordLastSentAt && user.lastPasswordChange >= user.resetPasswordLastSentAt) {
-      throw new BadRequestException('El token ya no es válido porque la contraseña fue cambiada después de emitir el token');
+      throw new BadRequestException('The token is no longer valid because the password was changed after the token was issued');
     }
 
     if (user.resetPasswordExpires.getTime() < Date.now()) {
-      throw new BadRequestException('Token expirado');
+      throw new BadRequestException('Token expired');
     }
 
     if (newPassword !== confirmNewPassword) {
-      throw new BadRequestException('Las contraseñas no coinciden');
+      throw new BadRequestException('Passwords do not match');
     }
 
     user.password = await this.hashService.hashPassword(newPassword);
@@ -94,7 +94,7 @@ export class ForgotPasswordService {
 
     await user.save();
 
-    return { message: 'Contraseña restablecida con éxito' };
+    return { message: 'Password reset successfully' };
   }
 
 }

@@ -32,12 +32,12 @@ export class UserService {
   //Register a new user, hash the password, and save to the database
   async register(createUserDto: CreateUserDto) {
     if (createUserDto.password !== createUserDto.confirmPassword) {
-      throw new BadRequestException("Las contraseñas no coinciden");
+      throw new BadRequestException("Passwords do not match");
     }
 
     const user = await this.getUserByEmail(createUserDto.email);
     if (user) {
-      throw new BadRequestException("Este correo electrónico ya está registrado");
+      throw new BadRequestException("This email is already registered");
     }
 
     const createUser = {
@@ -52,13 +52,13 @@ export class UserService {
   async isEmailVerified(email: string): Promise<{ isVerified: boolean; message: string }> {
     const user = await this.getUserByEmail(email);
     if (!user) {
-        throw new BadRequestException('El usuario con el correo proporcionado no existe.');
+        throw new BadRequestException('The user with the provided email does not exist.');
     }
     
     if (user.isValid) {
-        return { isVerified: true, message: 'Correo verificado con éxito.' };
+        return { isVerified: true, message: 'Email verified successfully.' };
     } else {
-        return { isVerified: false, message: 'El correo aún no está verificado.' };
+        return { isVerified: false, message: 'The email is not yet verified.' };
     }
 }
 
@@ -68,20 +68,20 @@ async verifyEmail(email: string, token: string): Promise<boolean> {
   const user = await this.getUserByEmail(email);
   
   if (!user) {
-      throw new BadRequestException('Usuario no existe.');
+      throw new BadRequestException('User does not exist.');
   }
   
   if (user.isValid) {
-      throw new BadRequestException('Correo ya verificado.');
+      throw new BadRequestException('Email already verified.');
   }
 
   if (!user.verifyEmailTokenHash || !user.verifyEmailExpires || user.verifyEmailExpires < new Date()) {
-      throw new BadRequestException('El token es inválido o ha expirado.');
+      throw new BadRequestException('The token is invalid or has expired.');
   }
 
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   if (user.verifyEmailTokenHash !== tokenHash) {
-      throw new BadRequestException('El token es inválido o ha expirado.');
+      throw new BadRequestException('The token is invalid or has expired.');
   }
   
   try {
@@ -91,7 +91,7 @@ async verifyEmail(email: string, token: string): Promise<boolean> {
       await user.save();
       return true;
   } catch {
-      throw new BadRequestException('Error al verificar correo.');
+      throw new BadRequestException('Error verifying email.');
   }
 }
 
@@ -102,11 +102,11 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   const user = await this.getUserByEmail(email);
   
   if (!user) {
-      throw new BadRequestException('Usuario no existe.');
+      throw new BadRequestException('User does not exist.');
   }
 
   if (user.isValid) {
-      throw new BadRequestException('Correo ya verificado. No se puede reenviar.');
+      throw new BadRequestException('Email already verified. Cannot resend.');
   }
   
   try {
@@ -120,7 +120,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
       await this.emailService.sendVerificationEmail(user.email, token);
       return true;
   } catch {
-      throw new BadRequestException('Error al enviar correo.');
+      throw new BadRequestException('Error sending email.');
   }
 }
 
@@ -129,11 +129,11 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   async updateTokenStatus(email: string, isTokenEnabled: boolean) {
     const user = await this.getUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado.');
+      throw new UnauthorizedException('User not found.');
     }
     user.isTokenEnabled = isTokenEnabled;
     await user.save();
-    return { msg: 'Seguridad de la cuenta actualizada con éxito.' };
+    return { msg: 'Account security updated successfully.' };
   }
 
 
@@ -141,7 +141,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   async getTokenStatus(email: string) {
     const user = await this.getUserByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado.');
+      throw new UnauthorizedException('User not found.');
     }
     return { isTokenEnabled: !!user.isTokenEnabled };
   }
@@ -151,18 +151,18 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   async changePassword(email: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.getUserByEmail(email);
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new NotFoundException('User not found');
     }
 
     const isPasswordValid = await this.hashService.comparePassword(changePasswordDto.currentPassword, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Contraseña actual incorrecta');
+      throw new UnauthorizedException('Current password is incorrect');
     }
 
     // Prevent changing to the same password
     const isSameAsCurrent = await this.hashService.comparePassword(changePasswordDto.newPassword, user.password);
     if (isSameAsCurrent) {
-      throw new BadRequestException('La nueva contraseña no puede ser igual a la anterior');
+      throw new BadRequestException('The new password cannot be the same as the previous one');
     }
 
     // Prevent password changes more than once within a 10-minute window
@@ -171,18 +171,18 @@ async sendVerificationEmail(email: string): Promise<boolean> {
       const elapsed = Date.now() - user.lastPasswordChange;
       if (elapsed < TEN_MINUTES_MS) {
         const remainingMinutes = Math.ceil((TEN_MINUTES_MS - elapsed) / (60 * 1000));
-        throw new BadRequestException(`No puedes cambiar la contraseña hasta pasados ${remainingMinutes} minuto(s) desde la última modificación.`);
+        throw new BadRequestException(`You cannot change the password until ${remainingMinutes} minute(s) have passed since the last change.`);
       }
     }
 
     if (changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword) {
-      throw new BadRequestException('Las nuevas contraseñas no coinciden');
+      throw new BadRequestException('The new passwords do not match');
     }
 
     user.password = await this.hashService.hashPassword(changePasswordDto.newPassword);
     user.lastPasswordChange = Date.now();
     await user.save();
-    return { message: 'Contraseña actualizada con éxito' };
+    return { message: 'Password updated successfully' };
   }
 
 
@@ -190,7 +190,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   async updateProfile(email: string, updateProfileDto: UpdateProfileDto, req?: any) {
     const user = await this.getUserByEmail(email);
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new NotFoundException('User not found');
     }
 
     // Prevent profile updates more than once within a 10-minute window
@@ -199,7 +199,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
       const elapsed = Date.now() - user.lastProfileUpdate;
       if (elapsed < TEN_MINUTES_MS) {
         const remainingMinutes = Math.ceil((TEN_MINUTES_MS - elapsed) / (60 * 1000));
-        throw new BadRequestException(`No puedes actualizar tu perfil hasta pasados ${remainingMinutes} minuto(s) desde la última modificación.`);
+        throw new BadRequestException(`You cannot update your profile until ${remainingMinutes} minute(s) have passed since the last update.`);
       }
     }
 
@@ -214,11 +214,11 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     // If none of the provided fields actually change the stored values, reject the update
     if (!firstNameChanged && !lastNameChanged && !emailChanged) {
       if ((providedFirstName || providedLastName) && !providedEmail) {
-        throw new BadRequestException('Debes usar nombres diferentes al anterior');
+        throw new BadRequestException('You must use different names than the previous one');
       } else if (providedEmail && !providedFirstName && !providedLastName) {
-        throw new BadRequestException('Debes usar un correo diferente al anterior');
+        throw new BadRequestException('You must use a different email than the previous one');
       } else {
-        throw new BadRequestException('Debes proporcionar valores diferentes a los actuales');
+        throw new BadRequestException('You must provide different values than the current ones');
       }
     }
 
@@ -226,10 +226,10 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     if (providedEmail && emailChanged) {
       const existingUser = await this.userRepository.findOne({ email: updateProfileDto.email });
       if (existingUser && existingUser.email !== email) {
-        throw new BadRequestException('El correo electrónico ya está en uso');
+        throw new BadRequestException('The email is already in use');
       }
       user.email = updateProfileDto.email!;
-      user.isValid = false; // Revocar estado de verificación
+      user.isValid = false; // Revoke verification status
     }
 
     if (firstNameChanged) user.firstName = updateProfileDto.firstName!;
@@ -239,18 +239,18 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     user.lastProfileUpdate = Date.now();
     await user.save();
 
-    const result = { message: 'Perfil actualizado con éxito' };
+    const result = { message: 'Profile updated successfully' };
 
     if (req) {
       const updatedUser = await this.getUserByEmail(updateProfileDto.email || email);
       if (!updatedUser) {
-        throw new BadRequestException('Error al actualizar sesión del usuario.');
+        throw new BadRequestException('Error updating user session.');
       }
 
       return new Promise((resolve, reject) => {
         req.login(updatedUser, (err) => {
           if (err) {
-            reject(new BadRequestException('Error al actualizar sesión del usuario.'));
+            reject(new BadRequestException('Error updating user session.'));
           } else {
             resolve(result);
           }

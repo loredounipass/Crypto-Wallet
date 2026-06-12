@@ -11,7 +11,7 @@ export class ChangePasswordDto {
     @MaxLength(50)
     @Matches(
         /(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-        message: 'La nueva contraseña debe contener mayúsculas, minúsculas y números'
+        message: 'The new password must contain uppercase, lowercase and numbers'
     })
     newPassword: string;
 

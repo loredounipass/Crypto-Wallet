@@ -204,7 +204,7 @@ export class EscrowService {
       chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
       users: [sellerEmail, dto.providerEmail],
       chatroomId,
-      latestMessage: 'Orden P2P creada. Los fondos están en escrow.',
+      latestMessage: 'P2P Order created. Funds are in escrow.',
     });
     await chat.save();
 
@@ -272,7 +272,7 @@ export class EscrowService {
 
     for (const order of orders) {
       if (!order.providerEmail) {
-        (order as any).counterpartName = 'Desconocido';
+        (order as any).counterpartName = 'Unknown';
         continue;
       }
 
@@ -299,16 +299,16 @@ export class EscrowService {
 
     for (const order of orders) {
       if (!order.sellerEmail) {
-        (order as any).counterpartName = 'Desconocido';
+        (order as any).counterpartName = 'Unknown';
         continue;
       }
 
-      // Buscar de forma insensible a mayúsculas
+      // Search case-insensitively
       let user: any = await this.userModel.findOne({ 
         email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
       }).lean().exec();
 
-      // Si por alguna razón no está en User, buscar en Provider
+      // If not found in User for some reason, search in Provider
       if (!user) {
         user = await this.providerModel.findOne({ 
           email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
@@ -383,7 +383,7 @@ export class EscrowService {
     }
 
     if (!order.escrowTxHash) {
-      throw new BadRequestException('Los fondos aún no están bloqueados en escrow. Espera unos segundos e intenta de nuevo.');
+      throw new BadRequestException('The funds are not yet locked in escrow. Wait a few seconds and try again.');
     }
 
     order.status = 'released';
