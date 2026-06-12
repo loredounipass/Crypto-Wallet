@@ -96,6 +96,7 @@ export default function ResetPassword() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           InputProps={{ sx: inputSx }}
+          sx={{ mb: 2 }}
         />
         <TextField
           margin="normal"
@@ -121,6 +122,7 @@ export default function ResetPassword() {
             ),
             sx: inputSx,
           }}
+          sx={{ mb: 2 }}
         />
         <TextField
           margin="normal"
