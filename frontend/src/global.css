@@ -106,4 +106,14 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
+
+}
+
+.MuiOutlinedInput-input {
+  padding-left: 18px !important;
+}
+
+.MuiOutlinedInput-input::placeholder {
+  color: #A5B4FC !important;
+  opacity: 1 !important;
 }
