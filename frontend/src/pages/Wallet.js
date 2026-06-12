@@ -457,11 +457,11 @@ export default function Wallet() {
         <div className="mx-auto w-full" style={styles.container}>
             {/* Back */}
             <div 
-                style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: "#FFFFFF" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: "#A5B4FC", fontSize: "13px", fontWeight: 500, padding: "6px 14px", borderRadius: "8px", background: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.2)", transition: "all 0.2s ease" }}
                 onClick={() => history.push('/wallets')}
             >
-                <BackIcon size={20} color="#FFFFFF" />
-                <span style={{ fontWeight: 500 }}>Volver a Billeteras</span>
+                <BackIcon size={16} color="#A5B4FC" />
+                <span>Volver a Billeteras</span>
             </div>
 
             {!isWalletLoading && walletInfo ? (

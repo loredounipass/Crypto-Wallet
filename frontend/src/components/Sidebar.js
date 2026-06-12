@@ -85,15 +85,8 @@ const SupportIcon = (props) => (
 
 const SettingsIcon = (props) => (
   <SidebarIconBase {...props}>
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
     <circle cx="12" cy="12" r="3" />
-    <path d="M12 3v3" />
-    <path d="M12 18v3" />
-    <path d="M3 12h3" />
-    <path d="M18 12h3" />
-    <path d="M5.6 5.6l2.1 2.1" />
-    <path d="M16.3 16.3l2.1 2.1" />
-    <path d="M18.4 5.6l-2.1 2.1" />
-    <path d="M7.7 16.3l-2.1 2.1" />
   </SidebarIconBase>
 );
 
@@ -128,54 +121,11 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const { auth } = useContext(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const sidebarRef = React.useRef(null);
-
   // Track mounted state to prevent state updates after unmount
   const isMountedRef = React.useRef(true);
   React.useEffect(() => {
     return () => { isMountedRef.current = false; };
   }, []);
-
-  const timeoutRef = React.useRef(null);
-
-  // Auto open sidebar on mouse hover when collapsed, and wait 3s before closing on leave
-  React.useEffect(() => {
-    const sidebarElement = sidebarRef.current;
-    if (!sidebarElement || isMobile) return;
-
-    const handleMouseEnter = () => {
-      // Si entra el mouse, cancelamos cualquier intento de cierre
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (!open) {
-        onToggle();
-      }
-    };
-
-    const handleMouseLeave = () => {
-      // Colapsar después de 3 segundos
-      if (open) {
-        timeoutRef.current = setTimeout(() => {
-          // Es importante chequear el estado actual, pero el closure tiene el valor anterior.
-          // Para evitar que haga toggle cuando no deba, onToggle desde el padre lo invierte.
-          onToggle();
-        }, 3000);
-      }
-    };
-
-    sidebarElement.addEventListener("mouseenter", handleMouseEnter);
-    sidebarElement.addEventListener("mouseleave", handleMouseLeave);
-
-    return () => {
-      sidebarElement.removeEventListener("mouseenter", handleMouseEnter);
-      sidebarElement.removeEventListener("mouseleave", handleMouseLeave);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [open, onToggle, isMobile]);
 
   const handleNavigation = (item) => {
     if (item.path === "logout") {
@@ -258,9 +208,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                <ChevronLeftIcon style={{ fontSize: 18 }} />
              </button>
            </>
-          ) : (
-            <Logo variant="sidebar-collapsed" />
-          )}
+           ) : (
+             <Logo variant="sidebar-collapsed" />
+           )}
        </Box>
 
        {/* User Info - Only when expanded */}
@@ -369,6 +319,19 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           );
         })}
 
+        {/* Collapse toggle - only on desktop when collapsed */}
+        {!open && !isMobile && (
+          <Box style={{ textAlign: "center", padding: "8px 0" }}>
+            <button
+              onClick={onToggle}
+              className="text-white bg-white/10 border-none rounded-lg p-1.5 cursor-pointer flex items-center justify-center hover:bg-white/20 transition-colors"
+              style={{ margin: "0 auto" }}
+            >
+              <ChevronLeftIcon style={{ fontSize: 18, transform: 'rotate(180deg)' }} />
+            </button>
+          </Box>
+        )}
+
         {/* Version - Only when expanded */}
         {open && (
           <Box style={{ textAlign: "center", marginTop: "8px" }}>
@@ -412,7 +375,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
 
   return (
     <div 
-      ref={sidebarRef}
       style={{ 
         width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED, 
         flexShrink: 0, 

@@ -202,12 +202,19 @@ const Wallets = () => {
             marginBottom: isMobile ? "12px" : "32px",
         },
         backLink: {
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
             gap: "8px",
             marginBottom: isMobile ? "12px" : "24px",
             cursor: "pointer",
-            color: "#FFFFFF",
+            color: "#A5B4FC",
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "6px 14px",
+            borderRadius: "8px",
+            background: "rgba(99, 102, 241, 0.1)",
+            border: "1px solid rgba(99, 102, 241, 0.2)",
+            transition: "all 0.2s ease",
         },
         statsGrid: {
             display: "grid",
@@ -580,13 +587,8 @@ const Wallets = () => {
                         ))}
                     </div>
                 ) : (
-                    <div style={{ textAlign: "center", padding: "40px" }}>
-                        <div style={{ color: "#9CA3AF", marginBottom: "16px" }}>
-                            No tienes billeteras todavía
-                        </div>
-                        <button onClick={handleCreateWallet} style={styles.button(true)}>
-                            Crear Primera Billetera
-                        </button>
+                    <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
+                        No tienes billeteras todavía
                     </div>
                 )}
             </div>
