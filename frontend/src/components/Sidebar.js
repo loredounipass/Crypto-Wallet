@@ -373,7 +373,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         {open && (
           <Box style={{ textAlign: "center", marginTop: "8px" }}>
             <Typography style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px" }}>
-              BlockVault v1.0
+              BrivoTrust v1.0
             </Typography>
           </Box>
         )}

@@ -13,7 +13,7 @@ mongodump \
     --username admin \
     --password "$MONGO_ROOT_PASSWORD" \
     --authenticationDatabase admin \
-    --db blockvault \
+    --db brivotrust \
     --out "$BACKUP_DIR/mongodb" \
     --quiet
 

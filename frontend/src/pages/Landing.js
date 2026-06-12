@@ -51,7 +51,7 @@ export default function Landing() {
             <nav className="bv-navbar">
                 <Link to="/landing" className="bv-logo-container">
                     <div className="bv-logo-icon">B</div>
-                    <div className="bv-logo-text">Block<span>Vault</span></div>
+                    <div className="bv-logo-text">Brivo<span>Trust</span></div>
                 </Link>
 
                 <div className="bv-nav-links">
@@ -68,7 +68,7 @@ export default function Landing() {
 
             {/* Hero Section */}
             <header className="bv-hero">
-                <div className="bv-subtitle">BlockVault Premium</div>
+                <div className="bv-subtitle">BrivoTrust Premium</div>
                 <h1 className="bv-title">
                     Unlock Your Financial Future<br />
                     in the Web3 Era
@@ -223,7 +223,7 @@ export default function Landing() {
                 </div>
                 
                 <div className="bv-footer-bottom">
-                    <p>&copy; {new Date().getFullYear()} BlockVault Premium. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} BrivoTrust Premium. All rights reserved.</p>
                 </div>
             </footer>
         </div>

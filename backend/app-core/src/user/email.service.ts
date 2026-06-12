@@ -6,8 +6,8 @@ import { randomInt } from 'crypto';
 
 @Injectable()
 export class EmailService {
-  private readonly FROM_NAME = 'BlockVault';
-  private readonly FROM_EMAIL = 'noreply@blockvault.com';
+  private readonly FROM_NAME = 'BrivoTrust';
+  private readonly FROM_EMAIL = 'noreply@brivotrust.com';
   private readonly FRONTEND_URL: string;
   
   private transporter: any;
@@ -49,7 +49,7 @@ export class EmailService {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>BlockVault</h1>
+                    <h1>BrivoTrust</h1>
                 </div>
                 <div class="content">
                     <p>Hello,</p>
@@ -73,7 +73,7 @@ export class EmailService {
                 </div>
                 <div class="footer">
                     <p>If you have any questions, do not hesitate to contact us.</p>
-                    <p>Thank you for using BlockVault.</p>
+                    <p>Thank you for using BrivoTrust.</p>
                 </div>
             </div>
         </body>
@@ -122,7 +122,7 @@ export class EmailService {
         <body>
           <div class="container">
               <div class="header">
-              <h1>BlockVault</h1>
+              <h1>BrivoTrust</h1>
             </div>
             <div class="content">
               <p class="lead">Hello,</p>
@@ -139,7 +139,7 @@ export class EmailService {
             </div>
               <div class="footer">
               <div>Tips to protect your account: use 2FA and do not share your credentials.</div>
-              <div style="margin-top:8px">Thank you for using BlockVault.</div>
+              <div style="margin-top:8px">Thank you for using BrivoTrust.</div>
             </div>
           </div>
         </body>
@@ -184,7 +184,7 @@ export class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>BlockVault</h1>
+              <h1>BrivoTrust</h1>
             </div>
             <div class="content">
               <p class="lead">Hello,</p>
@@ -201,7 +201,7 @@ export class EmailService {
             </div>
             <div class="footer">
               <div>Tips to protect your account: use 2FA and do not share your credentials.</div>
-              <div style="margin-top:8px">Thank you for using BlockVault.</div>
+              <div style="margin-top:8px">Thank you for using BrivoTrust.</div>
             </div>
           </div>
         </body>
@@ -242,7 +242,7 @@ export class EmailService {
         <body>
             <div class="container">
                 <div class="header">
-                  <h1>BlockVault</h1>
+                  <h1>BrivoTrust</h1>
                 </div>
                 <div class="content">
                     <p>Hello,</p>
@@ -262,7 +262,7 @@ export class EmailService {
                 </div>
                 <div class="footer">
                   <p>If you have any questions, do not hesitate to contact us.</p>
-                  <p>Thank you for using BlockVault.</p>
+                  <p>Thank you for using BrivoTrust.</p>
                 </div>
             </div>
         </body>

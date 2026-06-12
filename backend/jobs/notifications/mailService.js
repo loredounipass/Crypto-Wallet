@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer')
 const mailService = process.env.SERVICE || 'gmail'
 const mailUser = process.env.USER
 const mailPass = process.env.PASS
-const mailFrom = process.env.EMAIL_FROM || process.env.MAIL_FROM || `BlokVault <${mailUser}>`
+const mailFrom = process.env.EMAIL_FROM || process.env.MAIL_FROM || `BrivoTrust <${mailUser}>`
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 let mailTransporter = null
@@ -35,7 +35,7 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
     const mailDetails = {
         from: mailFrom,
         to: toEmail,
-        subject: `[BlokVault] Confirmación de Depósito`,
+        subject: `[BrivoTrust] Confirmación de Depósito`,
         html: `
         <html>
         <head>
@@ -58,11 +58,11 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>BlokVault</h1>
+                    <h1>BrivoTrust</h1>
                 </div>
                 <h3><strong>Depósito completado correctamente</strong></h3>
                 <p>Tu depósito de <strong>${amount} ${coin.toUpperCase()}</strong> 
-                ya está disponible en tu cuenta de BlokVault. 
+                ya está disponible en tu cuenta de BrivoTrust. 
                 <a href="${frontendUrl}/wallet/${coin.toLowerCase()}"
                  target="_blank" rel="noopener">Comprueba tu balance aquí.</a></p>
                 
@@ -78,7 +78,7 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
                 </div>
 
                 <div class="footer">
-                    <p>Gracias por usar BlokVault. Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                    <p>Gracias por usar BrivoTrust. Si tienes alguna pregunta, no dudes en contactarnos.</p>
                 </div>
             </div>
         </body>
@@ -92,7 +92,7 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
     const mailDetails = {
         from: mailFrom,
         to: toEmail,
-        subject: `[BlokVault] Confirmación de Retiro`,
+        subject: `[BrivoTrust] Confirmación de Retiro`,
         html: `
         <html>
         <head>
@@ -114,11 +114,11 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>BlokVault</h1>
+                    <h1>BrivoTrust</h1>
                 </div>
                 <h3><strong>Retiro completado correctamente</strong></h3>
                 <div>Has realizado una retirada de <strong>${amount} ${coin.toUpperCase()}</strong> 
-                en tu cuenta de BlokVault.</div>
+                en tu cuenta de BrivoTrust.</div>
                 <div>&nbsp;</div>
                 <div><strong>Dirección de retiro:</strong> ${toAddress}</div>
                 <div><strong>ID de Transacción:</strong> ${txId}</div>
@@ -135,7 +135,7 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
                 </div>
 
                 <div class="footer">
-                    <p>Gracias por usar BlokVault. Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                    <p>Gracias por usar BrivoTrust. Si tienes alguna pregunta, no dudes en contactarnos.</p>
                 </div>
             </div>
         </body>

@@ -45,7 +45,7 @@ const Logo = ({ variant = 'auth' }) => {
           className="font-bold text-lg tracking-wide"
           style={{ textShadow: "0 0 20px rgba(99, 102, 241, 0.5)", color: 'white' }}
         >
-          Block<span className="text-[#8B5CF6]">Vault</span>
+          Brivo<span className="text-[#8B5CF6]">Trust</span>
         </Typography>
       </Box>
     );
@@ -79,7 +79,7 @@ const Logo = ({ variant = 'auth' }) => {
           component="h1"
           className="font-bold text-2xl sm:text-3xl"
         >
-          <span className="text-[#111827] dark:text-white">Block</span><span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#2186EB] bg-clip-text text-transparent">Vault</span>
+          <span className="text-[#111827] dark:text-white">Brivo</span><span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#2186EB] bg-clip-text text-transparent">Trust</span>
         </Typography>
       </Box>
     </Box>

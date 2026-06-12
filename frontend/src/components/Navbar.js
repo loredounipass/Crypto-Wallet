@@ -210,7 +210,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
                   lineHeight: 1,
                 }}
               >
-                BlockVault
+                BrivoTrust
               </Typography>
             </Box>
           </Link>

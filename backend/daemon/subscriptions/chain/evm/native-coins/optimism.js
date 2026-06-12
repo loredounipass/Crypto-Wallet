@@ -13,7 +13,7 @@ const transactionsQueue = new Queue('op-transactions')
 
 connectDB.then(async () => {
     const web3 = getWeb3WssInstance(process.env.OPTIMISM_WSS)
-    const topic = web3.utils.sha3('DepositedOnBlockVault()')
+    const topic = web3.utils.sha3('DepositedOnMetaDapp()')
     console.log('[SUB][OP] subscription started on chainId:', chainId)
     console.log('[SUB][OP] listening topic:', topic)
 
