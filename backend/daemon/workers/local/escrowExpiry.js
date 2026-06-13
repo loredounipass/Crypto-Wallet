@@ -52,13 +52,13 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
     })
 
     if (!wallet) {
-        console.warn('[ESCROW-EXPIRY] Seller wallet not found for refund registration:', {
+        console.error('[ESCROW-EXPIRY] Seller wallet not found for refund registration, will retry:', {
             orderId: order.orderId,
             sellerAddress,
             coin,
             chainId
         })
-        return null
+        throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
 
     // Si hay txHash (on-chain), se marca pendiente (status 1). Si es interna, se marca completada (status 3).

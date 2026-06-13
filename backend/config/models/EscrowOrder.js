@@ -19,7 +19,13 @@ const EscrowOrderSchema = new mongoose.Schema({
     sellerConfirmedRelease: { type: Boolean, default: false },
     disputeReason: { type: String },
     disputeOpenedBy: { type: String },
+    isReverted: { type: Boolean, default: false },
+    isAwarded: { type: Boolean, default: false },
+    resolvedAt: { type: Date },
+    resolutionType: { type: String },
     expiresAt: { type: Date },
 }, { timestamps: true })
+
+EscrowOrderSchema.index({ status: 1, isReverted: 1, isAwarded: 1, resolvedAt: 1 })
 
 module.exports = mongoose.model('EscrowOrder', EscrowOrderSchema)

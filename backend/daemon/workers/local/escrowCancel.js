@@ -54,13 +54,13 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
     })
 
     if (!wallet) {
-        console.warn('[ESCROW-CANCEL-WORKER] Seller wallet not found for refund registration:', {
+        console.error('[ESCROW-CANCEL-WORKER] Seller wallet not found for refund registration, will retry:', {
             orderId: order.orderId,
             sellerAddress,
             coin,
             chainId
         })
-        return null
+        throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
 
     const isInternal = !refundTxHash

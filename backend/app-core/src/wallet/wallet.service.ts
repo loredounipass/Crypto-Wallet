@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { QueryDto } from './dto/query.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -65,37 +65,99 @@ export class WalletService {
         walletId: wallet._id
       }
     } else {
-      // no tiene wallet
-      const data = await this.walletContractModel.findOneAndUpdate(
+      // Reserve a pre-generated wallet contract atomically
+      const contract = await this.walletContractModel.findOneAndUpdate(
         { chainId: createWalletDto.chainId, reserved: false },
         { reserved: true },
         { returnDocument: 'after' }
       );
+      if (!contract) {
+        throw new BadRequestException('No available wallet contracts for this chain.');
+      }
 
-      if (data) {
+      // Re-check: another concurrent request may have created a wallet
+      // for this user+coin+chainId while we were reserving the contract.
+      const reCheck = await this.userModel.aggregate([
+        { $match: { email: createWalletDto.email } },
+        { $unwind: '$wallets' },
+        { $project: { _id: 0 } },
+        {
+          $lookup: {
+            from: 'wallets',
+            localField: 'wallets',
+            foreignField: '_id',
+            as: 'walletsData',
+            pipeline: [
+              { $match: { coin: createWalletDto.coin, chainId: createWalletDto.chainId } }
+            ]
+          }
+        },
+        { $match: { 'walletsData.0': { $exists: true } } }
+      ]).exec();
+      if (reCheck.length > 0) {
+        // Another request beat us — unreserve our contract and return the existing wallet
+        await this.walletContractModel.updateOne(
+          { _id: contract._id },
+          { reserved: false }
+        ).catch(e => console.error('[WALLET] Failed to unreserve contract:', e.message));
+        const existingWallet = reCheck[0].walletsData[0];
+        return {
+          address: existingWallet.address,
+          chainId: existingWallet.chainId,
+          coin: existingWallet.coin,
+          walletId: existingWallet._id
+        };
+      }
+
+      // Create wallet document. The unique index on `address` prevents
+      // duplicate wallets at the database level.
+      try {
         const wallet = new this.walletModel({
-          address: data.address,
+          address: contract.address,
           chainId: createWalletDto.chainId,
           coin: createWalletDto.coin
         });
-
         const saved = await wallet.save();
-        if (saved) {
-          const result = await this.userModel.updateOne({
-            email: createWalletDto.email
-          }, {
-            $push: { wallets: wallet._id }
-          });
 
-          if (result.modifiedCount > 0) {
+        const result = await this.userModel.updateOne(
+          { email: createWalletDto.email },
+          { $push: { wallets: wallet._id } }
+        );
+
+        if (result.modifiedCount > 0) {
+          return {
+            address: wallet.address,
+            chainId: wallet.chainId,
+            coin: wallet.coin,
+            walletId: wallet._id
+          };
+        }
+        // $push didn't modify — user record not found or edge case
+        throw new Error('Failed to link wallet to user.');
+      } catch (error: any) {
+        if (error.code === 11000) {
+          // Duplicate key on `address` — another request already created this wallet.
+          await this.walletContractModel.updateOne(
+            { _id: contract._id },
+            { reserved: false }
+          ).catch(e => console.error('[WALLET] Failed to unreserve contract on duplicate:', e.message));
+
+          const existingByAddress = await this.walletModel.findOne({ address: contract.address });
+          if (existingByAddress) {
+            // Ensure the user is linked to this wallet
+            await this.userModel.updateOne(
+              { email: createWalletDto.email, wallets: { $ne: existingByAddress._id } },
+              { $push: { wallets: existingByAddress._id } }
+            );
             return {
-              address: wallet.address,
-              chainId: wallet.chainId,
-              coin: wallet.coin,
-              walletId: wallet._id
-            }
+              address: existingByAddress.address,
+              chainId: existingByAddress.chainId,
+              coin: existingByAddress.coin,
+              walletId: existingByAddress._id
+            };
           }
         }
+        throw error;
       }
     }
   }

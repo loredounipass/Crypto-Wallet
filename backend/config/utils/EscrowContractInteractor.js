@@ -403,6 +403,31 @@ class EscrowContractInteractor {
     }
 
     /**
+     * Award funds from escrow wallet directly to provider wallet (dispute resolution).
+     * Semantically identical to releaseFundsFromEscrowWallet but used when the
+     * provider wins a dispute (isAwarded = true).
+     */
+    async awardFundsFromEscrowWallet(orderId, providerAddress, amountWei) {
+        if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
+            throw new Error('Escrow wallet credentials are not configured')
+        }
+
+        console.log('[ESCROW-WALLET] Awarding from escrow wallet (dispute resolution):', {
+            orderId,
+            from: this.escrowWalletAddress,
+            to: providerAddress,
+            amountWei: amountWei.toString()
+        })
+
+        return this._sendNativeTransfer(
+            this.escrowWalletAddress,
+            this.escrowWalletPrivateKey,
+            providerAddress,
+            amountWei
+        )
+    }
+
+    /**
      * Refund escrowed funds to the seller on-chain
      * @param {string} orderId - UUID of the order
      * @returns {Object} Transaction receipt

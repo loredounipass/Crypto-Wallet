@@ -61,6 +61,18 @@ export class EscrowOrder {
     @Prop()
     disputeOpenedBy: string;
 
+    @Prop({ default: false })
+    isReverted: boolean;
+
+    @Prop({ default: false })
+    isAwarded: boolean;
+
+    @Prop()
+    resolvedAt: Date;
+
+    @Prop()
+    resolutionType: string;
+
     @Prop()
     expiresAt: Date;
 }

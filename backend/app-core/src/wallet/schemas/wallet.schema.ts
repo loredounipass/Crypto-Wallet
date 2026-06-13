@@ -14,7 +14,7 @@ export class Wallet {
 
     @Prop({
         required: true,
-        index: true,
+        unique: true,
     })
     address: string;
 

@@ -12,7 +12,7 @@ export class EscrowStatusProcessor extends WorkerHost {
   }
 
   async process(job: Job): Promise<void> {
-    const { orderId, status, sellerEmail, providerEmail, disputeReason, disputeOpenedBy } = job.data;
+    const { orderId, status, sellerEmail, providerEmail, disputeReason, disputeOpenedBy, resolutionType } = job.data;
     this.logger.log(`Processing escrow status event: orderId=${orderId} status=${status}`);
 
     this.escrowGateway.emitEscrowStatusUpdate({
@@ -22,6 +22,7 @@ export class EscrowStatusProcessor extends WorkerHost {
       providerEmail,
       disputeReason,
       disputeOpenedBy,
+      resolutionType,
     });
   }
 

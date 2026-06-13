@@ -237,6 +237,33 @@ export default function P2POrderDetailsPanel({
             </div>
           )}
 
+          {/* Resolved message */}
+          {currentOrder?.status === 'resolved' && (
+            <div style={{
+              padding: 16, borderRadius: 14,
+              background: currentOrder?.resolutionType === 'revert'
+                ? 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))'
+                : 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))',
+              border: currentOrder?.resolutionType === 'revert'
+                ? '1px solid rgba(245,158,11,0.15)'
+                : '1px solid rgba(16,185,129,0.15)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 18 }}>
+                  {currentOrder?.resolutionType === 'revert' ? '↩️' : '✅'}
+                </span>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: currentOrder?.resolutionType === 'revert' ? '#F59E0B' : '#10B981' }}>
+                  Disputa resuelta
+                </p>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
+                {currentOrder?.resolutionType === 'revert'
+                  ? 'Los fondos han sido devueltos al vendedor.'
+                  : 'Los fondos han sido entregados al proveedor.'}
+              </p>
+            </div>
+          )}
+
           {/* Waiting messages */}
           {isSeller && currentOrder?.status === 'funded' && (
             <div style={{

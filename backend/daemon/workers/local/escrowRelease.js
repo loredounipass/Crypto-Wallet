@@ -132,6 +132,16 @@ const processEscrowRelease = async (jobData) => {
         throw new Error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
     }
 
+    // Wait for funding transaction to reach 12 confirmations (status === 3)
+    if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+        const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
+        if (!fundingTx || fundingTx.status !== 3) {
+            console.log(`[ESCROW-RELEASE] Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx?.status || 'not found'}). Retrying later...`)
+            throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
+        }
+        console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
+    }
+
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = toWeiAmount(amount, decimals)
 

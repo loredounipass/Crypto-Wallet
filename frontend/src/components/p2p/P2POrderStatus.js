@@ -8,6 +8,7 @@ const STATUS_CONFIG = {
   released:   { label: 'Liberando', color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)', step: 3 },
   completed:  { label: 'Completado', color: '#10B981', bg: 'rgba(16,185,129,0.10)', step: 4 },
   disputed:   { label: 'En Disputa', color: '#EF4444', bg: 'rgba(239,68,68,0.10)', step: -1 },
+  resolved:   { label: 'Resuelta', color: '#10B981', bg: 'rgba(16,185,129,0.10)', step: -1 },
   refunded:   { label: 'Reembolsado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', step: -1 },
   cancelled:  { label: 'Cancelado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', step: -1 },
   expired:    { label: 'Expirado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', step: -1 },

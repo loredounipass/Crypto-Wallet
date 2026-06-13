@@ -19,6 +19,7 @@ type EscrowStatusEvent = {
   providerEmail?: string;
   disputeReason?: string;
   disputeOpenedBy?: string;
+  resolutionType?: string;
 };
 
 @WebSocketGateway({

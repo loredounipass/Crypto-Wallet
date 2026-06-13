@@ -187,6 +187,37 @@ export default function useEscrow() {
     }
   };
 
+  const getDisputedOrders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await Escrow.getDisputedOrders();
+      setError(null);
+      return res;
+    } catch (err) {
+      setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al obtener órdenes en disputa' });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const resolveDispute = async (orderId, type) => {
+    setIsLoading(true);
+    try {
+      const res = await Escrow.resolveDispute(orderId, type);
+      setError(null);
+      setToast({ kind: 'success', message: `Disputa resuelta: fondos ${type === 'revert' ? 'devueltos al vendedor' : 'entregados al proveedor'}` });
+      return res;
+    } catch (err) {
+      setError(err.message);
+      setToast({ kind: 'error', message: err.message || 'Error al resolver disputa' });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     orders,
     providerOrders,
@@ -203,5 +234,7 @@ export default function useEscrow() {
     releaseFunds,
     openDispute,
     cancelOrder,
+    getDisputedOrders,
+    resolveDispute,
   };
 }

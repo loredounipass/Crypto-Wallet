@@ -60,7 +60,10 @@ contract EscrowContract {
     function releaseFunds(bytes32 orderId) external onlyRelayer {
         EscrowOrder storage order = orders[orderId];
         require(order.amount > 0, "Order not found");
-        require(order.status == OrderStatus.FUNDED, "Order not in funded state");
+        require(
+            order.status == OrderStatus.FUNDED || order.status == OrderStatus.DISPUTED,
+            "Order not in funded or disputed state"
+        );
 
         order.status = OrderStatus.RELEASED;
 

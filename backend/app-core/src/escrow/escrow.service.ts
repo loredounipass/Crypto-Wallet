@@ -67,7 +67,10 @@ export class EscrowService {
       }
     }
 
-    if (!wallet) return null;
+    if (!wallet) {
+      console.error(`[ESCROW] Wallet not found for refund: seller=${order.sellerEmail} coin=${order.coin} chainId=${order.chainId}`);
+      throw new Error(`Wallet not found for refund: order ${order.orderId}`);
+    }
 
     const isInternal = !refundTxHash;
     const transaction = new this.transactionModel({
@@ -158,44 +161,17 @@ export class EscrowService {
     }
 
     const wallet = walletEntry.walletsData[0];
-    const coinInfo = require('../../../config/coins/info.js')[dto.coin.toUpperCase()];
 
-    // Generate orderId early for gas estimation
     const orderId = uuidv4();
 
-    let exactGasFee = 0;
-    try {
-      const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
-      const interactor = new EscrowContractInteractor(wallet.chainId);
-      const { parseUnits, formatUnits } = require('ethers');
-
-      const decimals = coinInfo ? coinInfo.decimals : 18;
-      const amountWei = parseUnits(dto.amount.toString(), decimals);
-
-      // Estimate gas for creation and release
-      const createGas = await interactor.estimateCreateOrderGas(orderId, wallet.address, provider.walletAddress, amountWei);
-      const releaseGas = await interactor.estimateReleaseFundsGas(orderId);
-
-      const totalGasWei = BigInt(createGas.gasPrice) * BigInt(createGas.gasLimit) +
-        BigInt(releaseGas.gasPrice) * BigInt(releaseGas.gasLimit);
-
-      exactGasFee = parseFloat(formatUnits(totalGasWei.toString(), decimals));
-      console.log(`[ESCROW] Exact gas fee estimated: ${exactGasFee} ${dto.coin}`);
-    } catch (err) {
-      console.error('[ESCROW] Failed to estimate gas, using fallback fee:', (err as Error).message);
-      exactGasFee = 0; // Don't use coinInfo.fee for gas fallback if we can't estimate
+    if (wallet.balance < dto.amount) {
+      throw new BadRequestException(`Insufficient balance. Required: ${dto.amount} ${dto.coin}`);
     }
 
-    const totalRequired = dto.amount + exactGasFee;
-
-    if (wallet.balance < totalRequired) {
-      throw new BadRequestException(`Insufficient balance. Required: ${totalRequired.toFixed(8)} ${dto.coin} (Amount: ${dto.amount} + Gas: ${exactGasFee.toFixed(8)} ${dto.coin})`);
-    }
-
-    // 3. Debit seller's wallet (lock funds + exact gas fee in escrow)
+    // 3. Debit seller's wallet (lock funds in escrow)
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
-      { $inc: { balance: -totalRequired } }
+      { $inc: { balance: -dto.amount } }
     );
 
     // 4. Create the chatroom for the order
@@ -366,6 +342,21 @@ export class EscrowService {
     return { orderId, status: 'buyer_paid' };
   }
 
+  // Check if the escrow funding transaction has reached 12 confirmations
+  private async isFundingConfirmed(order: any): Promise<boolean> {
+    if (!order.escrowTxHash) {
+      return false;
+    }
+    if (order.escrowTxHash.startsWith('offchain-')) {
+      return true;
+    }
+    const fundingTx = await this.transactionModel.findOne({
+      txHash: order.escrowTxHash,
+      status: 3
+    });
+    return !!fundingTx;
+  }
+
   // Seller releases funds to the provider after confirming external payment receipt
   async releaseFunds(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
@@ -384,6 +375,11 @@ export class EscrowService {
 
     if (!order.escrowTxHash) {
       throw new BadRequestException('The funds are not yet locked in escrow. Wait a few seconds and try again.');
+    }
+
+    const funded = await this.isFundingConfirmed(order);
+    if (!funded) {
+      throw new BadRequestException('The escrow funds are still pending confirmation. Please wait until the transaction reaches 12 confirmations before releasing.');
     }
 
     order.status = 'released';
@@ -501,6 +497,56 @@ export class EscrowService {
     return { orderId, status: 'cancelled' };
   }
 
+  // Get all disputed orders (admin only)
+  async getDisputedOrders(email: string) {
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    if (!adminEmails.includes(email.toLowerCase())) {
+      throw new ForbiddenException('Only administrators can view disputed orders.');
+    }
+    return this.escrowOrderModel.find({ status: 'disputed' }).sort({ createdAt: -1 }).lean().exec();
+  }
+
+  // Admin resolves a dispute: sets isReverted or isAwarded flag
+  async resolveDispute(orderId: string, type: 'revert' | 'award', email: string) {
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    if (!adminEmails.includes(email.toLowerCase())) {
+      throw new ForbiddenException('Only administrators can resolve disputes.');
+    }
+
+    const order = await this.escrowOrderModel.findOne({ orderId });
+    if (!order) {
+      throw new BadRequestException('Order not found.');
+    }
+    if (order.status !== 'disputed') {
+      throw new BadRequestException(`Cannot resolve dispute for order with status: ${order.status}`);
+    }
+    if (order.isReverted && order.isAwarded) {
+      throw new BadRequestException('Invalid state: both isReverted and isAwarded cannot be true.');
+    }
+    if (order.isReverted || order.isAwarded) {
+      throw new BadRequestException('Dispute already resolved.');
+    }
+
+    if (type === 'revert') {
+      order.isReverted = true;
+    } else {
+      order.isAwarded = true;
+    }
+    await order.save();
+
+    console.log(`[ESCROW] Admin resolved dispute: ${orderId} -> ${type}`);
+
+    await this.escrowStatusQueue.add('status-update', {
+      orderId,
+      status: 'disputed',
+      resolutionType: type,
+      sellerEmail: order.sellerEmail,
+      providerEmail: order.providerEmail,
+    }, { removeOnComplete: true, removeOnFail: 50 });
+
+    return { orderId, status: 'disputed', isReverted: order.isReverted, isAwarded: order.isAwarded };
+  }
+
   // Mark order as completed (called by the release worker after successful transfer)
   async markCompleted(orderId: string, releaseTxHash?: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
@@ -539,91 +585,97 @@ export class EscrowService {
     }).exec();
 
     for (const order of expiredOrders) {
-      let refundTxHash = null;
+      try {
+        let refundTxHash = null;
 
-      // Refund on-chain when escrow was already funded
-      if (order.escrowTxHash) {
-        try {
-          const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
-          const interactor = new EscrowContractInteractor(order.chainId);
-          const { parseUnits } = require('ethers');
-          const decimals = require('../../../config/coins/info.js')[order.coin.toUpperCase()]?.decimals || 18;
-          const amountWei = parseUnits(String(order.amount), decimals);
-          let refunded = false;
-          const contractAvailable = await interactor.isContractAvailable();
+        // Refund on-chain when escrow was already funded
+        if (order.escrowTxHash) {
+          try {
+            const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+            const interactor = new EscrowContractInteractor(order.chainId);
+            const { parseUnits } = require('ethers');
+            const decimals = require('../../../config/coins/info.js')[order.coin.toUpperCase()]?.decimals || 18;
+            const amountWei = parseUnits(String(order.amount), decimals);
+            let refunded = false;
+            const contractAvailable = await interactor.isContractAvailable();
 
-          const useEscrowContract = process.env.ESCROW_USE_CONTRACT === 'true';
-          if (useEscrowContract && contractAvailable) {
-            try {
-              console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);
-              const receipt = await interactor.refundFundsOnChain(order.orderId);
-              if (receipt && receipt.status) {
-                refunded = true;
-                refundTxHash = receipt.transactionHash;
-                console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
+            const useEscrowContract = process.env.ESCROW_USE_CONTRACT === 'true';
+            if (useEscrowContract && contractAvailable) {
+              try {
+                console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);
+                const receipt = await interactor.refundFundsOnChain(order.orderId);
+                if (receipt && receipt.status) {
+                  refunded = true;
+                  refundTxHash = receipt.transactionHash;
+                  console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
+                }
+              } catch (contractRefundError) {
+                console.warn(`[ESCROW-EXPIRE] Contract refund failed:`, (contractRefundError as Error).message);
               }
-            } catch (contractRefundError) {
-              console.warn(`[ESCROW-EXPIRE] Contract refund failed:`, (contractRefundError as Error).message);
             }
-          }
 
-          // Strategy 2: Top up escrow wallet if needed, then refund
-          if (!refunded) {
-            try {
-              await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei);
-              const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
-              if (receipt && receipt.status) {
-                refunded = true;
-                refundTxHash = receipt.transactionHash;
-                console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
+            // Strategy 2: Top up escrow wallet if needed, then refund
+            if (!refunded) {
+              try {
+                await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei);
+                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
+                if (receipt && receipt.status) {
+                  refunded = true;
+                  refundTxHash = receipt.transactionHash;
+                  console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
+                }
+              } catch (escrowWalletErr) {
+                console.warn(`[ESCROW-EXPIRE] Escrow wallet refund failed:`, (escrowWalletErr as Error).message);
               }
-            } catch (escrowWalletErr) {
-              console.warn(`[ESCROW-EXPIRE] Escrow wallet refund failed:`, (escrowWalletErr as Error).message);
             }
-          }
 
-          // Strategy 3: Direct hot wallet → seller
-          if (!refunded && interactor.hotWalletAddress) {
-            try {
-              console.log(`[ESCROW-EXPIRE] Last resort: refunding from hot wallet directly...`);
-              const receipt = await interactor._sendNativeTransfer(
-                interactor.hotWalletAddress,
-                interactor.hotWalletPrivateKey,
-                order.sellerWalletAddress,
-                amountWei,
-              );
-              if (receipt && receipt.status) {
-                refunded = true;
-                refundTxHash = receipt.transactionHash;
-                console.log(`[ESCROW-EXPIRE] Hot wallet direct refund successful.`);
+            // Strategy 3: Direct hot wallet → seller
+            if (!refunded && interactor.hotWalletAddress) {
+              try {
+                console.log(`[ESCROW-EXPIRE] Last resort: refunding from hot wallet directly...`);
+                const receipt = await interactor._sendNativeTransfer(
+                  interactor.hotWalletAddress,
+                  interactor.hotWalletPrivateKey,
+                  order.sellerWalletAddress,
+                  amountWei,
+                );
+                if (receipt && receipt.status) {
+                  refunded = true;
+                  refundTxHash = receipt.transactionHash;
+                  console.log(`[ESCROW-EXPIRE] Hot wallet direct refund successful.`);
+                }
+              } catch (hotWalletErr) {
+                console.warn(`[ESCROW-EXPIRE] Hot wallet direct refund failed:`, (hotWalletErr as Error).message);
               }
-            } catch (hotWalletErr) {
-              console.warn(`[ESCROW-EXPIRE] Hot wallet direct refund failed:`, (hotWalletErr as Error).message);
             }
-          }
 
-          // Strategy 4 was removed. We do not do internal refunds for on-chain orders.
+            // Strategy 4 was removed. We do not do internal refunds for on-chain orders.
 
-          if (!refunded) {
-            throw new Error('All refund strategies failed');
+            if (!refunded) {
+              throw new Error('All refund strategies failed');
+            }
+          } catch (err) {
+            console.error(`[ESCROW-EXPIRE] Failed to refund:`, (err as Error).message);
+            continue; // Skip DB refund if on-chain fails to avoid state mismatch
           }
-        } catch (err) {
-          console.error(`[ESCROW-EXPIRE] Failed to refund:`, (err as Error).message);
-          continue; // Skip DB refund if on-chain fails to avoid state mismatch
         }
+
+        await this.registerRefundTransaction(order, refundTxHash);
+
+        order.status = 'expired';
+        await order.save();
+
+        await this.escrowStatusQueue.add('status-update', {
+          orderId: order.orderId,
+          status: 'expired',
+          sellerEmail: order.sellerEmail,
+          providerEmail: order.providerEmail,
+        }, { removeOnComplete: true, removeOnFail: 50 });
+
+        console.log(`[ESCROW-EXPIRE] Order expired and refunded: ${order.orderId}`);
+      } catch (orderError) {
+        console.error(`[ESCROW-EXPIRE] Error processing expired order:`, order.orderId, (orderError as Error).message);
       }
-
-      await this.registerRefundTransaction(order, refundTxHash);
-
-      order.status = 'expired';
-      await order.save();
-
-      await this.escrowStatusQueue.add('status-update', {
-        orderId: order.orderId,
-        status: 'expired',
-        sellerEmail: order.sellerEmail,
-        providerEmail: order.providerEmail,
-      }, { removeOnComplete: true, removeOnFail: 50 });
     }
 
     return { expired: expiredOrders.length };

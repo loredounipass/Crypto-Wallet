@@ -107,6 +107,8 @@ const escrowConfirmPaymentApi = `${baseApi}/escrow/confirm-payment`
 const escrowReleaseFundsApi = `${baseApi}/escrow/release-funds`
 const escrowOpenDisputeApi = `${baseApi}/escrow/open-dispute`
 const escrowCancelOrderApi = `${baseApi}/escrow/cancel-order`
+const escrowDisputedOrdersApi = `${baseApi}/escrow/disputed-orders`
+const escrowResolveDisputeApi = `${baseApi}/escrow/resolve-dispute`
 
 
 
@@ -199,5 +201,7 @@ export {
     escrowConfirmPaymentApi,
     escrowReleaseFundsApi,
     escrowOpenDisputeApi,
-    escrowCancelOrderApi
+    escrowCancelOrderApi,
+    escrowDisputedOrdersApi,
+    escrowResolveDisputeApi
 };

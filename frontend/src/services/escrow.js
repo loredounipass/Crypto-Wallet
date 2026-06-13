@@ -9,6 +9,8 @@ import {
     escrowReleaseFundsApi,
     escrowOpenDisputeApi,
     escrowCancelOrderApi,
+    escrowDisputedOrdersApi,
+    escrowResolveDisputeApi,
 } from '../api/http';
 
 export default class Escrow {
@@ -49,6 +51,16 @@ export default class Escrow {
 
     static async cancelOrder(orderId) {
         const { data } = await post(escrowCancelOrderApi, { orderId })
+        return data
+    }
+
+    static async getDisputedOrders() {
+        const { data } = await get(escrowDisputedOrdersApi)
+        return data
+    }
+
+    static async resolveDispute(orderId, type) {
+        const { data } = await post(escrowResolveDisputeApi, { orderId, type })
         return data
     }
 }

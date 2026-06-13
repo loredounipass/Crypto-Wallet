@@ -39,6 +39,10 @@
         {
             "name": "ME: Escrow Cancel Worker NODE",
             "script": "./daemon/workers/local/escrowCancel.js"
+        },
+        {
+            "name": "ME: Escrow Dispute Resolution Worker NODE",
+            "script": "./daemon/workers/local/escrowDisputeResolution.js"
         }
     ]
 }

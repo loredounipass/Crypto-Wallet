@@ -178,13 +178,21 @@ export default function Wallet() {
         && !withdrawLoading
         && !hasInsufficientFunds;
 
+    const [creating, setCreating] = useState(false);
+
     const handleCreateWallet = async () => {
-        const wallet = await createWallet({
-            coin: walletId,
-            chainId: defaultNetworkId,
-        });
-        if (wallet) {
-            setWalletInfo(wallet);
+        if (creating) return;
+        setCreating(true);
+        try {
+            const wallet = await createWallet({
+                coin: walletId,
+                chainId: defaultNetworkId,
+            });
+            if (wallet) {
+                setWalletInfo(wallet);
+            }
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -557,8 +565,8 @@ export default function Wallet() {
                         No tienes una billetera para esta moneda
                     </div>
                     <div style={{ display: "flex", justifyContent: "center" }}>
-                        <button onClick={handleCreateWallet} style={styles.button(true)}>
-                            Crear Billetera
+                        <button onClick={handleCreateWallet} disabled={creating} style={styles.button(true)}>
+                            {creating ? 'Creando...' : 'Crear Billetera'}
                         </button>
                     </div>
                 </div>
