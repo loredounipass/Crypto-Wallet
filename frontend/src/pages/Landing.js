@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
 
@@ -8,8 +8,31 @@ import p2pSecurityImg from '../assets/p2p_security_lock_1780904458349.png';
 import web3NetworkImg from '../assets/web3_network_nodes_1780904477811.png';
 import chartUiImg from '../assets/trading_chart_ui_1780904602514.png';
 
+const coins = [
+    { id: 'bitcoin', symbol: 'BTC', name: 'BTC/USD' },
+    { id: 'ethereum', symbol: 'ETH', name: 'ETH/USD' },
+    { id: 'solana', symbol: 'SOL', name: 'SOL/USD' },
+    { id: 'binancecoin', symbol: 'BNB', name: 'BNB/USD' },
+];
+
 export default function Landing() {
+    const [prices, setPrices] = useState(null);
+
     useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                const ids = coins.map(c => c.id).join(',');
+                const res = await fetch(
+                    `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
+                );
+                const data = await res.json();
+                setPrices(data);
+            } catch {
+                console.warn('Failed to fetch prices');
+            }
+        };
+        fetchPrices();
+        const interval = setInterval(fetchPrices, 60000);
         // Ensure scroll to top on mount
         window.scrollTo(0, 0);
 
@@ -40,6 +63,7 @@ export default function Landing() {
         });
 
         return () => {
+            clearInterval(interval);
             document.getElementById('products')?.removeEventListener('mousemove', handleMouseMove);
             revealObserver.disconnect();
         };
@@ -49,26 +73,40 @@ export default function Landing() {
         <div className="bv-landing">
             {/* Navbar */}
             <nav className="bv-navbar">
-                <Link to="/landing" className="bv-logo-container">
-                    <div className="bv-logo-icon">B</div>
-                    <div className="bv-logo-text">Brivo<span>Trust</span></div>
-                </Link>
+                <div className="bv-nav-inner">
+                    <Link to="/landing" className="bv-logo-container">
+                        <div className="bv-logo-icon">
+                            <svg viewBox="0 0 40 40" className="bv-logo-hex">
+                                <polygon points="20,2 37,12 37,28 20,38 3,28 3,12" fill="url(#logoGrad)" />
+                                <text x="20" y="26" textAnchor="middle" fill="white" fontSize="18" fontWeight="800" style={{ textShadow: '0 0 10px rgba(255,255,255,0.5)' }}>B</text>
+                                <defs>
+                                    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#6366F1" />
+                                        <stop offset="50%" stopColor="#8B5CF6" />
+                                        <stop offset="100%" stopColor="#2186EB" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div className="bv-logo-text">Brivo<span>Trust</span></div>
+                    </Link>
 
-                <div className="bv-nav-links">
-                    <a href="#exchange" className="bv-nav-link">Exchange</a>
-                    <a href="#p2p" className="bv-nav-link">P2P</a>
-                    <a href="#web3" className="bv-nav-link">Web3</a>
-                    <a href="#products" className="bv-nav-link">Products</a>
-                </div>
+                    <div className="bv-nav-links">
+                        <a href="#exchange" className="bv-nav-link">Exchange</a>
+                        <a href="#p2p" className="bv-nav-link">P2P</a>
+                        <a href="#web3" className="bv-nav-link">Web3</a>
+                        <a href="#products" className="bv-nav-link">Products</a>
+                    </div>
 
-                <div className="bv-auth-buttons">
-                    <Link to="/login" className="bv-btn-outline">Sign in / Register</Link>
+                    <div className="bv-auth-buttons">
+                        <Link to="/login" className="bv-btn-outline">Sign in / Register</Link>
+                    </div>
                 </div>
             </nav>
 
             {/* Hero Section */}
             <header className="bv-hero">
-                <div className="bv-subtitle">BrivoTrust Premium</div>
+                <div className="bv-subtitle">BrivoTrust</div>
                 <h1 className="bv-title">
                     Unlock Your Financial Future<br />
                     in the Web3 Era
@@ -86,42 +124,29 @@ export default function Landing() {
 
             {/* Tickers */}
             <section className="bv-tickers reveal">
-                <div className="bv-ticker-card">
-                    <div className="bv-ticker-info">
-                        <div className="bv-ticker-name">BTC/USD</div>
-                        <div className="bv-ticker-price">$65,452.10 <span className="bv-ticker-change positive">(+5.5%)</span></div>
-                    </div>
-                    <svg className="bv-sparkline" viewBox="0 0 60 25">
-                        <path d="M0 20 Q 15 15, 30 10 T 60 5" fill="none" stroke="#00e6f0" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </div>
-                <div className="bv-ticker-card">
-                    <div className="bv-ticker-info">
-                        <div className="bv-ticker-name">ETH/USD</div>
-                        <div className="bv-ticker-price">$3,456.76 <span className="bv-ticker-change positive">(+3.19%)</span></div>
-                    </div>
-                    <svg className="bv-sparkline" viewBox="0 0 60 25">
-                        <path d="M0 15 Q 15 20, 30 10 T 60 2" fill="none" stroke="#9d4edd" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </div>
-                <div className="bv-ticker-card">
-                    <div className="bv-ticker-info">
-                        <div className="bv-ticker-name">SOL/USD</div>
-                        <div className="bv-ticker-price">$125.45 <span className="bv-ticker-change positive">(+6.2%)</span></div>
-                    </div>
-                    <svg className="bv-sparkline" viewBox="0 0 60 25">
-                        <path d="M0 22 Q 10 15, 20 18 T 40 8 T 60 4" fill="none" stroke="#00e6f0" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </div>
-                <div className="bv-ticker-card">
-                    <div className="bv-ticker-info">
-                        <div className="bv-ticker-name">BNB/USD</div>
-                        <div className="bv-ticker-price">$456.78 <span className="bv-ticker-change positive">(+1.8%)</span></div>
-                    </div>
-                    <svg className="bv-sparkline" viewBox="0 0 60 25">
-                        <path d="M0 18 Q 20 22, 40 10 T 60 6" fill="none" stroke="#9d4edd" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </div>
+                {coins.map((coin, i) => {
+                    const data = prices?.[coin.id];
+                    const usd = data?.usd ?? 0;
+                    const change = data?.usd_24h_change ?? 0;
+                    const isPositive = change >= 0;
+                    const strokeColor = i % 2 === 0 ? '#00e6f0' : '#9d4edd';
+                    return (
+                        <div className="bv-ticker-card" key={coin.id}>
+                            <div className="bv-ticker-info">
+                                <div className="bv-ticker-name">{coin.name}</div>
+                                <div className="bv-ticker-price">
+                                    ${usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    <span className={`bv-ticker-change ${isPositive ? 'positive' : 'negative'}`}>
+                                        ({isPositive ? '+' : ''}{change.toFixed(2)}%)
+                                    </span>
+                                </div>
+                            </div>
+                            <svg className="bv-sparkline" viewBox="0 0 60 25">
+                                <path d={['M0 20 Q 15 15, 30 10 T 60 5', 'M0 15 Q 15 20, 30 10 T 60 2', 'M0 22 Q 10 15, 20 18 T 40 8 T 60 4', 'M0 18 Q 20 22, 40 10 T 60 6'][i]} fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        </div>
+                    );
+                })}
             </section>
 
             {/* Ecosystem Cards */}
@@ -129,19 +154,24 @@ export default function Landing() {
                 <h2 className="bv-section-title">Our Ecosystem</h2>
                 <div className="bv-cards-grid">
                     <div className="bv-card">
+                        <div className="bv-card-icon">💰</div>
+                        <h3 className="bv-card-title">Wallet</h3>
+                        <p className="bv-card-desc">Store and manage your funds securely with multi-currency wallet support.</p>
+                    </div>
+                    <div className="bv-card">
+                        <div className="bv-card-icon">📥</div>
+                        <h3 className="bv-card-title">Deposits</h3>
+                        <p className="bv-card-desc">Fast and secure deposits across multiple crypto networks and fiat gateways.</p>
+                    </div>
+                    <div className="bv-card">
+                        <div className="bv-card-icon">📤</div>
+                        <h3 className="bv-card-title">Withdrawals</h3>
+                        <p className="bv-card-desc">Instant withdrawals with low fees and support for all major cryptocurrencies.</p>
+                    </div>
+                    <div className="bv-card">
                         <div className="bv-card-icon">🤝</div>
-                        <h3 className="bv-card-title">Global P2P Network</h3>
-                        <p className="bv-card-desc">Secure peer-to-peer trading with escrow and encrypted communication across multiple crypto networks.</p>
-                    </div>
-                    <div className="bv-card">
-                        <div className="bv-card-icon">🌐</div>
-                        <h3 className="bv-card-title">Direct Web3 Access</h3>
-                        <p className="bv-card-desc">Node connection and network adherence connection to access wallet integration and multi-chain features.</p>
-                    </div>
-                    <div className="bv-card">
-                        <div className="bv-card-icon">🛡️</div>
-                        <h3 className="bv-card-title">Institutional Grade Security</h3>
-                        <p className="bv-card-desc">Multi-layered protection to secure your assets, operations, and transactions with institutional standards.</p>
+                        <h3 className="bv-card-title">P2P Trading</h3>
+                        <p className="bv-card-desc">Peer-to-peer trading with escrow protection, dispute resolution, and encrypted chat.</p>
                     </div>
                 </div>
             </section>
@@ -150,11 +180,11 @@ export default function Landing() {
             <section className="bv-features-split reveal" id="p2p">
                 <div className="bv-feature-block">
                     <div className="bv-feature-content">
-                        <h3 className="bv-feature-title">Secure P2P Trading</h3>
-                        <p className="bv-feature-desc">Secure peer-to-peer network with encrypted data transmission on escrow, and encrypted data network.</p>
+                        <h3 className="bv-feature-title">Secure P2P Trading with Escrow</h3>
+                        <p className="bv-feature-desc">Trade directly with other users using our escrow system. Funds are held securely until both parties confirm the transaction.</p>
                         <ul className="bv-feature-list">
-                            <li>Trustless Escrow</li>
-                            <li>Verified Merchants</li>
+                            <li>Escrow Protection</li>
+                            <li>Dispute Resolution</li>
                             <li>Instant Settlement</li>
                         </ul>
                     </div>
@@ -183,7 +213,20 @@ export default function Landing() {
 
             {/* Chart Preview */}
             <section className="bv-chart-preview reveal" id="exchange">
-                <img src={chartUiImg} alt="Trading Interface" className="bv-chart-image" />
+                <div className="bv-chart-content">
+                    <div className="bv-chart-text">
+                        <h3 className="bv-chart-title">Multi-Currency Exchange</h3>
+                        <p className="bv-chart-desc">Trade cryptocurrencies with real-time order books, deep liquidity, and seamless wallet integration. BrivoTrust connects you to global markets with institutional-grade execution.</p>
+                        <ul className="bv-chart-list">
+                            <li>Real-time Order Books</li>
+                            <li>Multi-Currency Wallet</li>
+                            <li>Instant Settlements</li>
+                        </ul>
+                    </div>
+                    <div className="bv-chart-visual">
+                        <img src={chartUiImg} alt="Trading Interface" className="bv-chart-image" />
+                    </div>
+                </div>
             </section>
 
             {/* Footer */}
@@ -206,9 +249,10 @@ export default function Landing() {
                 <div className="bv-footer-col">
                     <h4>Products</h4>
                     <ul className="bv-footer-links">
-                        <li><a href="#p2p">P2P</a></li>
-                        <li><a href="#web3">Web3</a></li>
-                        <li><a href="#blog">Blog</a></li>
+                        <li><a href="#p2p">P2P Trading</a></li>
+                        <li><a href="#wallet">Wallet</a></li>
+                        <li><a href="#deposits">Deposits</a></li>
+                        <li><a href="#withdrawals">Withdrawals</a></li>
                     </ul>
                 </div>
                 <div className="bv-footer-col">
@@ -223,7 +267,11 @@ export default function Landing() {
                 </div>
                 
                 <div className="bv-footer-bottom">
-                    <p>&copy; {new Date().getFullYear()} BrivoTrust Premium. All rights reserved.</p>
+                    <div className="bv-footer-legal">
+                        <Link to="/privacy">Privacy Policy</Link>
+                        <Link to="/terms">Terms & Conditions</Link>
+                    </div>
+                    <p>&copy; {new Date().getFullYear()} BrivoTrust. All rights reserved.</p>
                 </div>
             </footer>
         </div>
