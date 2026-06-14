@@ -58,7 +58,7 @@
         "overrides": {
             "nth-check": ">=2.0.1",
             "postcss": ">=8.4.31",
-            "serialize-javascript": ">=6.0.2"
+            "serialize-javascript": ">=7.0.5"
         },
         "onlyBuiltDependencies": [
             "core-js",
