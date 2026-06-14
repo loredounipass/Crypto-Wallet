@@ -60,8 +60,7 @@
     "rxjs": "^7.8.2",
     "sharp": "^0.34.5",
     "socket.io": "^4.8.3",
-    "uuid": "^14.0.0",
-    "uuidv4": "^6.2.13"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.21",
@@ -95,14 +94,6 @@
       "sharp",
       "unrs-resolver"
     ],
-    "overrides": {
-      "fast-xml-parser": "5.3.4",
-      "lodash": "^4.18.0",
-      "tmp": "0.2.4",
-      "webpack": "^5.104.1",
-      "bull>uuid": "^11.1.1",
-      "uuidv4>uuid": "^11.1.1"
-    },
     "ignoredBuiltDependencies": [
       "@nestjs/core",
       "msgpackr-extract"
