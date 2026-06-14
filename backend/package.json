@@ -24,6 +24,9 @@
     "hardhat": "^3.9.0"
   },
   "pnpm": {
+    "overrides": {
+        "ws": ">=8.17.1"
+    },
     "onlyBuiltDependencies": [
       "bufferutil",
       "esbuild",

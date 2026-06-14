@@ -87,6 +87,9 @@
     "typescript": "^6.0.3"
   },
   "pnpm": {
+    "overrides": {
+        "uuid": ">=8.3.3"
+    },
     "onlyBuiltDependencies": [
       "@nestjs/core",
       "ffmpeg-static",
