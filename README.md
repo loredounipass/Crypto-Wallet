@@ -75,6 +75,14 @@ $ npx hardhat run scripts/deploy.js --network (--network name--)
 $ node generate.js (--number of wallets--) + (--network ID--)
 ```
 
+# pnpm setup
+```
+$ pnpm setup
+$ source ~/.bashrc
+$ pnpm add -g hardhat
+$ pnpm add -g opencode-ai
+```
+
 # Screenshots  
 
 # Login  
