@@ -224,12 +224,12 @@ export default function Wallet() {
         },
         input: {
             width: "100%",
-            padding: isMobile ? "12px 14px" : "14px 16px",
+            padding: isMobile ? "10px 12px" : "12px 14px",
             borderRadius: "12px",
             border: "1px solid #1F1F33",
             backgroundColor: "#080811",
             color: "#FFFFFF",
-            fontSize: isMobile ? "13px" : "14px",
+            fontSize: isMobile ? "12px" : "13px",
             outline: "none",
             boxSizing: "border-box",
         },
@@ -238,11 +238,11 @@ export default function Wallet() {
             color: disabled ? "#6B7280" : (primary ? "white" : "#FFFFFF"),
             border: primary ? "none" : "1px solid #1F1F33",
             borderRadius: "12px",
-            padding: isMobile ? "12px 16px" : "14px 24px",
+            padding: isMobile ? "8px 14px" : "8px 18px",
             fontWeight: 600,
             cursor: disabled ? "not-allowed" : "pointer",
             textTransform: "none",
-            fontSize: isMobile ? "13px" : "14px",
+            fontSize: isMobile ? "12px" : "13px",
         }),
         actionSwitcher: {
             display: "grid",
@@ -270,17 +270,17 @@ export default function Wallet() {
             top: "50%",
             transform: "translateY(-50%)",
             border: "none",
-            borderRadius: "8px",
-            padding: "6px 10px",
+            borderRadius: "6px",
+            padding: "4px 8px",
             backgroundColor: "#1A1A2E",
             color: "#E5E7EB",
-            fontSize: "12px",
+            fontSize: "11px",
             fontWeight: 600,
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            minWidth: "44px",
+            minWidth: "36px",
         },
     };
     const useCompactActions = isTablet;
@@ -322,8 +322,8 @@ export default function Wallet() {
                             backgroundColor: copied ? "rgba(76, 175, 80, 0.15)" : "rgba(33, 134, 235, 0.1)",
                             border: copied ? "1px solid rgba(76, 175, 80, 0.3)" : "1px solid rgba(33, 134, 235, 0.3)",
                             transition: "all 0.2s ease",
-                            minWidth: "48px",
-                            height: "36px",
+                            minWidth: "40px",
+                            height: "32px",
                             padding: "0"
                         }} 
                         onMouseEnter={(e) => {
@@ -359,13 +359,13 @@ export default function Wallet() {
                 ¡Dirección copiada exitosamente!
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "16px" }}>
+            <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "4px" : "12px" }}>
                 <div 
                     onClick={() => setIsQRModalOpen(true)}
                     style={{ 
-                        padding: isMobile ? "10px" : "16px", 
+                        padding: isMobile ? "8px" : "12px", 
                         backgroundColor: "white", 
-                        borderRadius: "16px",
+                        borderRadius: "12px",
                         cursor: "pointer",
                         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                         transition: "transform 0.2s ease, box-shadow 0.2s ease"
@@ -380,7 +380,7 @@ export default function Wallet() {
                     }}
                     title="Toca para ampliar el código QR"
                 >
-                    <QRCode value={walletInfo?.address || ''} size={isMobile ? 140 : 180} />
+                    <QRCode value={walletInfo?.address || ''} size={isMobile ? 120 : 160} />
                 </div>
             </div>
         </div>
@@ -476,11 +476,11 @@ export default function Wallet() {
                 <>
                     {/* Balance Card */}
                     <div style={styles.section}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-                            <div
-                                style={{
-                                    width: isMobile ? 46 : 56,
-                                    height: isMobile ? 46 : 56,
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                                <div
+                                    style={{
+                                        width: isMobile ? 38 : 44,
+                                        height: isMobile ? 38 : 44,
                                     borderRadius: "999px",
                                     overflow: "hidden",
                                     backgroundColor: "#2D2D44",
@@ -499,12 +499,12 @@ export default function Wallet() {
                             <div>
                                 <div style={{ color: "#9CA3AF", fontSize: "14px" }}>Balance</div>
                                 <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
-                                    {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "16px" : "20px" }}>{walletInfo.coin}</span>
+                                    {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{walletInfo.coin}</span>
                                 </div>
                             </div>
                         </div>
                         {coinPrice && (
-                            <div style={{ color: "#9CA3AF", fontSize: "16px", marginTop: "8px" }}>
+                            <div style={{ color: "#9CA3AF", fontSize: "14px", marginTop: "8px" }}>
                                 ≈ ${(parseFloat(maxWithdrawable) * parseFloat(coinPrice)).toFixed(2)} USD
                             </div>
                         )}
@@ -558,10 +558,10 @@ export default function Wallet() {
                 </>
             ) : walletInfo === null ? (
                 <div style={styles.section}>
-                    <h2 style={{ color: "#FFFFFF", fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "16px" }}>
+                    <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, textAlign: "center", marginBottom: "12px" }}>
                         Crear Billetera {walletId.toUpperCase()}
                     </h2>
-                    <div style={{ textAlign: "center", marginBottom: "24px", color: "#9CA3AF" }}>
+                    <div style={{ textAlign: "center", marginBottom: "16px", color: "#9CA3AF" }}>
                         No tienes una billetera para esta moneda
                     </div>
                     <div style={{ display: "flex", justifyContent: "center" }}>
@@ -631,30 +631,30 @@ export default function Wallet() {
                     >
                         <QRCode value={walletInfo?.address || ''} size={isMobile ? 240 : 320} />
                         <div style={{ 
-                            marginTop: "24px", 
+                            marginTop: "16px", 
                             color: "#1A1A2E", 
                             fontWeight: 600, 
-                            fontSize: isMobile ? "14px" : "16px", 
+                            fontSize: isMobile ? "12px" : "14px", 
                             wordBreak: "break-all", 
                             textAlign: "center", 
                             maxWidth: isMobile ? "240px" : "320px",
-                            padding: "12px",
+                            padding: "10px",
                             backgroundColor: "#F3F4F6",
-                            borderRadius: "12px"
+                            borderRadius: "10px"
                         }}>
                             {walletInfo?.address}
                         </div>
                         <button 
                             onClick={() => setIsQRModalOpen(false)}
                             style={{
-                                marginTop: "24px",
+                                marginTop: "16px",
                                 backgroundColor: "#2186EB",
                                 color: "white",
                                 border: "none",
-                                borderRadius: "12px",
-                                padding: "14px 24px",
+                                borderRadius: "10px",
+                                padding: "10px 18px",
                                 fontWeight: 600,
-                                fontSize: "16px",
+                                fontSize: "14px",
                                 cursor: "pointer",
                                 width: "100%",
                                 transition: "background-color 0.2s"
