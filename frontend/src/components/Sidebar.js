@@ -12,7 +12,7 @@ import {
   Avatar,
   Typography,
 } from "../ui/material";
-import { ChevronLeft } from "../ui/icons";
+
 import { useHistory, useLocation } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../hooks/AuthContext";
@@ -119,7 +119,6 @@ const SettingsIcon = (props) => (
   </SidebarIconBase>
 );
 
-const ChevronLeftIcon = ChevronLeft;
 const LogoutIcon = (props) => (
   <SidebarIconBase {...props}>
     <path d="M10 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
