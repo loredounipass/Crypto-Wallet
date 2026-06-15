@@ -56,7 +56,7 @@ const TransitionComponent = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const WelcomeTemplate = () => {
+const SupportChat = () => {
   const [openSurvey, setOpenSurvey] = useState(true);  
   const [openMainDialog, setOpenMainDialog] = useState(false); 
   const [openCancelMessage, setOpenCancelMessage] = useState(false); 
@@ -128,7 +128,7 @@ const WelcomeTemplate = () => {
       {/* Main Dialog */}
       <DialogStyled open={openMainDialog} onClose={handleCancel} TransitionComponent={TransitionComponent}>
         <DialogTitle sx={{ color: '#2C3E50', fontWeight: 'bold', fontSize: '1.5rem', fontFamily: 'Roboto, sans-serif' }}>
-          ¡Bienvenido a Crypto Soporte!
+          ¡Bienvenido a Brivo Soporte!
         </DialogTitle>
         <DialogContent>
           <Typography
@@ -208,4 +208,4 @@ const WelcomeTemplate = () => {
   );
 };
 
-export default WelcomeTemplate;
+export default SupportChat;

@@ -15,7 +15,7 @@ import Sidebar, { DRAWER_WIDTH_EXPANDED, DRAWER_WIDTH_COLLAPSED } from './compon
 import Logo from './components/Logo'
 import Wallets from './pages/Wallets'
 import Wallet from './pages/Wallet'
-import WelcomeTemplate from './pages/welcometemplate'
+import SupportChat from './pages/SupportChat'
 import ProviderCard from './components/providers/ProviderCard'
 import CreateProvider from './pages/Create';
 import Landing from './pages/Landing'
@@ -142,7 +142,7 @@ function AppContent() {
                                 <PrivateRoute exact path="/wallet/:walletId" component={Wallet} />
                                 <PrivateRoute exact path="/providers" component={ProviderCard} />
                                 <PrivateRoute exact path="/create" component={CreateProvider} />
-                                <PrivateRoute exact path='/welcome' component={WelcomeTemplate}/>
+                                <PrivateRoute exact path='/supportChat' component={SupportChat}/>
                                 <PrivateRoute exact path='/settings' component={Settings}/>
                                 <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent}/>
                                 <PrivateRoute exact path='/chat' component={Chatcomponent}/>

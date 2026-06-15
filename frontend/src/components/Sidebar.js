@@ -136,7 +136,7 @@ const menuItems = [
   { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
   { text: "Feed", icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
   { text: "Noticias", icon: NoticiasIcon, path: "/noticias", matchPaths: ["/noticias"] },
-  { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome", matchPaths: ["/welcome"] },
+  { text: "Brivo Soporte", icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
 ];
 
 const bottomItems = [
