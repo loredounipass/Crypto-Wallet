@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box, IconButton } from "../ui/material";
 
 const BrivoAgent = () => {
@@ -7,6 +7,19 @@ const BrivoAgent = () => {
     { text: "¡Hola! Soy Brivo Agent, tu asistente virtual inteligente. ¿En qué puedo ayudarte hoy?", sender: "agent" }
   ]);
   const [inputText, setInputText] = useState("");
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom();
+  }, [isOpen]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const toggleChat = () => setIsOpen(!isOpen);
 
@@ -141,6 +154,7 @@ const BrivoAgent = () => {
 
         {/* Messages */}
         <Box
+          className="hide-scrollbar"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -150,7 +164,7 @@ const BrivoAgent = () => {
             gap: "12px",
           }}
         >
-          {messages.map((msg, index) => (
+            {messages.map((msg, index) => (
             <div
               key={index}
               style={{
@@ -170,6 +184,7 @@ const BrivoAgent = () => {
               {msg.text}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </Box>
 
         {/* Input Area */}
