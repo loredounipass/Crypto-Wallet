@@ -83,6 +83,31 @@ const SupportIcon = (props) => (
   </SidebarIconBase>
 );
 
+const SwapSidebarIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M16 3l4 4-4 4" />
+    <path d="M20 7H4" />
+    <path d="M8 21l-4-4 4-4" />
+    <path d="M4 17h16" />
+  </SidebarIconBase>
+);
+
+const FeetIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </SidebarIconBase>
+);
+
+const NoticiasIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+    <path d="M18 14h-8" />
+    <path d="M15 18h-5" />
+    <rect x="10" y="6" width="8" height="5" rx="1" />
+  </SidebarIconBase>
+);
+
 const SettingsIcon = (props) => (
   <SidebarIconBase {...props}>
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
@@ -104,6 +129,9 @@ const menuItems = [
   { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
   { text: "P2P Trading", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
   { text: "Proveedor P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
+  { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
+  { text: "Feet", icon: FeetIcon, path: "/feet", matchPaths: ["/feet"] },
+  { text: "Noticias", icon: NoticiasIcon, path: "/noticias", matchPaths: ["/noticias"] },
   { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome", matchPaths: ["/welcome"] },
 ];
 
@@ -197,15 +225,42 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       borderRight: "1px solid #1A1A2E",
     }}>
        {/* Logo Section */}
-       <Box className="p-4 flex items-center justify-between min-h-[64px]" style={{ borderBottom: "1px solid #1A1A2E" }}>
+       <Box style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "64px", borderBottom: "1px solid #1A1A2E" }}>
          {open || isMobile ? (
            <>
              <Logo variant="sidebar-expanded" />
              <button
                onClick={isMobile ? onMobileClose : onToggle}
-               className="text-white bg-white/10 border-none rounded-lg p-1.5 cursor-pointer flex items-center justify-center hover:bg-white/20 transition-colors"
+               style={{
+                 width: "26px",
+                 height: "26px",
+                 borderRadius: "8px",
+                 border: "1px solid #1F1F33",
+                 background: "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))",
+                 color: "#8F95A3",
+                 cursor: "pointer",
+                 display: "flex",
+                 alignItems: "center",
+                 justifyContent: "center",
+                 transition: "all 0.25s ease",
+                 flexShrink: 0,
+               }}
+               onMouseOver={(e) => {
+                 e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.2), rgba(139, 92, 246, 0.15))";
+                 e.currentTarget.style.borderColor = "rgba(33, 134, 235, 0.3)";
+                 e.currentTarget.style.color = "#FFFFFF";
+                 e.currentTarget.style.boxShadow = "0 0 12px rgba(33, 134, 235, 0.15)";
+               }}
+               onMouseOut={(e) => {
+                 e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))";
+                 e.currentTarget.style.borderColor = "#1F1F33";
+                 e.currentTarget.style.color = "#8F95A3";
+                 e.currentTarget.style.boxShadow = "none";
+               }}
              >
-               <ChevronLeftIcon style={{ fontSize: 18 }} />
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                 <path d="M15 18l-6-6 6-6" />
+               </svg>
              </button>
            </>
            ) : (
@@ -269,7 +324,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 <ListItemText 
                   primary={item.text} 
                   style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
-                  disableTypography
                 />
               )}
             </ListItem>
@@ -311,7 +365,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 <ListItemText 
                   primary={item.text} 
                   style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
-                  disableTypography
                 />
               )}
             </ListItem>
@@ -321,13 +374,38 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
 
         {/* Collapse toggle - only on desktop when collapsed */}
         {!open && !isMobile && (
-          <Box style={{ textAlign: "center", padding: "8px 0" }}>
+          <Box style={{ display: "flex", justifyContent: "center", paddingTop: "4px", paddingBottom: "12px", marginTop: "-8px" }}>
             <button
               onClick={onToggle}
-              className="text-white bg-white/10 border-none rounded-lg p-1.5 cursor-pointer flex items-center justify-center hover:bg-white/20 transition-colors"
-              style={{ margin: "0 auto" }}
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "8px",
+                border: "1px solid #1F1F33",
+                background: "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))",
+                color: "#8F95A3",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.25s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.2), rgba(139, 92, 246, 0.15))";
+                e.currentTarget.style.borderColor = "rgba(33, 134, 235, 0.3)";
+                e.currentTarget.style.color = "#FFFFFF";
+                e.currentTarget.style.boxShadow = "0 0 12px rgba(33, 134, 235, 0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))";
+                e.currentTarget.style.borderColor = "#1F1F33";
+                e.currentTarget.style.color = "#8F95A3";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
-              <ChevronLeftIcon style={{ fontSize: 18, transform: 'rotate(180deg)' }} />
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </button>
           </Box>
         )}

@@ -275,7 +275,7 @@ export const ListItem = ({ children, button, selected, sx, style, ...props }) =>
     {children}
   </li>
 );
-export const ListItemText = ({ primary, children, sx, style, ...props }) => (
+export const ListItemText = ({ primary, disableTypography, children, sx, style, ...props }) => (
   <span style={mergeStyles(sx, style)} {...props}>
     {primary || children}
   </span>
