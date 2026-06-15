@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../hooks/AuthContext";
 
-const Feet = () => {
+const Feed = () => {
   const { auth } = useContext(AuthContext);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [postText, setPostText] = useState("");
@@ -102,7 +102,7 @@ const Feet = () => {
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         }}
       >
-        Feet
+        Feed
       </h1>
       <p style={{ color: "#9CA3AF", fontSize: "14px", margin: 0, marginBottom: "24px" }}>
         Comparte tus ideas y experiencias con la comunidad cripto.
@@ -330,4 +330,4 @@ const Feet = () => {
   );
 };
 
-export default Feet;
+export default Feed;

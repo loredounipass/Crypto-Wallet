@@ -92,10 +92,14 @@ const SwapSidebarIcon = (props) => (
   </SidebarIconBase>
 );
 
-const FeetIcon = (props) => (
+const FeedIcon = (props) => (
   <SidebarIconBase {...props}>
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    <rect width="6" height="6" x="3" y="4" rx="1" />
+    <rect width="6" height="6" x="3" y="14" rx="1" />
+    <path d="M13 5h8" />
+    <path d="M13 9h5" />
+    <path d="M13 15h8" />
+    <path d="M13 19h5" />
   </SidebarIconBase>
 );
 
@@ -130,7 +134,7 @@ const menuItems = [
   { text: "P2P Trading", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
   { text: "Proveedor P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
   { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
-  { text: "Feet", icon: FeetIcon, path: "/feet", matchPaths: ["/feet"] },
+  { text: "Feed", icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
   { text: "Noticias", icon: NoticiasIcon, path: "/noticias", matchPaths: ["/noticias"] },
   { text: "Crypto Soporte", icon: SupportIcon, path: "/welcome", matchPaths: ["/welcome"] },
 ];
