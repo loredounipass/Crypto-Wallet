@@ -34,7 +34,7 @@ html.dark {
 }
 
 .settings-bg {
-  background-color: var(--settings-bg);
+  background-color: transparent;
 }
 
 .settings-card {
@@ -47,7 +47,7 @@ html.dark {
 }
 
 .settings-sidebar {
-  background-color: #080811;
+  background-color: transparent;
 }
 
 .settings-form-card {

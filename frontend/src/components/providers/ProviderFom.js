@@ -133,7 +133,7 @@ export default function ProviderForm() {
   const btnSecondary = "rounded-xl border border-[#1F1F33] bg-[#1A1A2E] px-6 py-3 font-medium text-slate-300 transition-all hover:bg-[#2D2D44] hover:text-white";
 
   return (
-    <div className="min-h-screen bg-[#080811] py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+    <div className="w-full h-full py-2 px-2 sm:px-4 lg:px-8 flex flex-col justify-center">
       <div className="mx-auto w-full max-w-2xl">
         
         {/* Header Section */}

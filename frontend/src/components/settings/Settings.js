@@ -47,7 +47,7 @@ function Settings() {
 
     return (
         <div
-            className={`min-h-screen ${isMobile ? 'p-0 py-2' : isTablet ? 'p-6' : 'p-10'} settings-bg`}
+            className={`w-full h-full flex flex-col justify-center flex-1 ${isMobile ? 'p-0 py-2' : isTablet ? 'p-6' : 'p-10'} settings-bg`}
         >
             <div
                 className={`mx-auto flex w-full max-w-[1100px] overflow-hidden rounded-2xl border ${isMobile ? 'flex-col min-h-[82vh]' : 'flex-row min-h-[75vh]'} settings-border settings-card`}
