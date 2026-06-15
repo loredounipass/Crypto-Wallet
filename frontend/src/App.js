@@ -35,6 +35,7 @@ import P2POrderChat from './components/p2p/P2POrderChat'
 import Swap from './pages/Swap'
 import Feet from './pages/Feet'
 import Noticias from './pages/Noticias'
+import BrivoAgent from './components/BrivoAgent'
 import { Menu as MenuIcon } from './ui/icons';
 
 const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
@@ -124,6 +125,10 @@ function AppContent() {
                             </IconButton>
                             <Logo variant="sidebar-expanded" />
                         </Box>
+                    )}
+
+                    {isAuthenticated && !isPublicRoute && (
+                        <BrivoAgent />
                     )}
 
                     <Box
