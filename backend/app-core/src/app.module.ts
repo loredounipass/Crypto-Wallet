@@ -14,6 +14,7 @@ import { ProfileModule } from './profile/profile.module';
 import { MessagesAndMultimediaModule } from './messages-and-multimedia/messages-and-multimedia.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EscrowModule } from './escrow/escrow.module';
+import { PriceModule } from './price/price.module';
 import { RedisModule } from './redis/redis.module';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfMiddleware } from './csrf/csrf.middleware';
@@ -25,8 +26,8 @@ import { CsrfMiddleware } from './csrf/csrf.middleware';
     ConfigModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [{
-        ttl: parseInt(process.env.RATE_LIMIT_TTL),
-        limit: parseInt(process.env.RATE_LIMIT),
+        ttl: parseInt(process.env.RATE_LIMIT_TTL!),
+        limit: parseInt(process.env.RATE_LIMIT!),
       }],
     }),
     
@@ -49,7 +50,8 @@ import { CsrfMiddleware } from './csrf/csrf.middleware';
     ProfileModule,
     MessagesAndMultimediaModule,
     EventEmitterModule.forRoot(),
-    EscrowModule
+    EscrowModule,
+    PriceModule
   ],
   providers: [AppService],
 })

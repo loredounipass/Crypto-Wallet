@@ -40,16 +40,33 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
     })
 }
 
+const _isRevertError = (error) => {
+    const msg = (error.message || '').toLowerCase()
+    return msg.includes('revert') || msg.includes('execution reverted') || msg.includes('always failing transaction')
+}
+
 const sendTransaction = async (valueWei, toAddress) => {
     const fromAddress = web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET)
     const toChecksum = web3.utils.toChecksumAddress(toAddress)
     const valueStr = valueWei.toString()
     const gasPrice = BigInt(await web3.eth.getGasPrice())
-    const gasLimit = BigInt(await web3.eth.estimateGas({
-        from: fromAddress,
-        to: toChecksum,
-        value: valueStr
-    }))
+
+    let gasLimit
+    try {
+        gasLimit = BigInt(await web3.eth.estimateGas({
+            from: fromAddress,
+            to: toChecksum,
+            value: valueStr
+        }))
+        gasLimit = gasLimit * 120n / 100n
+    } catch (estimateError) {
+        if (_isRevertError(estimateError)) {
+            throw new Error(`[WITHDRAW-TX] Native transfer would revert: ${estimateError.message}`)
+        }
+        console.warn('[WITHDRAW-TX] Gas estimation failed, using default:', estimateError.message)
+        gasLimit = 30000n
+    }
+
     const senderBalance = BigInt(await web3.eth.getBalance(fromAddress))
     const requiredBalance = valueWei + (gasPrice * gasLimit)
 
@@ -90,20 +107,27 @@ const sendWithdraw = async ({
 
     if (wallet && 'coin' in wallet) {
         const { coin, chainId } = wallet
-        const decimals = coins[coin].decimals
+        const coinKey = String(coin).toUpperCase()
+        const coinConfig = coins[coinKey]
+
+        if (!coinConfig) {
+            await _updateTransactionState(null, 4, transactionId)
+            throw new Error(`Unsupported coin: ${coin} (normalized: ${coinKey})`)
+        }
+
+        const decimals = coinConfig.decimals
         const amountWei = toWeiAmount(amount, decimals)
-        const feeWei = toWeiAmount(coins[coin].fee, decimals)
+        const feeWei = toWeiAmount(coinConfig.fee, decimals)
         const valueWei = amountWei - feeWei
         if (valueWei <= 0n) {
             await _updateTransactionState(null, 4, transactionId)
-            throw new Error(`Invalid withdraw amount. amount must be greater than fee (${coins[coin].fee} ${coin})`)
+            throw new Error(`Invalid withdraw amount. amount must be greater than fee (${coinConfig.fee} ${coin})`)
         }
         web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
         const receipt = await sendTransaction(valueWei, withdrawAddress)
-        const feeValue = coins[coin].fee
         if (receipt) {
             const { transactionHash, status } = receipt
-            await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, feeValue)
+            await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, coinConfig.fee)
 
             const withdrawFrom = new Queue('WithdrawedFromMetaDapp')
             withdrawFrom.add('withdraw', {
@@ -114,6 +138,9 @@ const sendWithdraw = async ({
                 transactionId,
                 status: toSerializable(status),
                 coin: wallet.coin
+            }, {
+                removeOnComplete: true,
+                removeOnFail: 50
             })
 
             return 'success'

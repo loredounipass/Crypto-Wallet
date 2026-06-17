@@ -3,12 +3,11 @@
  * 
  * BullMQ worker that processes the 'escrow-release' queue.
  * When a seller approves fund release, this worker:
- *   1. Calls EscrowContract.releaseFunds() to transfer on-chain
- *   2. If contract not available, sends directly from relayer wallet
- *   3. Credits provider's wallet balance in DB
- *   4. Updates provider stats (completedOrders, totalTradeVolume)
- *   5. Updates EscrowOrder status to 'completed'
- *   6. Emits status update event via escrow-status-events queue
+ *   1. Transfers funds from escrow wallet to provider
+ *   2. Credits provider's wallet balance in DB
+ *   3. Updates provider stats (completedOrders, totalTradeVolume)
+ *   4. Updates EscrowOrder status to 'completed'
+ *   5. Emits status update event via escrow-status-events queue
  * 
  * Queue: 'escrow-release'
  * Job data: { orderId, providerWalletAddress, sellerWalletAddress, amount, coin, chainId, sellerEmail, providerEmail }
@@ -28,7 +27,6 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
-const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
@@ -132,6 +130,12 @@ const processEscrowRelease = async (jobData) => {
         throw new Error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
     }
 
+    // Idempotency: if release already completed, skip
+    if (order.releaseTxHash || order.status === 'completed') {
+        console.log(`[ESCROW-RELEASE] Order ${orderId} already released (tx=${order.releaseTxHash}), skipping`)
+        return 'success'
+    }
+
     // Wait for funding transaction to reach 12 confirmations (status === 3)
     if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
         const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
@@ -147,43 +151,19 @@ const processEscrowRelease = async (jobData) => {
 
     let releaseTxHash = null
 
-    // ===== STRATEGY 1: Use smart contract if available =====
     const interactor = new EscrowContractInteractor(chainId)
-    const contractAvailable = await interactor.isContractAvailable()
 
-    if (USE_ESCROW_CONTRACT && contractAvailable && order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
-        console.log('[ESCROW-RELEASE] Releasing via smart contract...')
+    console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
+    await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
+    const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei)
 
-        try {
-            const receipt = await interactor.releaseFundsOnChain(orderId)
-
-            if (!receipt || !receipt.status) {
-                console.error('Contract release transaction failed')
-                throw new Error('Contract release transaction failed')
-            }
-
-            releaseTxHash = receipt.transactionHash
-            console.log('[ESCROW-RELEASE] Contract release successful:', { orderId, txHash: releaseTxHash })
-        } catch (contractError) {
-            console.warn('[ESCROW-RELEASE] Contract release failed, falling back to direct transfer:', contractError.message)
-            // Fall through to direct transfer
-        }
+    if (!receipt || !receipt.status) {
+        console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+        throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
     }
 
-    // ===== STRATEGY 2: Transfer directly from escrow wallet (fallback) =====
-    if (!releaseTxHash) {
-        console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
-        await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
-        const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei)
-
-        if (!receipt || !receipt.status) {
-            console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
-            throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
-        }
-
-        releaseTxHash = receipt.transactionHash
-        console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
-    }
+    releaseTxHash = receipt.transactionHash
+    console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
 
     // ===== Update database =====
 
@@ -202,7 +182,7 @@ const processEscrowRelease = async (jobData) => {
     await registerEscrowReleaseTransaction(order, releaseTxHash)
 
     // 3. Update provider stats
-    await Provider.updateOne(
+    const providerResult = await Provider.updateOne(
         { email: providerEmail },
         {
             $inc: {
@@ -211,6 +191,9 @@ const processEscrowRelease = async (jobData) => {
             }
         }
     )
+    if (providerResult.matchedCount === 0) {
+        console.warn('[ESCROW-RELEASE] Provider not found for stats update:', { orderId, providerEmail })
+    }
 
     // 4. Emit status update via queue ��' WebSocket
     const statusQueue = new Queue('escrow-status-events')

@@ -197,7 +197,7 @@ export class EscrowService {
       amount: dto.amount,
       fiatAmount: dto.fiatAmount,
       paymentMethod: dto.paymentMethod,
-      status: 'funded',
+      status: 'pending',
       chatroomId,
       expiresAt: new Date(Date.now() + expirySeconds * 1000),
     });
@@ -222,7 +222,7 @@ export class EscrowService {
     // 7. Emit status event
     await this.escrowStatusQueue.add('status-update', {
       orderId,
-      status: 'funded',
+      status: 'pending',
       sellerEmail,
       providerEmail: dto.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
@@ -230,7 +230,7 @@ export class EscrowService {
     return {
       orderId,
       chatroomId,
-      status: 'funded',
+      status: 'pending',
       amount: dto.amount,
       coin: dto.coin,
       providerEmail: dto.providerEmail,
@@ -471,7 +471,7 @@ export class EscrowService {
       throw new ForbiddenException('Only the seller can cancel the order.');
     }
 
-    if (order.status !== 'funded') {
+    if (order.status !== 'pending' && order.status !== 'funded') {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 

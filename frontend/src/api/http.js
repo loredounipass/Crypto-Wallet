@@ -114,8 +114,6 @@ const escrowResolveDisputeApi = `${baseApi}/escrow/resolve-dispute`
 
 
 
-const priceApi = 'https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids='
-
 async function get(url, body, config = {}) {
     return await api.get(url, {
         params: body || {},
@@ -157,9 +155,9 @@ export {
     postMultipart,
     patch,
     fetchCsrfToken,
-    priceApi,
     mediaBase,
     apiOrigin,
+
     loginApi,
     logoutApi,
     registerApi,

@@ -5,7 +5,7 @@
  * has manually set isReverted=true (seller won) or isAwarded=true (provider won).
  *
  * When such an order is found:
- *   1. Executes on-chain transfer (smart contract or escrow wallet)
+ *   1. Transfers funds from escrow wallet to the winner
  *   2. Registers the transaction in the confirmation pipeline (12 confirmations)
  *   3. Updates EscrowOrder status to 'resolved'
  *   4. Emits status update event via escrow-status-events queue
@@ -26,7 +26,6 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
-const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const POLL_INTERVAL_MS = 30000
 
@@ -122,6 +121,24 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
     return transaction
 }
 
+/**
+ * Check if a transaction matching the given criteria could be a legitimate previous
+ * resolution attempt (partial success guard). Uses strict matching to avoid false positives.
+ */
+const findPreviousResolutionTx = async (orderId, recipientAddress, amount) => {
+    const patternMatch = await Transaction.findOne({
+        $or: [
+            { txHash: `internal-resolve-revert-${orderId}` },
+            { txHash: `internal-resolve-award-${orderId}` },
+            { txHash: { $regex: `^onchain-revert-${orderId}$` } },
+            { txHash: { $regex: `^onchain-award-${orderId}$` } },
+        ]
+    })
+    if (patternMatch) return patternMatch
+
+    return null
+}
+
 const processDisputeResolution = async (order) => {
     const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
     const amountWei = toWeiAmount(order.amount, decimals)
@@ -131,27 +148,23 @@ const processDisputeResolution = async (order) => {
     let txHash = null
 
     // -----Guard: detect retry after partial success (transfer done, DB update failed)-----
-    const ownResolveType = order.isReverted ? 'revert' : 'award'
-    const recipientForSearch = ownResolveType === 'revert' ? order.sellerWalletAddress : order.providerWalletAddress
-    const TWO_HOURS_MS = 2 * 60 * 60 * 1000
-
-    const patternTx = await Transaction.findOne({
-        $or: [
-            { txHash: `internal-resolve-${ownResolveType}-${order.orderId}` },
-            { txHash: { $regex: `^onchain-${ownResolveType}-${order.orderId}$` } },
-        ]
-    })
+    const patternTx = await findPreviousResolutionTx(order.orderId, null, null)
     if (patternTx) {
         console.log('[DISP-RESOLVE] Resolution already processed (found via pattern txHash). Skipping on-chain transfer.', { orderId: order.orderId, txHash: patternTx.txHash })
         txHash = patternTx.txHash
-    } else {
+    } else if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+        // Secondary guard: check for matching Transaction with nature=1 (deposit) within the last 30 min.
+        // This catches cases where the on-chain tx succeeded but had a non-deterministic txHash
+        // that doesn't match our known patterns. Using nature=1 and short window (30min) to avoid false positives.
+        const recipientForSearch = order.isReverted ? order.sellerWalletAddress : order.providerWalletAddress
         const amountTx = await Transaction.findOne({
             to: { $regex: `^${recipientForSearch}$`, $options: 'i' },
             amount: Number(order.amount),
-            created_at: { $gte: new Date(Date.now() - TWO_HOURS_MS) }
+            nature: 1,
+            created_at: { $gte: new Date(Date.now() - 30 * 60 * 1000) }
         })
         if (amountTx) {
-            console.error('[DISP-RESOLVE] BLOCKING: Found to+amount matching Transaction without known pattern. Possible retry after real-blockchain transfer. Manual review required.', {
+            console.error('[DISP-RESOLVE] BLOCKING: Found matching Transaction (nature=1) without known pattern. Possible retry after real-blockchain transfer. Manual review required.', {
                 orderId: order.orderId,
                 foundTxHash: amountTx.txHash
             })
@@ -168,83 +181,33 @@ const processDisputeResolution = async (order) => {
         }
         console.log(`[DISP-RESOLVE] Funding transaction confirmed. Proceeding with dispute resolution...`)
 
-        // Continue with on-chain resolution only if funds are confirmed in escrow
         let receipt = null
-        let alreadyResolved = false
 
-        // Check on-chain state first to avoid double-transfer if DB update failed previously
-        if (USE_ESCROW_CONTRACT) {
-            try {
-                const contractAvailable = await interactor.isContractAvailable()
-                if (contractAvailable) {
-                    const onchainOrder = await interactor.contract.methods.getOrder(interactor.uuidToBytes32(order.orderId)).call()
-                    const status = Number(onchainOrder.status)
-                    if (resolvedType === 'revert' && status === 2) {
-                        alreadyResolved = true
-                    } else if (resolvedType === 'award' && status === 1) {
-                        alreadyResolved = true
-                    }
-                }
-            } catch (checkError) {
-                console.warn('[DISP-RESOLVE] Failed to check on-chain state, proceeding anyway:', checkError.message)
+        try {
+            await interactor.ensureEscrowWalletBalanceForTransfer(
+                order.orderId,
+                resolvedType === 'revert' ? order.sellerWalletAddress : order.providerWalletAddress,
+                amountWei
+            )
+            if (resolvedType === 'revert') {
+                receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
+            } else {
+                receipt = await interactor.awardFundsFromEscrowWallet(order.orderId, order.providerWalletAddress, amountWei)
             }
+        } catch (walletError) {
+            console.error('[DISP-RESOLVE] Escrow wallet transfer failed:', walletError.message)
         }
 
-        if (alreadyResolved) {
-            console.log('[DISP-RESOLVE] On-chain state already resolved, skipping transfer:', {
+        if (receipt && receipt.status) {
+            txHash = receipt.transactionHash
+            console.log('[DISP-RESOLVE] Transfer successful:', {
                 orderId: order.orderId,
+                txHash,
                 type: resolvedType
             })
-            // Find the txHash from the last Transfer event or use existing releaseTxHash
-            txHash = order.releaseTxHash || `onchain-${resolvedType}-${order.orderId}`
         } else {
-            // Strategy 1: Use smart contract if available
-            if (USE_ESCROW_CONTRACT) {
-                const contractAvailable = await interactor.isContractAvailable()
-                if (contractAvailable) {
-                    try {
-                        if (resolvedType === 'revert') {
-                            console.log('[DISP-RESOLVE] Refunding via smart contract:', { orderId: order.orderId })
-                            receipt = await interactor.refundFundsOnChain(order.orderId)
-                        } else {
-                            console.log('[DISP-RESOLVE] Releasing via smart contract (award):', { orderId: order.orderId })
-                            receipt = await interactor.releaseFundsOnChain(order.orderId)
-                        }
-                    } catch (contractError) {
-                        console.warn('[DISP-RESOLVE] Contract transfer failed, trying escrow wallet fallback:', contractError.message)
-                    }
-                }
-            }
-
-            // Strategy 2: Transfer directly from escrow wallet
-            if (!receipt || !receipt.status) {
-                try {
-                    await interactor.ensureEscrowWalletBalanceForTransfer(
-                        order.orderId,
-                        resolvedType === 'revert' ? order.sellerWalletAddress : order.providerWalletAddress,
-                        amountWei
-                    )
-                    if (resolvedType === 'revert') {
-                        receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
-                    } else {
-                        receipt = await interactor.awardFundsFromEscrowWallet(order.orderId, order.providerWalletAddress, amountWei)
-                    }
-                } catch (walletError) {
-                    console.warn('[DISP-RESOLVE] Escrow wallet transfer failed:', walletError.message)
-                }
-            }
-
-            if (receipt && receipt.status) {
-                txHash = receipt.transactionHash
-                console.log('[DISP-RESOLVE] On-chain transfer successful:', {
-                    orderId: order.orderId,
-                    txHash,
-                    type: resolvedType
-                })
-            } else {
-                console.error('[DISP-RESOLVE] All on-chain strategies failed for:', order.orderId)
-                throw new Error(`All on-chain transfer strategies failed for order ${order.orderId}`)
-            }
+            console.error('[DISP-RESOLVE] Escrow wallet transfer failed for:', order.orderId)
+            throw new Error(`Escrow wallet transfer failed for order ${order.orderId}`)
         }
     }
 
@@ -266,7 +229,7 @@ const processDisputeResolution = async (order) => {
 
     // Update provider stats if award
     if (resolvedType === 'award') {
-        await Provider.updateOne(
+        const providerResult = await Provider.updateOne(
             { email: order.providerEmail },
             {
                 $inc: {
@@ -275,6 +238,9 @@ const processDisputeResolution = async (order) => {
                 }
             }
         )
+        if (providerResult.matchedCount === 0) {
+            console.warn('[DISP-RESOLVE] Provider not found for stats update:', { orderId: order.orderId, providerEmail: order.providerEmail })
+        }
     }
 
     // Emit status update event

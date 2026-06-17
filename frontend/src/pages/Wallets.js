@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useAllWallets from '../hooks/useAllWallets';
 import useCoinPrice from '../hooks/useCoinPrice';
+import { get } from '../api/http';
 import { ArrowBack } from '../ui/icons';
 import {
     getCoinList,
@@ -60,32 +61,12 @@ const Wallets = () => {
     const [chartDataValues, setChartDataValues] = useState([]);
 
     useEffect(() => {
-        const COINGECKO_IDS = {
-            bnb: 'binancecoin',
-            avax: 'avalanche-2',
-            ftm: 'fantom',
-            eth: 'ethereum',
-            matic: 'matic-network',
-            op: 'optimism',
-        };
-        function getCoinId(coin) {
-            const key = String(coin || '').trim().toLowerCase();
-            return COINGECKO_IDS[key] || key;
-        }
-
         let isMounted = true;
         const fetchHistoricalData = async () => {
             try {
-                const id = getCoinId(selectedCoin);
-                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=1`);
-                if (!res.ok) {
-                    console.warn("CoinGecko API responded with", res.status);
-                    return;
-                }
-                const json = await res.json();
-                if (json && Array.isArray(json.prices) && json.prices.length > 1) {
-                    const prices = json.prices.map(p => p[1]);
-                    if (isMounted) setChartDataValues(prices);
+                const { data } = await get(`price/${selectedCoin}/chart`);
+                if (isMounted && Array.isArray(data?.prices) && data.prices.length > 1) {
+                    setChartDataValues(data.prices);
                 }
             } catch (err) {
                 console.error("Failed to fetch historical chart data", err);

@@ -81,6 +81,8 @@ $ pnpm setup
 $ source ~/.bashrc
 $ pnpm add -g hardhat
 $ pnpm add -g opencode-ai
+$ mongodb://brivotrust:Miranda23%26%26@127.0.0.1:27020/brivotrust?authSource=admin
+
 ```
 
 # Screenshots  

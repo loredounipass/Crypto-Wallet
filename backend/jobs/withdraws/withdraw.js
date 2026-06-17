@@ -12,6 +12,7 @@ let web3
 
 const POLL_INTERVAL_MS = Number(process.env.CONFIRMATION_POLL_INTERVAL_MS || 10000)
 const MAX_CONFIRMATION_POLLS = Number(process.env.MAX_CONFIRMATION_POLLS || 180)
+const MIN_CONFIRMATIONS = Number(process.env.MIN_CONFIRMATIONS || 12)
 
 const toCoinAmount = (rawValue, coin) => {
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
@@ -78,7 +79,6 @@ const processWithdraw = async ({
     web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
     var result = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (result) {
-        const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
             result = await web3.eth.getTransaction(transactionHash)
             if (result && 'value' in result) {
@@ -87,7 +87,7 @@ const processWithdraw = async ({
                     const latestBlockNumber = await web3.eth.getBlockNumber()
                     const confirmations = Number(latestBlockNumber - blockNumber)
                     await _updateTransactionState(transactionId, 2, confirmations)
-                    if (confirmations >= minConfirmations) {
+                    if (confirmations >= MIN_CONFIRMATIONS) {
                         return await _checkConfirmation(
                             walletAddress, transactionHash, value, coin, chainId, transactionId
                         )
@@ -96,7 +96,7 @@ const processWithdraw = async ({
                     console.log('[WITHDRAW] waiting for more confirmations', {
                         transactionId,
                         confirmations,
-                        minConfirmations
+                        minConfirmations: MIN_CONFIRMATIONS
                     })
                 } else {
                     console.log('[WITHDRAW] transaction is pending inclusion in block', {

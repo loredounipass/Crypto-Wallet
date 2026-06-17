@@ -13,6 +13,7 @@ let web3
 
 const POLL_INTERVAL_MS = Number(process.env.CONFIRMATION_POLL_INTERVAL_MS || 10000)
 const MAX_CONFIRMATION_POLLS = Number(process.env.MAX_CONFIRMATION_POLLS || 180)
+const MIN_CONFIRMATIONS = Number(process.env.MIN_CONFIRMATIONS || 12)
 
 const toNumber = (value) => {
     if (typeof value === 'bigint') return Number(value)
@@ -65,32 +66,45 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
         address,
         value
     })
-    var result = await Wallet.updateOne({
+    const result = await Wallet.updateOne({
         address, coin, chainId
     }, {
         $inc: { balance: value }
     })
 
-    if (result) {
-        await _updateTransactionState(transactionId, 3, value)
-        const wallet = await Wallet.findOne({
-            transactions: new ObjectId(transactionId)
+    if (result.matchedCount === 0) {
+        console.error('[DEPOSIT] Wallet not found for credit:', {
+            transactionId,
+            address,
+            coin,
+            chainId
         })
-        const user = await User.findOne({
-            wallets: new ObjectId(wallet._id)
-        })
-        if (user && user.email) {
-            try {
-                await sendDepositEmail(value, coin, user.email)
-            } catch (error) {
-                console.error('[DEPOSIT] notification email failed', error?.message || error)
-            }
-        }
-        return 'deposit'
-    } else {
         await _updateTransactionState(transactionId, 4)
-        reject()
+        reject('err: wallet not found for deposit')
+        return
     }
+
+    await _updateTransactionState(transactionId, 3, value)
+    const wallet = await Wallet.findOne({
+        transactions: new ObjectId(transactionId)
+    })
+    if (!wallet) {
+        console.warn('[DEPOSIT] Wallet with matching transaction not found for email notification:', {
+            transactionId
+        })
+        return 'deposit'
+    }
+    const user = await User.findOne({
+        wallets: new ObjectId(wallet._id)
+    })
+    if (user && user.email) {
+        try {
+            await sendDepositEmail(value, coin, user.email)
+        } catch (error) {
+            console.error('[DEPOSIT] notification email failed', error?.message || error)
+        }
+    }
+    return 'deposit'
 }
 
 const _checkConfirmation = async (
@@ -127,7 +141,6 @@ const processDeposit = async (
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
     let trackedTransaction = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (trackedTransaction) {
-        const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || 0)
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
             const chainTx = await web3.eth.getTransaction(transactionHash)
             if (chainTx && 'value' in chainTx) {
@@ -140,6 +153,21 @@ const processDeposit = async (
                     const amount = chainAmount > 0
                         ? chainAmount
                         : (isFiniteNumber(storedAmount) ? storedAmount : 0)
+
+                    if (chainAmount === 0 && isFiniteNumber(storedAmount) && storedAmount > 0) {
+                        console.warn('[DEPOSIT] On-chain value is 0 but stored amount > 0. Possible ERC-20 token transfer — deposit pipeline only supports native coins.', {
+                            transactionId,
+                            txHash: transactionHash,
+                            storedAmount,
+                            coin
+                        })
+                    } else if (chainAmount === 0 && amount === 0) {
+                        console.error('[DEPOSIT] Cannot determine deposit amount: on-chain value is 0 and no stored amount available.', {
+                            transactionId,
+                            txHash: transactionHash
+                        })
+                    }
+
                     console.log('[DEPOSIT] transaction found on chain', {
                         transactionId,
                         confirmations,
@@ -153,10 +181,10 @@ const processDeposit = async (
                         amount,
                         confirmations
                     )
-                    if (confirmations >= minConfirmations) {
+                    if (confirmations >= MIN_CONFIRMATIONS) {
                         console.log('[DEPOSIT] minimum confirmations reached', {
                             transactionId,
-                            minConfirmations
+                            minConfirmations: MIN_CONFIRMATIONS
                         })
                         return await _checkConfirmation(
                             walletAddress,
@@ -171,7 +199,7 @@ const processDeposit = async (
                     console.log('[DEPOSIT] waiting for more confirmations', {
                         transactionId,
                         confirmations,
-                        minConfirmations
+                        minConfirmations: MIN_CONFIRMATIONS
                     })
                 } else {
                     console.log('[DEPOSIT] transaction is pending inclusion in block', {

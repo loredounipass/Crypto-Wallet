@@ -75,6 +75,15 @@ export class EscrowOrder {
 
     @Prop()
     expiresAt: Date;
+
+    @Prop()
+    fundingMethod: string;
+
+    @Prop()
+    expiryLockedAt: Date;
+
+    @Prop()
+    refundTxHash: string;
 }
 
 export const EscrowOrderSchema = SchemaFactory.createForClass(EscrowOrder);

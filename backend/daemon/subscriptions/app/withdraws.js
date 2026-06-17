@@ -26,7 +26,9 @@ connectDB.then(() => {
             backoff: {
                 type: 'exponential',
                 delay: 5000,
-            }
+            },
+            removeOnComplete: true,
+            removeOnFail: 50
         })
 
         return 'success'

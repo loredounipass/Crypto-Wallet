@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { get } from '../api/http';
 import './Landing.css';
 
 // Importing generated assets
@@ -21,11 +22,7 @@ export default function Landing() {
     useEffect(() => {
         const fetchPrices = async () => {
             try {
-                const ids = coins.map(c => c.id).join(',');
-                const res = await fetch(
-                    `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
-                );
-                const data = await res.json();
+                const { data } = await get('price/landing');
                 setPrices(data);
             } catch {
                 console.warn('Failed to fetch prices');

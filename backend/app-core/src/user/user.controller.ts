@@ -201,11 +201,10 @@ async isEmailVerified(@Request() req): Promise<{ isVerified: boolean; message: s
     const { email } = body;
     try {
       await this.forgotPasswordService.requestPasswordReset(email);
-      return { message: 'Reset email sent if the user exists.' };
-    } catch (error: unknown) {
-      const e = error instanceof Error ? error : new Error(String(error));
-      throw new BadRequestException(e.message || 'Could not process the request.');
+    } catch {
+      // Swallow all errors to prevent email enumeration
     }
+    return { message: 'Reset email sent if the user exists.' };
   }
   
 

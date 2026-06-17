@@ -24,6 +24,9 @@ const EscrowOrderSchema = new mongoose.Schema({
     resolvedAt: { type: Date },
     resolutionType: { type: String },
     expiresAt: { type: Date },
+    fundingMethod: { type: String, enum: ['contract', 'wallet'] },
+    expiryLockedAt: { type: Date },
+    refundTxHash: { type: String },
 }, { timestamps: true })
 
 EscrowOrderSchema.index({ status: 1, isReverted: 1, isAwarded: 1, resolvedAt: 1 })

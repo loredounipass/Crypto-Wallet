@@ -7,15 +7,17 @@ const { publishTransactionStatusUpdate } = require('../notifications/transaction
 
 
 const createTransaction
-    = async ({ walletAddress, transactionHash, chainId, coin }) => {
+    = async ({ walletAddress, transactionHash, chainId, coin, amount }) => {
         console.log('[DEPOSIT_TX] create transaction requested', {
             walletAddress,
             transactionHash,
             chainId,
-            coin
+            coin,
+            amount
         })
         const transaction = new Transaction({
             nature: 1,
+            amount: typeof amount === 'number' ? amount : undefined,
             created_at: Date.now(),
             txHash: transactionHash
         })

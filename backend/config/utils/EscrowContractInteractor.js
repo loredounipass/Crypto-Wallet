@@ -69,6 +69,11 @@ class EscrowContractInteractor {
         return keccak256(toUtf8Bytes(uuid))
     }
 
+    _isRevertError(error) {
+        const msg = (error.message || error.data?.message || '').toLowerCase()
+        return msg.includes('revert') || msg.includes('execution reverted') || msg.includes('always failing transaction')
+    }
+
     _normalizePrivateKey(privateKey) {
         if (!privateKey) return privateKey
         return privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`
@@ -97,6 +102,9 @@ class EscrowContractInteractor {
             // Add 20% buffer for safety
             gasLimit = BigInt(gasLimit) * 120n / 100n
         } catch (estimateError) {
+            if (this._isRevertError(estimateError)) {
+                throw new Error(`[ESCROW-CONTRACT] Contract call would revert: ${estimateError.message}`)
+            }
             console.warn('[ESCROW-CONTRACT] Gas estimation failed, using default:', estimateError.message)
             gasLimit = 200000n
         }
@@ -146,6 +154,9 @@ class EscrowContractInteractor {
             }))
             gasLimit = gasLimit * 120n / 100n
         } catch (estimateError) {
+            if (this._isRevertError(estimateError)) {
+                throw new Error(`[ESCROW-WALLET] Native transfer would revert: ${estimateError.message}`)
+            }
             console.warn('[ESCROW-WALLET] Native transfer gas estimation failed, using fallback:', estimateError.message)
             gasLimit = 30000n
         }
