@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
 import Transaction from '../services/transaction';
-import { apiOrigin } from '../api/http';
 
 export default function useTransitions(coin) {
     const [transactions, setTransactions] = useState([]);
     const [toast, setToast] = useState(null);
     const notifiedCompletedTxRef = useRef(new Set());
+
+    const upsertTransactionRef = useRef(null);
 
     // Define getTransactions using useCallback to memoize it
     const getTransactions = useCallback(async () => {
@@ -97,19 +98,22 @@ export default function useTransitions(coin) {
         }
     }, [coin]);
 
+    upsertTransactionRef.current = upsertTransaction;
+
     useEffect(() => {
-        const socket = io(`${apiOrigin}/transactions`, {
+        const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/transactions`, {
             withCredentials: true,
-            transports: ['websocket', 'polling']
+            transports: ['polling']
         });
 
-        socket.on('transactionStatusUpdated', upsertTransaction);
+        const handler = (data) => upsertTransactionRef.current(data);
+        socket.on('transactionStatusUpdated', handler);
 
         return () => {
-            socket.off('transactionStatusUpdated', upsertTransaction);
+            socket.off('transactionStatusUpdated', handler);
             socket.disconnect();
         };
-    }, [upsertTransaction]);
+    }, []);
 
     return {
         transactions,

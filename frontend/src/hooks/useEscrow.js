@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import Escrow from '../services/escrow';
-import { apiOrigin } from '../api/http';
 
 export default function useEscrow() {
   const [orders, setOrders] = useState([]);
@@ -15,11 +14,9 @@ export default function useEscrow() {
 
   // WebSocket Connection for Real-time Escrow Updates
   useEffect(() => {
-    // Extraemos la base sin /secure/api para conectarnos al gateway principal
-    const socketOrigin = apiOrigin.replace('/secure/api', '');
-    const socket = io(`${socketOrigin}/escrow`, {
+    const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/escrow`, {
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     });
 
     socket.on('connect', () => {

@@ -28,7 +28,7 @@ export const SocketProvider = ({ children }) => {
 
         const newSocket = io(`${socketOrigin}/messages`, {
             withCredentials: true,
-            path: '/socket.io',
+            transports: ['polling'],
         });
 
         newSocket.on('connect', () => {

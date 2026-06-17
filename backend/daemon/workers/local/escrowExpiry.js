@@ -3,7 +3,7 @@
  * 
  * Polling worker that checks for expired escrow orders every 60 seconds.
  * When an order expires (expiresAt < now && status in ['pending', 'funded']):
- *   1. If funds were locked on-chain, calls EscrowContract.refundFunds()
+ *   1. Refunds funds from escrow wallet to seller
  *   2. Refunds the seller's wallet balance in MongoDB
  *   3. Sets the order status to 'expired'
  *   4. Emits a status update event via the escrow-status-events queue
@@ -16,7 +16,7 @@ require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const ObjectId = require('mongoose').Types.ObjectId
-const { parseUnits } = require('ethers')
+const { parseUnits, formatUnits } = require('ethers')
 
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
@@ -24,11 +24,10 @@ const User = require(`${appRoot}/config/models/User`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 const coins = require(`${appRoot}/config/coins/info`)
-const USE_ESCROW_CONTRACT = process.env.ESCROW_USE_CONTRACT === 'true'
 
 const POLL_INTERVAL_MS = 60000 // Check every 60 seconds
 
-const registerEscrowRefundTransaction = async (order, refundTxHash) => {
+const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
@@ -63,9 +62,10 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
 
     // Si hay txHash (on-chain), se marca pendiente (status 1). Si es interna, se marca completada (status 3).
     const isInternal = !refundTxHash
+    const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
     const transaction = new Transaction({
         nature: 1, // Deposit (Refund)
-        amount: Number(order.amount || 0),
+        amount: actualAmount,
         created_at: Date.now(),
         status: isInternal ? 3 : 1,
         confirmations: 0,
@@ -118,47 +118,54 @@ const registerEscrowRefundTransaction = async (order, refundTxHash) => {
 
 const refundSellerWallet = async (order) => {
     let refundTxHash = null;
+    let refundAmountEth = null;
 
-    // 1. If order was funded on-chain, refund via smart contract
     if (order.escrowTxHash) {
         try {
             const interactor = new EscrowContractInteractor(order.chainId)
-            const contractAvailable = await interactor.isContractAvailable()
             const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
             const amountWei = parseUnits(String(order.amount), decimals)
-            let refunded = false
 
-            if (USE_ESCROW_CONTRACT && contractAvailable) {
-                try {
-                    console.log('[ESCROW-EXPIRY] Refunding via escrow contract:', { orderId: order.orderId })
-                    const receipt = await interactor.refundFundsOnChain(order.orderId)
-                    if (receipt && receipt.status) {
-                        refunded = true
-                        refundTxHash = receipt.transactionHash
-                        console.log('[ESCROW-EXPIRY] Contract refund successful:', {
-                            orderId: order.orderId,
-                            txHash: refundTxHash
-                        })
-                    }
-                } catch (contractError) {
-                    console.warn('[ESCROW-EXPIRY] Contract refund failed, trying escrow wallet fallback:', contractError.message)
+            // Idempotency check: if escrow wallet already empty, refund was already processed
+            const escrowBalance = await interactor.getNativeBalance(interactor.escrowWalletAddress)
+            if (escrowBalance >= amountWei) {
+                // Estimate gas cost and deduct from refund (user pays gas)
+                const requiredWei = await interactor._estimateNativeTransferRequiredWei(
+                    interactor.escrowWalletAddress,
+                    order.sellerWalletAddress,
+                    amountWei
+                )
+                const gasCost = requiredWei - amountWei
+                const refundAmount = amountWei - gasCost
+                if (refundAmount <= 0n) {
+                    throw new Error(`Order amount too small to cover gas costs: amountWei=${amountWei} gasCost=${gasCost}`)
                 }
+                const gasCostEth = formatUnits(gasCost, decimals)
+                refundAmountEth = formatUnits(refundAmount, decimals)
+
+                console.log('[ESCROW-EXPIRY] Refunding from Escrow Wallet:', {
+                    orderId: order.orderId,
+                    refundAmount: refundAmountEth,
+                    gasDeducted: gasCostEth
+                })
+                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, refundAmount)
+            } else {
+                console.log('[ESCROW-EXPIRY] Escrow wallet balance is less than amount. Refund already processed on-chain, skipping:', {
+                    orderId: order.orderId,
+                    balance: escrowBalance.toString(),
+                    amount: amountWei.toString()
+                })
+            }
+            if (receipt && receipt.status) {
+                refundTxHash = receipt.transactionHash
+                console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
+                    orderId: order.orderId,
+                    txHash: refundTxHash
+                })
             }
 
-            if (!refunded) {
-                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
-                if (receipt && receipt.status) {
-                    refunded = true
-                    refundTxHash = receipt.transactionHash
-                    console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
-                        orderId: order.orderId,
-                        txHash: refundTxHash
-                    })
-                }
-            }
-
-            if (!refunded) {
-                throw new Error('Refund transaction failed in all strategies')
+            if (!refundTxHash) {
+                throw new Error('[ESCROW-EXPIRY] Escrow wallet refund failed')
             }
         } catch (error) {
             console.warn('[ESCROW-EXPIRY] On-chain refund error:', error.message)
@@ -166,24 +173,40 @@ const refundSellerWallet = async (order) => {
         }
     }
 
-    // 2. Refund seller's wallet balance using Transaction queue (or internal if no hash)
-    await registerEscrowRefundTransaction(order, refundTxHash)
+    await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
 }
 
 const checkExpiredOrders = async () => {
     try {
-        const expiredOrders = await EscrowOrder.find({
+        const pendingOrders = await EscrowOrder.find({
             status: { $in: ['pending', 'funded'] },
-            expiresAt: { $lt: new Date() }
+            expiresAt: { $lt: new Date() },
+            expiryLockedAt: null
         }).exec()
 
-        if (expiredOrders.length === 0) return
+        if (pendingOrders.length === 0) return
 
-        console.log(`[ESCROW-EXPIRY] Found ${expiredOrders.length} expired orders`)
+        console.log(`[ESCROW-EXPIRY] Found ${pendingOrders.length} expired orders`)
 
         const statusQueue = new Queue('escrow-status-events')
 
-        for (const order of expiredOrders) {
+        for (const order of pendingOrders) {
+            // Atomic lock: claim this order exclusively
+            const claimed = await EscrowOrder.findOneAndUpdate(
+                {
+                    orderId: order.orderId,
+                    status: { $in: ['pending', 'funded'] },
+                    expiresAt: { $lt: new Date() },
+                    expiryLockedAt: null
+                },
+                { $set: { expiryLockedAt: new Date() } }
+            )
+
+            if (!claimed) {
+                console.log(`[ESCROW-EXPIRY] Order ${order.orderId} already claimed by another process, skipping`)
+                continue
+            }
+
             try {
                 // Refund seller (on-chain + DB)
                 await refundSellerWallet(order)
@@ -205,6 +228,11 @@ const checkExpiredOrders = async () => {
                 console.log('[ESCROW-EXPIRY] Order expired and refunded:', order.orderId)
             } catch (orderError) {
                 console.error('[ESCROW-EXPIRY] Error processing expired order:', order.orderId, orderError.message)
+                // Clear lock for retry on next poll cycle
+                await EscrowOrder.updateOne(
+                    { orderId: order.orderId },
+                    { $set: { expiryLockedAt: null } }
+                ).catch(e => console.error('[ESCROW-EXPIRY] Failed to clear lock:', e.message))
             }
         }
     } catch (error) {
