@@ -84,7 +84,7 @@ async function forwardToHotWallet(web3, walletContractAddress, tokenAddress, rel
 connectDB.then(() => {
     console.log('[ERC20-WITHDRAW] Worker started and ready')
     new Worker('erc20-withdraw-requests', async (job) => {
-        const { transactionId, walletAddress, tokenAddress, chainId, amount, withdrawAddress, symbol } = job.data
+        const { transactionId, walletAddress, tokenAddress, chainId, amount, withdrawAddress, symbol, deductLocked } = job.data
         console.log(`[ERC20-WITHDRAW] Processing withdrawal of ${amount} ${symbol} to ${withdrawAddress}`)
 
         const chainConfig = require(`${appRoot}/config/chains/${chainId}`)
@@ -147,6 +147,13 @@ connectDB.then(() => {
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
 
         console.log(`[ERC20-WITHDRAW] ${symbol} withdrawal sent. Tx: ${receipt.transactionHash}`)
+
+        // Decrement ledger only after successful on-chain send
+        const deduct = Math.min(amount, deductLocked || amount)
+        await Erc20Ledger.updateOne(
+            { walletAddress: walletAddress.toLowerCase(), tokenAddress: tokenAddress.toLowerCase(), chainId },
+            { $inc: { available_balance: -amount, locked_for_forward: -deduct } }
+        )
 
         const Transaction = require(`${appRoot}/config/models/Transaction`)
         await Transaction.updateOne(

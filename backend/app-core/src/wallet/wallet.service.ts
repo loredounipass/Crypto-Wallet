@@ -373,8 +373,17 @@ export class WalletService {
     }
 
     const entry = chainEntries[0];
-    const available = entry.available_balance || 0;
+    let available = entry.available_balance || 0;
     const locked = entry.locked_for_forward || 0;
+
+    // Re-credit if a previous withdrawal failed (available === 0 but locked > 0)
+    if (available === 0 && locked > 0) {
+      await this.erc20LedgerModel.updateOne(
+        { walletAddress: entry.walletAddress, tokenAddress: entry.tokenAddress, chainId: entry.chainId },
+        { $set: { available_balance: locked, locked_for_forward: 0 } }
+      );
+      available = locked;
+    }
 
     if (available < tokenWithdrawDto.amount) {
       return { error: true, msg: 'Insufficient token balance' };
@@ -406,12 +415,6 @@ export class WalletService {
       source: 'app-core-withdraw-token'
     }, { removeOnComplete: true, removeOnFail: 50 });
 
-    const deductLocked = Math.min(tokenWithdrawDto.amount, locked);
-    await this.erc20LedgerModel.updateOne(
-      { walletAddress: entry.walletAddress, tokenAddress: entry.tokenAddress, chainId: entry.chainId },
-      { $inc: { available_balance: -tokenWithdrawDto.amount, locked_for_forward: -deductLocked } }
-    );
-
     await this.withdrawTokenQueue.add('request', {
       transactionId: transaction._id.toString(),
       walletAddress: entry.walletAddress,
@@ -419,7 +422,8 @@ export class WalletService {
       chainId: entry.chainId,
       amount: tokenWithdrawDto.amount,
       withdrawAddress: tokenWithdrawDto.to,
-      symbol: tokenInfo?.symbol || 'UNKNOWN'
+      symbol: tokenInfo?.symbol || 'UNKNOWN',
+      deductLocked: Math.min(tokenWithdrawDto.amount, locked)
     });
 
     return { error: null, data: 'success', transactionId: transaction._id.toString() };
