@@ -19,12 +19,66 @@ const ERC20_ABI_TRANSFER = [
     }
 ]
 
+const ERC20_ABI_BALANCE = [
+    {
+        "constant": true,
+        "inputs": [{"name": "account","type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "","type": "uint256"}],
+        "type": "function"
+    }
+]
+
+const WALLET_CONTRACT_ABI = [
+    {
+        "inputs": [{"internalType": "address","name": "tokenAddress","type": "address"}],
+        "name": "forwardToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
+
 function toRawAmount(displayAmount, decimals) {
     const divisor = BigInt(10) ** BigInt(decimals)
     const parts = displayAmount.toString().split('.')
     const whole = BigInt(parts[0] || '0') * divisor
     const fraction = parts[1] ? BigInt(parts[1].padEnd(decimals, '0').slice(0, decimals)) : BigInt(0)
     return (whole + fraction).toString()
+}
+
+async function forwardToHotWallet(web3, walletContractAddress, tokenAddress, relayerPk, chainId) {
+    const walletContract = new web3.eth.Contract(WALLET_CONTRACT_ABI, walletContractAddress)
+    const txData = walletContract.methods.forwardToken(tokenAddress).encodeABI()
+
+    const gasPrice = await web3.eth.getGasPrice()
+    const account = web3.eth.accounts.privateKeyToAccount(relayerPk)
+    let gasEstimate
+    try {
+        gasEstimate = await web3.eth.estimateGas({
+            from: account.address,
+            to: walletContractAddress,
+            data: txData
+        })
+    } catch {
+        gasEstimate = 150000
+    }
+    const gasLimit = Math.ceil(gasEstimate * 1.2)
+
+    const nonce = await web3.eth.getTransactionCount(account.address)
+    const txObject = {
+        from: account.address,
+        to: walletContractAddress,
+        nonce: web3.utils.toHex(nonce),
+        gasPrice: web3.utils.toHex(gasPrice),
+        gas: web3.utils.toHex(gasLimit),
+        data: txData,
+        chainId
+    }
+
+    const signedTx = await web3.eth.accounts.signTransaction(txObject, relayerPk)
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+    console.log(`[ERC20-WITHDRAW] Forwarded tokens from ${walletContractAddress} to hot wallet. Tx: ${receipt.transactionHash}`)
 }
 
 connectDB.then(() => {
@@ -48,8 +102,22 @@ connectDB.then(() => {
         const decimals = tokenInfo?.decimals ?? 18
         const rawAmount = toRawAmount(amount, decimals)
 
-        const tokenContract = new web3.eth.Contract(ERC20_ABI_TRANSFER, tokenAddress)
-        const txData = tokenContract.methods.transfer(withdrawAddress, rawAmount).encodeABI()
+        // Check if hot wallet has enough balance
+        const tokenContract = new web3.eth.Contract(ERC20_ABI_BALANCE, tokenAddress)
+        const hotWalletBalance = await tokenContract.methods.balanceOf(hotWalletAddress).call()
+
+        if (BigInt(hotWalletBalance) < BigInt(rawAmount)) {
+            console.log(`[ERC20-WITHDRAW] Hot wallet has insufficient balance. Forwarding from wallet contract ${walletAddress}...`)
+            const relayerPk = process.env.RELAYER_PRIVATE_KEY
+            if (!relayerPk) {
+                throw new Error('RELAYER_PRIVATE_KEY not configured. Needed to forward tokens from wallet contract.')
+            }
+            await forwardToHotWallet(web3, walletAddress, tokenAddress, relayerPk, chainId)
+        }
+
+        // Now send from hot wallet to user
+        const transferContract = new web3.eth.Contract(ERC20_ABI_TRANSFER, tokenAddress)
+        const txData = transferContract.methods.transfer(withdrawAddress, rawAmount).encodeABI()
 
         const gasPrice = await web3.eth.getGasPrice()
         let gasEstimate
