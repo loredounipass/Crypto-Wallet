@@ -179,7 +179,7 @@ export default function Wallet() {
             setError(t('token_withdraw') + ': Monto inválido');
             return;
         }
-        if (amountNumber > token.availableBalance) {
+        if (amountNumber > Math.floor(token.availableBalance * 1e8) / 1e8) {
             setError(t('token_withdraw') + ': Saldo insuficiente');
             return;
         }
@@ -616,11 +616,12 @@ export default function Wallet() {
                                                 <div style={{ color: "#9CA3AF", fontSize: "11px" }}>
                                                     {t('token_withdraw_available', { amount: token.availableBalance.toFixed(4), symbol: token.tokenSymbol })}
                                                 </div>
+                                                {error && <div style={{ color: "#F44336", fontSize: "14px", marginBottom: "8px" }}>{error}</div>}
                                                 <button
                                                     onClick={() => handleTokenWithdraw(token)}
-                                                    disabled={tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > token.availableBalance}
+                                                    disabled={tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.availableBalance * 1e8) / 1e8}
                                                     style={{
-                                                        ...styles.button(true, tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > token.availableBalance),
+                                                        ...styles.button(true, tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.availableBalance * 1e8) / 1e8),
                                                     }}
                                                 >
                                                     {tokenWithdrawLoading ? t('token_withdraw_sending') : t('token_withdraw_btn', { symbol: token.tokenSymbol })}

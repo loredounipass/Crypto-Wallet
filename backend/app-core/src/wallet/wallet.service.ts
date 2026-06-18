@@ -365,7 +365,7 @@ export class WalletService {
 
     const chainEntries = await this.erc20LedgerModel.find({
       walletAddress: { $in: wallets.map(w => w.address.toLowerCase()) },
-      tokenAddress: tokenWithdrawDto.tokenAddress.toLowerCase()
+      tokenAddress: tokenWithdrawDto.tokenAddress
     }).exec();
 
     if (!chainEntries || chainEntries.length === 0) {
