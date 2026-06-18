@@ -63,6 +63,10 @@
         {
             "name": "ME: ERC20 Withdraw Worker NODE",
             "script": "./daemon/workers/local/erc20-withdraw.js"
+        },
+        {
+            "name": "ME: ERC20 Backfill NODE",
+            "script": "./daemon/subscriptions/chain/evm/erc20-tokens/erc20-backfill-runner.js"
         }
     ]
 }

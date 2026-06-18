@@ -45,7 +45,7 @@ contract WalletContract {
         // Llamada de bajo nivel (low-level call) para soportar USDT en Mainnet
         // ya que el transfer de USDT no retorna un booleano y haría revert de la forma tradicional.
         (bool success, bytes memory data) = tokenAddress.call(
-            abi.encodeWithSelector(token.transfer.selector, HOT_WALLET, balance)
+            abi.encodeWithSelector(IERC20.transfer.selector, HOT_WALLET, balance)
         );
         require(success && (data.length == 0 || abi.decode(data, (bool))), "Transferencia ERC20 fallida");
         
