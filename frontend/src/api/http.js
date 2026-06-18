@@ -73,6 +73,8 @@ const walletInfoApi = `${baseApi}/wallet/info`
 const allWalletInfoApi = `${baseApi}/wallet/all`
 const walletCreateApi = `${baseApi}/wallet/create`
 const withdrawApi = `${baseApi}/wallet/withdraw`
+const withdrawTokenApi = `${baseApi}/wallet/withdraw-token`
+const tokenBalancesApi = `${baseApi}/wallet/tokens`
 
 // Endpoints transacción
 const transactionsApi = `${baseApi}/transaction/all`
@@ -163,8 +165,10 @@ export {
     registerApi,
     userInfoApi,
     withdrawApi,
+    withdrawTokenApi,
     walletInfoApi,
     walletCreateApi,
+    tokenBalancesApi,
     transactionsApi,
     allWalletInfoApi,
     transactionApi,

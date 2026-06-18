@@ -21,6 +21,10 @@ const transactionScheme = mongoose.Schema({
         default: Date.now
     },
     to: String,
+    tokenSymbol: {
+        type: String,
+        required: false
+    },
     confirmations: {
         type: Number,
         default: 0

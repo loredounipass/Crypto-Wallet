@@ -1,4 +1,4 @@
-import { get, post, walletInfoApi, allWalletInfoApi, walletCreateApi } from '../api/http'
+import { get, post, walletInfoApi, allWalletInfoApi, walletCreateApi, tokenBalancesApi } from '../api/http'
 
 export default class Wallet {
     static async getWalletInfo(walletId) {
@@ -10,6 +10,10 @@ export default class Wallet {
 
     static async getAllWalletInfo() {
         return await get(allWalletInfoApi)
+    }
+
+    static async getTokenBalances() {
+        return await get(tokenBalancesApi)
     }
 
     static async createWallet({ chainId, coin }) {

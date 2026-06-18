@@ -6,7 +6,10 @@ import { User, UserDocument } from '../user/schemas/user.schema';
 import { Model, Types } from 'mongoose';
 import { Wallet, WalletDocument } from './schemas/wallet.schema';
 import { WalletContract, WalletContractDocument } from './schemas/wallet-contract.schema';
+import { Erc20Ledger, Erc20LedgerDocument } from './schemas/erc20-ledger.schema';
+import { getTokenInfo } from './token-info';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { TokenWithdrawDto } from './dto/token-withdraw.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { default as QueueType } from './queue/types.queue'
 import { Queue } from 'bullmq';
@@ -22,8 +25,10 @@ export class WalletService {
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     @InjectModel(WalletContract.name) private walletContractModel: Model<WalletContractDocument>,
     @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>,
+    @InjectModel(Erc20Ledger.name) private erc20LedgerModel: Model<Erc20LedgerDocument>,
     @InjectQueue(QueueType.WITHDRAW_REQUEST) private withdrawQueue: Queue,
-    @InjectQueue(QueueType.TRANSACTION_STATUS_EVENTS) private transactionStatusQueue: Queue
+    @InjectQueue(QueueType.TRANSACTION_STATUS_EVENTS) private transactionStatusQueue: Queue,
+    @InjectQueue(QueueType.WITHDRAW_TOKEN_REQUEST) private withdrawTokenQueue: Queue
   ) { }
 
 
@@ -236,6 +241,37 @@ export class WalletService {
   }
 
 
+  async getTokenBalances(email: string) {
+    const wallets = await this.getWallets(email);
+    if (!wallets || wallets.length === 0) return [];
+
+    const addresses = wallets.map(w => w.address.toLowerCase());
+    const ledgerEntries = await this.erc20LedgerModel.find({
+      walletAddress: { $in: addresses }
+    }).exec();
+
+    return ledgerEntries.map(entry => {
+      const info = getTokenInfo(entry.tokenAddress);
+      const available = entry.available_balance || 0;
+      const locked = entry.locked_for_forward || 0;
+      const forwarded = entry.forwarded_total || 0;
+      return {
+        walletAddress: entry.walletAddress,
+        chainId: entry.chainId,
+        tokenAddress: entry.tokenAddress,
+        tokenSymbol: info?.symbol || 'UNKNOWN',
+        tokenDecimals: info?.decimals || 18,
+        coinGeckoId: info?.coinGeckoId || null,
+        totalDeposits: available + locked + forwarded,
+        availableBalance: available,
+        lockedForForward: locked,
+        forwardedTotal: forwarded,
+        freeBalance: Math.max(0, available - locked),
+      };
+    });
+  }
+
+
   // Process a withdrawal request for a user based on the provided email, coin, amount, and destination address. It checks if the user has sufficient balance in their wallet, creates a new transaction for the withdrawal, updates the wallet balance, and adds the withdrawal request to a queue for asynchronous processing.
   async withdraw(withdrawDto: WithdrawDto) {
     const data = await this.userModel.aggregate([
@@ -319,5 +355,73 @@ export class WalletService {
 
       }
     }
+  }
+
+  async withdrawToken(tokenWithdrawDto: TokenWithdrawDto) {
+    const wallets = await this.getWallets(tokenWithdrawDto.email);
+    if (!wallets || wallets.length === 0) {
+      return { error: true, msg: 'No wallets found' };
+    }
+
+    const chainEntries = await this.erc20LedgerModel.find({
+      walletAddress: { $in: wallets.map(w => w.address.toLowerCase()) },
+      tokenAddress: tokenWithdrawDto.tokenAddress.toLowerCase()
+    }).exec();
+
+    if (!chainEntries || chainEntries.length === 0) {
+      return { error: true, msg: 'No token balance found for this wallet' };
+    }
+
+    const entry = chainEntries[0];
+    const available = entry.available_balance || 0;
+    const locked = entry.locked_for_forward || 0;
+    const freeBalance = Math.max(0, available - locked);
+
+    if (freeBalance < tokenWithdrawDto.amount) {
+      return { error: true, msg: 'Insufficient token balance' };
+    }
+
+    const wallet = wallets.find(w => w.address.toLowerCase() === entry.walletAddress);
+    if (!wallet) {
+      return { error: true, msg: 'Wallet not found' };
+    }
+
+    const tokenInfo = getTokenInfo(tokenWithdrawDto.tokenAddress);
+    const transaction = new this.transactionModel({
+      nature: 2,
+      amount: -1 * tokenWithdrawDto.amount,
+      created_at: Date.now(),
+      status: 1,
+      txHash: uuidv4(),
+      to: tokenWithdrawDto.to
+    });
+    const saved = await transaction.save();
+    if (!saved) {
+      return { error: true, msg: 'Failed to create transaction' };
+    }
+
+    await this.transactionStatusQueue.add('status-update', {
+      transactionId: transaction._id.toString(),
+      status: transaction.status,
+      confirmations: transaction.confirmations ?? 0,
+      source: 'app-core-withdraw-token'
+    }, { removeOnComplete: true, removeOnFail: 50 });
+
+    await this.erc20LedgerModel.updateOne(
+      { walletAddress: entry.walletAddress, tokenAddress: entry.tokenAddress, chainId: entry.chainId },
+      { $inc: { available_balance: -tokenWithdrawDto.amount } }
+    );
+
+    await this.withdrawTokenQueue.add('request', {
+      transactionId: transaction._id.toString(),
+      walletAddress: entry.walletAddress,
+      tokenAddress: tokenWithdrawDto.tokenAddress.toLowerCase(),
+      chainId: entry.chainId,
+      amount: tokenWithdrawDto.amount,
+      withdrawAddress: tokenWithdrawDto.to,
+      symbol: tokenInfo?.symbol || 'UNKNOWN'
+    });
+
+    return { error: null, data: 'success', transactionId: transaction._id.toString() };
   }
 }

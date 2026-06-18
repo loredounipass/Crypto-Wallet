@@ -3,6 +3,7 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'react-qr-code';
 import useWalletInfo from '../hooks/useWalletInfo';
 import useCoinPrice from '../hooks/useCoinPrice';
+import useTokenBalances from '../hooks/useTokenBalances';
 import { useParams, useHistory } from 'react-router-dom';
 import {
     getCoinDecimalsPlace,
@@ -20,6 +21,8 @@ import CoinTransactions from '../components/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
 import TransactionToast from '../components/TransactionToast';
 import QRScannerModal from '../components/QRScannerModal';
+import { useTranslation } from 'react-i18next';
+import { invalidateTokensCache } from '../hooks/useTokenBalances';
 
 const ScanIcon = ({ size = 20, color = "currentColor" }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,6 +70,7 @@ const CheckIcon = ({ size = 20, color = "currentColor" }) => (
 );
 
 export default function Wallet() {
+    const { t } = useTranslation();
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
@@ -77,12 +81,17 @@ export default function Wallet() {
     const [activeAction, setActiveAction] = useState('deposit');
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+    const [tokenWithdrawAddress, setTokenWithdrawAddress] = useState('');
+    const [tokenWithdrawAmounts, setTokenWithdrawAmounts] = useState({});
+    const [activeTokenWithdraw, setActiveTokenWithdraw] = useState(null);
+    const [tokenWithdrawLoading, setTokenWithdrawLoading] = useState(false);
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
     const { walletInfo, isWalletLoading, setWalletInfo } = useWalletInfo(walletId);
     const { coinPrice } = useCoinPrice(walletId);
-    const { withdraw } = useWithdraw(walletId);
+    const { tokenBalances, refreshTokens } = useTokenBalances();
+    const { withdraw, withdrawToken } = useWithdraw(walletId);
     const { transactions, getTransactions, toast, dismissToast } = useTransitions(walletId);
 
     const truncateToDecimals = (num, dec) => {
@@ -156,6 +165,45 @@ export default function Wallet() {
     const setMaxAmount = () => {
         setWithdrawAmount(String(truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))));
         setError('');
+    };
+
+    const handleTokenWithdraw = async (token) => {
+        const normalizedAddress = String(tokenWithdrawAddress || '').trim();
+        const amountNumber = Number(tokenWithdrawAmounts[token.tokenAddress] || 0);
+
+        if (!normalizedAddress || !/^0x[a-fA-F0-9]{40}$/.test(normalizedAddress)) {
+            setError(t('token_withdraw') + ': Dirección inválida');
+            return;
+        }
+        if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+            setError(t('token_withdraw') + ': Monto inválido');
+            return;
+        }
+        if (amountNumber > token.availableBalance) {
+            setError(t('token_withdraw') + ': Saldo insuficiente');
+            return;
+        }
+
+        setTokenWithdrawLoading(true);
+        setError('');
+        try {
+            const result = await withdrawToken(token.tokenAddress, amountNumber, normalizedAddress);
+            if (result === 'success') {
+                setTokenWithdrawAddress('');
+                setTokenWithdrawAmounts(prev => ({ ...prev, [token.tokenAddress]: '' }));
+                setActiveTokenWithdraw(null);
+                setError('');
+                invalidateTokensCache();
+                refreshTokens();
+                getTransactions();
+            } else {
+                setError(result?.msg || result?.message || 'Error al procesar retiro');
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setTokenWithdrawLoading(false);
+        }
     };
 
     const getWithdrawButtonText = () => {
@@ -508,6 +556,80 @@ export default function Wallet() {
                                 ≈ ${(parseFloat(maxWithdrawable) * parseFloat(coinPrice)).toFixed(2)} USD
                             </div>
                         )}
+
+                        {walletInfo?.address && tokenBalances
+                            .filter(t => t.walletAddress.toLowerCase() === walletInfo.address.toLowerCase())
+                            .map(token => (
+                                <div key={token.tokenAddress} style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1F1F33" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <div>
+                                            <div style={{ color: "#9CA3AF", fontSize: "14px" }}>{token.tokenSymbol} {t('balance')}</div>
+                                            <div style={{ color: "#34D399", fontSize: isMobile ? "20px" : "24px", fontWeight: 700 }}>
+                                                {token.availableBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTokenWithdraw(activeTokenWithdraw === token.tokenAddress ? null : token.tokenAddress)}
+                                            style={{
+                                                background: activeTokenWithdraw === token.tokenAddress ? "rgba(239,68,68,0.1)" : "rgba(33,134,235,0.1)",
+                                                border: activeTokenWithdraw === token.tokenAddress ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(33,134,235,0.3)",
+                                                borderRadius: "10px",
+                                                padding: "8px 14px",
+                                                color: activeTokenWithdraw === token.tokenAddress ? "#EF4444" : "#2186EB",
+                                                fontWeight: 600,
+                                                fontSize: "12px",
+                                                cursor: "pointer",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
+                                            {activeTokenWithdraw === token.tokenAddress ? t('cancel') || 'Cancelar' : t('token_withdraw')}
+                                        </button>
+                                    </div>
+                                    {activeTokenWithdraw === token.tokenAddress && (
+                                        <div style={{ marginTop: "12px", padding: "12px", background: "rgba(0,0,0,0.2)", borderRadius: "12px", border: "1px solid #1F1F33" }}>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                                <div style={{ position: "relative" }}>
+                                                    <input
+                                                        type="text"
+                                                        value={tokenWithdrawAddress}
+                                                        onChange={(e) => { setTokenWithdrawAddress(e.target.value); setError(''); }}
+                                                        placeholder={t('token_withdraw_address')}
+                                                        style={{ ...styles.input, paddingRight: "8px" }}
+                                                    />
+                                                </div>
+                                                <div style={{ position: "relative" }}>
+                                                    <input
+                                                        type="number"
+                                                        value={tokenWithdrawAmounts[token.tokenAddress] || ''}
+                                                        onChange={(e) => { setTokenWithdrawAmounts(prev => ({ ...prev, [token.tokenAddress]: e.target.value })); setError(''); }}
+                                                        placeholder={t('token_withdraw_amount')}
+                                                        style={{ ...styles.input, paddingRight: "58px" }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setTokenWithdrawAmounts(prev => ({ ...prev, [token.tokenAddress]: String(token.availableBalance) }))}
+                                                        style={styles.inputActionButton}
+                                                    >
+                                                        {t('token_withdraw_max')}
+                                                    </button>
+                                                </div>
+                                                <div style={{ color: "#9CA3AF", fontSize: "11px" }}>
+                                                    {t('token_withdraw_available', { amount: token.availableBalance.toFixed(4), symbol: token.tokenSymbol })}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleTokenWithdraw(token)}
+                                                    disabled={tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > token.availableBalance}
+                                                    style={{
+                                                        ...styles.button(true, tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > token.availableBalance),
+                                                    }}
+                                                >
+                                                    {tokenWithdrawLoading ? t('token_withdraw_sending') : t('token_withdraw_btn', { symbol: token.tokenSymbol })}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                     </div>
 
                     <div style={{ marginBottom: isMobile ? "12px" : "24px" }}>

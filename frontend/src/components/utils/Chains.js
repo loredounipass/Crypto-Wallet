@@ -66,7 +66,8 @@ const getCoinLogo = (coin) => {
         eth: `${baseApi}/ethereum-eth-logo.png`,
         matic: `${baseApi}/polygon-matic-logo.png`,
         ftm: `${baseApi}/fantom-ftm-logo.png`,
-        op: `${baseApi}/optimism-ethereum-op-logo.png`
+        op: `${baseApi}/optimism-ethereum-op-logo.png`,
+        usdt: `${baseApi}/tether-usdt-logo.png`
 
     }[normalizedCoin] || getCoinFallbackLogo(coin)
 }

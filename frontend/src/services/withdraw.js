@@ -1,4 +1,4 @@
-import { post, withdrawApi } from '../api/http'
+import { post, withdrawApi, withdrawTokenApi } from '../api/http'
 
 export default class Withdraw {
     static async process(coin, amount, account) {
@@ -7,6 +7,15 @@ export default class Withdraw {
                 coin,
                 amount: parseFloat(amount),
                 to: account
+            })
+    }
+
+    static async processToken(tokenAddress, amount, to) {
+        return await post(withdrawTokenApi,
+            {
+                tokenAddress,
+                amount: parseFloat(amount),
+                to
             })
     }
 }

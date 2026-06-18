@@ -1,5 +1,6 @@
 import * as React from 'react';
 import useAllWallets from '../hooks/useAllWallets';
+import useTokenBalances from '../hooks/useTokenBalances';
 import { useTranslation } from 'react-i18next'; 
 import { Link as RouterLink } from 'react-router-dom';
 import { getCoinLogo, getCoinFallbackLogo, getCoinFee, normalizeCoin } from './utils/Chains';
@@ -9,6 +10,7 @@ import { getDisplayableAddress } from './utils/Display';
 export default function MyWallets() {
     const { t } = useTranslation();
     const { allWalletInfo } = useAllWallets();
+    const { tokenBalances } = useTokenBalances();
     const [isSmallScreen, setIsSmallScreen] = React.useState(() => window.innerWidth <= 640);
     
     
@@ -28,12 +30,16 @@ export default function MyWallets() {
         <div style={{ width: '100%', padding: isSmallScreen ? '4px' : '16px', marginBottom: isSmallScreen ? '16px' : '32px' }}>
             {isSmallScreen ? (
                 <div className="grid grid-cols-1 gap-2">
-                    {allWalletInfo.map((wallet) => (
+                    {allWalletInfo.map((wallet) => {
+                        const walletTokens = tokenBalances.filter(
+                            t => t.walletAddress.toLowerCase() === wallet.address.toLowerCase()
+                        );
+                        return (
                         <div key={wallet.walletId} className="rounded-xl border p-3 shadow-sm" style={{ borderColor: '#2D2D44', backgroundColor: '#1A1A2E' }}>
                                 <div className="flex flex-col gap-2">
                                     <div>
                                         <p className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
-                                        {t('currency')}: {/* Usar t para traducir */}
+                                        {t('currency')}:
                                         </p>
                                         <div className="flex items-center gap-2">
                                                 <img
@@ -62,6 +68,16 @@ export default function MyWallets() {
                                         </p>
                                     </div>
 
+                                    {walletTokens.map(token => (
+                                        <div key={token.tokenAddress}>
+                                            <p className="text-xs font-bold" style={{ color: '#9CA3AF' }}>
+                                                {t('balance')} {token.tokenSymbol}:
+                                            </p>
+                                            <p className="text-sm font-bold" style={{ color: '#34D399' }}>
+                                                {token.availableBalance.toFixed(4)} {token.tokenSymbol}
+                                            </p>
+                                        </div>
+                                    ))}
         
                                     <div>
                                         <RouterLink 
@@ -78,12 +94,17 @@ export default function MyWallets() {
                                     </div>
                                 </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="overflow-x-auto">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {allWalletInfo.map((wallet) => (
+                        {allWalletInfo.map((wallet) => {
+                            const walletTokens = tokenBalances.filter(
+                                t => t.walletAddress.toLowerCase() === wallet.address.toLowerCase()
+                            );
+                            return (
                             <div key={wallet.walletId} className="rounded-xl border p-4 shadow-sm" style={{ borderColor: '#2D2D44', backgroundColor: '#1A1A2E', minHeight: '100px' }}>
                                     <div className="flex items-center gap-2">
                                             <img
@@ -114,6 +135,16 @@ export default function MyWallets() {
                                             </p>
                                         </div>
 
+                                        {walletTokens.map(token => (
+                                            <div key={token.tokenAddress}>
+                                                <p className="text-xs font-bold" style={{ color: '#9CA3AF' }}>
+                                                    {token.tokenSymbol}:
+                                                </p>
+                                                <p className="text-base font-bold" style={{ color: '#34D399' }}>
+                                                    {token.availableBalance.toFixed(4)} {token.tokenSymbol}
+                                                </p>
+                                            </div>
+                                        ))}
                                        
                                         <div>
                                             <RouterLink 
@@ -130,7 +161,8 @@ export default function MyWallets() {
                                         </div>
                                     </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}

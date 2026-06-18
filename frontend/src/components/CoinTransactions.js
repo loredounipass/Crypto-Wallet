@@ -192,6 +192,11 @@ export default function CoinTransactions({
         return normalizeCoin(transaction?.coin || coin || 'coin');
     };
 
+    const getTransactionSymbol = (transaction) => {
+        if (transaction?.tokenSymbol) return transaction.tokenSymbol;
+        return String(getTransactionCoin(transaction)).toUpperCase();
+    };
+
     const getTransactionChainId = (transaction) => {
         return transaction?.chainId || transaction?.chain_id || chainId;
     };
@@ -292,7 +297,7 @@ export default function CoinTransactions({
                                                     onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(transaction)); }}
                                                     style={{ width: 20, height: 20, borderRadius: "999px", objectFit: "cover" }}
                                                 />
-                                                <span>{String(getTransactionCoin(transaction) || '').toUpperCase()}</span>
+                                                <span>{getTransactionSymbol(transaction)}</span>
                                             </div>
                                         </td>
                                     )}
@@ -390,7 +395,7 @@ export default function CoinTransactions({
                                         onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(getTransactionCoin(selectedTransaction)); }}
                                         style={{ width: isMobile ? 28 : 30, height: isMobile ? 28 : 30, borderRadius: "999px", objectFit: "cover" }}
                                     />
-                                    <span style={styles.value}>{String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}</span>
+                                    <span style={styles.value}>{getTransactionSymbol(selectedTransaction)}</span>
                                 </div>
                             </div>
                             <div>
@@ -398,14 +403,14 @@ export default function CoinTransactions({
                                 <div style={styles.value}>
                                     {selectedTransaction.nature === 1 
                                         ? formatAmount(selectedTransaction.amount, selectedTransaction)
-                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)), selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)), selectedTransaction)} {getTransactionSymbol(selectedTransaction)}
                                 </div>
                             </div>
                             {selectedTransaction.nature === 2 && (
                                 <div>
                                     <div style={styles.label}>Comision</div>
                                     <div style={{ ...styles.value, color: "#F44336" }}>
-                                        -{getSafeFee(selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        -{getSafeFee(selectedTransaction)} {getTransactionSymbol(selectedTransaction)}
                                     </div>
                                 </div>
                             )}
@@ -414,7 +419,7 @@ export default function CoinTransactions({
                                 <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : ("#FFFFFF"), fontWeight: 700 }}>
                                     {selectedTransaction.nature === 1 
                                         ? formatAmount(selectedTransaction.amount, selectedTransaction)
-                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)) - getSafeFee(selectedTransaction), selectedTransaction)} {String(getTransactionCoin(selectedTransaction) || '').toUpperCase()}
+                                        : formatAmount(Math.abs(toSafeNumber(selectedTransaction.amount)) - getSafeFee(selectedTransaction), selectedTransaction)} {getTransactionSymbol(selectedTransaction)}
                                 </div>
                             </div>
                             <div>

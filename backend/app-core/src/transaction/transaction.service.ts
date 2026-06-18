@@ -19,13 +19,24 @@ export class TransactionService {
 
   // Get a specific transaction by its ID
   async getTransaction(queryDto: QueryDto) {
-    const data = await this.transactionModel.findOne(
+    const tx = await this.transactionModel.findOne(
       { _id: new Types.ObjectId(queryDto.transactionId) },
       { _id: 0, __v: 0 }
     ).exec();
 
-    if (data) {
-      return data;
+    if (tx) {
+      return {
+        nature: tx.nature,
+        txHash: tx.txHash,
+        transactionId: tx._id,
+        created_at: tx.createdAt,
+        confirmations: tx.confirmations,
+        status: tx.status,
+        amount: tx.amount,
+        fee: tx.fee || 0,
+        to: tx.to,
+        tokenSymbol: tx.tokenSymbol || null
+      };
     }
   }
 
@@ -76,12 +87,13 @@ export class TransactionService {
               nature: tx.nature,
               txHash: tx.txHash,
               transactionId: tx._id,
-              created_at: tx.created_at,
+              created_at: tx.createdAt,
               confirmations: tx.confirmations,
               status: tx.status,
               amount: tx.amount,
               fee: tx.fee || 0,
               to: tx.to,
+              tokenSymbol: tx.tokenSymbol || null,
               coin: wallet.coin,
               chainId: wallet.chainId
             }

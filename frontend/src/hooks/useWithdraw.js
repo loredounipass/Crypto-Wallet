@@ -13,7 +13,19 @@ export default function useWithdraw(coin) {
         }
     }
 
+    async function withdrawToken(tokenAddress, amount, to) {
+        try {
+            const { data } = await Withdraw.processToken(tokenAddress, amount, to)
+            if (data && 'data' in data)
+                return data.data
+            return data;
+        } catch (err) {
+            throw err;
+        }
+    }
+
     return {
-        withdraw
+        withdraw,
+        withdrawToken
     }
 }

@@ -4,6 +4,7 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { QueryDto } from './dto/query.dto';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { TokenWithdrawDto } from './dto/token-withdraw.dto';
 
 
 // This controller handles HTTP requests related to wallets, such as creating a new wallet for a user, retrieving wallet information, and processing withdrawal requests. It uses the WalletService to perform these operations and is protected by an authentication guard to ensure that only authenticated users can access these endpoints.
@@ -45,6 +46,14 @@ export class WalletController {
     return this.walletService.getWallets(req.user.email);
   }
 
+
+  // Endpoint to retrieve ERC-20 token balances (USDT, etc.) for the user's wallets.
+  @UseGuards(AuthenticatedGuard)
+  @Get('tokens')
+  tokenBalances(@Request() req) {
+    return this.walletService.getTokenBalances(req.user.email);
+  }
+
   
   // Endpoint to process a withdrawal request for a user based on the provided email, coin, amount, and destination address. It checks if the user has sufficient balance in their wallet, creates a new transaction for the withdrawal, updates the wallet balance, and adds the withdrawal request to a queue for asynchronous processing.
   @UseGuards(AuthenticatedGuard)
@@ -55,5 +64,15 @@ export class WalletController {
   ) {
     withdrawDto.email = req.user.email;
     return this.walletService.withdraw(withdrawDto);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Post('withdraw-token')
+  withdrawToken(
+    @Request() req,
+    @Body() tokenWithdrawDto: TokenWithdrawDto
+  ) {
+    tokenWithdrawDto.email = req.user.email;
+    return this.walletService.withdrawToken(tokenWithdrawDto);
   }
 }

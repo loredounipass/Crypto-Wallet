@@ -26,6 +26,9 @@ export class Transaction {
     @Prop()
     to: string;
 
+    @Prop()
+    tokenSymbol: string;
+
     @Prop({
         default: 0
     })

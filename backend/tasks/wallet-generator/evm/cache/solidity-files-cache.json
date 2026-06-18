@@ -1,9 +1,9 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/workspaces/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/EscrowContract.sol": {
-      "lastModificationDate": 1781381226449,
-      "contentHash": "60efe60de91c015a750aeb825f6b5296",
+    "/workspaces/pruebas/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/EscrowContract.sol": {
+      "lastModificationDate": 1781753559846,
+      "contentHash": "ebd5c8c30f9113a2af217f6acfa905e1",
       "sourceName": "contracts/EscrowContract.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -37,8 +37,8 @@
         "EscrowContract"
       ]
     },
-    "/workspaces/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/GeneratorFactoryContract.sol": {
-      "lastModificationDate": 1777242444337,
+    "/workspaces/pruebas/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/GeneratorFactoryContract.sol": {
+      "lastModificationDate": 1781753559846,
       "contentHash": "5bbe53a4d0a223477cd2bb09d0e49ccf",
       "sourceName": "contracts/GeneratorFactoryContract.sol",
       "solcConfig": {
@@ -75,9 +75,9 @@
         "GeneratorFactoryContract"
       ]
     },
-    "/workspaces/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/WalletContract.sol": {
-      "lastModificationDate": 1777242444337,
-      "contentHash": "adaec916757b47e12cc0c5b10f52c946",
+    "/workspaces/pruebas/Crypto-Wallet/backend/tasks/wallet-generator/evm/contracts/WalletContract.sol": {
+      "lastModificationDate": 1781753559846,
+      "contentHash": "cfec31a91b238df2e99f0eb78ebc54db",
       "sourceName": "contracts/WalletContract.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -108,6 +108,7 @@
         "^0.8.20"
       ],
       "artifacts": [
+        "IERC20",
         "WalletContract"
       ]
     }

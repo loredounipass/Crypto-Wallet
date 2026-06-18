@@ -4,19 +4,22 @@ import { Typography } from '../ui/material';
 import { Wallet as WalletIcon } from '../ui/icons';
 import Title from './utils/Title';
 import useAllWallets from '../hooks/useAllWallets';
+import useTokenBalances from '../hooks/useTokenBalances';
 import { Box } from '../ui/material'; 
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 
 const TotalBalance = () => {
     const { walletBalance } = useAllWallets();
+    const { tokenUsdValue } = useTokenBalances();
     const { t } = useTranslation();
+    const totalUsd = parseFloat(walletBalance) + tokenUsdValue;
 
     return (
         <React.Fragment>
             <Title>{t('total_balance_title')}</Title>
             <Typography component="p" variant="h4" sx={{ mb: 1 }}>
-                ${parseFloat(walletBalance).toFixed(2)}
+                ${totalUsd.toFixed(2)}
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
                 {t('total_balance_amount')}

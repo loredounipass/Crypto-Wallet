@@ -16,17 +16,20 @@ try {
 
 console.log('Starting processes from process.json...');
 
-const processes = scripts.map(({ name, script }) => {
+const children = scripts.map(({ name, script }) => {
+  let child;
   const startProcess = () => {
     console.log(`[${name}] Starting...`);
-    const child = spawn('node', [script], {
+    child = spawn('node', [script], {
       stdio: 'inherit',
       cwd: __dirname
     });
 
     child.on('exit', (code) => {
-      console.log(`[${name}] Exited with code ${code}. Restarting in 5 seconds...`);
-      setTimeout(startProcess, 5000);
+      if (code !== null && code !== 0) {
+        console.log(`[${name}] Exited with code ${code}. Restarting in 5 seconds...`);
+        setTimeout(startProcess, 5000);
+      }
     });
 
     child.on('error', (err) => {
@@ -39,4 +42,33 @@ const processes = scripts.map(({ name, script }) => {
   return startProcess();
 });
 
-console.log(`Started ${processes.length} daemon processes successfully.`);
+function shutdown() {
+  console.log('\nShutting down all processes gracefully...');
+  let completed = 0;
+  const total = children.length;
+
+  children.forEach((child, i) => {
+    if (!child || !child.pid) {
+      completed++;
+      if (completed === total) process.exit(0);
+      return;
+    }
+    const name = scripts[i]?.name || `process-${i}`;
+    child.on('exit', () => {
+      console.log(`[${name}] Stopped.`);
+      completed++;
+      if (completed === total) process.exit(0);
+    });
+    child.kill('SIGTERM');
+  });
+
+  setTimeout(() => {
+    console.warn('Forcing exit after timeout.');
+    process.exit(1);
+  }, 15000);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+console.log(`Started ${children.length} daemon processes successfully.`);
