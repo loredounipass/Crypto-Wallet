@@ -40,6 +40,10 @@ export class Transaction {
         default: 1
     })
     status: number; //1. Aprobando, 2. Procesando, 3. Procesado, 4. Cancelado
+
+    created_at?: Date;
+
+    updated_at?: Date;
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction); 
