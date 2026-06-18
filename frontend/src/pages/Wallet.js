@@ -179,7 +179,7 @@ export default function Wallet() {
             setError(t('token_withdraw') + ': Monto inválido');
             return;
         }
-        if (amountNumber > Math.floor(token.availableBalance * 1e8) / 1e8) {
+        if (amountNumber > Math.floor(token.freeBalance * 1e8) / 1e8) {
             setError(t('token_withdraw') + ': Saldo insuficiente');
             return;
         }
@@ -565,8 +565,13 @@ export default function Wallet() {
                                         <div>
                                             <div style={{ color: "#9CA3AF", fontSize: "14px" }}>{token.tokenSymbol} {t('balance')}</div>
                                             <div style={{ color: "#34D399", fontSize: isMobile ? "20px" : "24px", fontWeight: 700 }}>
-                                                {token.availableBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
+                                                {token.freeBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
                                             </div>
+                                            {token.lockedForForward > 0 && (
+                                                <div style={{ color: "#F59E0B", fontSize: "12px", marginTop: "2px" }}>
+                                                    {token.lockedForForward.toFixed(4)} en proceso de consolidación
+                                                </div>
+                                            )}
                                         </div>
                                         <button
                                             onClick={() => setActiveTokenWithdraw(activeTokenWithdraw === token.tokenAddress ? null : token.tokenAddress)}
@@ -607,21 +612,21 @@ export default function Wallet() {
                                                     />
                                                     <button
                                                         type="button"
-                                                        onClick={() => setTokenWithdrawAmounts(prev => ({ ...prev, [token.tokenAddress]: String(token.availableBalance) }))}
+                                                        onClick={() => setTokenWithdrawAmounts(prev => ({ ...prev, [token.tokenAddress]: String(token.freeBalance) }))}
                                                         style={styles.inputActionButton}
                                                     >
                                                         {t('token_withdraw_max')}
                                                     </button>
                                                 </div>
                                                 <div style={{ color: "#9CA3AF", fontSize: "11px" }}>
-                                                    {t('token_withdraw_available', { amount: token.availableBalance.toFixed(4), symbol: token.tokenSymbol })}
+                                                    {t('token_withdraw_available', { amount: token.freeBalance.toFixed(4), symbol: token.tokenSymbol })}
                                                 </div>
                                                 {error && <div style={{ color: "#F44336", fontSize: "14px", marginBottom: "8px" }}>{error}</div>}
                                                 <button
                                                     onClick={() => handleTokenWithdraw(token)}
-                                                    disabled={tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.availableBalance * 1e8) / 1e8}
+                                                    disabled={tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.freeBalance * 1e8) / 1e8}
                                                     style={{
-                                                        ...styles.button(true, tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.availableBalance * 1e8) / 1e8),
+                                                        ...styles.button(true, tokenWithdrawLoading || !tokenWithdrawAddress || !tokenWithdrawAmounts[token.tokenAddress] || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) <= 0 || Number(tokenWithdrawAmounts[token.tokenAddress] || 0) > Math.floor(token.freeBalance * 1e8) / 1e8),
                                                     }}
                                                 >
                                                     {tokenWithdrawLoading ? t('token_withdraw_sending') : t('token_withdraw_btn', { symbol: token.tokenSymbol })}

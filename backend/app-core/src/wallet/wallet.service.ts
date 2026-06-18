@@ -375,9 +375,8 @@ export class WalletService {
     const entry = chainEntries[0];
     const available = entry.available_balance || 0;
     const locked = entry.locked_for_forward || 0;
-    const freeBalance = Math.max(0, available - locked);
 
-    if (freeBalance < tokenWithdrawDto.amount) {
+    if (available < tokenWithdrawDto.amount) {
       return { error: true, msg: 'Insufficient token balance' };
     }
 
@@ -407,9 +406,10 @@ export class WalletService {
       source: 'app-core-withdraw-token'
     }, { removeOnComplete: true, removeOnFail: 50 });
 
+    const deductLocked = Math.min(tokenWithdrawDto.amount, locked);
     await this.erc20LedgerModel.updateOne(
       { walletAddress: entry.walletAddress, tokenAddress: entry.tokenAddress, chainId: entry.chainId },
-      { $inc: { available_balance: -tokenWithdrawDto.amount } }
+      { $inc: { available_balance: -tokenWithdrawDto.amount, locked_for_forward: -deductLocked } }
     );
 
     await this.withdrawTokenQueue.add('request', {

@@ -12,7 +12,13 @@ const processAggregation = async (job) => {
     const { walletAddress, tokenAddress, chainId, trigger_event } = job.data
 
     const lock = await Erc20Ledger.findOneAndUpdate(
-        { walletAddress, tokenAddress, chainId, aggregatorLock: { $ne: true } },
+        {
+            walletAddress, tokenAddress, chainId,
+            $or: [
+                { aggregatorLock: { $ne: true } },
+                { aggregatorLockedAt: { $lt: new Date(Date.now() - 300000) } }
+            ]
+        },
         { $set: { aggregatorLock: true, aggregatorLockedAt: new Date() } }
     )
     if (!lock) {
