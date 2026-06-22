@@ -161,11 +161,7 @@ async function post(url, body) {
 }
 
 async function postMultipart(url, formData) {
-    return await api.post(url, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    })
+    return await api.post(url, formData)
 }
 
 async function patch(url, body) {

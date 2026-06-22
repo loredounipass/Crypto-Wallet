@@ -29,7 +29,7 @@ export default function PostForm() {
         // El hook useFeed actual usa formData
         await createPostWithFile(formData);
       } else {
-        await createPost({ description, type: 'text' });
+        await createPost({ description, type: 'text', authorId: auth._id });
       }
       setDescription('');
       setFile(null);
