@@ -38,40 +38,49 @@ export class SupportService {
     }
 
     private async callAiApi(message: string): Promise<string> {
-        const { data } = await axios.post(
-            this.apiUrl,
-            {
-                model: this.inferModel(),
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Eres Brivo Agent, un asistente AI profesional y directo. Reglas: 1) Sé conciso — responde solo lo necesario, sin introducciones ni despedidas. 2) Si te piden código, responde SOLO el código, sin explicaciones. 3) Estilo limpio como Google: directo al grano. 4) Siempre en español.',
-                    },
-                    {
-                        role: 'user',
-                        content: message,
-                    },
-                ],
-                max_tokens: 512,
-                temperature: 0.7,
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+        try {
+            const { data } = await axios.post(
+                this.apiUrl,
+                {
+                    model: this.inferModel(),
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'Eres Brivo Agent, un asistente AI profesional y directo. Reglas: 1) Sé conciso — responde solo lo necesario, sin introducciones ni despedidas. 2) Si te piden código, responde SOLO el código, sin explicaciones. 3) Estilo limpio como Google: directo al grano. 4) Siempre en español.',
+                        },
+                        {
+                            role: 'user',
+                            content: message,
+                        },
+                    ],
+                    max_tokens: 512,
+                    temperature: 0.7,
                 },
-                timeout: 30000,
-            },
-        );
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+                    },
+                    timeout: 30000,
+                },
+            );
 
-        const content = data.choices?.[0]?.message?.content;
-        if (!content) {
-            throw new Error('La API no devolvió contenido en la respuesta.');
+            const content = data.choices?.[0]?.message?.content;
+            if (!content) {
+                return 'No se recibio respuesta del asistente.';
+            }
+            if (content.includes('Cannot read') || content.includes('does not support image')) {
+                return 'El asistente esta teniendo problemas de configuracion. Contacta al administrador.';
+            }
+            return content;
+        } catch (err) {
+            const errData = err?.response?.data;
+            const errStr = typeof errData === 'string' ? errData : JSON.stringify(errData || '');
+            if (errStr.includes('Cannot read') || errStr.includes('does not support image')) {
+                return 'El asistente esta teniendo problemas de configuracion. Contacta al administrador.';
+            }
+            throw err;
         }
-        if (content.includes('Cannot read') || content.includes('does not support image')) {
-            return 'Lo siento, hubo un error de configuración con el modelo. Por favor, contacta al administrador.';
-        }
-        return content;
     }
 
     private inferModel(): string {
