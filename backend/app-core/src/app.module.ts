@@ -15,6 +15,7 @@ import { MessagesAndMultimediaModule } from './messages-and-multimedia/messages-
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EscrowModule } from './escrow/escrow.module';
 import { PriceModule } from './price/price.module';
+import { SupportModule } from './support/support.module';
 import { RedisModule } from './redis/redis.module';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfMiddleware } from './csrf/csrf.middleware';
@@ -51,7 +52,8 @@ import { CsrfMiddleware } from './csrf/csrf.middleware';
     MessagesAndMultimediaModule,
     EventEmitterModule.forRoot(),
     EscrowModule,
-    PriceModule
+    PriceModule,
+    SupportModule
   ],
   providers: [AppService],
 })

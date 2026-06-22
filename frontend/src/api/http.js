@@ -100,6 +100,9 @@ const updateProviderApi = `${baseApi}/providers/update`
 const checkTermsApi = `${baseApi}/providers/terms/check`
 const acceptTermsApi = `${baseApi}/providers/terms/accept`
 
+// Endpoints support
+const supportChatApi = `${baseApi}/support/chat`
+
 // Endpoints escrow P2P
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
 const escrowMyOrdersApi = `${baseApi}/escrow/orders`
@@ -196,6 +199,7 @@ export {
     profileMeApi,
     profileByIdApi,
     profileUploadProfilePhotoApi,
+    supportChatApi,
     escrowCreateOrderApi,
     escrowMyOrdersApi,
     escrowProviderOrdersApi,
