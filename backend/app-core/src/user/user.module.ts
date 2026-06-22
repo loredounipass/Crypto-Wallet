@@ -29,6 +29,6 @@ import { ProfileModule } from 'src/profile/profile.module';
     AuthService,
     ForgotPasswordService
   ],
-  exports: [UserService, HashService, MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])], 
+  exports: [UserService, HashService, UserRepository, MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])], 
 })
 export class UserModule { }

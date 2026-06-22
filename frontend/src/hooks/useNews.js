@@ -19,7 +19,13 @@ export default function useNews(options = {}) {
         setError(null);
         try {
             const { data } = await News.getNews({ lang, categories, sortOrder });
-            setNews(data?.Data || []);
+            
+            // CryptoCompare devuelve HTTP 200 incluso si hay error de Rate Limit u otros
+            if (data?.Response === 'Error') {
+                throw new Error(data.Message || 'Error desde CryptoCompare');
+            }
+            
+            setNews(Array.isArray(data?.Data) ? data.Data : []);
         } catch (err) {
             setError(err.message || 'Error al cargar noticias');
         } finally {

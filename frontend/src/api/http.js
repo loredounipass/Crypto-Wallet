@@ -107,6 +107,18 @@ const supportChatApi = `${baseApi}/support/chat`
 const newsApi = `${baseApi}/news`
 const newsCategoriesApi = `${baseApi}/news/categories`
 
+// Endpoints feed
+const feedApi = `${baseApi}/feed`
+const feedVideosApi = `${baseApi}/feed/videos`
+const feedUploadApi = `${baseApi}/feed/upload`
+const feedPostByIdApi = (id) => `${baseApi}/feed/${id}`
+const feedPostCommentsApi = (id) => `${baseApi}/feed/${id}/comments`
+const feedCommentLikesApi = (commentId) => `${baseApi}/feed/comments/${commentId}/likes`
+const feedPostLikesApi = (id) => `${baseApi}/feed/${id}/likes`
+const feedPostViewsApi = (id) => `${baseApi}/feed/${id}/views`
+const feedPostSharesApi = (id) => `${baseApi}/feed/${id}/shares`
+const feedCommentDeleteApi = (commentId) => `${baseApi}/feed/comments/${commentId}`
+
 // Endpoints escrow P2P
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
 const escrowMyOrdersApi = `${baseApi}/escrow/orders`
@@ -157,12 +169,17 @@ async function patch(url, body) {
     return await api.patch(url, body)
 }
 
+async function del(url) {
+    return await api.delete(url)
+}
+
 export {
     get,
     getExternal,
     post,
     postMultipart,
     patch,
+    del,
     fetchCsrfToken,
     mediaBase,
     apiOrigin,
@@ -215,5 +232,15 @@ export {
     escrowDisputedOrdersApi,
     escrowResolveDisputeApi,
     newsApi,
-    newsCategoriesApi
+    newsCategoriesApi,
+    feedApi,
+    feedVideosApi,
+    feedUploadApi,
+    feedPostByIdApi,
+    feedPostCommentsApi,
+    feedCommentLikesApi,
+    feedPostLikesApi,
+    feedPostViewsApi,
+    feedPostSharesApi,
+    feedCommentDeleteApi
 };
