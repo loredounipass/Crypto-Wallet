@@ -89,7 +89,8 @@
   },
   "pnpm": {
     "overrides": {
-        "uuid": ">=8.3.3"
+        "uuid": ">=8.3.3",
+        "multer": ">=2.2.0"
     },
     "onlyBuiltDependencies": [
       "@nestjs/core",
