@@ -103,6 +103,9 @@ const acceptTermsApi = `${baseApi}/providers/terms/accept`
 // Endpoints support
 const supportChatApi = `${baseApi}/support/chat`
 
+// Endpoints donations
+const donationsWalletsApi = `${baseApi}/donations/wallets`
+
 // Endpoints news
 const newsApi = `${baseApi}/news`
 const newsCategoriesApi = `${baseApi}/news/categories`
@@ -242,5 +245,6 @@ export {
     feedPostLikesApi,
     feedPostViewsApi,
     feedPostSharesApi,
-    feedCommentDeleteApi
+    feedCommentDeleteApi,
+    donationsWalletsApi
 };

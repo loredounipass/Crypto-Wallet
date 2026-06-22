@@ -21,6 +21,7 @@ import { NewsModule } from './news/news.module';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfMiddleware } from './csrf/csrf.middleware';
 import { FeedAndMultimediaModule } from './feed-and-multimedia/feed-and-multimedia.module';
+import { DonationsModule } from './donations/donations.module';
 
 
 // This is the main application module that imports and configures various modules such as ConfigModule for environment variables, MongooseModule for MongoDB connection, ThrottlerModule for rate limiting, BullModule for Redis-based queues, and other feature modules like UserModule, WalletModule, AuthModule, TransactionModule, ProviderModule, and TwoFactorAuthModule. It also provides the AppService for handling application-level logic.
@@ -57,7 +58,8 @@ import { FeedAndMultimediaModule } from './feed-and-multimedia/feed-and-multimed
     PriceModule,
     SupportModule,
     NewsModule,
-    FeedAndMultimediaModule
+    FeedAndMultimediaModule,
+    DonationsModule
   ],
   providers: [AppService],
 })
