@@ -103,6 +103,10 @@ const acceptTermsApi = `${baseApi}/providers/terms/accept`
 // Endpoints support
 const supportChatApi = `${baseApi}/support/chat`
 
+// Endpoints news
+const newsApi = `${baseApi}/news`
+const newsCategoriesApi = `${baseApi}/news/categories`
+
 // Endpoints escrow P2P
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
 const escrowMyOrdersApi = `${baseApi}/escrow/orders`
@@ -209,5 +213,7 @@ export {
     escrowOpenDisputeApi,
     escrowCancelOrderApi,
     escrowDisputedOrdersApi,
-    escrowResolveDisputeApi
+    escrowResolveDisputeApi,
+    newsApi,
+    newsCategoriesApi
 };

@@ -17,6 +17,7 @@ import { EscrowModule } from './escrow/escrow.module';
 import { PriceModule } from './price/price.module';
 import { SupportModule } from './support/support.module';
 import { RedisModule } from './redis/redis.module';
+import { NewsModule } from './news/news.module';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfMiddleware } from './csrf/csrf.middleware';
 
@@ -53,7 +54,8 @@ import { CsrfMiddleware } from './csrf/csrf.middleware';
     EventEmitterModule.forRoot(),
     EscrowModule,
     PriceModule,
-    SupportModule
+    SupportModule,
+    NewsModule
   ],
   providers: [AppService],
 })
