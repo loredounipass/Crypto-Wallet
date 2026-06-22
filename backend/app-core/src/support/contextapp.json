@@ -1,0 +1,247 @@
+{
+  "app": "BrivoTrust",
+  "description": "Plataforma de intercambio de criptomonedas con wallet, trading P2P con escrow, y soporte multicadena.",
+  "features": [
+    {
+      "id": "deposit",
+      "title": "Depositar criptomonedas",
+      "keywords": ["depositar", "depósito", "recibir fondos", "ingresar", "recargar", "fund"],
+      "questions": ["Como deposito?", "Como recibo cripto?", "Como ingreso fondos a mi wallet?"],
+      "steps": [
+        "1. Ve a 'Mis Billeteras' desde el menu lateral.",
+        "2. Haz clic en la wallet de la moneda que deseas depositar (ej. BTC, ETH, USDT).",
+        "3. En la pagina de la wallet, veras un panel de 'Depositar' con tu direccion de deposito y un codigo QR.",
+        "4. Copia la direccion (clic en 'Copiar') o escanea el codigo QR.",
+        "5. Desde tu exchange externo o wallet externa, envía los fondos a esa direccion.",
+        "6. Asegurate de usar la red correcta (ej. enviar ETH por la red Ethereum, no por BSC).",
+        "7. Una vez enviada la transaccion, aparecera en la tabla de transacciones con estado 'Aprobando' y luego 'Procesado'."
+      ],
+      "notes": "Cada wallet tiene una direccion unica por moneda y red. No envies fondos de una red diferente a la indicada o podrías perderlos."
+    },
+    {
+      "id": "withdraw",
+      "title": "Retirar criptomonedas",
+      "keywords": ["retirar", "retiro", "sacar fondos", "enviar", "withdraw", "transferir"],
+      "questions": ["Como retiro fondos?", "Como envio cripto a otro wallet?", "Como hago un withdraw?"],
+      "steps": [
+        "1. Ve a 'Mis Billeteras' y selecciona la wallet de la moneda que deseas retirar.",
+        "2. En la pagina de la wallet, cambia a la pestana 'Retirar'.",
+        "3. Ingresa la direccion de destino (o escanea un codigo QR con la camara).",
+        "4. Ingresa el monto a retirar (puedes usar el boton 'Max' para retirar el saldo disponible).",
+        "5. Revisa la tarifa (fee) y el monto neto que se enviara.",
+        "6. Haz clic en 'Retirar' para enviar la solicitud.",
+        "7. La transaccion se procesara de forma asincrona y aparecera en la lista de transacciones.",
+        "8. Recibirás una actualizacion del estado cuando se complete el envio."
+      ],
+      "notes": "Las solicitudes de retiro se procesan automaticamente. El tiempo depende de la congestión de la red blockchain."
+    },
+    {
+      "id": "become_provider",
+      "title": "Convertirse en proveedor P2P",
+      "keywords": ["proveedor", "provider", "vender p2p", "ser proveedor", "registrarse como proveedor", "p2p provider"],
+      "questions": ["Como me convierto en proveedor?", "Como vender crypto P2P?", "Que necesito para ser proveedor?"],
+      "steps": [
+        "1. El registro como proveedor P2P se realiza a través del equipo de soporte o administración de BrivoTrust.",
+        "2. Debes proporcionar tu nombre completo, numero de identificacion, direccion (calle, ciudad, codigo postal), y correo electronico.",
+        "3. Una vez registrado, un administrador debe verificar y aprobar tu cuenta de proveedor (isValid = true).",
+        "4. Despues de aprobado, configura tu wallet de proveedor y tus metodos de pago (Transferencia Bancaria, Zelle, PayPal, Nequi, Mercado Pago, Efectivo, etc.).",
+        "5. Los compradores podran ver tu perfil en el Marketplace y crear ordenes P2P contigo.",
+        "6. Tus ordenes completadas y volumen de trading se acumularan en tu perfil de proveedor."
+      ],
+      "notes": "Los proveedores deben estar verificados (KYC) para operar. Sin wallet configurada, los compradores no podran seleccionarte."
+    },
+    {
+      "id": "sell_p2p",
+      "title": "Vender criptomonedas P2P (como vendedor)",
+      "keywords": ["vender p2p", "vender crypto", "p2p sell", "crear orden p2p", "vender a proveedor"],
+      "questions": ["Como vendo mis criptos P2P?", "Como creo una orden de venta?", "Como vendo a un proveedor?"],
+      "steps": [
+        "1. Ve a la pagina 'P2P' desde el menu lateral.",
+        "2. En la pestana 'Marketplace', veras la lista de proveedores disponibles.",
+        "3. Selecciona un proveedor y haz clic en 'Vender' o 'Vender a este proveedor'.",
+        "4. En el modal de creacion de orden: selecciona la moneda, ingresa el monto a vender (maximo tu saldo disponible), y elige el metodo de pago del proveedor.",
+        "5. Revisa el resumen: {monto} {MONEDA} → ${montoUSD} USD via {metodo de pago}.",
+        "6. Haz clic en 'Crear Orden P2P'. Los fondos se debitaran de tu wallet y quedaran bloqueados en escrow.",
+        "7. La orden se crea con estado 'Pendiente' y el sistema la financiara en la blockchain (escrow).",
+        "8. Espera a que el proveedor confirme que recibio el pago en efectivo/transferencia.",
+        "9. Cuando el estado cambie a 'Pago Confirmado', haz clic en 'Liberar Fondos' para enviar las criptos al proveedor.",
+        "10. La orden se completara y las criptos se transferiran al proveedor."
+      ],
+      "notes": "Solo el vendedor (seller) puede liberar los fondos. Solo el vendedor puede cancelar la orden si esta en estado 'Pendiente' o 'Funded'. La orden expira en 30 minutos si no se financia."
+    },
+    {
+      "id": "buy_p2p_provider",
+      "title": "Comprar criptomonedas P2P (como proveedor/comprador)",
+      "keywords": ["comprar p2p", "buy p2p", "orden como proveedor", "confirmar pago", "provider order"],
+      "questions": ["Como compro crypto como proveedor?", "Como confirmo un pago?", "Que hago cuando me llega una orden P2P?"],
+      "steps": [
+        "1. Ve a la pagina 'P2P' y cambia a la pestana 'Proveedor'.",
+        "2. Veras las ordenes entrantes de compradores que quieren venderte cripto.",
+        "3. Haz clic en una orden para ver los detalles y entrar al chat con el vendedor.",
+        "4. Cuando el vendedor financie el escrow, el estado cambiara a 'Fondos en Escrow'.",
+        "5. Realiza el pago en efectivo/transferencia al vendedor por el monto acordado (USD).",
+        "6. Una vez que hayas pagado, haz clic en 'Confirmar Pago Recibido'.",
+        "7. El estado cambiara a 'Pago Confirmado'. Ahora espera a que el vendedor libere los fondos.",
+        "8. Cuando el vendedor libere, las criptomonedas se transferiran a tu wallet de proveedor."
+      ],
+      "notes": "Como proveedor, tu wallet debe tener fondos para recibir las criptos. No puedes cancelar la orden, solo el vendedor puede hacerlo."
+    },
+    {
+      "id": "p2p_dispute",
+      "title": "Abrir una disputa en orden P2P",
+      "keywords": ["disputa", "dispute", "problema orden", "reclamar", "abrir disputa"],
+      "questions": ["Como abro una disputa?", "Que hago si hay un problema con la orden?", "Como reporto un problema P2P?"],
+      "steps": [
+        "1. En la pagina de la orden P2P, haz clic en 'Abrir Disputa'.",
+        "2. Solo se puede abrir disputa cuando la orden esta en estado 'Fondos en Escrow' o 'Pago Confirmado'.",
+        "3. Ingresa el motivo detallado de la disputa.",
+        "4. Confirma haciendo clic en 'Abrir Disputa'.",
+        "5. El estado de la orden cambiara a 'En Disputa' y quedara congelada.",
+        "6. Un administrador revisara el caso y resolvera la disputa.",
+        "7. La resolucion puede ser: liberar los fondos al proveedor (award) o revertir la orden (revert)."
+      ],
+      "notes": "Tanto el vendedor como el proveedor pueden abrir una disputa. Una vez en disputa, la orden no puede avanzar hasta que un admin la resuelva."
+    },
+    {
+      "id": "wallet_create",
+      "title": "Crear una nueva wallet",
+      "keywords": ["crear wallet", "nueva billetera", "agregar moneda", "new wallet", "create wallet"],
+      "questions": ["Como creo una wallet?", "Como agrego una nueva moneda?", "Como creo una billetera para BTC?"],
+      "steps": [
+        "1. Ve a 'Mis Billeteras' desde el menu lateral.",
+        "2. Haz clic en el boton 'Crear' o 'Agregar Wallet'.",
+        "3. Selecciona la moneda y la red (chain) para la wallet.",
+        "4. El sistema generara automaticamente una nueva direccion para esa moneda/red.",
+        "5. La nueva wallet aparecera en tu lista de billeteras lista para usar.",
+        "6. Si ya tienes una wallet para esa moneda/red, el sistema te devolvera la existente."
+      ],
+      "notes": "Cada wallet tiene una direccion unica. Las wallets se crean a partir de contratos de wallet pre-generados."
+    },
+    {
+      "id": "profile_settings",
+      "title": "Cambiar perfil de usuario",
+      "keywords": ["perfil", "profile", "cambiar nombre", "actualizar perfil", "editar perfil"],
+      "questions": ["Como cambio mi nombre?", "Como actualizo mi perfil?", "Como edito mis datos?"],
+      "steps": [
+        "1. Ve a 'Configuracion' desde el menu lateral o el menu de usuario.",
+        "2. En la seccion 'Perfil de Usuario', puedes modificar tu nombre, apellido y correo electronico.",
+        "3. Realiza los cambios y haz clic en 'Guardar cambios'.",
+        "4. Nota: Solo puedes actualizar tu perfil una vez cada 10 minutos.",
+        "5. Si cambias tu correo electronico, deberas verificar el nuevo correo."
+      ],
+      "notes": "El cooldown de 10 minutos aplica desde la ultima actualizacion de perfil. No puedes usar el mismo nombre o email que ya tenias."
+    },
+    {
+      "id": "change_password",
+      "title": "Cambiar contraseña",
+      "keywords": ["contraseña", "password", "cambiar clave", "cambiar contraseña", "new password"],
+      "questions": ["Como cambio mi contraseña?", "Como restablecer mi clave?", "Como actualizar mi password?"],
+      "steps": [
+        "1. Ve a 'Configuracion' y selecciona 'Cambiar Contraseña' en el menu lateral.",
+        "2. Ingresa tu contraseña actual.",
+        "3. Ingresa la nueva contraseña (debe tener entre 8 y 50 caracteres, incluir mayusculas, minusculas y numeros o caracteres especiales).",
+        "4. Confirma la nueva contraseña.",
+        "5. Haz clic en 'Guardar'.",
+        "6. Nota: Solo puedes cambiar la contraseña una vez cada 10 minutos."
+      ],
+      "notes": "La nueva contraseña no puede ser igual a la actual. El cooldown de 10 minutos aplica desde el ultimo cambio."
+    },
+    {
+      "id": "two_factor_auth",
+      "title": "Activar o desactivar autenticación de dos factores (2FA)",
+      "keywords": ["2fa", "two factor", "autenticacion", "seguridad", "token", "doble factor"],
+      "questions": ["Como activo 2FA?", "Como desactivo la autenticacion de dos factores?", "Como mejoro la seguridad de mi cuenta?"],
+      "steps": [
+        "1. Ve a 'Configuracion' y selecciona 'Autenticacion de Dos Factores'.",
+        "2. Para activar: haz clic en el interruptor para activar 2FA.",
+        "3. Recibiras un codigo de 6 digitos en tu correo cada vez que inicies sesion.",
+        "4. Para desactivar: haz clic en el interruptor, lee la advertencia y confirma en el modal haciendo clic en 'Desactivar'.",
+        "5. Una vez desactivado, ya no necesitaras codigo para iniciar sesion."
+      ],
+      "notes": "Se recomienda mantener 2FA activado para mayor seguridad de tu cuenta."
+    },
+    {
+      "id": "verify_email",
+      "title": "Verificar correo electrónico",
+      "keywords": ["verificar email", "verificar correo", "email verification", "confirmar email"],
+      "questions": ["Como verifico mi correo?", "No he recibido el correo de verificacion?", "Como confirmo mi email?"],
+      "steps": [
+        "1. Ve a 'Configuracion' y selecciona 'Verificar Email'.",
+        "2. Si tu correo no esta verificado, haz clic en 'Enviar correo'.",
+        "3. Revisa tu bandeja de entrada y haz clic en el enlace de verificacion.",
+        "4. El enlace expira en 1 hora.",
+        "5. Una vez verificado, aparecera un icono de verificado y el boton se deshabilitara."
+      ],
+      "notes": "Si cambias tu correo electronico en el perfil, el nuevo correo debera verificarse nuevamente."
+    },
+    {
+      "id": "forgot_password",
+      "title": "Recuperar contraseña olvidada",
+      "keywords": ["olvide contraseña", "recuperar clave", "forgot password", "reset password", "restablecer"],
+      "questions": ["Olvide mi contraseña que hago?", "Como recupero mi cuenta?", "Como restablezco mi password?"],
+      "steps": [
+        "1. En la pagina de inicio de sesion, haz clic en 'Olvidaste tu contraseña?'.",
+        "2. Ingresa tu correo electronico registrado.",
+        "3. Recibiras un enlace de restablecimiento en tu correo (valido por 2 minutos).",
+        "4. Haz clic en el enlace y establece una nueva contraseña.",
+        "5. La nueva contraseña debe tener entre 8 y 50 caracteres, incluir mayusculas, minusculas y numeros."
+      ],
+      "notes": "Si no recibes el correo, revisa tu carpeta de spam. Puedes solicitar un nuevo enlace despues de 2 minutos."
+    },
+    {
+      "id": "transactions",
+      "title": "Ver historial de transacciones",
+      "keywords": ["transacciones", "historial", "transactions", "movimientos", "actividad"],
+      "questions": ["Como veo mis transacciones?", "Donde esta mi historial?", "Como veo el estado de una transaccion?"],
+      "steps": [
+        "1. Ve a la pagina de una wallet especifica (ej. /wallet/eth).",
+        "2. Desplazate hacia abajo para ver la tabla de transacciones.",
+        "3. Cada transaccion muestra: ID, tipo (Deposito/Retiro), monto, tarifa, estado y fecha.",
+        "4. Los estados posibles: Aprobando (pendiente), Procesando, Procesado (completado), Cancelado.",
+        "5. Haz clic en cualquier transaccion para ver detalles completos: direccion de destino, hash de transaccion, y enlace al block explorer."
+      ],
+      "notes": "Las transacciones se actualizan en tiempo real via WebSocket cuando cambia su estado."
+    },
+    {
+      "id": "token_balances",
+      "title": "Ver tokens ERC-20 (USDT, etc.)",
+      "keywords": ["tokens", "usdt", "token balance", "erc20", "tokens erc-20"],
+      "questions": ["Como veo mis tokens USDT?", "Donde estan mis tokens?", "Como consulto mis balances de tokens?"],
+      "steps": [
+        "1. Ve a 'Mis Billeteras' y selecciona una wallet compatible con tokens (ej. Ethereum).",
+        "2. En los detalles de la wallet, veras la seccion de tokens con los balances disponibles.",
+        "3. Los tokens soportados incluyen USDT entre otros.",
+        "4. Puedes depositar y retirar tokens ERC-20 desde la misma interfaz de la wallet."
+      ],
+      "notes": "Los tokens ERC-20 usan la misma direccion que la wallet nativa de la red."
+    },
+    {
+      "id": "p2p_chat",
+      "title": "Chat en ordenes P2P",
+      "keywords": ["chat p2p", "mensajes orden", "conversacion p2p", "hablar con comprador", "hablar con vendedor"],
+      "questions": ["Como chateo con el vendedor?", "Como envio mensajes en la orden?", "Como envio una imagen en el chat?"],
+      "steps": [
+        "1. Dentro de una orden P2P, hay un panel de chat completo.",
+        "2. Puedes enviar mensajes de texto, emojis (con el selector de emojis), imagenes y notas de voz.",
+        "3. Veras cuando la otra persona esta escribiendo (indicador de escribiendo).",
+        "4. Los mensajes de audio se reproducen con visualizador de onda.",
+        "5. El chat es privado entre el vendedor y el comprador de la orden."
+      ],
+      "notes": "El chat esta disponible solo para ordenes P2P activas. Los archivos multimedia tienen un limite de 250 MB."
+    },
+    {
+      "id": "supported_coins",
+      "title": "Monedas y redes soportadas",
+      "keywords": ["monedas", "coins", "redes", "chains", "criptomonedas soportadas", "que monedas"],
+      "questions": ["Que monedas soportan?", "Cuales son las redes disponibles?", "Que criptomonedas puedo usar?"],
+      "steps": [
+        "1. BrivoTrust soporta multiple monedas incluyendo: BTC, ETH, BNB, AVAX, FTM, MATIC, OP y mas.",
+        "2. Cada moneda corresponde a una red blockchain especifica.",
+        "3. Los tokens ERC-20 como USDT estan disponibles en redes compatibles con Ethereum.",
+        "4. Los precios se actualizan en tiempo real via CoinGecko.",
+        "5. Puedes consultar el precio de cualquier moneda soportada en la interfaz."
+      ],
+      "notes": "No todas las monedas estan disponibles en todas las redes. Asegurate de seleccionar la red correcta al crear una wallet."
+    }
+  ]
+}
