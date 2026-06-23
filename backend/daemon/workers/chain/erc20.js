@@ -1,14 +1,12 @@
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
-const mongoose = require('mongoose')
+const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Worker } = require(`${appRoot}/config/bullmq`)
 const processERC20Event = require(`${appRoot}/jobs/deposits/erc20-processor`)
 const processAggregation = require(`${appRoot}/jobs/deposits/erc20-aggregator`)
 const processForwardExecution = require(`${appRoot}/jobs/withdraws/erc20-forward`)
 
-const DB_URI = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?authSource=admin`
-
-mongoose.connect(DB_URI).then(() => {
+connectDB.then(() => {
     console.log('[ERC20-WORKERS] Conectado a MongoDB. Levantando colas de procesamiento...')
 
     new Worker('erc20-processing', async (job) => {

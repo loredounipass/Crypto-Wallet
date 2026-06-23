@@ -1,9 +1,7 @@
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
-const mongoose = require('mongoose')
+const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { runBackfill } = require(`${appRoot}/jobs/indexers/erc20-backfill`)
-
-const DB_URI = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?authSource=admin`
 
 const POLL_INTERVAL_MS = Number(process.env.ERC20_BACKFILL_POLL_INTERVAL_MS || 300000)
 
@@ -56,7 +54,7 @@ async function runAllBackfills(tokens) {
     }
 }
 
-mongoose.connect(DB_URI).then(async () => {
+connectDB.then(async () => {
     console.log('[ERC20-BACKFILL-RUNNER] Conectado a MongoDB')
 
     const tokens = buildTokensFromEnv()
