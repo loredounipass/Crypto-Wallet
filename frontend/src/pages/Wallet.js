@@ -575,16 +575,11 @@ export default function Wallet() {
                                         </div>
                                         <button
                                             onClick={() => setActiveTokenWithdraw(activeTokenWithdraw === token.tokenAddress ? null : token.tokenAddress)}
+                                            className="rounded-[10px] px-[14px] py-2 font-semibold text-xs cursor-pointer transition-all duration-200"
                                             style={{
                                                 background: activeTokenWithdraw === token.tokenAddress ? "rgba(239,68,68,0.1)" : "rgba(33,134,235,0.1)",
                                                 border: activeTokenWithdraw === token.tokenAddress ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(33,134,235,0.3)",
-                                                borderRadius: "10px",
-                                                padding: "8px 14px",
                                                 color: activeTokenWithdraw === token.tokenAddress ? "#EF4444" : "#2186EB",
-                                                fontWeight: 600,
-                                                fontSize: "12px",
-                                                cursor: "pointer",
-                                                transition: "all 0.2s",
                                             }}
                                         >
                                             {activeTokenWithdraw === token.tokenAddress ? t('cancel') || 'Cancelar' : t('token_withdraw')}
@@ -830,21 +825,7 @@ export default function Wallet() {
                                 navigator.clipboard.writeText(walletInfo?.address || '');
                                 setIsQRModalOpen(false);
                             }}
-                            style={{
-                                marginTop: "16px",
-                                background: "linear-gradient(135deg, #2186EB 0%, #1A6BBD 100%)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "12px",
-                                padding: "12px 18px",
-                                fontWeight: 600,
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                width: "100%",
-                                transition: "all 0.2s"
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-                            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                            className="mt-4 bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none rounded-xl px-4 py-3 font-semibold text-sm cursor-pointer w-full transition-opacity duration-200 hover:opacity-90"
                         >
                             Copiar Dirección
                         </button>

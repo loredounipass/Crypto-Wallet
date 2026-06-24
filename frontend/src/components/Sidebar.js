@@ -14,7 +14,7 @@ import {
 } from "../ui/material";
 
 import { useHistory, useLocation } from "react-router-dom";
-import { useContext } from "react";
+import { use } from "react";
 import { AuthContext } from "../hooks/AuthContext";
 import useAuth from "../hooks/useAuth";
 import Logo from './Logo';
@@ -149,7 +149,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   // Track mounted state to prevent state updates after unmount

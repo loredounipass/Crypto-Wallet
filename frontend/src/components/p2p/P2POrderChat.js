@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, use, useCallback } from 'react';
 // Force Webpack recompile
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -19,7 +19,7 @@ import useP2PChatState from '../../hooks/useP2PChatState';
 
 export default function P2POrderChat() {
   const { orderId } = useParams();
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   
   const { currentOrder, getOrder, confirmPayment, releaseFunds, openDispute, cancelOrder, isLoading, toast, dismissToast } = useEscrow();
   const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat, apiOrigin } = useMessagesAndMultimedia();

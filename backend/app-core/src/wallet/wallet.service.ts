@@ -21,14 +21,14 @@ import { Transaction, TransactionDocument } from '../transaction/schemas/transac
 @Injectable()
 export class WalletService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
-    @InjectModel(WalletContract.name) private walletContractModel: Model<WalletContractDocument>,
-    @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>,
-    @InjectModel(Erc20Ledger.name) private erc20LedgerModel: Model<Erc20LedgerDocument>,
-    @InjectQueue(QueueType.WITHDRAW_REQUEST) private withdrawQueue: Queue,
-    @InjectQueue(QueueType.TRANSACTION_STATUS_EVENTS) private transactionStatusQueue: Queue,
-    @InjectQueue(QueueType.WITHDRAW_TOKEN_REQUEST) private withdrawTokenQueue: Queue
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Wallet.name) private readonly walletModel: Model<WalletDocument>,
+    @InjectModel(WalletContract.name) private readonly walletContractModel: Model<WalletContractDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(Erc20Ledger.name) private readonly erc20LedgerModel: Model<Erc20LedgerDocument>,
+    @InjectQueue(QueueType.WITHDRAW_REQUEST) private readonly withdrawQueue: Queue,
+    @InjectQueue(QueueType.TRANSACTION_STATUS_EVENTS) private readonly transactionStatusQueue: Queue,
+    @InjectQueue(QueueType.WITHDRAW_TOKEN_REQUEST) private readonly withdrawTokenQueue: Queue
   ) { }
 
 

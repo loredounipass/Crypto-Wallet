@@ -1,9 +1,9 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
 
 const EmailVerificationStatus = () => {
-    const { auth } = useContext(AuthContext); 
+    const { auth } = use(AuthContext); 
     const { isEmailVerified } = useAuth(); 
 
     const [verificationStatus, setVerificationStatus] = useState(null);

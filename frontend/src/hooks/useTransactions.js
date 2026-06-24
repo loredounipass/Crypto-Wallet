@@ -5,8 +5,10 @@ import Transaction from '../services/transaction';
 export default function useTransitions(coin) {
     const [transactions, setTransactions] = useState([]);
     const [toast, setToast] = useState(null);
-    const notifiedCompletedTxRef = useRef(new Set());
-
+    const notifiedCompletedTxRef = useRef(null);
+    if (!notifiedCompletedTxRef.current) {
+        notifiedCompletedTxRef.current = new Set();
+    }
     const upsertTransactionRef = useRef(null);
 
     // Define getTransactions using useCallback to memoize it

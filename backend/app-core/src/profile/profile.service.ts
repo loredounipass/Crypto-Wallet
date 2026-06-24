@@ -71,7 +71,7 @@ export class ProfileService {
   }
 
   // Public: get photos/videos posted by a given user (for profile media tab)
-  async getPostsForProfile(userId: string, limit = 50) {
+  getPostsForProfile(userId: string, limit = 50) {
     if (!userId || !Types.ObjectId.isValid(userId)) throw new BadRequestException('Invalid user id');
     return [];
   }

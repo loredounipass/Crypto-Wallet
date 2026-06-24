@@ -1,12 +1,17 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, use, useEffect } from 'react';
 import { useHistory } from 'react-router-dom'; 
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
 import TransactionToast from '../TransactionToast';
 
+const AVAILABLE_PAYMENT_METHODS = [
+  'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
+  'Mercado Pago', 'Efectivo', 'Otro'
+];
+
 export default function ProviderForm() {
   const { createNewProvider, findByEMail, checkTerms, acceptTerms } = useProvider();
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const history = useHistory();
   const [toast, setToast] = useState(null);
 
@@ -23,13 +28,10 @@ export default function ProviderForm() {
     walletAddress: '',
   });
 
-  const AVAILABLE_PAYMENT_METHODS = [
-    'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
-    'Mercado Pago', 'Efectivo', 'Otro'
-  ];
+
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([]);
 
-  const [hasCheckedProvider, setHasCheckedProvider] = useState(false);
+  const hasCheckedProvider = React.useRef(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -92,8 +94,8 @@ export default function ProviderForm() {
 
   useEffect(() => {
     const fetchProvider = async () => {
-      if (!hasCheckedProvider && auth?.email) {
-        setHasCheckedProvider(true);
+      if (!hasCheckedProvider.current && auth?.email) {
+        hasCheckedProvider.current = true;
         try {
           const response = await findByEMail(auth.email);
           if (response) {
@@ -113,7 +115,7 @@ export default function ProviderForm() {
       }
     };
     fetchProvider();
-  }, [auth?.email, hasCheckedProvider, findByEMail, checkTerms, history]);
+  }, [auth?.email, findByEMail, checkTerms, history]);
 
   const handleAcceptTerms = async () => {
     try {

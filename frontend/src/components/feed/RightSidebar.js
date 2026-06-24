@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { use, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { AuthContext } from '../../hooks/AuthContext'
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia'
@@ -161,7 +161,7 @@ const styles = {
 }
 
 export default function RightSidebar() {
-  const { auth } = useContext(AuthContext)
+  const { auth } = use(AuthContext)
   const { messages, fetchMyMessages, joinChat } = useMessagesAndMultimedia()
   const history = useHistory()
 
@@ -210,7 +210,10 @@ export default function RightSidebar() {
   }, [contacts, searchQuery, userCache])
 
   useEffect(() => {
-    const unknown = contacts.map(c => c.userId).filter(id => id && !userCache[id])
+    const unknown = contacts.reduce((acc, c) => {
+      if (c.userId && !userCache[c.userId]) acc.push(c.userId);
+      return acc;
+    }, []);
     if (unknown.length === 0) return
     let mounted = true
     ;(async () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -37,8 +37,8 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
 
 /* ── main ── */
 function UserProfileComponent() {
-    const { updateUserProfile, error: authError, successMessage: authSuccess } = useAuth();
-    const { auth } = useContext(AuthContext);
+    const { updateUserProfile } = useAuth();
+    const { auth } = use(AuthContext);
     
     
 
@@ -49,7 +49,7 @@ function UserProfileComponent() {
 
     // UI state
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [initialized, setInitialized]   = useState(false);
+    const initialized = React.useRef(false);
     const [toast, setToast]               = useState(null);
 
     // Cooldown guard
@@ -64,21 +64,17 @@ function UserProfileComponent() {
 
     // Init everything from auth + API once
     useEffect(() => {
-        if (initialized) return;
+        if (initialized.current) return;
         setFirstName(auth?.firstName || '');
         setLastName(auth?.lastName || '');
         setEmail(auth?.email || '');
 
         profileService.getMyProfile()
             .catch(() => {})
-            .finally(() => setInitialized(true));
-    }, [initialized, auth]);
+            .finally(() => { initialized.current = true; });
+    }, [auth]);
 
-    // Sync auth hook messages
-    useEffect(() => {
-        if (authSuccess) setToast({ kind: 'success', message: authSuccess });
-        if (authError) setToast({ kind: 'error', message: authError });
-    }, [authSuccess, authError]);
+
 
     /* ── single save handler ── */
     const handleSave = async () => {
@@ -98,7 +94,11 @@ function UserProfileComponent() {
                 email     !== (auth?.email     || '');
 
             if (accountChanged) {
-                await updateUserProfile({ firstName, lastName, email });
+                const res = await updateUserProfile({ firstName, lastName, email });
+                if (res?.error) {
+                    setToast({ kind: 'error', message: res.error });
+                    return;
+                }
             }
 
             // 2) Profile upsert (always — cheap PATCH)

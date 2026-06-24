@@ -1,10 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { use, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
 import useAuth from '../../hooks/useAuth';
 
 const EmailVerificationComponent = () => {
-    const { auth } = useContext(AuthContext);
+    const { auth } = use(AuthContext);
     const { verifyEmail } = useAuth();
     const location = useLocation();
     const [openDialog, setOpenDialog] = useState(false);

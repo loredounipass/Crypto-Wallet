@@ -162,8 +162,8 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
       };
 
       const userRoom = `user:${user._id.toString()}`;
-      this.server.to(userRoom).emit('transactionStatusUpdated', payload);
-      this.server.to(`tx:${payload.transactionId}`).emit('transactionStatusUpdated', payload);
+      void this.server.to(userRoom).emit('transactionStatusUpdated', payload);
+      void this.server.to(`tx:${payload.transactionId}`).emit('transactionStatusUpdated', payload);
     } catch (error) {
       this.logger.warn(`Failed to emit transaction status update: ${error}`);
     }

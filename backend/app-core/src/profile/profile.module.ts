@@ -1,21 +1,16 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
-import { Profile, ProfileSchema } from './schemas/profile.schema';
 import { UserModule } from '../user/user.module';
 import { LocalStorageProvider } from '../storage/local.storage.provider';
-import { ProfileRepository } from 'src/repositories/profile.repository';
+import { SharedProfileModule } from './shared-profile.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Profile.name, schema: ProfileSchema },
-    ]),
-    forwardRef(() => UserModule),
+    SharedProfileModule,
+    UserModule,
   ],
   controllers: [ProfileController],
-  providers: [ProfileService, LocalStorageProvider, ProfileRepository],
-  exports: [ProfileService, ProfileRepository],
+  providers: [ProfileService, LocalStorageProvider],
 })
 export class ProfileModule {}

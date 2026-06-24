@@ -14,7 +14,7 @@ const STATUS_LABELS = {
   refunded: 'Reembolsado', cancelled: 'Cancelado', expired: 'Expirado',
 };
 
-export default function P2PMyOrders({ orders, role = 'seller' }) {
+export default function P2PMyOrders({ orders, userRole = 'seller' }) {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
   
   React.useEffect(() => {
@@ -59,7 +59,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
         {orders.map((order) => {
           const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
           const statusLabel = STATUS_LABELS[order.status] || order.status;
-          const counterparty = order.counterpartName ? formatName(order.counterpartName) : (role === 'seller' ? order.providerEmail : order.sellerEmail);
+          const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
           const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
           }) : '';
@@ -108,7 +108,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
               </div>
 
               <div>
-                <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{role === 'seller' ? 'Proveedor' : 'Vendedor'}</p>
+                <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{userRole === 'seller' ? 'Proveedor' : 'Vendedor'}</p>
                 <p style={{ margin: 0, fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {counterparty}
                 </p>
@@ -148,7 +148,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
         minWidth: 700,
       }}>
         <span>Orden</span>
-        <span>{role === 'seller' ? 'Proveedor' : 'Vendedor'}</span>
+        <span>{userRole === 'seller' ? 'Proveedor' : 'Vendedor'}</span>
         <span>Cantidad</span>
         <span>Fiat</span>
         <span>Estado</span>
@@ -159,7 +159,7 @@ export default function P2PMyOrders({ orders, role = 'seller' }) {
       {orders.map((order) => {
         const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
         const statusLabel = STATUS_LABELS[order.status] || order.status;
-        const counterparty = order.counterpartName ? formatName(order.counterpartName) : (role === 'seller' ? order.providerEmail : order.sellerEmail);
+        const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
         const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
         }) : '';

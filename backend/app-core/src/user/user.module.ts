@@ -1,15 +1,15 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { HashService } from './hash.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { AuthService } from '../auth/auth.service';
-import { TwoFactorAuthModule } from 'src/two-factor/verification.module';
+import { TwoFactorAuthModule } from '../two-factor/verification.module';
 import { EmailModule } from './email.module';
 import { ForgotPasswordService } from './forgot.password.service';
-import { UserRepository } from 'src/repositories/user.repository';
-import { ProfileModule } from 'src/profile/profile.module';
+import { UserRepository } from '../repositories/user.repository';
+import { SharedProfileModule } from '../profile/shared-profile.module';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { ProfileModule } from 'src/profile/profile.module';
       name: User.name,
       schema: UserSchema
     }]),
-    forwardRef(() => ProfileModule)
+    SharedProfileModule
   ],
   controllers: [UserController],
   providers: [

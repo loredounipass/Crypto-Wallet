@@ -1,4 +1,5 @@
 import { Controller, UseGuards, Get, Post, Body, UseInterceptors, UploadedFile, Param, Query } from '@nestjs/common';
+import { Public } from '../guard/auth/public.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProfileService } from './profile.service';
 import { AuthenticatedGuard } from 'src/guard/auth/authenticated.guard';
@@ -28,6 +29,7 @@ export class ProfileController {
     return this.service.getByOwner(user._id.toString());
   }
 
+  @Public()
   @Get(':id')
   async getProfileById(@Param('id') id: string) {
     return this.service.getPublicById(id);
@@ -47,6 +49,7 @@ export class ProfileController {
   }
 
   // Public: list photos & videos posted by profile owner (for profile media tab)
+  @Public()
   @Get(':id/posts')
   async getPostsByProfile(@Param('id') id: string, @Query('limit') limit?: string) {
     const l = limit ? parseInt(limit, 10) : 50;

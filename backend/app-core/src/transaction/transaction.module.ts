@@ -36,6 +36,5 @@ import { TransactionStatusProcessor } from './transaction-status.processor';
     TransactionGateway,
     TransactionStatusProcessor
   ],
-  exports: [TransactionGateway]
 })
 export class TransactionModule { }

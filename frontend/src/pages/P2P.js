@@ -164,11 +164,11 @@ export default function P2P() {
         )}
 
         {activeTab === 'my-orders' && (
-          <P2PMyOrders orders={orders} role="seller" />
+          <P2PMyOrders orders={orders} userRole="seller" />
         )}
 
         {activeTab === 'provider-orders' && (
-          <P2PMyOrders orders={providerOrders} role="provider" />
+          <P2PMyOrders orders={providerOrders} userRole="provider" />
         )}
       </div>
 

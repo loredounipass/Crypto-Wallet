@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
+import React, { use } from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
 
 export default function PrivateRoute(props) {
-    const { auth, loading } = useContext(AuthContext);
+    const { auth, loading } = use(AuthContext);
     const { component: Component, ...rest } = props;
 
     if (loading) {

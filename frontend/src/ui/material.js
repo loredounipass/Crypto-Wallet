@@ -2,6 +2,7 @@ import React from "react";
 import { defaultTheme, mergeStyles, sxToStyle } from "./sx";
 
 const cx = (...values) => values.filter(Boolean).join(" ");
+const EMPTY_OBJ = {};
 
 const resolveComponent = (component) => component || "div";
 
@@ -136,7 +137,7 @@ export const IconButton = ({ sx, style, children, ...props }) => (
   </button>
 );
 
-export const Avatar = ({ src, alt, sx, style, imgProps = {}, children, ...props }) => (
+export const Avatar = ({ src, alt, sx, style, imgProps = EMPTY_OBJ, children, ...props }) => (
   <div
     className="inline-flex items-center justify-center overflow-hidden rounded-full bg-slate-300 text-sm font-semibold"
     style={{ width: 32, height: 32, ...mergeStyles(sx, style) }}
@@ -240,7 +241,7 @@ const ModalShell = ({ open, onClose, children, style }) => {
   );
 };
 
-export const Dialog = ({ open, onClose, children, PaperProps = {} }) => (
+export const Dialog = ({ open, onClose, children, PaperProps = EMPTY_OBJ }) => (
   <ModalShell open={open} onClose={onClose} style={sxToStyle(PaperProps.sx)}>
     {children}
   </ModalShell>
@@ -286,7 +287,7 @@ export const ListItemIcon = ({ children, sx, style, ...props }) => (
   </span>
 );
 
-export const Drawer = ({ open, onClose, children, sx, style, PaperProps = {} }) => {
+export const Drawer = ({ open, onClose, children, sx, style, PaperProps = EMPTY_OBJ }) => {
   if (!open) return null;
 
   const rootSx = { ...sx };
@@ -341,7 +342,7 @@ export const TextField = ({
   placeholder,
   sx,
   style,
-  InputProps = {},
+  InputProps = EMPTY_OBJ,
   InputLabelProps,
   error,
   helperText,
@@ -433,7 +434,7 @@ export const Snackbar = ({ open, children, anchorOrigin }) =>
 
 export const Chip = ({ label }) => <span className="inline-flex rounded-full border px-2 py-0.5 text-xs">{label}</span>;
 export const Zoom = ({ children }) => <>{children}</>;
-export const Slide = React.forwardRef(({ children }, ref) => <div ref={ref}>{children}</div>);
+export const Slide = ({ children, ref }) => <div ref={ref}>{children}</div>;
 
 export const TableContainer = ({ children, sx, style, ...props }) => (
   <div className="overflow-auto" style={mergeStyles(sx, style)} {...props}>

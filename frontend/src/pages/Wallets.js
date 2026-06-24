@@ -34,6 +34,54 @@ ChartJS.register(
   LineController
 );
 
+const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
+    <div 
+        style={styles.walletCard}
+        onClick={() => handleWalletClick(wallet.coin)}
+        onMouseOver={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 14px 26px rgba(0,0,0,0.35)";
+        }}
+        onMouseOut={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = styles.walletCard.boxShadow;
+        }}
+    >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <img 
+                src={getCoinLogo(wallet.coin)} 
+                alt={wallet.coin}
+                onError={(e) => {
+                    e.currentTarget.src = getCoinFallbackLogo(wallet.coin);
+                }}
+                style={{ width: isMobile ? 26 : 32, height: isMobile ? 26 : 32 }}
+            />
+            <div>
+                <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "14px" : "16px" }}>
+                    {String(wallet.coin || "").toUpperCase()}
+                </div>
+                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
+                    {getDisplayableAddress(wallet.address)}
+                </div>
+            </div>
+            </div>
+            <div style={{ width: 8, height: 8, borderRadius: "999px", backgroundColor: "#22C55E" }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>Balance</div>
+                <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "16px" : "18px" }}>
+                    {wallet.balance}
+                </div>
+            </div>
+            <div style={styles.walletActionPill}>
+                Ver
+            </div>
+        </div>
+    </div>
+);
+
 const Wallets = () => {
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
@@ -340,53 +388,7 @@ const Wallets = () => {
         }),
     };
 
-    const WalletCard = ({ wallet }) => (
-        <div 
-            style={styles.walletCard}
-            onClick={() => handleWalletClick(wallet.coin)}
-            onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow = "0 14px 26px rgba(0,0,0,0.35)";
-            }}
-            onMouseOut={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = styles.walletCard.boxShadow;
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <img 
-                    src={getCoinLogo(wallet.coin)} 
-                    alt={wallet.coin}
-                    onError={(e) => {
-                        e.currentTarget.src = getCoinFallbackLogo(wallet.coin);
-                    }}
-                    style={{ width: isMobile ? 26 : 32, height: isMobile ? 26 : 32 }}
-                />
-                <div>
-                    <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "14px" : "16px" }}>
-                        {String(wallet.coin || "").toUpperCase()}
-                    </div>
-                    <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                        {getDisplayableAddress(wallet.address)}
-                    </div>
-                </div>
-                </div>
-                <div style={{ width: 8, height: 8, borderRadius: "999px", backgroundColor: "#22C55E" }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                    <div style={{ color: "#9CA3AF", fontSize: "12px" }}>Balance</div>
-                    <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "16px" : "18px" }}>
-                        {wallet.balance}
-                    </div>
-                </div>
-                <div style={styles.walletActionPill}>
-                    Ver
-                </div>
-            </div>
-        </div>
-    );
+
 
     return (
         <div className="mx-auto w-full" style={styles.container}>
@@ -564,7 +566,7 @@ const Wallets = () => {
                 {allWalletInfo.length > 0 ? (
                     <div className="grid gap-3 md:gap-4" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: isMobile ? "10px" : "16px" }}>
                         {allWalletInfo.map((wallet, index) => (
-                            <WalletCard key={index} wallet={wallet} />
+                            <WalletCard key={index} wallet={wallet} isMobile={isMobile} styles={styles} handleWalletClick={handleWalletClick} />
                         ))}
                     </div>
                 ) : (

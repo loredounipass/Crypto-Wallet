@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { use, useState } from "react";
 import { styled } from "../ui/styles";
 import {
   AppBar as MuiAppBar,
@@ -46,9 +46,9 @@ const AppBarStyled = styled(MuiAppBar)(({ theme, open }) => ({
 }));
 
 function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const [anchorElUser, setAnchorElUser] = useState(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const isLoggingOut = React.useRef(false);
   const { logoutUser } = useAuth();
   const history = useHistory();
   const theme = useTheme();
@@ -63,10 +63,10 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
     e.stopPropagation();
 
     if (action === "Logout") {
-      if (isLoggingOut) return;
-      setIsLoggingOut(true);
+      if (isLoggingOut.current) return;
+      isLoggingOut.current = true;
       await logoutUser().catch(() => {});
-      setIsLoggingOut(false);
+      isLoggingOut.current = false;
     } else if (action === "Mis billeteras") {
       history.push("/wallets");
     } else if (action === "Settings") {

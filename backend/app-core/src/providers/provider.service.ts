@@ -47,7 +47,7 @@ export class ProviderService {
     if (currentUserEmail) {
       filter.email = { $ne: currentUserEmail };
     }
-    return this.providerModel.find(filter).exec();
+    return await this.providerModel.find(filter).exec();
   }
 
   async acceptTerms(email: string): Promise<ProviderTerms> {
@@ -67,7 +67,7 @@ export class ProviderService {
 
 
   async findProviderByEmail(email: string): Promise<Provider> {
-    return this.providerModel.findOne({ email }).exec();
+    return await this.providerModel.findOne({ email }).exec();
   }
 
 

@@ -18,7 +18,7 @@ const CameraFlipIcon = ({ size = 24, color = "currentColor" }) => (
 );
 
 const QRScannerModal = ({ isOpen, onClose, onScan }) => {
-    const [facingMode, setFacingMode] = useState("environment");
+    const facingMode = useRef("environment");
     const [error, setError] = useState("");
     const [scanSuccess, setScanSuccess] = useState(false);
     const html5QrCodeRef = useRef(null);
@@ -31,10 +31,17 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
         onCloseRef.current = onClose;
     }, [onScan, onClose]);
 
-    useEffect(() => {
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
         if (!isOpen) {
             setScanSuccess(false);
             successTriggeredRef.current = false;
+        }
+    }
+
+    useEffect(() => {
+        if (!isOpen) {
             return;
         }
 
@@ -42,6 +49,8 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
         successTriggeredRef.current = false;
         
         const initScanner = async () => {
+            if (!isComponentMounted) return;
+            
             // Give any previous scanner a moment to clean up
             await new Promise(resolve => setTimeout(resolve, 100));
             
@@ -61,7 +70,7 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
                 if (!isComponentMounted) return;
 
                 await html5QrCodeRef.current.start(
-                    { facingMode: facingMode },
+                    { facingMode: facingMode.current },
                     {
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
@@ -119,10 +128,46 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
                 }
             }
         };
-    }, [isOpen, facingMode]);
+    }, [isOpen]);
 
-    const toggleCamera = () => {
-        setFacingMode(prev => prev === "environment" ? "user" : "environment");
+    const toggleCamera = async () => {
+        facingMode.current = facingMode.current === "environment" ? "user" : "environment";
+        if (html5QrCodeRef.current) {
+            try {
+                if (html5QrCodeRef.current.isScanning) {
+                    await html5QrCodeRef.current.stop();
+                    html5QrCodeRef.current.clear();
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await html5QrCodeRef.current.start(
+                    { facingMode: facingMode.current },
+                    { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                    (decodedText) => {
+                        if (!successTriggeredRef.current) {
+                            successTriggeredRef.current = true;
+                            setScanSuccess(true);
+                            try { if (html5QrCodeRef.current.pause) html5QrCodeRef.current.pause(true); } catch(e) {}
+                            setTimeout(() => {
+                                if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+                                    html5QrCodeRef.current.stop().then(() => {
+                                        html5QrCodeRef.current.clear();
+                                        if (onScanRef.current) onScanRef.current(decodedText);
+                                        if (onCloseRef.current) onCloseRef.current();
+                                    }).catch(err => console.error(err));
+                                } else {
+                                    if (onScanRef.current) onScanRef.current(decodedText);
+                                    if (onCloseRef.current) onCloseRef.current();
+                                }
+                            }, 600);
+                        }
+                    },
+                    () => {}
+                );
+            } catch (err) {
+                console.error("Camera access error:", err);
+                setError(err.message);
+            }
+        }
     };
 
     if (!isOpen) return null;

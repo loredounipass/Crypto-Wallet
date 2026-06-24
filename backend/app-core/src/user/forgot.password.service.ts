@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { UserRepository } from './index';
+import { UserRepository } from '../repositories/user.repository';
 import { randomBytes } from 'crypto';
 import { HashService } from './hash.service';
 import { EmailService } from './email.service';

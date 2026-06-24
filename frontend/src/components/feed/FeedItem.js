@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext, useCallback } from 'react'
+import React, { useState, useEffect, useRef, use, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { mediaBase, apiOrigin } from '../../api/http'
 import CommentsPanel from './CommentsPanel'
@@ -6,37 +6,48 @@ import NewChatDialog from '../chat/NewChatDialog'
 import { AuthContext } from '../../hooks/AuthContext'
 import UserAvatar from '../common/UserAvatar'
 
+const EMPTY_ACTIONS = {};
 
-export default function FeedItem({ post, actions = {} }) {
+const resolveUrl = (u) => {
+  if (!u) return null
+  try {
+    if (/^https?:\/\//i.test(u)) return u
+    if (u.startsWith('/')) return `${apiOrigin}${u}`
+    return `${mediaBase}/${u}`
+  } catch (_) { return u }
+}
+
+
+export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
   const { likePost, unlikePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost } = actions
-  const { auth } = useContext(AuthContext)
+  const { auth } = use(AuthContext)
   const isMyPost = post && auth?._id && String(post.author) === String(auth._id)
 
   // ── Follow state (placeholder) ──
   const [following, setFollowing] = useState(false)
-  const [followLoading, setFollowLoading] = useState(false)
+  const followLoading = useRef(false)
 
   const handleFollow = useCallback(async () => {
-    if (followLoading || following) return
-    setFollowLoading(true)
+    if (followLoading.current || following) return
+    followLoading.current = true
     try {
       // profileService.followUser(String(post.author))
       setFollowing(true)
     } catch (err) {
       console.error('[FeedItem] Error following user:', err)
-    } finally { setFollowLoading(false) }
-  }, [followLoading, following])
+    } finally { followLoading.current = false }
+  }, [following])
 
   const handleUnfollow = useCallback(async () => {
-    if (followLoading || !following) return
-    setFollowLoading(true)
+    if (followLoading.current || !following) return
+    followLoading.current = true
     try {
       // profileService.unfollowUser(String(post.author))
       setFollowing(false)
     } catch (err) {
       console.error('[FeedItem] Error unfollowing user:', err)
-    } finally { setFollowLoading(false) }
-  }, [followLoading, following])
+    } finally { followLoading.current = false }
+  }, [following])
 
   const isLikedByMe = (p) => {
     if (!p || !auth?._id) return false
@@ -54,7 +65,7 @@ export default function FeedItem({ post, actions = {} }) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const containerRef = useRef(null)
   const videoRef = useRef(null)
-  const [viewed, setViewed]             = useState(false)
+  const viewed = useRef(false)
   const [progress, setProgress] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
@@ -101,9 +112,9 @@ export default function FeedItem({ post, actions = {} }) {
     try {
       obs = new IntersectionObserver((entries) => {
         entries.forEach(e => {
-          if (e.isIntersecting && e.intersectionRatio > 0.25 && !viewed) {
+          if (e.isIntersecting && e.intersectionRatio > 0.25 && !viewed.current) {
             try { if (viewPost) viewPost(post._id).catch(() => {}) } catch (_) {}
-            setViewed(true)
+            viewed.current = true
           }
           try {
             const vid = videoRef.current
@@ -121,7 +132,7 @@ export default function FeedItem({ post, actions = {} }) {
       obs.observe(el)
     } catch (_) {}
     return () => { try { if (obs && el) obs.unobserve(el) } catch (_) {} }
-  }, [post, viewed, viewPost])
+  }, [post, viewPost])
 
   if (!post) return null
   const {
@@ -139,15 +150,6 @@ export default function FeedItem({ post, actions = {} }) {
   const shareUrl = (typeof window !== 'undefined' && window.location)
     ? `${window.location.origin}/feed/${post._id}`
     : ''
-
-  const resolveUrl = (u) => {
-    if (!u) return null
-    try {
-      if (/^https?:\/\//i.test(u)) return u
-      if (u.startsWith('/')) return `${apiOrigin}${u}`
-      return `${mediaBase}/${u}`
-    } catch (_) { return u }
-  }
 
   const mediaUrl =
     resolveUrl(multimediaUrl) ||

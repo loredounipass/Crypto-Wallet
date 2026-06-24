@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
 import TransactionToast from '../TransactionToast';
@@ -12,65 +12,57 @@ import './Settings.css';
 
 
 const VerifyEmailComponent = () => {
-    const { auth } = useContext(AuthContext); 
-    const { sendVerificationEmail, isEmailVerified, error, successMessage } = useAuth();
+    const { auth } = use(AuthContext); 
+    const { sendVerificationEmail, isEmailVerified } = useAuth();
     
     
 
-    const [verificationStatus, setVerificationStatus] = useState(null);
-    const [loading, setLoading] = useState(true); 
-    const [emailVerified, setEmailVerified] = useState(false);
-    const [hasCheckedVerification, setHasCheckedVerification] = useState(false); 
-    const [sending, setSending] = useState(false); 
+    const [ui, setUi] = useState({
+        verificationStatus: null,
+        loading: true,
+        emailVerified: false,
+        sending: false
+    });
+    const hasCheckedVerification = React.useRef(false);
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
         const checkEmailVerification = async () => {
             const isVerified = await isEmailVerified(); 
-            if (isVerified) {
-                setVerificationStatus({
-                    verified: true,
-                    message: 'Correo electrónico verificado',
-                });
-                setEmailVerified(true);
-            } else {
-                setVerificationStatus({
-                    verified: false,
-                    message: 'El correo electrónico no está verificado.',
-                });
-                setEmailVerified(false);
-            }
-            setLoading(false); 
-            setHasCheckedVerification(true); 
+            setUi(prev => ({
+                ...prev,
+                verificationStatus: {
+                    verified: isVerified,
+                    message: isVerified ? 'Correo electrónico verificado' : 'El correo electrónico no está verificado.'
+                },
+                emailVerified: isVerified,
+                loading: false
+            }));
+            hasCheckedVerification.current = true;
         };
 
-        if (auth && auth.email && !hasCheckedVerification) {
+        if (auth && auth.email && !hasCheckedVerification.current) {
             checkEmailVerification(); 
         } else if (!auth || !auth.email) {
             setToast({ kind: 'error', message: 'No se ha encontrado un correo electrónico autenticado.' });
-            setLoading(false); 
+            setUi(prev => ({ ...prev, loading: false }));
         }
-    }, [auth, isEmailVerified, hasCheckedVerification]); 
+    }, [auth, isEmailVerified]); 
 
     const handleSendVerificationEmail = async () => {
         if (auth && auth.email) {
-            setSending(true); 
-            await sendVerificationEmail();
-            setSending(false); 
+            setUi(prev => ({ ...prev, sending: true }));
+            const res = await sendVerificationEmail();
+            setUi(prev => ({ ...prev, sending: false }));
+            
+            if (res?.success) {
+                setToast({ kind: 'success', message: res.message });
+            } else if (res?.error) {
+                setToast({ kind: 'error', message: res.error });
+            }
         }
     };
 
-    useEffect(() => {
-        if (successMessage) {
-            setToast({ kind: 'success', message: successMessage });
-        }
-    }, [successMessage]);
-
-    useEffect(() => {
-        if (error) {
-            setToast({ kind: 'error', message: error });
-        }
-    }, [error]);
 
     return (
         <div className="flex w-full flex-col border-0 bg-transparent p-0 shadow-none">
@@ -88,46 +80,46 @@ const VerifyEmailComponent = () => {
                 </p>
             </div>
 
-            {loading ? (
+            {ui.loading ? (
                 <div className="flex justify-center p-6">
                     <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-[rgba(33,134,235,0.3)] border-t-[#2186EB]"></div>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {verificationStatus && (
-                        <div className={`flex items-center gap-3 rounded-xl border px-4 py-4 font-medium ${verificationStatus.verified 
+                    {ui.verificationStatus && (
+                        <div className={`flex items-center gap-3 rounded-xl border px-4 py-4 font-medium ${ui.verificationStatus.verified 
                                 ? 'settings-verify-status-success' 
                                 : 'settings-verify-status-warning'}`}>
-                            {verificationStatus.verified ? <CheckCircleOutlineIcon /> : <WarningAmberIcon />}
+                            {ui.verificationStatus.verified ? <CheckCircleOutlineIcon /> : <WarningAmberIcon />}
                             <span style={{ fontWeight: 700 }}>
-                                {verificationStatus.message}
+                                {ui.verificationStatus.message}
                             </span>
                         </div>
                     )}
 
                     <button
                         onClick={handleSendVerificationEmail}
-                        disabled={emailVerified || sending} 
+                        disabled={ui.emailVerified || ui.sending} 
                         className="box-border w-full cursor-pointer rounded-xl border-0 px-6 py-[14px] text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60"
                         style={{ 
                           maxWidth: '200px', 
                           margin: '0 auto',
-                          backgroundColor: (emailVerified || sending) ? 'var(--settings-muted)' : 'var(--settings-primary)'
+                          backgroundColor: (ui.emailVerified || ui.sending) ? 'var(--settings-muted)' : 'var(--settings-primary)'
                         }}
                         onMouseEnter={(e) => {
-                          if (!emailVerified && !sending) e.target.style.backgroundColor = 'var(--settings-primary-hover)';
+                          if (!ui.emailVerified && !ui.sending) e.target.style.backgroundColor = 'var(--settings-primary-hover)';
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = (emailVerified || sending) ? 'var(--settings-muted)' : 'var(--settings-primary)';
+                          e.target.style.backgroundColor = (ui.emailVerified || ui.sending) ? 'var(--settings-muted)' : 'var(--settings-primary)';
                         }}
                     >
-                        {sending ? (
+                        {ui.sending ? (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                 <div className="h-4 w-4 animate-spin rounded-full border-[2px] border-[rgba(255,255,255,0.3)] border-b-white"></div>
                                 <span>Enviando...</span>
                             </div>
                         ) : (
-                            emailVerified ? 'Verificado' : 'Enviar correo'
+                            ui.emailVerified ? 'Verificado' : 'Enviar correo'
                         )}
                     </button>
                 </div>

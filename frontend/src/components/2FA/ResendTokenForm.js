@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useAuth from '../../hooks/useAuth';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
@@ -17,17 +17,16 @@ const ResendTokenForm = () => {
   const [email, setEmail] = useState(() => location.state?.email || '');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (successMessage && successMessage.includes('código de verificación')) {
-      history.push({ pathname: '/verifytoken', state: { email } });
-    }
-  }, [successMessage, history, email]);
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     try {
-      await resendToken({ email: email.trim() });
+      const res = await resendToken({ email: email.trim() });
+      if (res?.success && res.message.includes('código de verificación')) {
+        history.push({ pathname: '/verifytoken', state: { email } });
+      }
     } catch (err) {
       console.error(err);
     } finally {

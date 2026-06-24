@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, use } from 'react';
 import {
     Visibility,
     VisibilityOff,
@@ -11,19 +11,44 @@ import TransactionToast from '../TransactionToast';
 import './Settings.css';
 
 
+const PasswordInput = ({ name, label, value, showPassword, onToggle, handleChange }) => (
+    <div className="mb-5 flex flex-col">
+        <label className="mb-2 text-sm font-medium" style={{ color: 'var(--settings-muted)' }}>
+            {label} <span style={{ color: 'var(--settings-danger)' }}>*</span>
+        </label>
+        <div className="relative flex items-center">
+            <input
+                type={showPassword ? 'text' : 'password'}
+                name={name}
+                value={value}
+                onChange={handleChange}
+                className="w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors focus:border-[#2186EB]"
+                style={{ 
+                    borderColor: 'var(--settings-border)', 
+                    backgroundColor: 'var(--settings-bg)', 
+                    color: 'var(--settings-text)' 
+                }}
+                required
+            />
+            <button
+                type="button"
+                onClick={() => onToggle(name)}
+                className="absolute right-3 flex items-center justify-center border-0 bg-transparent p-0"
+                style={{ color: 'var(--settings-muted)' }}
+            >
+                {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+            </button>
+        </div>
+    </div>
+);
+
 function ChangePasswordComponent() {
-    const { changePassword, successMessage, error } = useAuth();
-    const { auth } = useContext(AuthContext);
+    const { changePassword } = useAuth();
+    const { auth } = use(AuthContext);
     
     const [toast, setToast] = useState(null);
 
-    React.useEffect(() => {
-        if (successMessage) setToast({ kind: 'success', message: successMessage });
-    }, [successMessage]);
 
-    React.useEffect(() => {
-        if (error) setToast({ kind: 'error', message: error });
-    }, [error]);
     
     
 
@@ -71,42 +96,17 @@ function ChangePasswordComponent() {
 
         try {
             setIsSubmitting(true);
-            await changePassword(passwords);
+            const res = await changePassword(passwords);
+            if (res?.success) {
+                setToast({ kind: 'success', message: res.message });
+            } else if (res?.error) {
+                setToast({ kind: 'error', message: res.error });
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const PasswordInput = ({ name, label, value, showPassword, onToggle }) => (
-        <div className="mb-5 flex flex-col">
-            <label className="mb-2 text-sm font-medium" style={{ color: 'var(--settings-muted)' }}>
-                {label} <span style={{ color: 'var(--settings-danger)' }}>*</span>
-            </label>
-            <div className="relative flex items-center">
-                <input
-                    type={showPassword ? 'text' : 'password'}
-                    name={name}
-                    value={value}
-                    onChange={handleChange}
-                    className="w-full rounded-xl border px-4 py-3 pr-10 text-sm outline-none transition-colors focus:border-[#2186EB]"
-                    style={{ 
-                        borderColor: 'var(--settings-border)', 
-                        backgroundColor: 'var(--settings-bg)', 
-                        color: 'var(--settings-text)' 
-                    }}
-                    required
-                />
-                <button
-                    type="button"
-                    onClick={() => onToggle(name)}
-                    className="absolute right-3 flex items-center justify-center border-0 bg-transparent p-0"
-                    style={{ color: 'var(--settings-muted)' }}
-                >
-                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                </button>
-            </div>
-        </div>
-    );
 
     return (
         <div className="w-full">
@@ -131,6 +131,7 @@ function ChangePasswordComponent() {
                         value={passwords.currentPassword}
                         showPassword={showPasswords.currentPassword}
                         onToggle={handleTogglePasswordVisibility}
+                        handleChange={handleChange}
                     />
                     <PasswordInput
                         name="newPassword"
@@ -138,6 +139,7 @@ function ChangePasswordComponent() {
                         value={passwords.newPassword}
                         showPassword={showPasswords.newPassword}
                         onToggle={handleTogglePasswordVisibility}
+                        handleChange={handleChange}
                     />
                     <PasswordInput
                         name="confirmNewPassword"
@@ -145,6 +147,7 @@ function ChangePasswordComponent() {
                         value={passwords.confirmNewPassword}
                         showPassword={showPasswords.confirmNewPassword}
                         onToggle={handleTogglePasswordVisibility}
+                        handleChange={handleChange}
                     />
 
                     <button

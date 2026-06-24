@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, use, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import useFeed from '../../hooks/useFeed';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -8,7 +8,7 @@ import UserAvatar from '../common/UserAvatar';
 export default function PostForm() {
   const history = useHistory();
   const { createPostWithFile, createPost, loading } = useFeed();
-  const { auth }  = useContext(AuthContext);
+  const { auth }  = use(AuthContext);
   const [description, setDescription] = useState('');
   const [file, setFile]               = useState(null);
   const [previewUrl, setPreviewUrl]   = useState(null);
@@ -144,7 +144,9 @@ export default function PostForm() {
           {previewUrl && (
             <div className="fb-media">
               {file?.type?.startsWith('video') ? (
-                <video controls src={previewUrl} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
+                <video controls src={previewUrl} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }}>
+                  <track kind="captions" />
+                </video>
               ) : (
                 <img src={previewUrl} alt={file?.name || 'preview'} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
               )}

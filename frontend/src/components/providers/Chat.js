@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
+import React, { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -11,7 +11,7 @@ const ChatComponent = () => {
     const providerEmail = location.state?.providerEmail || null;
     
     const { messages: allMessages, fetchMyMessages, createMessage, uploadMessage, joinChat } = useMessagesAndMultimedia();
-    const { auth } = useContext(AuthContext);
+    const { auth } = use(AuthContext);
     
     const [isSending, setIsSending] = useState(false);
     const [localError, setLocalError] = useState('');
@@ -20,19 +20,20 @@ const ChatComponent = () => {
 
     // Fetch counterpart user ID by email
     useEffect(() => {
+        if (!providerEmail || !auth?._id) return;
+
         const fetchCounterpart = async () => {
-            if (!providerEmail) {
-                setLocalError('No se encontró información del proveedor. Vuelve a iniciar el chat desde proveedores.');
-                return;
-            }
             try {
                 const res = await get('/user/search', { q: providerEmail });
                 const users = Array.isArray(res?.data?.data)
                     ? res.data.data
                     : (Array.isArray(res?.data) ? res.data : []);
                 if (users.length > 0) {
-                    setCounterpartId(users[0]._id);
+                    const foundId = users[0]._id;
+                    setCounterpartId(foundId);
                     setLocalError('');
+                    joinChat(foundId);
+                    fetchMyMessages();
                 } else {
                     setLocalError('Proveedor no encontrado en el sistema.');
                 }
@@ -41,15 +42,9 @@ const ChatComponent = () => {
             }
         };
         fetchCounterpart();
-    }, [providerEmail]);
+    }, [providerEmail, auth?._id, joinChat, fetchMyMessages]);
 
-    // Join socket room and fetch messages
-    useEffect(() => {
-        if (counterpartId && auth?._id) {
-            joinChat(counterpartId);
-            fetchMyMessages();
-        }
-    }, [counterpartId, auth?._id, joinChat, fetchMyMessages]);
+
 
     // Filter messages for this conversation and sort chronologically
     const messages = useMemo(() => {
@@ -137,7 +132,9 @@ const ChatComponent = () => {
                                                 src={message.multimediaUrl} 
                                                 controls 
                                                 className="mb-2 block max-w-full rounded-lg" 
-                                            />
+                                            >
+                                                <track kind="captions" />
+                                            </video>
                                         )}
                                         {message.multimediaStatus === 'uploading' && <p className="text-xs italic opacity-80">Subiendo archivo...</p>}
                                         {message.multimediaStatus === 'processing' && <p className="text-xs italic opacity-80">Procesando archivo...</p>}

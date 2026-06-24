@@ -135,7 +135,9 @@ export default function SecureAudio({ url, isMe }) {
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         style={{ display: 'none' }}
-      />
+      >
+        <track kind="captions" />
+      </audio>
 
       {/* Play/Pause Button */}
       <button

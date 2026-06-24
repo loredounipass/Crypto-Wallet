@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -9,24 +9,27 @@ import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema'
 import { ChatQueryDto } from './dto/chat-query.dto';
 
 @Injectable()
-export class SupportService {
+export class SupportService implements OnModuleInit {
     private readonly apiKey: string;
     private readonly apiUrl: string;
-    private readonly appContext: string;
+    private appContext: string = '';
 
     constructor(
         private readonly configService: ConfigService,
-        @InjectModel(ChatMessage.name) private chatMessageModel: Model<ChatMessageDocument>,
+        @InjectModel(ChatMessage.name) private readonly chatMessageModel: Model<ChatMessageDocument>,
     ) {
         this.apiKey = this.configService.get<string>('NVIDIA_API_KEY') || '';
         this.apiUrl = this.configService.get<string>('NVIDIA_API_URL') || 'http://localhost:11434/v1/chat/completions';
-        this.appContext = this.loadContext();
     }
 
-    private loadContext(): string {
+    async onModuleInit() {
+        this.appContext = await this.loadContext();
+    }
+
+    private async loadContext(): Promise<string> {
         try {
             const contextPath = path.join(__dirname, 'contextapp.json');
-            const raw = fs.readFileSync(contextPath, 'utf-8');
+            const raw = await fs.promises.readFile(contextPath, 'utf-8');
             const parsed = JSON.parse(raw);
             const features = parsed.features.map(f =>
                 `### ${f.title}\n${f.steps.join('\n')}`

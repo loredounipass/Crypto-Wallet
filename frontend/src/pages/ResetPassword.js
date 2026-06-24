@@ -19,16 +19,20 @@ import TransactionToast from '../components/TransactionToast';
 export default function ResetPassword() {
   const location = useLocation()
   const history = useHistory()
-  const [email, setEmail] = useState('')
-  const [token, setToken] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmNewPassword, setConfirmNewPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [openSnackbar, setOpenSnackbar] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState('error')
-  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({
+    email: '',
+    token: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  })
+  
+  const [ui, setUi] = useState({
+    showPassword: false,
+    showConfirmPassword: false,
+    loading: false
+  })
+
+  const [toast, setToast] = useState(null)
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -39,15 +43,15 @@ export default function ResetPassword() {
     const qToken = queryParams.get('token') || ''
     const resolvedEmail = stateEmail || qEmail
     const resolvedToken = stateToken || qToken
-    setEmail(resolvedEmail)
-    setToken(resolvedToken)
+    setForm(prev => ({ ...prev, email: resolvedEmail, token: resolvedToken }))
     if ((qEmail || qToken) && (!stateEmail || !stateToken)) {
       history.replace({
         pathname: '/reset-password',
         state: { email: resolvedEmail, token: resolvedToken },
       })
     }
-  }, [location.search, location.state, history])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     isMounted.current = true;
@@ -56,30 +60,24 @@ export default function ResetPassword() {
 
   const submit = async (e) => {
     e.preventDefault()
-    if (newPassword !== confirmNewPassword) {
-      setSnackbarSeverity('error')
-      setSnackbarMessage('Las contraseñas no coinciden')
-      setOpenSnackbar(true)
+    if (form.newPassword !== form.confirmNewPassword) {
+      setToast({ kind: 'error', message: 'Las contraseñas no coinciden' })
       return
     }
-    setLoading(true)
+    setUi(prev => ({ ...prev, loading: true }))
     try {
-      const body = { email, token, newPassword, confirmNewPassword }
+      const body = { ...form }
       const res = await post(resetPasswordApi, body)
       if (isMounted.current) {
-        setSnackbarSeverity('success')
-        setSnackbarMessage(res?.data?.message || res?.data?.msg)
-        setOpenSnackbar(true)
+        setToast({ kind: 'success', message: res?.data?.message || res?.data?.msg })
         setTimeout(() => history.push('/login'), 1500)
       }
     } catch (err) {
       if (isMounted.current) {
-        setSnackbarSeverity('error')
-        setSnackbarMessage(err.message)
-        setOpenSnackbar(true)
+        setToast({ kind: 'error', message: err.message })
       }
     } finally {
-      if (isMounted.current) setLoading(false)
+      if (isMounted.current) setUi(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -93,8 +91,8 @@ export default function ResetPassword() {
           placeholder="Correo electrónico"
           name="email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={form.email}
+          onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
           InputProps={{ sx: inputSx }}
           sx={{ mb: 2 }}
         />
@@ -104,19 +102,19 @@ export default function ResetPassword() {
           fullWidth
           name="newPassword"
           placeholder="Nueva contraseña"
-          type={showPassword ? 'text' : 'password'}
+          type={ui.showPassword ? 'text' : 'password'}
           id="newPassword"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+          value={form.newPassword}
+          onChange={(e) => setForm(prev => ({ ...prev, newPassword: e.target.value }))}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
                   aria-label="toggle password visibility"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setUi(prev => ({ ...prev, showPassword: !prev.showPassword }))}
                   sx={{ color: '#9CA3AF' }}
                 >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                  {ui.showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
             ),
@@ -130,19 +128,19 @@ export default function ResetPassword() {
           fullWidth
           name="confirmNewPassword"
           placeholder="Confirmar contraseña"
-          type={showConfirmPassword ? 'text' : 'password'}
+          type={ui.showConfirmPassword ? 'text' : 'password'}
           id="confirmNewPassword"
-          value={confirmNewPassword}
-          onChange={(e) => setConfirmNewPassword(e.target.value)}
+          value={form.confirmNewPassword}
+          onChange={(e) => setForm(prev => ({ ...prev, confirmNewPassword: e.target.value }))}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
                   aria-label="toggle password visibility"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onClick={() => setUi(prev => ({ ...prev, showConfirmPassword: !prev.showConfirmPassword }))}
                   sx={{ color: '#9CA3AF' }}
                 >
-                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  {ui.showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
             ),
@@ -153,11 +151,11 @@ export default function ResetPassword() {
           type="submit"
           fullWidth
           variant="contained"
-          disabled={loading}
+          disabled={ui.loading}
           className="!mt-6 !mb-4 !text-white !font-semibold"
           style={buttonStyle}
         >
-          {loading ? (
+          {ui.loading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
               <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
               <Typography sx={{ ml: 1, color: '#FFFFFF', fontSize: 16, fontWeight: 600 }}>
@@ -176,8 +174,8 @@ export default function ResetPassword() {
         </Box>
       </Box>
       <TransactionToast
-        toast={openSnackbar ? { kind: snackbarSeverity, message: snackbarMessage } : null}
-        onClose={() => setOpenSnackbar(false)}
+        toast={toast}
+        onClose={() => setToast(null)}
       />
     </AuthLayout>
   )

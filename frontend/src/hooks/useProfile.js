@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import * as profileService from '../services/profile';
 import { AuthContext } from './AuthContext';
 
@@ -9,7 +9,7 @@ import { AuthContext } from './AuthContext';
  */
 export default function useProfile(options = {}) {
     const { userId: viewUserId } = options;
-    const { auth, setAuth } = useContext(AuthContext);
+    const { auth, setAuth } = use(AuthContext);
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [postsLoading, setPostsLoading] = useState(false);

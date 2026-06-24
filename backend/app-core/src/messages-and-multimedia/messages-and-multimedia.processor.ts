@@ -140,10 +140,8 @@ export class MultimediaProcessor {
     } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error(String(err));
       console.error(`[MultimediaProcessor] ❌ Job FAILED | multimediaId=${multimediaId} | error=${e.message}`);
-      console.error(`[MultimediaProcessor] ❌ Stack:`, e.stack);
       const errorPayload: any = { status: 'failed' };
       try { errorPayload.lastError = e.message; } catch (_) { errorPayload.lastError = 'unknown'; }
-      try { errorPayload.lastErrorStack = e.stack; } catch (_) { }
       await this.multimediaModel.findByIdAndUpdate(multimediaId, errorPayload as any).exec();
       throw err;
     } finally {

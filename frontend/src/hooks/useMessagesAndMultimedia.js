@@ -4,13 +4,13 @@
  * Consumes the shared SocketContext (singleton socket) and wraps the
  * HTTP service calls for messages/multimedia. No socket is created here.
  */
-import { useContext, useCallback } from 'react';
+import { use, useCallback } from 'react';
 import MessagesAndMultimedia from '../services/messagesAndMultimedia';
 import { AuthContext } from './AuthContext';
 import { useSocket } from './SocketContext';
 
 export default function useMessagesAndMultimedia() {
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const { connected, messages, setMessages, joinChat } = useSocket();
 
   /* ── Fetch all messages for the current user ─────────────────── */

@@ -1,10 +1,11 @@
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { TransactionGateway } from './transaction.gateway';
 import QueueType from '../wallet/queue/types.queue';
 
 @Processor(QueueType.TRANSACTION_STATUS_EVENTS)
+@Injectable()
 export class TransactionStatusProcessor extends WorkerHost {
   private readonly logger = new Logger('TransactionStatusProcessor');
 

@@ -37,10 +37,10 @@ async function fetchTokenBalances(force = false) {
         const { data } = await Wallet.getTokenBalances();
         const tokens = Array.isArray(data) ? data : [];
 
-        const uniqueGeckoIds = [...new Set(tokens
-            .filter(t => t.coinGeckoId)
-            .map(t => t.coinGeckoId)
-        )];
+        const uniqueGeckoIds = [...new Set(tokens.reduce((acc, t) => {
+            if (t.coinGeckoId) acc.push(t.coinGeckoId);
+            return acc;
+        }, []))];
         const priceEntries = await Promise.all(
             uniqueGeckoIds.map(async (id) => {
                 try {

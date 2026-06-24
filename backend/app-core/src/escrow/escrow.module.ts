@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bullmq';
 import { EscrowService } from './escrow.service';
@@ -15,6 +16,7 @@ import { default as EscrowQueueType } from './queue/types.queue';
 
 @Module({
   imports: [
+    ConfigModule,
     MongooseModule.forFeature([
       { name: EscrowOrder.name, schema: EscrowOrderSchema },
       { name: User.name, schema: UserSchema },
@@ -38,6 +40,5 @@ import { default as EscrowQueueType } from './queue/types.queue';
   ],
   controllers: [EscrowController],
   providers: [EscrowService, EscrowGateway, EscrowStatusProcessor],
-  exports: [EscrowService],
 })
 export class EscrowModule {}

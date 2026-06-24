@@ -15,9 +15,7 @@ import TransactionToast from '../components/TransactionToast';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
-  const [openSnackbar, setOpenSnackbar] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState('error')
+  const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
   const history = useHistory()
   const isMounted = useRef(true)
@@ -28,16 +26,12 @@ export default function ForgotPassword() {
     try {
       await post(forgotPasswordApi, { email })
       if (isMounted.current) {
-        setSnackbarSeverity('success')
-        setSnackbarMessage('Si el correo existe, se ha enviado un mensaje con instrucciones.')
-        setOpenSnackbar(true)
+        setToast({ kind: 'success', message: 'Si el correo existe, se ha enviado un mensaje con instrucciones.' })
         setTimeout(() => history.push('/login'), 1500)
       }
     } catch (err) {
       if (isMounted.current) {
-        setSnackbarSeverity('error')
-        setSnackbarMessage(err.message)
-        setOpenSnackbar(true)
+        setToast({ kind: 'error', message: err.message })
       }
     } finally {
       if (isMounted.current) setLoading(false)
@@ -95,8 +89,8 @@ export default function ForgotPassword() {
         </Box>
       </Box>
       <TransactionToast
-        toast={openSnackbar ? { kind: snackbarSeverity, message: snackbarMessage } : null}
-        onClose={() => setOpenSnackbar(false)}
+        toast={toast}
+        onClose={() => setToast(null)}
       />
     </AuthLayout>
   )

@@ -134,18 +134,18 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!event?.orderId) return;
 
     // Emit to the order room
-    this.server
+    void this.server
       .to(`escrow:order:${event.orderId}`)
       .emit('escrowStatusUpdated', event);
 
     // Emit to both the seller's and provider's user rooms
     if (event.sellerEmail) {
-      this.server
+      void this.server
         .to(`escrow:user:${event.sellerEmail}`)
         .emit('escrowStatusUpdated', event);
     }
     if (event.providerEmail) {
-      this.server
+      void this.server
         .to(`escrow:user:${event.providerEmail}`)
         .emit('escrowStatusUpdated', event);
     }

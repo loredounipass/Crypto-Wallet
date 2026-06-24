@@ -32,6 +32,5 @@ import { FeedRepository } from './feed.repository';
     LocalStorageProvider,
     FeedRepository,
   ],
-  exports: [FeedAndMultimediaService, LocalStorageProvider],
 })
 export class FeedAndMultimediaModule {}

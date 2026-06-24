@@ -224,24 +224,33 @@ const BrivoAgent = () => {
   };
 
   useEffect(() => {
-    if (isOpen) scrollToBottom();
-  }, [isOpen]);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    if (!isOpen) setMode(null);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen && mode === "agent") {
-      setTimeout(() => inputRef.current?.focus(), 300);
+  const toggleChat = () => {
+    const nextIsOpen = !isOpen;
+    setIsOpen(nextIsOpen);
+    if (!nextIsOpen) {
+      setMode(null);
+    } else {
+      setTimeout(() => {
+        scrollToBottom();
+        if (mode === "agent") {
+          inputRef.current?.focus();
+        }
+      }, 50);
     }
-  }, [isOpen, mode]);
+  };
 
-  const toggleChat = () => setIsOpen(!isOpen);
+  const handleModeSelect = (m) => {
+    setMode(m);
+    setTimeout(() => {
+      scrollToBottom();
+      if (m === "agent") {
+        inputRef.current?.focus();
+      }
+    }, 50);
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -258,8 +267,7 @@ const BrivoAgent = () => {
     }
   };
 
-  const handleHuman = () => setMode("human");
-  const handleAgent = () => setMode("agent");
+
   const handleBack = () => setMode(null);
 
   return (
@@ -355,7 +363,7 @@ const BrivoAgent = () => {
             </div>
 
             <div className="brivo-slide-up brivo-delay-1" style={{ width: "100%", marginTop: "24px" }}>
-              <button onClick={handleAgent} style={{
+              <button onClick={() => handleModeSelect("agent")} style={{
                 width: "100%", border: "none", borderRadius: "12px", padding: "14px 20px", cursor: "pointer",
                 fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "12px",
                 background: "linear-gradient(135deg, #2186EB, #8B5CF6)", color: "#FFF",
@@ -372,7 +380,7 @@ const BrivoAgent = () => {
             </div>
 
             <div className="brivo-slide-up brivo-delay-2" style={{ width: "100%", marginTop: "10px" }}>
-              <button onClick={handleHuman} style={{
+              <button onClick={() => handleModeSelect("human")} style={{
                 width: "100%", borderRadius: "12px", padding: "14px 20px", cursor: "pointer",
                 fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "12px",
                 background: "#1A1A2E", color: "#E2E8F0", border: "1px solid #2D2D44",

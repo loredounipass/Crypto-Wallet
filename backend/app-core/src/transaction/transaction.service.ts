@@ -11,9 +11,9 @@ import { QueryDto } from './dto/query.dto';
 @Injectable()
 export class TransactionService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
-    @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Wallet.name) private readonly walletModel: Model<WalletDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>
   ) { }
 
 

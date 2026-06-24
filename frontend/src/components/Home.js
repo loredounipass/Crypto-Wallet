@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useMemo } from 'react';
+import React, { useEffect, useState, use, useMemo, useRef } from 'react';
 import { Grid, Paper, Typography, Button } from '../ui/material';
 import { Link } from 'react-router-dom';
 import TotalBalance from './TotalBalance';
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 const Dashboard = () => {
     const { t } = useTranslation();
-    const { auth } = useContext(AuthContext);
+    const { auth } = use(AuthContext);
     
     const texts = useMemo(() => [
         t('account_security_message'),
@@ -20,20 +20,21 @@ const Dashboard = () => {
         t('p2p_exchange_service_message')
     ], [t]);
 
-    const [textIndex, setTextIndex] = useState(0);
+    const textIndex = useRef(0);
     const [visibleText, setVisibleText] = useState(texts[0]);
     const [fadeOut, setFadeOut] = useState(false);
 
     useEffect(() => {
         const fadeOutDuration = 1000;
-        const displayDuration = textIndex === 1 ? 8000 : 5000;
+        const displayDuration = textIndex.current === 1 ? 8000 : 5000;
 
         const timeout1 = setTimeout(() => {
             setFadeOut(true);
         }, displayDuration);
 
         const timeout2 = setTimeout(() => {
-            setTextIndex((prev) => (prev + 1) % texts.length);
+            textIndex.current = (textIndex.current + 1) % texts.length;
+            setVisibleText(texts[textIndex.current]);
             setFadeOut(false);
         }, displayDuration + fadeOutDuration);
 
@@ -41,11 +42,7 @@ const Dashboard = () => {
             clearTimeout(timeout1);
             clearTimeout(timeout2);
         };
-    }, [textIndex, texts]);
-
-    useEffect(() => {
-        setVisibleText(texts[textIndex]);
-    }, [textIndex, texts]);
+    }, [visibleText, texts]);
 
     return (
         <Grid container spacing={3} sx={{ padding: 2 }}>

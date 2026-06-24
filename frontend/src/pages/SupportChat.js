@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Container, Typography, Button, Box, Dialog, DialogActions, DialogContent, DialogTitle, Slide } from '../ui/material';
 import { styled } from '../ui/styles';
@@ -51,10 +51,10 @@ const DialogStyled = styled(Dialog)(() => ({
   },
 }));
 
-// Transition component wrapped with forwardRef
-const TransitionComponent = forwardRef(function Transition(props, ref) {
+// Transition component wrapper
+const TransitionComponent = function Transition({ ref, ...props }) {
   return <Slide direction="up" ref={ref} {...props} />;
-});
+};
 
 const SupportChat = () => {
   const [openSurvey, setOpenSurvey] = useState(true);  

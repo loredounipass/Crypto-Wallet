@@ -23,7 +23,6 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
   const [coin, setCoin] = useState('');
   const [amount, setAmount] = useState('');
-  const [fiatAmount, setFiatAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [coinPriceUsd, setCoinPriceUsd] = useState(0);
 
@@ -66,14 +65,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     return () => { isMounted = false; };
   }, [coin]);
 
-  useEffect(() => {
+  const fiatAmount = useMemo(() => {
     const qty = Number(amount || 0);
-    if (!qty || !coinPriceUsd) {
-      setFiatAmount('');
-      return;
-    }
+    if (!qty || !coinPriceUsd) return '';
     const totalUsd = truncateToDecimals(qty * coinPriceUsd, 2);
-    setFiatAmount(totalUsd ? totalUsd.toFixed(2) : '');
+    return totalUsd ? totalUsd.toFixed(2) : '';
   }, [amount, coinPriceUsd]);
 
   const isValid = coin && parseFloat(amount) > 0 && parseFloat(fiatAmount) > 0

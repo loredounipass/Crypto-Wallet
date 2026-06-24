@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { AuthContext } from '../../hooks/AuthContext';
 import User from '../../services/user';
 import useAuth from '../../hooks/useAuth';
@@ -10,9 +10,21 @@ import {
 
 import './Settings.css';
 
+// Components
+const Switch = ({ checked, onChange, disabled }) => (
+  <button
+    onClick={disabled ? null : onChange}
+    className={`relative h-6 w-12 rounded-xl border-0 p-[2px] transition-colors ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+    style={{ backgroundColor: checked ? 'var(--settings-primary)' : 'var(--settings-border)' }}
+  >
+    <span
+      className={`block h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-0'}`}
+    />
+  </button>
+);
 
 const TwoFactorAuthComponent = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const { updateTokenStatus, error: authError } = useAuth();
   
   
@@ -22,7 +34,6 @@ const TwoFactorAuthComponent = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +54,7 @@ const TwoFactorAuthComponent = () => {
                           err.code === 'ERR_CANCELED' ||
                           err.message?.includes('canceled');
         if (!isCanceled) {
-          setError(err.message);
+          setToast({ kind: 'error', message: err.message });
         }
       } finally {
         setLoading(false);
@@ -69,7 +80,7 @@ const TwoFactorAuthComponent = () => {
     setLoading(true);
     try {
       const res = await updateTokenStatus({ isTokenEnabled: newStatus });
-      if (res) {
+      if (res && !res.error) {
         setToast({ 
           kind: 'success', 
           message: res.message || res.msg 
@@ -77,6 +88,8 @@ const TwoFactorAuthComponent = () => {
       } else {
         setIsTokenEnabled(previousStatus);
         setShowWarning(!previousStatus);
+        if (res?.error) setToast({ kind: 'error', message: res.error });
+        if (!res && authError) setToast({ kind: 'error', message: authError });
       }
       return res;
     } finally {
@@ -84,18 +97,7 @@ const TwoFactorAuthComponent = () => {
     }
   };
 
-  useEffect(() => {
-    if (authError) {
-      setToast({ kind: 'error', message: authError });
-    }
-  }, [authError]);
 
-  useEffect(() => {
-    if (error && error !== 'canceled') {
-      setToast({ kind: 'error', message: error });
-      setError(null);
-    }
-  }, [error]);
 
   const handleConfirmDialogClose = (confirm) => {
     setConfirmDialogOpen(false);
@@ -104,18 +106,6 @@ const TwoFactorAuthComponent = () => {
     }
   };
 
-  // Components
-  const Switch = ({ checked, onChange, disabled }) => (
-    <button
-      onClick={disabled ? null : onChange}
-      className={`relative h-6 w-12 rounded-xl border-0 p-[2px] transition-colors ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-      style={{ backgroundColor: checked ? 'var(--settings-primary)' : 'var(--settings-border)' }}
-    >
-      <span
-        className={`block h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-0'}`}
-      />
-    </button>
-  );
 
   return (
     <div className="w-full">

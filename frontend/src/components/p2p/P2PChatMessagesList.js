@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import SecureAudio from './SecureAudio';
 
+const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter 
+    ? new Intl.Segmenter('en', { granularity: 'grapheme' }) 
+    : null;
+
 export default function P2PChatMessagesList({
   messages,
   authId,
@@ -72,8 +76,11 @@ export default function P2PChatMessagesList({
                 const hasTextChars = /[\p{L}\p{N}\p{P}]/u.test(stripped);
                 if (!hasTextChars && stripped.length > 0) {
                   try {
-                    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-                    emojiCount = Array.from(segmenter.segment(stripped)).length;
+                    if (segmenter) {
+                      emojiCount = Array.from(segmenter.segment(stripped)).length;
+                    } else {
+                      emojiCount = Array.from(stripped).length;
+                    }
                     if (emojiCount > 0 && emojiCount <= 10) isOnlyEmojis = true;
                   } catch (e) {
                     emojiCount = Array.from(stripped).length;
@@ -162,7 +169,9 @@ export default function P2PChatMessagesList({
                                 borderRadius: hasNoText ? 0 : 8,
                                 margin: hasNoText ? 0 : '0 0 6px 0',
                               }}
-                            />
+                            >
+                              <track kind="captions" />
+                            </video>
                           )}
                           {/* Audio */}
                           {isMediaMsg && msg.type === 'audio' && fullUrl && mediaReady && (

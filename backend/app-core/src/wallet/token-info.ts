@@ -4,19 +4,27 @@ export interface TokenInfo {
     coinGeckoId: string;
 }
 
-// Re-export from shared config so both daemon and API use the same source of truth
-const tokens: Record<string, TokenInfo> = {
-    '0xdac17f958d2ee523a2206206994597c13d831ec7': {
-        symbol: 'USDT',
-        decimals: 6,
-        coinGeckoId: 'tether',
-    },
-    '0x543c4eeb75cf5d88171a8edb36e9c8562dadc864': {
-        symbol: 'mUSDT',
-        decimals: 6,
-        coinGeckoId: null,
-    },
-};
+// Default token registry — can be extended via SUPPORTED_TOKEN_ADDRESSES env var.
+const DEFAULT_TOKENS: Record<string, TokenInfo> = {};
+
+/**
+ * Build token map from environment variable (JSON) with defaults fallback.
+ * Env format: SUPPORTED_TOKEN_ADDRESSES='{"0xaddr":{"symbol":"X","decimals":18,"coinGeckoId":"x"}}'
+ */
+function buildTokenMap(): Record<string, TokenInfo> {
+    const envTokens = process.env.SUPPORTED_TOKEN_ADDRESSES;
+    if (envTokens) {
+        try {
+            const parsed = JSON.parse(envTokens) as Record<string, TokenInfo>;
+            return { ...DEFAULT_TOKENS, ...parsed };
+        } catch {
+            // Invalid JSON — fall back to defaults
+        }
+    }
+    return { ...DEFAULT_TOKENS };
+}
+
+const tokens: Record<string, TokenInfo> = buildTokenMap();
 
 export function getTokenInfo(tokenAddress: string): TokenInfo | null {
     return tokens[tokenAddress.toLowerCase()] || null;

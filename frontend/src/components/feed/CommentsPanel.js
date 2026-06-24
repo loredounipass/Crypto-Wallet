@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react'
+import React, { useState, useEffect, useRef, use } from 'react'
 import { AuthContext } from '../../hooks/AuthContext'
 
 /* ── helpers ── */
@@ -20,16 +20,17 @@ function relativeTime(dateStr) {
 }
 
 function sortByCreatedAtAsc(list) {
-  return [...list].sort((a, b) => {
-    const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0
-    const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0
-    return da - db
-  })
+  const sortFn = (a, b) => {
+    const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return da - db;
+  };
+  return list.toSorted ? list.toSorted(sortFn) : [...list].sort(sortFn);
 }
 
 /* ── component ── */
 export default function CommentsPanel({ post, open, onClose, addComment, getComments, joinPost, likeComment, unlikeComment }) {
-  const { auth } = useContext(AuthContext)
+  const { auth } = use(AuthContext)
   const [comments, setComments]           = useState([])
   const [loading, setLoading]             = useState(false)
   const [text, setText]                   = useState('')

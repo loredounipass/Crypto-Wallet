@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, { useEffect, useState, use, useCallback } from 'react';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
 import { useHistory } from 'react-router-dom';
 
 export default function ProviderCard() {
   const { getAllProviders } = useProvider();
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const history = useHistory();
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState(null);

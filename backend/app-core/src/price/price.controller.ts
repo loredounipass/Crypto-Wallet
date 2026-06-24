@@ -1,4 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { Public } from '../guard/auth/public.decorator';
 
 @Controller('price')
 export class PriceController {
@@ -16,6 +17,7 @@ export class PriceController {
     return this.coinIds[key] || key;
   }
 
+  @Public()
   @Get(':coin')
   async getPrice(@Param('coin') coin: string) {
     const id = this.getCoinId(coin);
@@ -28,6 +30,7 @@ export class PriceController {
     return { USD: usd };
   }
 
+  @Public()
   @Get(':coin/chart')
   async getChart(@Param('coin') coin: string) {
     const id = this.getCoinId(coin);
@@ -40,6 +43,7 @@ export class PriceController {
     return { prices };
   }
 
+  @Public()
   @Get('landing')
   async getLandingPrices() {
     const ids = 'bitcoin,ethereum,solana,binancecoin';

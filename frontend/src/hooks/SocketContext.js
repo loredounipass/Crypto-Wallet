@@ -1,15 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, use, useState, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { AuthContext } from './AuthContext';
 
 const SocketContext = createContext();
 
 export const useSocket = () => {
-    return useContext(SocketContext);
+    return use(SocketContext);
 };
 
 export const SocketProvider = ({ children }) => {
-    const { auth } = useContext(AuthContext);
+    const { auth } = use(AuthContext);
     const [socket, setSocket] = useState(null);
     const [connected, setConnected] = useState(false);
     const [messages, setMessages] = useState([]);

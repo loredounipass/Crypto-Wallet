@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
 import UserAvatar from '../common/UserAvatar';
@@ -122,7 +122,7 @@ const IconSettings = () => (
 );
 
 export default function LeftSidebar() {
-  const { auth } = useContext(AuthContext);
+  const { auth } = use(AuthContext);
   const [copied, setCopied] = useState({ btc: false, usdt: false });
   const [wallets, setWallets] = useState({ btc: '', usdt: '' });
   const history = useHistory();

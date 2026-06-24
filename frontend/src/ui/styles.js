@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, use, useEffect } from "react";
 import { defaultTheme, mergeStyles } from "./sx";
 
 const ThemeContext = createContext();
@@ -74,7 +74,7 @@ export const ThemeProvider = ({ children }) => {
 };
 
 export const useThemeMode = () => {
-  const context = useContext(ThemeContext);
+  const context = use(ThemeContext);
   if (!context) {
     throw new Error("useThemeMode must be used within ThemeProvider");
   }
@@ -82,7 +82,7 @@ export const useThemeMode = () => {
 };
 
 export const styled = (BaseComponent) => (styleFactory) => {
-  const StyledComponent = React.forwardRef(({ sx, style, ...props }, ref) => {
+  const StyledComponent = ({ sx, style, ref, ...props }) => {
     const { theme } = useThemeMode();
     const computed =
       typeof styleFactory === "function"
@@ -96,7 +96,7 @@ export const styled = (BaseComponent) => (styleFactory) => {
         {...props}
       />
     );
-  });
+  };
   StyledComponent.displayName = "StyledComponent";
   return StyledComponent;
 };

@@ -1,9 +1,10 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { EscrowGateway } from './escrow.gateway';
 
 @Processor('escrow-status-events')
+@Injectable()
 export class EscrowStatusProcessor extends WorkerHost {
   private readonly logger = new Logger('EscrowStatusProcessor');
 
@@ -15,7 +16,7 @@ export class EscrowStatusProcessor extends WorkerHost {
     const { orderId, status, sellerEmail, providerEmail, disputeReason, disputeOpenedBy, resolutionType } = job.data;
     this.logger.log(`Processing escrow status event: orderId=${orderId} status=${status}`);
 
-    this.escrowGateway.emitEscrowStatusUpdate({
+    await this.escrowGateway.emitEscrowStatusUpdate({
       orderId,
       status,
       sellerEmail,

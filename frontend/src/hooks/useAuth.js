@@ -1,11 +1,11 @@
-import { useState, useContext } from 'react';
+import { useState, use } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import User from '../services/user';
 
 export default function useAuth() {
     let history = useHistory();
-    const { setAuth } = useContext(AuthContext);
+    const { setAuth } = use(AuthContext);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
     const setUserContext = async () => {
@@ -88,11 +88,14 @@ export default function useAuth() {
             const { data } = await User.resendToken(body);
             if (data && (data.message || data.msg)) {
                 setSuccessMessage(data.message || data.msg);
+                return { success: true, message: data.message || data.msg };
             } else {
                 setError(data?.error || data?.message);
+                return { error: data?.error || data?.message };
             }
         } catch (err) {
             setError(err.message);
+            return { error: err.message };
         }
     };
 
@@ -108,11 +111,14 @@ export default function useAuth() {
                 } catch (err) {
                     // ignore refresh errors
                 }
+                return { success: true, message: data.message || data.msg };
             } else {
                 setError(data?.error || data?.message);
+                return { error: data?.error || data?.message };
             }
         } catch (err) {
             setError(err.message);
+            return { error: err.message };
         }
     };
 
@@ -144,11 +150,14 @@ export default function useAuth() {
                 } catch (err) {
                     // ignore refresh errors; UI will still show success
                 }
+                return { success: true, message: data.message || data.msg };
             } else {
                 setError(data?.error || data?.message);
+                return { error: data?.error || data?.message };
             }
         } catch (err) {
             setError(err.message);
+            return { error: err.message };
         }
     };
 
@@ -157,11 +166,14 @@ export default function useAuth() {
             const { data } = await User.verifyEmail({ token });
             if (data && (data.message || data.msg)) {
                 setSuccessMessage(data.message || data.msg);
+                return { success: true, message: data.message || data.msg };
             } else {
                 setError(data?.error || data?.message);
+                return { error: data?.error || data?.message };
             }
         } catch (err) {
             setError(err.message);
+            return { error: err.message };
         }
     };
     
@@ -170,11 +182,14 @@ export default function useAuth() {
             const { data } = await User.sendVerificationEmail({});
             if (data && (data.message || data.msg)) {
                 setSuccessMessage(data.message || data.msg);
+                return { success: true, message: data.message || data.msg };
             } else {
                 setError(data?.error || data?.message);
+                return { error: data?.error || data?.message };
             }
         } catch (err) {
             setError(err.message);
+            return { error: err.message };
         }
     };
     

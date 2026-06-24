@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -18,16 +19,17 @@ import { default as EscrowQueueType } from './queue/types.queue';
 @Injectable()
 export class EscrowService {
   constructor(
-    @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
-    @InjectModel(Provider.name) private providerModel: Model<ProviderDocument>,
-    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
-    @InjectModel(Transaction.name) private transactionModel: Model<TransactionDocument>,
-    @InjectQueue(EscrowQueueType.ESCROW_FUNDING) private escrowFundingQueue: Queue,
-    @InjectQueue(EscrowQueueType.ESCROW_RELEASE) private escrowReleaseQueue: Queue,
-    @InjectQueue(EscrowQueueType.ESCROW_STATUS_EVENTS) private escrowStatusQueue: Queue,
-    @InjectQueue(EscrowQueueType.ESCROW_CANCEL) private escrowCancelQueue: Queue,
+    @InjectModel(EscrowOrder.name) private readonly escrowOrderModel: Model<EscrowOrderDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Wallet.name) private readonly walletModel: Model<WalletDocument>,
+    @InjectModel(Provider.name) private readonly providerModel: Model<ProviderDocument>,
+    @InjectModel(Chat.name) private readonly chatModel: Model<ChatDocument>,
+    @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    @InjectQueue(EscrowQueueType.ESCROW_FUNDING) private readonly escrowFundingQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_RELEASE) private readonly escrowReleaseQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_STATUS_EVENTS) private readonly escrowStatusQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_CANCEL) private readonly escrowCancelQueue: Queue,
+    private readonly configService: ConfigService,
   ) { }
 
   private async registerRefundTransaction(order: any, refundTxHash: string | null) {
@@ -185,7 +187,7 @@ export class EscrowService {
     await chat.save();
 
     // 5. Create escrow order
-    const expirySeconds = parseInt(process.env.ESCROW_ORDER_EXPIRY_SECONDS || '1800');
+    const expirySeconds = parseInt(this.configService.get<string>('ESCROW_ORDER_EXPIRY_SECONDS') || '1800');
     const escrowOrder = new this.escrowOrderModel({
       orderId,
       sellerEmail,
@@ -432,7 +434,7 @@ export class EscrowService {
     order.disputeOpenedBy = email;
     await order.save();
 
-    const useEscrowContract = process.env.ESCROW_USE_CONTRACT === 'true';
+    const useEscrowContract = this.configService.get<string>('ESCROW_USE_CONTRACT') === 'true';
     if (order.escrowTxHash && useEscrowContract) {
       try {
         const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
@@ -499,16 +501,16 @@ export class EscrowService {
 
   // Get all disputed orders (admin only)
   async getDisputedOrders(email: string) {
-    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
     if (!adminEmails.includes(email.toLowerCase())) {
       throw new ForbiddenException('Only administrators can view disputed orders.');
     }
-    return this.escrowOrderModel.find({ status: 'disputed' }).sort({ createdAt: -1 }).lean().exec();
+    return await this.escrowOrderModel.find({ status: 'disputed' }).sort({ createdAt: -1 }).lean().exec();
   }
 
   // Admin resolves a dispute: sets isReverted or isAwarded flag
   async resolveDispute(orderId: string, type: 'revert' | 'award', email: string) {
-    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+    const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
     if (!adminEmails.includes(email.toLowerCase())) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }
@@ -599,7 +601,7 @@ export class EscrowService {
             let refunded = false;
             const contractAvailable = await interactor.isContractAvailable();
 
-            const useEscrowContract = process.env.ESCROW_USE_CONTRACT === 'true';
+            const useEscrowContract = this.configService.get<string>('ESCROW_USE_CONTRACT') === 'true';
             if (useEscrowContract && contractAvailable) {
               try {
                 console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);

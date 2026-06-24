@@ -186,7 +186,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Broadcast to the chat room (excludes sender)
     const room = this.makeChatRoom(senderId, receiverId);
-    client.to(room).emit('typing', typingPayload);
+    void client.to(room).emit('typing', typingPayload);
 
     // Also emit to the receiver's user room for redundancy
     void this.server.to(`user:${receiverId}`).emit('typing', typingPayload);
