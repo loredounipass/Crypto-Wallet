@@ -85,6 +85,22 @@ $ mongodb://brivotrust:Miranda23%26%26@127.0.0.1:27020/brivotrust?authSource=adm
 
 ```
 
+# Debug and scan issues nest js doctor
+```
+$ pnpm add -g nestjs-doctor
+$ nestjs-doctor . 
+$ nestjs-doctor . --verboose
+
+```
+
+# Debug and scan issues React doctor
+```
+$ pnpm add -g react-doctor
+$ react-doctor .
+$ npx react-doctor@latest --verbose
+
+```
+
 # Screenshots  
 
 # Login  
