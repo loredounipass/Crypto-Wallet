@@ -148,7 +148,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
-  
+
   const { auth } = use(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
@@ -163,7 +163,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       if (isLoggingOut) return;
       setIsLoggingOut(true);
       logoutUser()
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => {
           if (isMountedRef.current) setIsLoggingOut(false);
         });
@@ -216,65 +216,30 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const sidebarContent = (
     <Box
       className="hide-scrollbar"
-      style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      height: "100%", 
-      background: "#080811",
-      width: isMobile ? "100%" : (open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED),
-      transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-      overflowX: "hidden",
-      overflowY: "auto",
-      borderRight: "1px solid #1A1A2E",
-    }}>
-       {/* Logo Section */}
-       <Box style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "64px", borderBottom: "1px solid #1A1A2E" }}>
-         {open || isMobile ? (
-           <>
-             <Logo variant="sidebar-expanded" />
-             <button
-               onClick={isMobile ? onMobileClose : onToggle}
-               style={{
-                 width: "26px",
-                 height: "26px",
-                 borderRadius: "8px",
-                 border: "1px solid #1F1F33",
-                 background: "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))",
-                 color: "#8F95A3",
-                 cursor: "pointer",
-                 display: "flex",
-                 alignItems: "center",
-                 justifyContent: "center",
-                 transition: "all 0.25s ease",
-                 flexShrink: 0,
-               }}
-               onMouseOver={(e) => {
-                 e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.2), rgba(139, 92, 246, 0.15))";
-                 e.currentTarget.style.borderColor = "rgba(33, 134, 235, 0.3)";
-                 e.currentTarget.style.color = "#FFFFFF";
-                 e.currentTarget.style.boxShadow = "0 0 12px rgba(33, 134, 235, 0.15)";
-               }}
-               onMouseOut={(e) => {
-                 e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))";
-                 e.currentTarget.style.borderColor = "#1F1F33";
-                 e.currentTarget.style.color = "#8F95A3";
-                 e.currentTarget.style.boxShadow = "none";
-               }}
-             >
-               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                 <path d="M15 18l-6-6 6-6" />
-               </svg>
-             </button>
-           </>
-           ) : (
-             <Logo variant="sidebar-collapsed" />
-           )}
-       </Box>
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "#080811",
+        width: isMobile ? "100%" : (open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED),
+        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+        overflowX: "hidden",
+        overflowY: "auto",
+        borderRight: "1px solid #1A1A2E",
+      }}>
+      {/* Logo Section */}
+      <Box style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "64px", borderBottom: "1px solid #1A1A2E" }}>
+        {open || isMobile ? (
+          <Logo variant="sidebar-expanded" />
+        ) : (
+          <Logo variant="sidebar-collapsed" />
+        )}
+      </Box>
 
-       {/* User Info - Only when expanded */}
+      {/* User Info - Only when expanded */}
       {open && auth && (
-        <Box style={{ 
-          padding: "16px", 
+        <Box style={{
+          padding: "16px",
           borderBottom: "1px solid #1A1A2E",
           display: "flex",
           alignItems: "center",
@@ -282,10 +247,10 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           gap: "10px",
           textAlign: "left",
         }}>
-          <Avatar 
-            style={{ 
-              backgroundColor: getAvatarColor(auth.firstName), 
-              width: 32, 
+          <Avatar
+            style={{
+              backgroundColor: getAvatarColor(auth.firstName),
+              width: 32,
               height: 32,
               fontSize: 14,
               fontWeight: 600,
@@ -305,79 +270,38 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         {menuItems.map((item) => {
           const isActive = checkIsActive(item);
           return (
-          <Tooltip
-            key={item.text}
-            title={!open ? item.text : ""}
-            placement="right"
-          >
-            <ListItem
-              onClick={() => handleNavigation(item)}
-              style={getListItemStyle(isActive)}
-              onMouseOver={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)";
-              }}
-              onMouseOut={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
-              }}
+            <Tooltip
+              key={item.text}
+              title={!open ? item.text : ""}
+              placement="right"
             >
-              <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
-                <item.icon style={{ fontSize: 20 }} />
-              </ListItemIcon>
-              { (open || isMobile) && (
-                <ListItemText 
-                  primary={item.text} 
-                  style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
-                />
-              )}
-            </ListItem>
-          </Tooltip>
-          );
-        })}
-      </List>
-
-      {/* Bottom Items (Settings & Logout) */}
-      <Box style={{ 
-        padding: "12px", 
-        borderTop: "1px solid #1A1A2E",
-      }}>
-        {bottomItems.map((item) => {
-          const isActive = checkIsActive(item);
-          return (
-          <Tooltip
-            key={item.text}
-            title={!open ? item.text : ""}
-            placement="right"
-          >
-            <ListItem
-              onClick={() => handleNavigation(item)}
-              style={{
-                ...getListItemStyle(isActive, item.color),
-                opacity: item.path === "logout" && isLoggingOut ? 0.7 : 1,
-              }}
-              onMouseOver={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.05)" : "rgba(255,255,255,0.03)";
-              }}
-              onMouseOut={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
-                <item.icon style={{ fontSize: 20 }} />
-              </ListItemIcon>
-              { (open || isMobile) && (
-                <ListItemText 
-                  primary={item.text} 
-                  style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }} 
-                />
-              )}
-            </ListItem>
-          </Tooltip>
+              <ListItem
+                onClick={() => handleNavigation(item)}
+                style={getListItemStyle(isActive)}
+                onMouseOver={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)";
+                }}
+                onMouseOut={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
+                  <item.icon style={{ fontSize: 20 }} />
+                </ListItemIcon>
+                {(open || isMobile) && (
+                  <ListItemText
+                    primary={item.text}
+                    style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }}
+                  />
+                )}
+              </ListItem>
+            </Tooltip>
           );
         })}
 
-        {/* Collapse toggle - only on desktop when collapsed */}
-        {!open && !isMobile && (
-          <Box style={{ display: "flex", justifyContent: "center", paddingTop: "4px", paddingBottom: "12px", marginTop: "-8px" }}>
+        {/* Collapse toggle - desktop only, open/close toggle */}
+        {!isMobile && (
+          <Box style={{ display: "flex", justifyContent: "center", paddingTop: "4px", paddingBottom: "12px", marginTop: "6px" }}>
             <button
               onClick={onToggle}
               style={{
@@ -407,20 +331,53 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
+                {open ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
               </svg>
             </button>
           </Box>
         )}
+      </List>
 
-        {/* Version - Only when expanded */}
-        {open && (
-          <Box style={{ textAlign: "center", marginTop: "8px" }}>
-            <Typography style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px" }}>
-              BrivoTrust v1.0
-            </Typography>
-          </Box>
-        )}
+      {/* Bottom Items (Settings & Logout) */}
+      <Box style={{
+        padding: "12px",
+        borderTop: "1px solid #1A1A2E",
+      }}>
+        {bottomItems.map((item) => {
+          const isActive = checkIsActive(item);
+          return (
+            <Tooltip
+              key={item.text}
+              title={!open ? item.text : ""}
+              placement="right"
+            >
+              <ListItem
+                onClick={() => handleNavigation(item)}
+                style={{
+                  ...getListItemStyle(isActive, item.color),
+                  opacity: item.path === "logout" && isLoggingOut ? 0.7 : 1,
+                }}
+                onMouseOver={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = item.color ? "rgba(255,107,107,0.05)" : "rgba(255,255,255,0.03)";
+                }}
+                onMouseOut={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <ListItemIcon style={{ color: "inherit", minWidth: open ? "40px" : "auto", display: "flex", justifyContent: "center" }}>
+                  <item.icon style={{ fontSize: 20 }} />
+                </ListItemIcon>
+                {(open || isMobile) && (
+                  <ListItemText
+                    primary={item.text}
+                    style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }}
+                  />
+                )}
+              </ListItem>
+            </Tooltip>
+          );
+        })}
+
       </Box>
     </Box>
   );
@@ -455,10 +412,10 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   }
 
   return (
-    <div 
-      style={{ 
-        width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED, 
-        flexShrink: 0, 
+    <div
+      style={{
+        width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
+        flexShrink: 0,
         transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "fixed",
         left: 0,
@@ -466,12 +423,12 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         bottom: 0,
         zIndex: 50,
       }}>
-       <div style={{ 
-         height: "100vh", 
-         width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
-         background: "#080811",
-         transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-       }}>
+      <div style={{
+        height: "100vh",
+        width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
+        background: "#080811",
+        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
         {sidebarContent}
       </div>
     </div>
