@@ -11,7 +11,8 @@ async function main() {
     console.log(`Deploying to network: ${networkName} (Chain ID: ${chainId})`);
 
     const GeneratorFactoryContract = await hre.ethers.getContractFactory("GeneratorFactoryContract");
-    const factory = await GeneratorFactoryContract.deploy();
+    const factory = await GeneratorFactoryContract.deploy({ gasLimit: 3000000 });
+
 
     await factory.waitForDeployment();
     const deployedAddress = await factory.getAddress();
@@ -20,7 +21,7 @@ async function main() {
 
     // Save deployed address into GeneratorFactoryContract.json to mimic Truffle behavior
     const artifactPath = path.join(__dirname, '../contracts/abis/GeneratorFactoryContract.json');
-    
+
     let artifact = {};
     if (fs.existsSync(artifactPath)) {
         artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));

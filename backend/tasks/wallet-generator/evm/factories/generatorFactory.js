@@ -12,7 +12,7 @@ class GeneratorFactory {
     async generate(address, networkId) {
         // networkId must be passed since ethers doesn't automatically load networks from Truffle JSON
         const contract = await getGeneratorFactoryContract(this.wallet, networkId);
-        const tx = await contract.generate();
+        const tx = await contract.generate({ gasLimit: 5000000 });
         const receipt = await tx.wait();
         return receipt;
     }
