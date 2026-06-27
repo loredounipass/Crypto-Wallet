@@ -12,6 +12,7 @@ import { UserModule } from '../user/user.module';
 import { BullModule } from '@nestjs/bull';
 import { LocalStorageProvider } from '../storage/local.storage.provider';
 import { FeedRepository } from './feed.repository';
+import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { FeedRepository } from './feed.repository';
     FeedGateway,
     LocalStorageProvider,
     FeedRepository,
+    EmailThrottlerGuard,
   ],
 })
 export class FeedAndMultimediaModule {}

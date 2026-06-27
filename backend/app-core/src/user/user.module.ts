@@ -10,6 +10,7 @@ import { EmailModule } from './email.module';
 import { ForgotPasswordService } from './forgot.password.service';
 import { UserRepository } from '../repositories/user.repository';
 import { SharedProfileModule } from '../profile/shared-profile.module';
+import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { SharedProfileModule } from '../profile/shared-profile.module';
     UserService,
     HashService,
     AuthService,
-    ForgotPasswordService
+    ForgotPasswordService,
+    EmailThrottlerGuard
   ],
   exports: [UserService, HashService, UserRepository, MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])], 
 })
