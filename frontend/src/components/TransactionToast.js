@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle, Close, WarningAmber } from '../ui/icons';
 
 
 export default function TransactionToast({ toast, onClose }) {
     
+    useEffect(() => {
+        if (!toast) return;
+        const timer = setTimeout(onClose, 4500);
+        return () => clearTimeout(timer);
+    }, [toast, onClose]);
 
     if (!toast) return null;
 
