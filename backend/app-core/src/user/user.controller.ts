@@ -100,7 +100,7 @@ export class UserController {
 
 
   // Route for retrieving the authenticated user's information. It uses the AuthenticatedGuard to ensure that only authenticated users can access this route, and returns the user's data from the request object.
-  @UseGuards(AuthenticatedGuard, EmailThrottlerGuard)
+  @UseGuards(AuthenticatedGuard)
   @Get('info')
   getUsers(@Request() req) {
     // Make sure to use the plain object (depending on how Passport serializes)
