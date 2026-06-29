@@ -5,7 +5,7 @@ const mongoUser = process.env.DB_USER || ''
 const mongoPass = process.env.DB_PASS || ''
 const auth = mongoUser && mongoPass ? `${encodeURIComponent(mongoUser)}:${encodeURIComponent(mongoPass)}@` : ''
 
-const isLocalRun = !process.env.CI
+const isLocalRun = !process.env.CI && !process.env.DOCKER
 const dbHost = isLocalRun && process.env.DB_HOST === 'mongodb'
     ? '127.0.0.1'
     : process.env.DB_HOST

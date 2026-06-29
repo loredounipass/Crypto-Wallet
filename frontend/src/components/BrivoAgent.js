@@ -281,10 +281,14 @@ const BrivoAgent = () => {
         .brivo-slide-up { animation: brivoSlideUp 0.4s ease both; }
         .brivo-delay-1 { animation-delay: 0.1s; }
         .brivo-delay-2 { animation-delay: 0.2s; }
+        @media (max-width: 640px) {
+          .brivo-fab { right: 16px !important; bottom: 16px !important; }
+          .brivo-chat { width: calc(100vw - 32px) !important; right: 16px !important; bottom: 16px !important; max-height: calc(100vh - 90px) !important; }
+        }
       `}</style>
 
       {/* Floating Button */}
-      <Box style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999 }}>
+      <Box className="brivo-fab" style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999 }}>
         <button onClick={toggleChat} style={{
           width: "56px", height: "56px", borderRadius: "50%",
           background: "linear-gradient(135deg, #2186EB, #8B5CF6)",
@@ -301,7 +305,7 @@ const BrivoAgent = () => {
       </Box>
 
       {/* Chat Window */}
-      <Box style={{
+      <Box className="brivo-chat" style={{
         position: "fixed", bottom: isOpen ? "24px" : "0", right: "24px",
         width: "380px", height: "540px", maxHeight: "calc(100vh - 48px)",
         background: "#0F0F1A", borderRadius: "16px",

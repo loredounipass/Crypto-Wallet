@@ -55,6 +55,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      DOCKER: "true"
     env_file:
       - ./backend/config/.env
     networks:
@@ -77,6 +79,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      DOCKER: "true"
     env_file:
       - ./backend/app-core/.env
     networks:
@@ -121,6 +125,7 @@ services:
       - backend-backups:/backups
       - backend-redis:/data:ro
     environment:
+      DOCKER: "true"
       MONGO_ROOT_PASSWORD: Miranda23&&
       REDIS_PASSWORD: Miranda23&&
     depends_on:
