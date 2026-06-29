@@ -281,6 +281,11 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
                     object-fit: cover !important;
                     border-radius: 16px;
                 }
+                @media (max-width: 640px) {
+                    .web3-container { width: calc(100% - 32px) !important; min-width: 0 !important; max-width: none !important; }
+                    .web3-scanner { min-height: 200px !important; }
+                    .scanner-reticle { width: 180px !important; height: 180px !important; }
+                }
                 `}
             </style>
             <div className="web3-container">

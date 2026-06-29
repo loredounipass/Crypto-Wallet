@@ -14,4 +14,8 @@ const dbPort = isLocalRun && String(process.env.DB_PORT) === '27017'
     : process.env.DB_PORT
 const uri = `mongodb://${auth}${dbHost}:${dbPort}/${process.env.DB_NAME}?authSource=admin`
 
-module.exports = mongoose.connect(uri)
+module.exports = mongoose.connect(uri, {
+  connectTimeoutMS: 90000,
+  serverSelectionTimeoutMS: 90000,
+  socketTimeoutMS: 90000,
+})

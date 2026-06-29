@@ -207,6 +207,7 @@ function CodeBlock({ language, content }) {
 
 const BrivoAgent = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('brivoAgentDismissed') === 'true');
   const [mode, setMode] = useState(null);
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef(null);
@@ -270,6 +271,20 @@ const BrivoAgent = () => {
 
   const handleBack = () => setMode(null);
 
+  const handleDismiss = (e) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    setDismissed(true);
+    localStorage.setItem('brivoAgentDismissed', 'true');
+  };
+
+  const handleShow = () => {
+    setDismissed(false);
+    localStorage.removeItem('brivoAgentDismissed');
+  };
+
+  if (dismissed) return null;
+
   return (
     <>
       <style>{`
@@ -282,32 +297,44 @@ const BrivoAgent = () => {
         .brivo-delay-1 { animation-delay: 0.1s; }
         .brivo-delay-2 { animation-delay: 0.2s; }
         @media (max-width: 640px) {
-          .brivo-fab { right: 16px !important; bottom: 16px !important; }
-          .brivo-chat { width: calc(100vw - 32px) !important; right: 16px !important; bottom: 16px !important; max-height: calc(100vh - 90px) !important; }
+          .brivo-fab { right: 16px !important; bottom: 80px !important; }
+          .brivo-chat { width: calc(100vw - 32px) !important; right: 16px !important; top: 80px !important; bottom: 16px !important; max-height: none !important; height: auto !important; }
         }
       `}</style>
 
       {/* Floating Button */}
-      <Box className="brivo-fab" style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999 }}>
-        <button onClick={toggleChat} style={{
-          width: "56px", height: "56px", borderRadius: "50%",
-          background: "linear-gradient(135deg, #2186EB, #8B5CF6)",
-          border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 8px 24px rgba(33, 134, 235, 0.4)",
-          transition: "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-          transform: isOpen ? "scale(0) rotate(90deg)" : "scale(1) rotate(0deg)",
-          opacity: isOpen ? 0 : 1, pointerEvents: isOpen ? "none" : "auto", color: "#FFF"
-        }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
-          </svg>
-        </button>
+      <Box className="brivo-fab" style={{ position: "fixed", bottom: "80px", right: "24px", zIndex: 9999 }}>
+        <div style={{ position: "relative" }}>
+          <button onClick={toggleChat} style={{
+            width: "56px", height: "56px", borderRadius: "50%",
+            background: "linear-gradient(135deg, #2186EB, #8B5CF6)",
+            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 8px 24px rgba(33, 134, 235, 0.4)",
+            transition: "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            transform: isOpen ? "scale(0) rotate(90deg)" : "scale(1) rotate(0deg)",
+            opacity: isOpen ? 0 : 1, pointerEvents: isOpen ? "none" : "auto", color: "#FFF"
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
+            </svg>
+          </button>
+          <button onClick={handleDismiss} style={{
+            position: "absolute", top: "-4px", right: "-4px", width: "20px", height: "20px", borderRadius: "50%",
+            background: "#1A1A2E", border: "1px solid #2D2D44", color: "#64748B", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+            fontSize: "12px", lineHeight: 1, zIndex: 1,
+          }} title="Ocultar">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </Box>
 
       {/* Chat Window */}
       <Box className="brivo-chat" style={{
-        position: "fixed", bottom: isOpen ? "24px" : "0", right: "24px",
-        width: "380px", height: "540px", maxHeight: "calc(100vh - 48px)",
+        position: "fixed", top: "80px", right: "24px", bottom: "24px",
+        width: "380px",
         background: "#0F0F1A", borderRadius: "16px",
         border: "1px solid #2D2D44",
         boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
@@ -479,12 +506,7 @@ const BrivoAgent = () => {
                 </div>
               ))}
               {(isLoading || isTyping) && (
-                <div className="brivo-msg" style={{ display: "flex", gap: "8px" }}>
-                  <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "linear-gradient(135deg, #2186EB, #8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", flexShrink: 0, marginTop: "2px" }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
-                    </svg>
-                  </div>
+                <div className="brivo-msg" style={{ display: "flex", gap: "8px", paddingLeft: "36px" }}>
                   <div style={{ padding: "8px 0" }}>
                     <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                       <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2186EB", animation: "brivoPulse 1.4s infinite" }}></span>
