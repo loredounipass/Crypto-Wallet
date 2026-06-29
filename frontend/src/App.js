@@ -123,7 +123,6 @@ function AppContent() {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Logo variant="sidebar-expanded" />
                         </Box>
                     )}
 
