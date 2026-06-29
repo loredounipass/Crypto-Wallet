@@ -16,11 +16,18 @@ try {
 
 console.log('Starting processes from process.json...');
 
-const children = scripts.map(({ name, script }) => {
-  let child;
-  const startProcess = () => {
+const children = [];
+let startupIndex = 0;
+
+const startNext = () => {
+  if (startupIndex >= scripts.length) return;
+  const { name, script } = scripts[startupIndex];
+  const delay = startupIndex > 0 ? 2000 : 0;
+  startupIndex++;
+
+  setTimeout(() => {
     console.log(`[${name}] Starting...`);
-    child = spawn('node', [script], {
+    const child = spawn('node', [script], {
       stdio: 'inherit',
       cwd: __dirname
     });
@@ -28,7 +35,16 @@ const children = scripts.map(({ name, script }) => {
     child.on('exit', (code) => {
       if (code !== null && code !== 0) {
         console.log(`[${name}] Exited with code ${code}. Restarting in 5 seconds...`);
-        setTimeout(startProcess, 5000);
+        setTimeout(() => {
+          console.log(`[${name}] Starting...`);
+          const newChild = spawn('node', [script], {
+            stdio: 'inherit',
+            cwd: __dirname
+          });
+          children[children.indexOf(child)] = newChild;
+          child = newChild;
+          child.on('exit', () => {});
+        }, 5000);
       }
     });
 
@@ -36,11 +52,12 @@ const children = scripts.map(({ name, script }) => {
       console.error(`[${name}] Error:`, err);
     });
 
-    return child;
-  };
+    children.push(child);
+    startNext();
+  }, delay);
+};
 
-  return startProcess();
-});
+startNext();
 
 function shutdown() {
   console.log('\nShutting down all processes gracefully...');
