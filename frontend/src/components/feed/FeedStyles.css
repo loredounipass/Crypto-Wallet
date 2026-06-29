@@ -221,3 +221,42 @@
     transform: translateX(0);
   }
 }
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .fb-list-wrapper {
+    padding: 12px 8px;
+  }
+  .fb-card {
+    border-radius: 8px;
+  }
+  .fb-desc {
+    font-size: 14px;
+  }
+  .fb-actions button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .fb-post-form {
+    padding: 12px;
+  }
+  .fb-post-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fb-post-input {
+    order: 2;
+    flex: 0 0 100%;
+  }
+  .fb-post-actions {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .fb-list-wrapper {
+    padding: 16px 10px;
+  }
+}
