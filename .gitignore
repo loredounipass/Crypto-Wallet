@@ -6,6 +6,7 @@ backend/app-core/package-lock.json
 backend/node_modules
 backend/package-lock.json
 backend/config/.env
+backend/app-core/.env
 
 frontend/.DS_Store
 frontend/node_modules

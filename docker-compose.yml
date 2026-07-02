@@ -1,19 +1,18 @@
 services:
   mongodb:
     image: mongo:7
-    ports:
-      - "127.0.0.1:27020:27017"
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - backend-mongodb:/data/db
     networks:
       - backend
     restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: Miranda23&&
+    security_opt:
+      - no-new-privileges:true
+    env_file:
+      - ./backend/config/.env
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok", "-u", "admin", "-p", "Miranda23&&"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ping:1}).ok' -u \"$$MONGO_INITDB_ROOT_USERNAME\" -p \"$$MONGO_INITDB_ROOT_PASSWORD\""]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -26,16 +25,18 @@ services:
 
   redis:
     image: 'redis:7-alpine'
-    ports:
-      - '127.0.0.1:6379:6379'
     volumes:
       - 'backend-redis:/data'
     networks:
       - backend
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "Miranda23&&"]
+    env_file:
+      - ./backend/config/.env
+    security_opt:
+      - no-new-privileges:true
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$$REDIS_PASS\""]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "Miranda23&&", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASS\" redis-cli ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,6 +63,8 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:
@@ -72,8 +75,6 @@ services:
     build:
       context: ./backend/app-core
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:4000:4000"
     depends_on:
       mongodb:
         condition: service_healthy
@@ -86,6 +87,14 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --server-response http://localhost:4000/ 2>&1 | grep -q \"HTTP/\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -105,6 +114,8 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
       interval: 15s
@@ -124,10 +135,10 @@ services:
     volumes:
       - backend-backups:/backups
       - backend-redis:/data:ro
+    env_file:
+      - ./backend/config/.env
     environment:
       DOCKER: "true"
-      MONGO_ROOT_PASSWORD: Miranda23&&
-      REDIS_PASSWORD: Miranda23&&
     depends_on:
       mongodb:
         condition: service_healthy
@@ -136,6 +147,8 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:
