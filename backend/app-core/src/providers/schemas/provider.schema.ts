@@ -35,8 +35,16 @@ export class Provider {
   @Prop({ type: [String], default: [] })
   paymentMethods: string[];
 
-  @Prop({ default: '' })
-  walletAddress: string;
+  @Prop({ required: false })
+  preferredBank?: string;
+
+  @Prop({ type: [{ address: String, coin: String, chainId: Number, enabled: Boolean }], default: [] })
+  destinationWallets: {
+    address: string;
+    coin: string;
+    chainId: number;
+    enabled: boolean;
+  }[];
 
   @Prop({ default: 0 })
   completedOrders: number;

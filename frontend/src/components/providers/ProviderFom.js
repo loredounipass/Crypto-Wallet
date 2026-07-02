@@ -2,11 +2,12 @@ import React, { useState, use, useEffect } from 'react';
 import { useHistory } from 'react-router-dom'; 
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
+import useAllWallets from '../../hooks/useAllWallets';
 import TransactionToast from '../TransactionToast';
+import { getCoinLogo, getCoinFallbackLogo } from '../utils/Chains';
 
 const AVAILABLE_PAYMENT_METHODS = [
-  'Transferencia Bancaria', 'Zelle', 'PayPal', 'Nequi',
-  'Mercado Pago', 'Efectivo', 'Otro'
+  'Transferencia Bancaria', 'En persona'
 ];
 
 export default function ProviderForm() {
@@ -18,15 +19,29 @@ export default function ProviderForm() {
   const [step, setStep] = useState(1);
 
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
+    firstName: auth?.firstName || '',
+    lastName: auth?.lastName || '',
     idNumber: '',
-    email: '',
+    email: auth?.email || '',
     streetName: '',
     city: '',
     postalCode: '',
-    walletAddress: '',
+    preferredBank: '',
   });
+
+  const [destinationWallets, setDestinationWallets] = useState([]);
+  const { allWalletInfo } = useAllWallets();
+
+  useEffect(() => {
+    if (auth) {
+      setForm(prev => ({
+        ...prev,
+        firstName: prev.firstName || auth.firstName || '',
+        lastName: prev.lastName || auth.lastName || '',
+        email: prev.email || auth.email || ''
+      }));
+    }
+  }, [auth]);
 
 
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([]);
@@ -69,10 +84,19 @@ export default function ProviderForm() {
       setToast({ kind: 'withdraw', message: 'Debes seleccionar al menos un método de pago.' });
       return;
     }
+    if (selectedPaymentMethods.includes('Transferencia Bancaria') && !form.preferredBank) {
+      setToast({ kind: 'withdraw', message: 'Debes ingresar el nombre de tu banco de preferencia.' });
+      return;
+    }
+    if (destinationWallets.length === 0) {
+      setToast({ kind: 'withdraw', message: 'Debes seleccionar al menos una wallet de destino.' });
+      return;
+    }
     try {
       await createNewProvider({
         ...form,
         paymentMethods: selectedPaymentMethods,
+        destinationWallets
       });
       setToast({ kind: 'deposit', message: 'Proveedor creado exitosamente' });
       setTimeout(() => {
@@ -90,6 +114,16 @@ export default function ProviderForm() {
     setSelectedPaymentMethods((prev) =>
       prev.includes(pm) ? prev.filter((p) => p !== pm) : [...prev, pm]
     );
+  };
+
+  const toggleWallet = (wallet) => {
+    setDestinationWallets((prev) => {
+      const exists = prev.find(w => w.address === wallet.address && w.coin === wallet.coin);
+      if (exists) {
+        return prev.filter(w => w.address !== wallet.address || w.coin !== wallet.coin);
+      }
+      return [...prev, { address: wallet.address, coin: wallet.coin, chainId: wallet.chainId, enabled: true }];
+    });
   };
 
   useEffect(() => {
@@ -189,11 +223,11 @@ export default function ProviderForm() {
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <label className={labelClass}>Primer nombre</label>
-                  <input className={inputClass} name="firstName" value={form.firstName} onChange={handleChange} placeholder="Ej. Juan" />
+                  <input className={inputClass} name="firstName" value={form.firstName} onChange={handleChange} placeholder="Ej. Juan" readOnly={!!auth?.firstName} style={{ opacity: auth?.firstName ? 0.7 : 1 }} />
                 </div>
                 <div>
                   <label className={labelClass}>Apellido</label>
-                  <input className={inputClass} name="lastName" value={form.lastName} onChange={handleChange} placeholder="Ej. Pérez" />
+                  <input className={inputClass} name="lastName" value={form.lastName} onChange={handleChange} placeholder="Ej. Pérez" readOnly={!!auth?.lastName} style={{ opacity: auth?.lastName ? 0.7 : 1 }} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Número de identificación</label>
@@ -201,7 +235,7 @@ export default function ProviderForm() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Correo electrónico</label>
-                  <input type="email" className={inputClass} name="email" value={form.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
+                  <input type="email" className={inputClass} name="email" value={form.email} onChange={handleChange} placeholder="correo@ejemplo.com" readOnly={!!auth?.email} style={{ opacity: auth?.email ? 0.7 : 1 }} />
                 </div>
               </div>
             </div>
@@ -230,15 +264,59 @@ export default function ProviderForm() {
               <h3 className={sectionTitleClass}>Detalles Operativos P2P</h3>
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <label className={labelClass}>Wallet de destino (para recibir crypto)</label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                      <svg className="h-5 w-5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20 4H4A2 2 0 002 6V18A2 2 0 004 20H20A2 2 0 0022 18V6A2 2 0 0020 4ZM20 18H4V6H20V18ZM14 10H18V14H14V10Z" />
-                      </svg>
+                  <label className={labelClass}>Wallets de destino (para recibir crypto)</label>
+                  <p className="mb-3 text-xs text-slate-400">Selecciona las wallets donde quieres recibir los fondos.</p>
+                  
+                  {!allWalletInfo || allWalletInfo.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[#1F1F33] p-6 text-center">
+                      <p className="text-slate-400 mb-4 text-sm">No tienes wallets creadas aún.</p>
+                      <button type="button" onClick={() => history.push('/wallets')} className={btnSecondary}>
+                        Crear Wallet
+                      </button>
                     </div>
-                    <input className={`${inputClass} pl-11 font-mono text-sm`} name="walletAddress" value={form.walletAddress} onChange={handleChange} placeholder="0x..." />
-                  </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {allWalletInfo.map(wallet => {
+                        const isSelected = destinationWallets.some(w => w.address === wallet.address && w.coin === wallet.coin);
+                        return (
+                          <button
+                            key={`${wallet.coin}-${wallet.address}`}
+                            type="button"
+                            onClick={() => toggleWallet(wallet)}
+                            className={`flex items-center justify-between rounded-xl border p-4 transition-all ${
+                              isSelected 
+                                ? 'border-[#8B5CF6] bg-[#8B5CF6]/10' 
+                                : 'border-[#1F1F33] bg-[#0A0A14] hover:border-slate-600'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#0A0A14]' : ''}`}>
+                                <img 
+                                  src={getCoinLogo(wallet.coin)} 
+                                  alt={wallet.coin}
+                                  onError={(e) => {
+                                      e.currentTarget.src = getCoinFallbackLogo(wallet.coin);
+                                  }}
+                                  className="h-10 w-10 object-contain"
+                                />
+                              </div>
+                              <div className="text-left">
+                                <p className={`font-semibold ${isSelected ? 'text-[#8B5CF6]' : 'text-slate-200'}`}>
+                                  {wallet.coin?.toUpperCase()} Wallet
+                                </p>
+                                <p className="text-xs text-slate-500 font-mono">
+                                  {wallet.address?.substring(0, 10)}...{wallet.address?.substring(wallet.address.length - 4)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-600'}`}>
+                              {isSelected && <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -263,6 +341,23 @@ export default function ProviderForm() {
                       </button>
                     ))}
                   </div>
+                  
+                  {selectedPaymentMethods.includes('Transferencia Bancaria') && (
+                    <div className="mt-5 animate-[fadeIn_0.3s_ease-out]">
+                      <label className={labelClass}>Banco de Preferencia</label>
+                      <input
+                        type="text"
+                        name="preferredBank"
+                        value={form.preferredBank}
+                        onChange={handleChange}
+                        placeholder="Ej. Banco Santander, BBVA, BCP..."
+                        className={inputClass}
+                      />
+                      <p className="mt-1 text-xs text-slate-400">
+                        Indica el banco principal donde recibirás o desde donde enviarás las transferencias.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

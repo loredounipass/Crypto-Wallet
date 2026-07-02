@@ -125,8 +125,9 @@ export class EscrowService {
     if (!provider) {
       throw new BadRequestException('Provider not found or not verified.');
     }
-    if (!provider.walletAddress) {
-      throw new BadRequestException('Provider has no wallet address configured.');
+    const matchedWallet = provider.destinationWallets?.find(w => w.coin?.toUpperCase() === dto.coin?.toUpperCase() && w.enabled);
+    if (!matchedWallet) {
+      throw new BadRequestException('Provider does not accept this coin or has no valid wallet configured for it.');
     }
     if (provider.paymentMethods.length === 0) {
       throw new BadRequestException('Provider has no payment methods configured.');
@@ -193,7 +194,7 @@ export class EscrowService {
       sellerEmail,
       providerEmail: dto.providerEmail,
       sellerWalletAddress: wallet.address,
-      providerWalletAddress: provider.walletAddress,
+      providerWalletAddress: matchedWallet.address,
       coin: dto.coin,
       chainId: wallet.chainId,
       amount: dto.amount,
@@ -210,7 +211,7 @@ export class EscrowService {
     await this.escrowFundingQueue.add('fund', {
       orderId,
       sellerWalletAddress: wallet.address,
-      providerWalletAddress: provider.walletAddress,
+      providerWalletAddress: matchedWallet.address,
       amount: dto.amount,
       coin: dto.coin,
       chainId: wallet.chainId,

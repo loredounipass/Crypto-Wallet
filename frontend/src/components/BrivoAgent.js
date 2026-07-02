@@ -278,10 +278,7 @@ const BrivoAgent = () => {
     localStorage.setItem('brivoAgentDismissed', 'true');
   };
 
-  const handleShow = () => {
-    setDismissed(false);
-    localStorage.removeItem('brivoAgentDismissed');
-  };
+
 
   if (dismissed) return null;
 

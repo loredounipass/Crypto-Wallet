@@ -96,7 +96,8 @@ export default function Landing() {
                     </div>
 
                     <div className="bv-auth-buttons">
-                        <Link to="/login" className="bv-btn-outline">Sign in / Register</Link>
+                        <Link to="/login" className="bv-nav-link" style={{ display: 'flex', alignItems: 'center', fontWeight: 600 }}>Log In</Link>
+                        <Link to="/register" className="bv-btn-gradient" style={{ padding: '0.45rem 1rem', fontSize: '0.8rem' }}>Sign Up</Link>
                     </div>
                 </div>
             </nav>
@@ -108,7 +109,7 @@ export default function Landing() {
                     Unlock Your Financial Future<br />
                     in the Web3 Era
                 </h1>
-                
+
                 <div className="bv-hero-actions">
                     <Link to="/register" className="bv-btn-gradient">Start Trading Now</Link>
                     <a href="#web3" className="bv-btn-outline">Explore Web3 Ecosystem</a>
@@ -139,7 +140,7 @@ export default function Landing() {
                                 </div>
                             </div>
                             <svg className="bv-sparkline" viewBox="0 0 60 25">
-                                <path d={['M0 20 Q 15 15, 30 10 T 60 5', 'M0 15 Q 15 20, 30 10 T 60 2', 'M0 22 Q 10 15, 20 18 T 40 8 T 60 4', 'M0 18 Q 20 22, 40 10 T 60 6'][i]} fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round"/>
+                                <path d={['M0 20 Q 15 15, 30 10 T 60 5', 'M0 15 Q 15 20, 30 10 T 60 2', 'M0 22 Q 10 15, 20 18 T 40 8 T 60 4', 'M0 18 Q 20 22, 40 10 T 60 6'][i]} fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" />
                             </svg>
                         </div>
                     );
@@ -232,37 +233,35 @@ export default function Landing() {
                     <div className="bv-footer-col">
                         <h4>About</h4>
                         <ul className="bv-footer-links">
-                        <li><a href="#about">About Us</a></li>
-                        <li><a href="#careers">Careers</a></li>
-                    </ul>
+                            <li><a href="#about">About Us</a></li>
+                        </ul>
+                    </div>
+                    <div className="bv-footer-col">
+                        <h4>Support</h4>
+                        <ul className="bv-footer-links">
+                            <li><a href="#help">Help Center</a></li>
+                            <li><a href="#contact">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div className="bv-footer-col">
+                        <h4>Products</h4>
+                        <ul className="bv-footer-links">
+                            <li><a href="#p2p">P2P Trading</a></li>
+                            <li><a href="#wallet">Wallet</a></li>
+                            <li><a href="#deposits">Deposits & Withdrawals</a></li>
+                        </ul>
+                    </div>
+                    <div className="bv-footer-col">
+                        <h4>Community</h4>
+                        <ul className="bv-footer-links">
+                            <li><a href="#twitter">Twitter</a></li>
+                            <li><a href="#discord">Discord</a></li>
+                            <li><a href="#telegram">Telegram</a></li>
+                            <li><a href="#linkedin">LinkedIn</a></li>
+                        </ul>
+                    </div>
                 </div>
-                <div className="bv-footer-col">
-                    <h4>Support</h4>
-                    <ul className="bv-footer-links">
-                        <li><a href="#help">Help Center</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div className="bv-footer-col">
-                    <h4>Products</h4>
-                    <ul className="bv-footer-links">
-                        <li><a href="#p2p">P2P Trading</a></li>
-                        <li><a href="#wallet">Wallet</a></li>
-                        <li><a href="#deposits">Deposits</a></li>
-                        <li><a href="#withdrawals">Withdrawals</a></li>
-                    </ul>
-                </div>
-                <div className="bv-footer-col">
-                    <h4>Community</h4>
-                    <ul className="bv-footer-links">
-                        <li><a href="#twitter">Twitter</a></li>
-                        <li><a href="#discord">Discord</a></li>
-                        <li><a href="#telegram">Telegram</a></li>
-                        <li><a href="#linkedin">LinkedIn</a></li>
-                    </ul>
-                </div>
-                </div>
-                
+
                 <div className="bv-footer-bottom">
                     <div className="bv-footer-legal">
                         <Link to="/privacy">Privacy Policy</Link>

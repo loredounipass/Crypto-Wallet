@@ -8,5 +8,14 @@ export class UpdateProviderDto {
 
   @IsOptional()
   @IsString()
-  walletAddress?: string;
+  preferredBank?: string;
+
+  @IsOptional()
+  @IsArray()
+  destinationWallets?: {
+    address: string;
+    coin: string;
+    chainId: number;
+    enabled: boolean;
+  }[];
 }

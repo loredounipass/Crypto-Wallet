@@ -89,19 +89,37 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               </div>
             </div>
 
+            <div>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tokens</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(provider.destinationWallets || []).filter(w => w.enabled).map((w, i) => (
+                  <span key={i} style={{
+                    padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    color: '#3B82F6',
+                  }}>
+                    {w.coin?.toUpperCase()}
+                  </span>
+                ))}
+                {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
+                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin tokens</span>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={() => onSelectProvider(provider)}
-              disabled={!provider.walletAddress}
+              disabled={!provider.destinationWallets?.some(w => w.enabled)}
               style={{
                 width: '100%',
                 padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
                 border: 'none',
-                background: provider.walletAddress
+                background: provider.destinationWallets?.some(w => w.enabled)
                   ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
                   : ('#1F1F33'),
-                color: provider.walletAddress ? '#FFF' : '#94A3B8',
-                cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
-                boxShadow: provider.walletAddress ? '0 4px 12px rgba(139,92,246,0.25)' : 'none',
+                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#94A3B8',
+                cursor: provider.destinationWallets?.some(w => w.enabled) ? 'pointer' : 'not-allowed',
+                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 4px 12px rgba(139,92,246,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -117,15 +135,16 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
     <div style={{ overflowX: 'auto' }}>
       {/* Header */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1fr',
+        display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1.5fr 1fr',
         padding: '12px 20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.5px', color: '#64748B',
         borderBottom: `1px solid ${'#1E1E2E'}`,
-        minWidth: 600,
+        minWidth: 700,
       }}>
         <span>Proveedor</span>
         <span>Órdenes</span>
         <span>Métodos de Pago</span>
+        <span>Tokens</span>
         <span style={{ textAlign: 'right' }}>Acción</span>
       </div>
 
@@ -134,11 +153,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
         <div
           key={provider._id}
           style={{
-            display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1fr',
+            display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1.5fr 1fr',
             padding: '16px 20px', alignItems: 'center',
             borderBottom: `1px solid ${'#1E1E2E'}`,
             transition: 'background-color 0.15s',
-            minWidth: 600,
+            minWidth: 700,
           }}
           onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(139,92,246,0.08)'}
           onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -178,16 +197,21 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
 
           {/* Payment Methods */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(provider.paymentMethods || []).slice(0, 3).map((pm, i) => (
-              <span key={i} style={{
-                padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
-                backgroundColor: '#1E1E2E',
-                color: '#94A3B8',
-                border: `1px solid ${'#1F1F33'}`,
-              }}>
-                {pm}
-              </span>
-            ))}
+            {(provider.paymentMethods || []).slice(0, 3).map((pm, i) => {
+              const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank) 
+                ? provider.preferredBank 
+                : pm;
+              return (
+                <span key={i} style={{
+                  padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
+                  backgroundColor: '#1E1E2E',
+                  color: '#94A3B8',
+                  border: `1px solid ${'#1F1F33'}`,
+                }}>
+                  {displayPm}
+                </span>
+              );
+            })}
             {(provider.paymentMethods || []).length > 3 && (
               <span style={{ fontSize: 11, color: '#94A3B8', alignSelf: 'center' }}>
                 +{provider.paymentMethods.length - 3}
@@ -198,20 +222,36 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             )}
           </div>
 
+          {/* Tokens */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {(provider.destinationWallets || []).filter(w => w.enabled).map((w, i) => (
+              <span key={i} style={{
+                padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                backgroundColor: 'rgba(59,130,246,0.1)',
+                color: '#3B82F6',
+              }}>
+                {w.coin?.toUpperCase()}
+              </span>
+            ))}
+            {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
+              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin tokens</span>
+            )}
+          </div>
+
           {/* Action */}
           <div style={{ textAlign: 'right' }}>
             <button
               onClick={() => onSelectProvider(provider)}
-              disabled={!provider.walletAddress}
+              disabled={!provider.destinationWallets?.some(w => w.enabled)}
               style={{
                 padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                 border: 'none',
-                background: provider.walletAddress
+                background: provider.destinationWallets?.some(w => w.enabled)
                   ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
                   : ('#1F1F33'),
-                color: provider.walletAddress ? '#FFF' : '#94A3B8',
-                cursor: provider.walletAddress ? 'pointer' : 'not-allowed',
-                boxShadow: provider.walletAddress ? '0 2px 8px rgba(139,92,246,0.25)' : 'none',
+                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#94A3B8',
+                cursor: provider.destinationWallets?.some(w => w.enabled) ? 'pointer' : 'not-allowed',
+                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 2px 8px rgba(139,92,246,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >

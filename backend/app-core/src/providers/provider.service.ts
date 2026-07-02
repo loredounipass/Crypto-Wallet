@@ -82,8 +82,8 @@ export class ProviderService {
     if (updateProviderDto.paymentMethods !== undefined) {
       provider.paymentMethods = updateProviderDto.paymentMethods;
     }
-    if (updateProviderDto.walletAddress !== undefined) {
-      provider.walletAddress = updateProviderDto.walletAddress;
+    if (updateProviderDto.destinationWallets !== undefined) {
+      provider.destinationWallets = updateProviderDto.destinationWallets;
     }
     return provider.save();
   }
