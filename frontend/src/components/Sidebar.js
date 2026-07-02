@@ -130,8 +130,8 @@ const LogoutIcon = (props) => (
 const menuItems = [
   { text: "Dashboard", icon: DashboardIcon, path: "/", matchPaths: ["/"] },
   { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
-  { text: "P2P Trading", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
-  { text: "Proveedor P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
+  { text: "Vender P2P", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
+  { text: "Comprar P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
   { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
   { text: "Feed", icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
   { text: "Noticias", icon: NoticiasIcon, path: "/noticias", matchPaths: ["/noticias"] },

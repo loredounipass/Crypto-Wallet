@@ -93,7 +93,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   const navItems = [
     { href: "/welcome", label: "Crypto Soporte", Icon: SupportAgentIcon },
     { href: "/providers", label: "Vender P2P", Icon: QrCodeIcon },
-    { href: "/create", label: "Proveedor P2P", Icon: QrCodeIcon },
+    { href: "/create", label: "Comprar P2P", Icon: QrCodeIcon },
   ];
 
   const navLinkStyle = {
