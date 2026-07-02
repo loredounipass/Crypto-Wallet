@@ -37,17 +37,21 @@ api.interceptors.response.use(
     }
 );
 
-// Fetch and set CSRF token globally
-async function fetchCsrfToken() {
+// Fetch and set CSRF token globally with retries for startup timing issues
+async function fetchCsrfToken(retries = 5, delayMs = 2000) {
     try {
         const response = await axios.get(csrfTokenApi, { withCredentials: true });
         const { csrfToken } = response.data;
         if (csrfToken) {
             // Attach token to all future requests from this 'api' instance
             api.defaults.headers.common['x-csrf-token'] = csrfToken;
+            console.log('CSRF token fetched successfully');
         }
     } catch (error) {
-        console.error('Failed to fetch CSRF token:', error);
+        console.error(`Failed to fetch CSRF token. Retries left: ${retries}`);
+        if (retries > 0) {
+            setTimeout(() => fetchCsrfToken(retries - 1, delayMs * 1.5), delayMs);
+        }
     }
 }
 

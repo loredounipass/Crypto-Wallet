@@ -1,6 +1,14 @@
+# Plantilla para rotación de logs
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mongodb:
     image: mongo:7
+    logging: *default-logging
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - backend-mongodb:/data/db
@@ -25,6 +33,7 @@ services:
 
   redis:
     image: 'redis:7-alpine'
+    logging: *default-logging
     volumes:
       - 'backend-redis:/data'
     networks:
@@ -51,6 +60,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    logging: *default-logging
     depends_on:
       mongodb:
         condition: service_healthy
@@ -66,6 +76,7 @@ services:
     security_opt:
       - no-new-privileges:true
     deploy:
+      replicas: 2
       resources:
         limits:
           memory: 512m
@@ -75,11 +86,14 @@ services:
     build:
       context: ./backend/app-core
       dockerfile: Dockerfile
+    logging: *default-logging
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - backend-uploads:/usr/src/app/uploads
     environment:
       DOCKER: "true"
     env_file:
@@ -96,6 +110,7 @@ services:
       retries: 3
       start_period: 60s
     deploy:
+      replicas: 2
       resources:
         limits:
           memory: 512m
@@ -105,12 +120,13 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
+    logging: *default-logging
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       app-core:
-        condition: service_healthy
+        condition: service_started
     networks:
       - backend
     restart: unless-stopped
@@ -132,9 +148,11 @@ services:
     build:
       context: ./backup
       dockerfile: Dockerfile
+    logging: *default-logging
     volumes:
       - backend-backups:/backups
       - backend-redis:/data:ro
+      - backend-uploads:/uploads:ro
     env_file:
       - ./backend/config/.env
     environment:
@@ -165,4 +183,6 @@ volumes:
   backend-redis:
     driver: local
   backend-backups:
+    driver: local
+  backend-uploads:
     driver: local

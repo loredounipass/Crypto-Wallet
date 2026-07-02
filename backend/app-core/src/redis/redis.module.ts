@@ -11,10 +11,10 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
       useFactory: async () => {
         const client = createClient({
           socket: {
-            host: process.env.REDIS_HOST || '127.0.0.1',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
+            host: process.env.REDIS_HOST,
+            port: parseInt(process.env.REDIS_PORT!),
           },
-          password: process.env.REDIS_PASS || undefined,
+          password: process.env.REDIS_PASS,
         });
         client.on('error', (err) => console.error('[Redis Global] Error:', err.message));
         await client.connect();

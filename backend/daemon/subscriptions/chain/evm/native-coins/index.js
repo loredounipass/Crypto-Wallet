@@ -72,6 +72,7 @@ const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
                     coin,
                     uuid: uuidv4()
                 }, {
+                    jobId: `${result.transactionHash}-${result.logIndex}`,
                     attempts: 2,
                     backoff: {
                         type: 'exponential',

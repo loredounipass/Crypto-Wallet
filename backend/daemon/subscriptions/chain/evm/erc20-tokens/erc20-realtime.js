@@ -71,6 +71,7 @@ const connectAndSubscribeRealtime = async ({ chainId, tokenAddress, wssUrl }) =>
                     walletAddress: toAddress.toLowerCase(),
                     amount: value.toString()
                 }, {
+                    jobId: eventId,
                     priority: 2097151 - (Number(result.blockNumber) % 2097152),
                     attempts: 5,
                     backoff: { type: 'exponential', delay: 5000 },
