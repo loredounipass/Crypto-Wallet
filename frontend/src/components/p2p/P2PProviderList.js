@@ -3,7 +3,7 @@ import React from 'react';
 
 export default function P2PProviderList({ providers, onSelectProvider }) {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
-  
+
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 640);
     window.addEventListener('resize', handleResize);
@@ -73,16 +73,21 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <div>
               <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Métodos de Pago</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(provider.paymentMethods || []).map((pm, i) => (
-                  <span key={i} style={{
-                    padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
-                    backgroundColor: '#1E1E2E',
-                    color: '#94A3B8',
-                    border: '1px solid #1F1F33',
-                  }}>
-                    {pm}
-                  </span>
-                ))}
+                {(provider.paymentMethods || []).map((pm, i) => {
+                  const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank)
+                    ? provider.preferredBank
+                    : pm;
+                  return (
+                    <span key={i} style={{
+                      padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
+                      backgroundColor: '#1E1E2E',
+                      color: '#94A3B8',
+                      border: '1px solid #1F1F33',
+                    }}>
+                      {displayPm}
+                    </span>
+                  );
+                })}
                 {(!provider.paymentMethods || provider.paymentMethods.length === 0) && (
                   <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin métodos</span>
                 )}
@@ -198,8 +203,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
           {/* Payment Methods */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {(provider.paymentMethods || []).slice(0, 3).map((pm, i) => {
-              const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank) 
-                ? provider.preferredBank 
+              const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank)
+                ? provider.preferredBank
                 : pm;
               return (
                 <span key={i} style={{
