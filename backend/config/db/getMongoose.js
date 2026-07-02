@@ -7,12 +7,12 @@ const auth = mongoUser && mongoPass ? `${encodeURIComponent(mongoUser)}:${encode
 
 const isLocalRun = !process.env.CI && !process.env.DOCKER
 const dbHost = isLocalRun && process.env.DB_HOST === 'mongodb'
-    ? '127.0.0.1'
-    : process.env.DB_HOST
+  ? '127.0.0.1'
+  : process.env.DB_HOST
 const dbPort = isLocalRun && String(process.env.DB_PORT) === '27017'
-    ? '27020'
-    : process.env.DB_PORT
-const uri = `mongodb://${auth}${dbHost}:${dbPort}/${process.env.DB_NAME}?authSource=admin`
+  ? '27020'
+  : process.env.DB_PORT
+const uri = `mongodb://${auth}${dbHost}:${dbPort}/${process.env.DB_NAME}?authSource=admin&retryWrites=false`
 
 module.exports = mongoose.connect(uri, {
   connectTimeoutMS: 90000,

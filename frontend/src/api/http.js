@@ -165,7 +165,7 @@ async function post(url, body) {
 }
 
 async function postMultipart(url, formData) {
-    return await api.post(url, formData)
+    return await api.post(url, formData, { timeout: 120000 })
 }
 
 async function patch(url, body) {

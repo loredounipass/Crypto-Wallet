@@ -28,7 +28,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('multimedia') private readonly multimediaQueue: Queue,
     private readonly storage: LocalStorageProvider,
-  ) {}
+  ) { }
 
   private get feedModel() {
     return this.feedRepository.feed;
@@ -47,13 +47,13 @@ export class FeedAndMultimediaService implements OnModuleInit {
   }
 
 
-  
+
   // Listen to multimedia processing events to update feed posts when media becomes ready
   onModuleInit() {
     try {
       // avoid double-registering handlers during hot-reload/dev
-      try { void (this.eventEmitter as any).removeAllListeners('multimedia.ready'); } catch (_) {}
-      try { void (this.eventEmitter as any).removeAllListeners('multimedia.failed'); } catch (_) {}
+      try { void (this.eventEmitter as any).removeAllListeners('multimedia.ready'); } catch (_) { }
+      try { void (this.eventEmitter as any).removeAllListeners('multimedia.failed'); } catch (_) { }
 
       this.eventEmitter.on('multimedia.ready', async (payload: any) => {
         try {
@@ -92,7 +92,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
           } catch (err) {
             console.warn('multimedia.ready handler error', err);
           }
-        } catch (_) {}
+        } catch (_) { }
       });
 
       this.eventEmitter.on('multimedia.failed', async (payload: any) => {
@@ -119,11 +119,11 @@ export class FeedAndMultimediaService implements OnModuleInit {
           } catch (err) {
             console.warn('multimedia.failed handler error', err);
           }
-        } catch (_) {}
+        } catch (_) { }
       });
 
       // listen for user profile updates to sync denormalized author names on posts
-      try { void (this.eventEmitter as any).removeAllListeners('user.updated'); } catch (_) {}
+      try { void (this.eventEmitter as any).removeAllListeners('user.updated'); } catch (_) { }
       this.eventEmitter.on('user.updated', async (payload: any) => {
         try {
           const userId = payload?._id || payload?.id || payload?.userId;
@@ -146,18 +146,18 @@ export class FeedAndMultimediaService implements OnModuleInit {
               try {
                 const out = await this.getPostById(p._id?.toString());
                 void this.eventEmitter.emit('post.updated', out);
-              } catch (_) {}
+              } catch (_) { }
             }
           } catch (e) { console.warn('Failed to emit post.updated after author name sync', e); }
 
         } catch (err) { console.warn('user.updated handler error', err); }
       });
-    } catch (_) {}
+    } catch (_) { }
   }
 
 
-  
-// get the piost by id, including denormalized author names and multimedia fields; lean query for performance; throw if not found
+
+  // get the piost by id, including denormalized author names and multimedia fields; lean query for performance; throw if not found
   async getPostById(postId: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
 
@@ -251,7 +251,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
     const actor = await this.userService.getUserById(authorId);
     if (!actor) {
       // cleanup upload
-      try { await this.storage.delete(uploadResult.key) } catch (_) {}
+      try { await this.storage.delete(uploadResult.key) } catch (_) { }
       throw new NotFoundException('Author not found');
     }
 
@@ -318,11 +318,15 @@ export class FeedAndMultimediaService implements OnModuleInit {
         usedTransaction = true;
       } catch (txErr) {
         // Detect servers that don't support transactions (standalone mongod)
-        const msg = String((txErr as any)?.message || '').toLowerCase();
-        if (msg.includes('transaction numbers are only allowed') || msg.includes('transactions are not supported')) {
-          // fallback to non-transactional flow below
-        } else {
-          // other error - rethrow after cleanup
+        const txErrAny = txErr as any;
+        const msg = String(txErrAny?.message || '').toLowerCase();
+        const nestedMsg = String(txErrAny?.originalError?.message || txErrAny?.errorResponse?.errmsg || '').toLowerCase();
+        const isTransactionError = msg.includes('transaction numbers are only allowed')
+          || msg.includes('transactions are not supported')
+          || msg.includes('retryable writes')
+          || nestedMsg.includes('transaction numbers are only allowed')
+          || nestedMsg.includes('transactions are not supported');
+        if (!isTransactionError) {
           throw txErr;
         }
       }
@@ -367,18 +371,18 @@ export class FeedAndMultimediaService implements OnModuleInit {
           createdPostId = createdPostDoc._id?.toString();
         } catch (nonTxErr) {
           // cleanup created docs and uploaded file if possible
-          try { if (createdMultimediaDoc && createdMultimediaDoc._id) await this.multimediaModel.deleteOne({ _id: createdMultimediaDoc._id }).exec(); } catch(_){}
-          try { if (createdPostDoc && createdPostDoc._id) await this.feedModel.deleteOne({ _id: createdPostDoc._id }).exec(); } catch(_){}
-          try { await this.storage.delete(uploadResult.key) } catch (_) {}
+          try { if (createdMultimediaDoc && createdMultimediaDoc._id) await this.multimediaModel.deleteOne({ _id: createdMultimediaDoc._id }).exec(); } catch (_) { }
+          try { if (createdPostDoc && createdPostDoc._id) await this.feedModel.deleteOne({ _id: createdPostDoc._id }).exec(); } catch (_) { }
+          try { await this.storage.delete(uploadResult.key) } catch (_) { }
           throw nonTxErr;
         }
       }
     } catch (err) {
       // compensating: delete uploaded file to avoid orphan if nothing was committed
-      try { await this.storage.delete(uploadResult.key) } catch (_) {}
+      try { await this.storage.delete(uploadResult.key) } catch (_) { }
       throw err;
     } finally {
-      try { session.endSession(); } catch(_){}
+      try { session.endSession(); } catch (_) { }
     }
 
     if (!createdPostId) throw new Error('Failed to create post');
@@ -397,7 +401,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
       // mark as enqueued
       try {
         await this.multimediaModel.updateOne({ _id: multimediaIdCreated }, { $set: { 'processingJob.enqueued': true } }).exec();
-      } catch (_) {}
+      } catch (_) { }
     } catch (err) {
       // leave processingJob.enqueued = false so a background reconciler can find it
     }
@@ -497,10 +501,10 @@ export class FeedAndMultimediaService implements OnModuleInit {
     }));
   }
 
- 
 
 
-// Update post: only allow author to update; allow updating description, type and multimedia (with validation); if multimedia is updated, denormalize new multimedia fields and remove old multimedia doc + storage asset
+
+  // Update post: only allow author to update; allow updating description, type and multimedia (with validation); if multimedia is updated, denormalize new multimedia fields and remove old multimedia doc + storage asset
   async updatePost(postId: string, data: Partial<CreatePostDto>, actorId: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
     const post = await this.feedModel.findById(postId).exec();
@@ -523,7 +527,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
 
 
 
-// Delete post: only allow author to delete; transactionally remove post, comments and multimedia doc; best-effort remove storage asset after transaction
+  // Delete post: only allow author to delete; transactionally remove post, comments and multimedia doc; best-effort remove storage asset after transaction
   async deletePost(postId: string, actorId: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
     const post = await this.feedModel.findById(postId).lean().exec();
@@ -557,7 +561,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
     try {
       const key = multimediaDoc?.processingJob?.stagingKey;
       if (key) await this.storage.delete(key);
-    } catch (_) {}
+    } catch (_) { }
 
     void this.eventEmitter.emit('post.deleted', { _id: postId, author: actorId });
     return { success: true };
@@ -589,7 +593,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
             likesCount: 0,
           };
           if (dto.parentId && Types.ObjectId.isValid(dto.parentId)) commentPayload.parent = new Types.ObjectId(dto.parentId);
-          const docs = await this.commentModel.create([ commentPayload ], { session });
+          const docs = await this.commentModel.create([commentPayload], { session });
           created = Array.isArray(docs) ? docs[0] : docs;
 
           await this.feedModel.findByIdAndUpdate(dto.postId, { $inc: { commentsCount: 1 } }, { session }).exec();
@@ -613,16 +617,16 @@ export class FeedAndMultimediaService implements OnModuleInit {
           const upd = await this.feedModel.findByIdAndUpdate(dto.postId, { $inc: { commentsCount: 1 } }).exec();
           if (!upd) {
             // rollback
-            try { await this.commentModel.deleteOne({ _id: created._id }).exec(); } catch (_) {}
+            try { await this.commentModel.deleteOne({ _id: created._id }).exec(); } catch (_) { }
             throw new BadRequestException('Post not found');
           }
         } catch (err) {
-          try { await this.commentModel.deleteOne({ _id: created._id }).exec(); } catch (_) {}
+          try { await this.commentModel.deleteOne({ _id: created._id }).exec(); } catch (_) { }
           throw err;
         }
       }
     } finally {
-      try { session.endSession(); } catch (_) {}
+      try { session.endSession(); } catch (_) { }
     }
 
     // attach author names using a single query
@@ -656,12 +660,12 @@ export class FeedAndMultimediaService implements OnModuleInit {
       .exec();
 
     // Batch load all author user docs to avoid N+1
-    const authorIds = Array.from(new Set(comments.filter((c:any) => c.author).map((c:any) => c.author.toString())));
+    const authorIds = Array.from(new Set(comments.filter((c: any) => c.author).map((c: any) => c.author.toString())));
     const users: any[] = authorIds.length > 0 ? await this.userModel.find({ _id: { $in: authorIds } }).select('firstName lastName username').lean().exec() : [];
     const userMap = new Map(users.map(u => [u._id?.toString(), u]));
 
     // Build a map from comment id -> author display name to be able to show parent author names
-    const commentAuthorNameMap = new Map<string,string>();
+    const commentAuthorNameMap = new Map<string, string>();
     for (const c of comments) {
       const aid = c.author?.toString();
       const u = userMap.get(aid);
@@ -678,7 +682,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
       post: c.post?.toString(),
       parent: c.parent?.toString() || undefined,
       parentAuthorName: c.parent ? commentAuthorNameMap.get(c.parent?.toString()) : undefined,
-      likes: Array.isArray(c.likes) ? c.likes.map((id:any) => id?.toString()) : [],
+      likes: Array.isArray(c.likes) ? c.likes.map((id: any) => id?.toString()) : [],
       likesCount: typeof c.likesCount === 'number' ? c.likesCount : (Array.isArray(c.likes) ? c.likes.length : 0),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
@@ -705,13 +709,13 @@ export class FeedAndMultimediaService implements OnModuleInit {
       author: updated.author?.toString(),
       post: updated.post?.toString(),
       parent: updated.parent?.toString() || undefined,
-      likes: Array.isArray(updated.likes) ? updated.likes.map((id:any) => id?.toString()) : [],
+      likes: Array.isArray(updated.likes) ? updated.likes.map((id: any) => id?.toString()) : [],
       likesCount: typeof updated.likesCount === 'number' ? updated.likesCount : (Array.isArray(updated.likes) ? updated.likes.length : 0),
       createdAt: (updated as any).createdAt,
       updatedAt: (updated as any).updatedAt,
     };
 
-    try { void this.eventEmitter.emit('comment.updated', { _id: out._id, post: out.post }); } catch(_){}
+    try { void this.eventEmitter.emit('comment.updated', { _id: out._id, post: out.post }); } catch (_) { }
     return out;
   }
 
@@ -735,13 +739,13 @@ export class FeedAndMultimediaService implements OnModuleInit {
       author: updated.author?.toString(),
       post: updated.post?.toString(),
       parent: updated.parent?.toString() || undefined,
-      likes: Array.isArray(updated.likes) ? updated.likes.map((id:any) => id?.toString()) : [],
+      likes: Array.isArray(updated.likes) ? updated.likes.map((id: any) => id?.toString()) : [],
       likesCount: typeof updated.likesCount === 'number' ? updated.likesCount : (Array.isArray(updated.likes) ? updated.likes.length : 0),
       createdAt: (updated as any).createdAt,
       updatedAt: (updated as any).updatedAt,
     };
 
-    try { void this.eventEmitter.emit('comment.updated', { _id: out._id, post: out.post }); } catch(_){}
+    try { void this.eventEmitter.emit('comment.updated', { _id: out._id, post: out.post }); } catch (_) { }
     return out;
   }
 
@@ -899,7 +903,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
       updatedAt: (updated as any).updatedAt,
     };
 
-    try { void this.eventEmitter.emit('post.updated', out); } catch (_) {}
+    try { void this.eventEmitter.emit('post.updated', out); } catch (_) { }
     return out;
   }
 

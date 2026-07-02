@@ -92,7 +92,17 @@ export class MultimediaProcessor {
         try { await fsPromises.unlink(optPath); } catch (_) { }
         try { await fsPromises.unlink(thumbPath); } catch (_) { }
       } else if (mime.startsWith('video/')) {
-        throw new Error('Video processing is disabled');
+        // upload video without additional processing (just move from staging to final)
+        let uploadRes;
+        if (typeof (this.storage as any).uploadStream === 'function') {
+          uploadRes = await (this.storage as any).uploadStream(fs.createReadStream(tempIn), finalKey, mime);
+        } else {
+          const buf = await fsPromises.readFile(tempIn);
+          uploadRes = await this.storage.upload(buf, finalKey, mime);
+        }
+        metadata = {};
+        try { await fsPromises.unlink(tempIn); } catch (_) { }
+        finalKey = uploadRes.key;
       } else if (mime.startsWith('audio/')) {
         // upload audio without additional processing
         let uploadRes;
@@ -107,29 +117,25 @@ export class MultimediaProcessor {
         finalKey = uploadRes.key;
       }
 
-      // Compute public URL and encoded variant for safe storage/clients
+      // Compute public URL
       const publicUrl = this.storage.getPublicUrl(finalKey);
-      const encodedUrl = publicUrl.split('/').map(s => encodeURIComponent(s)).join('/');
-      const encodedThumbnail = thumbnailUrl ? thumbnailUrl.split('/').map(s => encodeURIComponent(s)).join('/') : undefined;
 
-      // update multimedia doc with encoded URLs so DB always contains safe paths
       await this.multimediaModel.findByIdAndUpdate(multimediaId, {
-        url: encodedUrl,
-        thumbnailUrl: encodedThumbnail,
+        url: publicUrl,
+        thumbnailUrl: thumbnailUrl,
         status: 'ready',
         ...metadata,
       }).exec();
-      console.log(`[MultimediaProcessor] ✅ DB updated to ready | multimediaId=${multimediaId} | publicUrl=${publicUrl} | encodedUrl=${encodedUrl}`);
+      console.log(`[MultimediaProcessor] ✅ DB updated to ready | multimediaId=${multimediaId} | publicUrl=${publicUrl}`);
 
       // emit event so realtime clients can update (thumbnail, url, metadata)
       try {
-        // log for debugging so dev can confirm the final public URL
-        try { console.log(`[MultimediaProcessor] multimedia.ready url=${publicUrl} encoded=${encodedUrl} messageId=${job.data.messageId}`); } catch (_) { }
+        try { console.log(`[MultimediaProcessor] multimedia.ready url=${publicUrl} messageId=${job.data.messageId}`); } catch (_) { }
         void this.eventEmitter.emit('multimedia.ready', {
           multimediaId: multimediaId,
           messageId: job.data.messageId,
-          url: encodedUrl,
-          thumbnailUrl: encodedThumbnail,
+          url: publicUrl,
+          thumbnailUrl: thumbnailUrl,
           metadata,
         });
       } catch (_) { }
