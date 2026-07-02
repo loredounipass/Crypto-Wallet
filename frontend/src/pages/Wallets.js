@@ -14,28 +14,28 @@ import {
 import { getDisplayableAddress } from '../components/utils/Display';
 import { useHistory } from 'react-router-dom';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Filler,
-  LineController
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Filler,
+    LineController
 } from 'chart.js';
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Filler,
-  LineController
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Filler,
+    LineController
 );
 
 const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
-    <div 
+    <div
         style={styles.walletCard}
         onClick={() => handleWalletClick(wallet.coin)}
         onMouseOver={(e) => {
@@ -49,22 +49,22 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
     >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <img 
-                src={getCoinLogo(wallet.coin)} 
-                alt={wallet.coin}
-                onError={(e) => {
-                    e.currentTarget.src = getCoinFallbackLogo(wallet.coin);
-                }}
-                style={{ width: isMobile ? 26 : 32, height: isMobile ? 26 : 32 }}
-            />
-            <div>
-                <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "14px" : "16px" }}>
-                    {String(wallet.coin || "").toUpperCase()}
+                <img
+                    src={getCoinLogo(wallet.coin)}
+                    alt={wallet.coin}
+                    onError={(e) => {
+                        e.currentTarget.src = getCoinFallbackLogo(wallet.coin);
+                    }}
+                    style={{ width: isMobile ? 26 : 32, height: isMobile ? 26 : 32 }}
+                />
+                <div>
+                    <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "14px" : "16px" }}>
+                        {String(wallet.coin || "").toUpperCase()}
+                    </div>
+                    <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
+                        {getDisplayableAddress(wallet.address)}
+                    </div>
                 </div>
-                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                    {getDisplayableAddress(wallet.address)}
-                </div>
-            </div>
             </div>
             <div style={{ width: 8, height: 8, borderRadius: "999px", backgroundColor: "#22C55E" }} />
         </div>
@@ -72,7 +72,7 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
             <div>
                 <div style={{ color: "#9CA3AF", fontSize: "12px" }}>Balance</div>
                 <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "16px" : "18px" }}>
-                    {wallet.balance}
+                    {Number(wallet.balance || 0).toFixed(18).replace(/\.?0+$/, '')}
                 </div>
             </div>
             <div style={styles.walletActionPill}>
@@ -432,7 +432,7 @@ const Wallets = () => {
                     <p style={{ ...styles.sectionSubtleText, marginBottom: "12px" }}>
                         Elige la red y crea tu wallet en segundos con configuracion segura.
                     </p>
-                    
+
                     <label style={{ display: "block", color: "#9CA3AF", fontSize: "12px", marginBottom: "4px" }}>
                         Selecciona una moneda
                     </label>
@@ -529,15 +529,15 @@ const Wallets = () => {
                         filter: "blur(20px)",
                         zIndex: 0
                     }} />
-                    
+
                     <div style={{ padding: isMobile ? "12px" : "16px", paddingBottom: "0", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ color: "#9CA3AF", fontSize: isMobile ? "12px" : "13px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
                                 Mercado • {selectedCoin.toUpperCase()}
                             </span>
-                            <span style={{ 
-                                color: "white", 
-                                fontSize: isMobile ? "24px" : "32px", 
+                            <span style={{
+                                color: "white",
+                                fontSize: isMobile ? "24px" : "32px",
                                 fontWeight: 700,
                                 background: "linear-gradient(135deg, #FFFFFF 0%, #E0E7FF 100%)",
                                 WebkitBackgroundClip: "text",
@@ -547,7 +547,7 @@ const Wallets = () => {
                             </span>
                         </div>
                     </div>
-                    
+
                     <div style={{ flex: 1, width: "100%", minHeight: 0, position: "relative", zIndex: 1 }}>
                         <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
                     </div>
@@ -562,7 +562,7 @@ const Wallets = () => {
                 <p style={{ color: "#9CA3AF", fontSize: "13px", textAlign: "center", marginTop: 0, marginBottom: "18px" }}>
                     Administra tus activos y entra rapido a cada wallet.
                 </p>
-                
+
                 {allWalletInfo.length > 0 ? (
                     <div className="grid gap-3 md:gap-4" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: isMobile ? "10px" : "16px" }}>
                         {allWalletInfo.map((wallet, index) => (
