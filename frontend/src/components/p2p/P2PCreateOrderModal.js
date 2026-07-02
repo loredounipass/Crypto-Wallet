@@ -28,11 +28,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const [coinPriceUsd, setCoinPriceUsd] = useState(0);
 
   const availablePaymentMethods = provider?.paymentMethods?.length > 0
-    ? provider.paymentMethods.map(pm => 
-        (pm === 'Transferencia Bancaria' && provider.preferredBank)
-          ? provider.preferredBank
-          : pm
-      )
+    ? provider.paymentMethods.map(pm =>
+      (pm === 'Transferencia Bancaria' && provider.preferredBank)
+        ? provider.preferredBank
+        : pm
+    )
     : ['Transferencia Bancaria'];
 
   const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
@@ -80,6 +80,12 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const isValid = coin && parseFloat(amount) > 0 && parseFloat(fiatAmount) > 0
     && paymentMethod && parseFloat(amount) <= availableAfterFee;
 
+  const resolvePaymentMethod = (displayValue) => {
+    if (provider?.paymentMethods?.includes(displayValue)) return displayValue;
+    if (displayValue === provider?.preferredBank) return 'Transferencia Bancaria';
+    return displayValue;
+  };
+
   const handleSubmit = () => {
     if (!isValid) return;
     onSubmit({
@@ -87,7 +93,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
       amount: parseFloat(amount),
       fiatAmount: parseFloat(fiatAmount),
       providerEmail: provider.email,
-      paymentMethod,
+      paymentMethod: resolvePaymentMethod(paymentMethod),
     });
   };
 
@@ -153,8 +159,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.15s', flexShrink: 0,
           }}
-          onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#E2E8F0'; }}
-          onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#64748B'; }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#E2E8F0'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#64748B'; }}
           >✕</button>
         </div>
 
