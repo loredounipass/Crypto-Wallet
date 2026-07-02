@@ -25,7 +25,7 @@ import EmailVerificationComponent from './components/settings/verify'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider } from './hooks/LanguageContext';
-import './i18n'; 
+import './i18n';
 import Chatcomponent from './components/providers/Chat';
 import ProviderChatComponent from './components/providers/ProviderChatComponent';
 import Dashboard from './pages/Dashboard'
@@ -33,7 +33,7 @@ import P2P from './pages/P2P'
 import P2POrderChat from './components/p2p/P2POrderChat'
 import Swap from './pages/Swap'
 import Feed from './pages/Feed'
-import Noticias from './pages/Noticias'
+//import Noticias from './pages/Noticias'
 import BrivoAgent from './components/BrivoAgent'
 import { Menu as MenuIcon } from './ui/icons';
 
@@ -45,7 +45,7 @@ function AppContent() {
     }, []);
 
     const { auth, setAuth, loading } = useFindUser();
-    
+
     const location = useLocation();
     const muiTheme = useTheme();
     const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -67,7 +67,7 @@ function AppContent() {
         setMobileOpen(true);
     };
 
-    
+
 
     const mainContentStyle = {
         flex: 1,
@@ -85,9 +85,9 @@ function AppContent() {
             <SocketProvider>
                 <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
                     <CssBaseline />
-                    
+
                     {isAuthenticated && !isPublicRoute && (
-                        <Sidebar 
+                        <Sidebar
                             open={isMobile ? true : sidebarOpen}
                             onToggle={handleSidebarToggle}
                             mobileOpen={mobileOpen}
@@ -140,23 +140,23 @@ function AppContent() {
                                 <PrivateRoute exact path="/wallet/:walletId" component={Wallet} />
                                 <PrivateRoute exact path="/providers" component={ProviderCard} />
                                 <PrivateRoute exact path="/create" component={CreateProvider} />
-                                <PrivateRoute exact path='/supportChat' component={SupportChat}/>
-                                <PrivateRoute exact path='/settings' component={Settings}/>
-                                <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent}/>
-                                <PrivateRoute exact path='/chat' component={Chatcomponent}/>
-                                <PrivateRoute exact path='/providerchat' component={ProviderChatComponent}/>
-                                <PrivateRoute exact path='/p2p' component={P2P}/>
-                                <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat}/>
-                                <PrivateRoute exact path='/swap' component={Swap}/>
-                                <PrivateRoute exact path='/feed' component={Feed}/>
-                                <PrivateRoute exact path='/noticias' component={Noticias}/>
+                                <PrivateRoute exact path='/supportChat' component={SupportChat} />
+                                <PrivateRoute exact path='/settings' component={Settings} />
+                                <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent} />
+                                <PrivateRoute exact path='/chat' component={Chatcomponent} />
+                                <PrivateRoute exact path='/providerchat' component={ProviderChatComponent} />
+                                <PrivateRoute exact path='/p2p' component={P2P} />
+                                <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat} />
+                                <PrivateRoute exact path='/swap' component={Swap} />
+                                <PrivateRoute exact path='/feed' component={Feed} />
+                                {/* <PrivateRoute exact path='/noticias' component={Noticias} /> */}
                                 <PublicRoute exact path='/login' component={Login} />
                                 <PublicRoute exact path='/register' component={Register} />
                                 <PublicRoute exact path='/forgot-password' component={ForgotPassword} />
                                 <PublicRoute exact path='/reset-password' component={ResetPassword} />
-                                <PublicRoute exact path='/landing' component={Landing}/>
+                                <PublicRoute exact path='/landing' component={Landing} />
                                 <PublicRoute exact path='/verifytoken' component={VerifyToken} />
-                                <PublicRoute exact path='/resendtoken' component={ResendTokenForm}/>
+                                <PublicRoute exact path='/resendtoken' component={ResendTokenForm} />
                             </Switch>
                         </Container>
                     </Box>

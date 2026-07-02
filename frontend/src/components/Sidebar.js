@@ -103,14 +103,20 @@ const FeedIcon = (props) => (
   </SidebarIconBase>
 );
 
-const NoticiasIcon = (props) => (
+const ChatIcon = (props) => (
   <SidebarIconBase {...props}>
-    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
-    <path d="M18 14h-8" />
-    <path d="M15 18h-5" />
-    <rect x="10" y="6" width="8" height="5" rx="1" />
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </SidebarIconBase>
 );
+
+// const NoticiasIcon = (props) => (
+//   <SidebarIconBase {...props}>
+//     <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+//     <path d="M18 14h-8" />
+//     <path d="M15 18h-5" />
+//     <rect x="10" y="6" width="8" height="5" rx="1" />
+//   </SidebarIconBase>
+// );
 
 const SettingsIcon = (props) => (
   <SidebarIconBase {...props}>
@@ -134,7 +140,7 @@ const menuItems = [
   { text: "Comprar P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
   { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
   { text: "Feed", icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
-  { text: "Noticias", icon: NoticiasIcon, path: "/noticias", matchPaths: ["/noticias"] },
+  { text: "Chat", icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },
   { text: "Brivo Soporte", icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
 ];
 

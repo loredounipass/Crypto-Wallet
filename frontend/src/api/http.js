@@ -107,8 +107,8 @@ const supportChatApi = `${baseApi}/support/chat`
 const donationsWalletsApi = `${baseApi}/donations/wallets`
 
 // Endpoints news
-const newsApi = `${baseApi}/news`
-const newsCategoriesApi = `${baseApi}/news/categories`
+// const newsApi = `${baseApi}/news`
+// const newsCategoriesApi = `${baseApi}/news/categories`
 
 // Endpoints feed
 const feedApi = `${baseApi}/feed`
@@ -230,8 +230,8 @@ export {
     escrowCancelOrderApi,
     escrowDisputedOrdersApi,
     escrowResolveDisputeApi,
-    newsApi,
-    newsCategoriesApi,
+    // newsApi,
+    // newsCategoriesApi,
     feedApi,
     feedVideosApi,
     feedUploadApi,

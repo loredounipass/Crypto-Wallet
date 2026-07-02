@@ -9,7 +9,7 @@ import { TransactionModule } from './transaction/transaction.module';
 import { AuthModule } from './auth/auth.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ProviderModule } from './providers/provider.module';
-import { TwoFactorAuthModule  } from './two-factor/verification.module';
+import { TwoFactorAuthModule } from './two-factor/verification.module';
 import { ProfileModule } from './profile/profile.module';
 import { MessagesAndMultimediaModule } from './messages-and-multimedia/messages-and-multimedia.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -17,7 +17,7 @@ import { EscrowModule } from './escrow/escrow.module';
 import { PriceModule } from './price/price.module';
 import { SupportModule } from './support/support.module';
 import { RedisModule } from './redis/redis.module';
-import { NewsModule } from './news/news.module';
+// import { NewsModule } from './news/news.module';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfMiddleware } from './csrf/csrf.middleware';
 import { FeedAndMultimediaModule } from './feed-and-multimedia/feed-and-multimedia.module';
@@ -34,7 +34,7 @@ import { DonationsModule } from './donations/donations.module';
         limit: parseInt(process.env.RATE_LIMIT!),
       }],
     }),
-    
+
     MongooseModule.forRoot(process.env.DB_URI),
     BullModule.forRoot({
       connection: {
@@ -57,7 +57,7 @@ import { DonationsModule } from './donations/donations.module';
     EscrowModule,
     PriceModule,
     SupportModule,
-    NewsModule,
+    // NewsModule,
     FeedAndMultimediaModule,
     DonationsModule
   ],
