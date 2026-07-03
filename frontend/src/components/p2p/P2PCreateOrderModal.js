@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import useAllWallets from '../../hooks/useAllWallets';
 import Price from '../../services/price';
 
 
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
+  const { t } = useTranslation();
   const isMounted = React.useRef(true);
 
   useEffect(() => {
@@ -146,10 +148,10 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#F1F5F9', letterSpacing: '-0.3px' }}>
-              Vender P2P
+              {t('p2p_sell_title')}
             </h3>
             <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94A3B8' }}>
-              Proveedor: <span style={{ color: '#8B5CF6', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
+              {t('p2p_provider_label')} <span style={{ color: '#8B5CF6', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
             </p>
           </div>
           <button onClick={onClose} style={{
@@ -166,15 +168,15 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
         {/* Coin Select */}
         <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Criptomoneda</label>
+          <label style={labelStyle}>{t('p2p_cryptocurrency')}</label>
           <select
             value={coin}
             onChange={e => setCoin(e.target.value)}
             style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
           >
-            <option value="">Seleccionar crypto...</option>
+            <option value="">{t('p2p_select_crypto')}</option>
             {compatibleWallets.length === 0 ? (
-              <option value="" disabled>No tienes wallets compatibles</option>
+              <option value="" disabled>{t('p2p_no_compatible_wallets')}</option>
             ) : (
               compatibleWallets.map(w => (
                 <option key={w.coin} value={w.coin}>
@@ -187,14 +189,14 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
         {/* Amount */}
         <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>
-            Cantidad a vender
+          <div style={labelStyle}>
+            <span>{t('p2p_amount_to_sell')}</span>
             {selectedWallet && (
-              <span style={{ float: 'right', fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>
-                Disponible: <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
+              <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>
+                {t('p2p_available')} <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
               </span>
             )}
-          </label>
+          </div>
           <div style={{ position: 'relative' }}>
             <input
               type="number"
@@ -202,7 +204,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               min="0"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
+              placeholder={t('p2p_amount_placeholder')}
               style={{ ...inputStyle, paddingRight: 62 }}
             />
             <button
@@ -227,19 +229,19 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 transition: 'all 0.15s',
               }}
             >
-              MAX
+              {t('p2p_max')}
             </button>
           </div>
           {parseFloat(amount) > availableAfterFee && availableAfterFee >= 0 && (
             <p style={{ color: '#EF4444', fontSize: 11, margin: '6px 0 0', fontWeight: 500 }}>
-              ⚠ Balance insuficiente
+              {t('p2p_insufficient_balance')}
             </p>
           )}
         </div>
 
         {/* Fiat Amount */}
         <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Monto en USD</label>
+          <label style={labelStyle}>{t('p2p_amount_usd_label')}</label>
           <div style={{ position: 'relative' }}>
             <input
               type="number"
@@ -264,7 +266,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
         {/* Payment Method */}
         <div style={{ marginBottom: 24 }}>
-          <label style={labelStyle}>Método de pago</label>
+          <label style={labelStyle}>{t('p2p_payment_method_label')}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {availablePaymentMethods.map(pm => (
               <button
@@ -295,14 +297,14 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             border: '1px solid rgba(139,92,246,0.15)',
           }}>
             <p style={{ margin: 0, fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
-              Resumen de la orden
+              {t('p2p_order_summary')}
             </p>
             <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
               {amount} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
             </p>
             {paymentMethod && (
               <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8B5CF6' }}>
-                vía {paymentMethod}
+                {t('p2p_via')} {paymentMethod}
               </p>
             )}
           </div>
@@ -321,7 +323,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               transition: 'all 0.15s',
             }}
           >
-            Cancelar
+            {t('p2p_cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -337,7 +339,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               transition: 'all 0.2s',
             }}
           >
-            {isLoading ? 'Creando orden...' : 'Crear Orden P2P'}
+            {t(isLoading ? 'p2p_creating_order' : 'p2p_create_order')}
           </button>
         </div>
       </div>

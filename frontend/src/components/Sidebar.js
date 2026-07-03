@@ -14,6 +14,8 @@ import {
 } from "../ui/material";
 
 import { useHistory, useLocation } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
+
 import { use } from "react";
 import { AuthContext } from "../hooks/AuthContext";
 import useAuth from "../hooks/useAuth";
@@ -133,27 +135,30 @@ const LogoutIcon = (props) => (
   </SidebarIconBase>
 );
 
-const menuItems = [
-  { text: "Dashboard", icon: DashboardIcon, path: "/", matchPaths: ["/"] },
-  { text: "Mis Billeteras", icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
-  { text: "Vender P2P", icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
-  { text: "Comprar P2P", icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
-  { text: "Swap", icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
-  { text: "Feed", icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
-  { text: "Chat", icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },
-  { text: "Brivo Soporte", icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
-];
 
-const bottomItems = [
-  { text: "Ajustes", icon: SettingsIcon, path: "/settings" },
-  { text: "Salir", icon: LogoutIcon, path: "logout", color: "#FF6B6B" },
-];
 
 export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
+  const { t } = useTranslation();
   const history = useHistory();
   const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
+
+  const menuItems = [
+    { text: t("sidebar_dashboard", "Dashboard"), icon: DashboardIcon, path: "/", matchPaths: ["/"] },
+    { text: t("sidebar_my_wallets", "Mis Billeteras"), icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
+    { text: t("sidebar_sell_p2p", "Vender P2P"), icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
+    { text: t("sidebar_buy_p2p", "Comprar P2P"), icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
+    { text: t("sidebar_swap", "Swap"), icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
+    { text: t("sidebar_feed", "Feed"), icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
+    { text: t("sidebar_chat", "Chat"), icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },
+    { text: t("sidebar_support", "Brivo Soporte"), icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
+  ];
+
+  const bottomItems = [
+    { text: t("sidebar_settings", "Ajustes"), icon: SettingsIcon, path: "/settings" },
+    { text: t("sidebar_logout", "Salir"), icon: LogoutIcon, path: "logout", color: "#FF6B6B" },
+  ];
 
   const { auth } = use(AuthContext);
   const { logoutUser } = useAuth();

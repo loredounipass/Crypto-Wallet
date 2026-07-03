@@ -1,4 +1,5 @@
 import React, { use, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../hooks/AuthContext'; 
 import useAuth from '../../hooks/useAuth'; 
 import TransactionToast from '../TransactionToast';
@@ -12,6 +13,7 @@ import './Settings.css';
 
 
 const VerifyEmailComponent = () => {
+    const { t } = useTranslation();
     const { auth } = use(AuthContext); 
     const { sendVerificationEmail, isEmailVerified } = useAuth();
     
@@ -33,7 +35,7 @@ const VerifyEmailComponent = () => {
                 ...prev,
                 verificationStatus: {
                     verified: isVerified,
-                    message: isVerified ? 'Correo electrónico verificado' : 'El correo electrónico no está verificado.'
+                    message: isVerified ? t('email_verified_message') : t('email_not_verified_message')
                 },
                 emailVerified: isVerified,
                 loading: false
@@ -44,10 +46,10 @@ const VerifyEmailComponent = () => {
         if (auth && auth.email && !hasCheckedVerification.current) {
             checkEmailVerification(); 
         } else if (!auth || !auth.email) {
-            setToast({ kind: 'error', message: 'No se ha encontrado un correo electrónico autenticado.' });
+            setToast({ kind: 'error', message: t('no_authenticated_email') });
             setUi(prev => ({ ...prev, loading: false }));
         }
-    }, [auth, isEmailVerified]); 
+    }, [auth, isEmailVerified, t]); 
 
     const handleSendVerificationEmail = async () => {
         if (auth && auth.email) {
@@ -70,13 +72,13 @@ const VerifyEmailComponent = () => {
                 <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
                     <EmailOutlinedIcon className="text-[28px]" style={{ color: 'var(--settings-primary)' }} />
                 </div>
-                <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>Verificar correo electrónico</h2>
+                <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>{t('verify_email_title')}</h2>
             </div>
 
             <div className="mb-6 flex items-center gap-3 rounded-xl border p-4" style={{ borderColor: 'var(--settings-border)', backgroundColor: 'var(--settings-bg)' }}>
                 <EmailOutlinedIcon style={{ color: 'var(--settings-muted)' }} />
                 <p style={{ color: 'var(--settings-muted)', margin: 0 }}>
-                    Correo autenticado: <span style={{ fontWeight: 700, color: 'var(--settings-text)' }}>{auth?.email || 'Correo no disponible'}</span>
+                    {t('authenticated_email')} <span style={{ fontWeight: 700, color: 'var(--settings-text)' }}>{auth?.email || t('email_not_available')}</span>
                 </p>
             </div>
 
@@ -116,10 +118,10 @@ const VerifyEmailComponent = () => {
                         {ui.sending ? (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                 <div className="h-4 w-4 animate-spin rounded-full border-[2px] border-[rgba(255,255,255,0.3)] border-b-white"></div>
-                                <span>Enviando...</span>
+                                <span>{t('sending')}</span>
                             </div>
                         ) : (
-                            ui.emailVerified ? 'Verificado' : 'Enviar correo'
+                            ui.emailVerified ? t('verified') : t('send_email')
                         )}
                     </button>
                 </div>

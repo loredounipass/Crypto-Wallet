@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, IconButton } from "../ui/material";
 import useSupport from "../hooks/useSupport";
 
@@ -206,6 +207,7 @@ function CodeBlock({ language, content }) {
 }
 
 const BrivoAgent = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [dismissed, setDismissed] = useState(() => localStorage.getItem('brivoAgentDismissed') === 'true');
   const [mode, setMode] = useState(null);
@@ -360,7 +362,7 @@ const BrivoAgent = () => {
             </div>
             <div>
               <div style={{ color: "#FFF", fontSize: "14px", fontWeight: 600 }}>
-                {mode === "human" ? "Soporte Humano" : "Brivo Agent"}
+                {mode === "human" ? t('brivo_tab_support') : t('brivo_title')}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "1px" }}>
                 <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: mode === "human" ? "#6B7280" : "#10B981" }}></span>
@@ -519,7 +521,7 @@ const BrivoAgent = () => {
             <div style={{ padding: "12px 16px", borderTop: "1px solid #2D2D44", background: "#0F0F1A" }}>
               <form onSubmit={handleSend} style={{ position: "relative", display: "flex", alignItems: "center", background: "#1A1A2E", border: "1px solid #2D2D44", borderRadius: "12px", padding: "4px 4px 4px 14px" }}>
                 <input ref={inputRef} type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={handleKeyDown}
-                  placeholder="Escribe tu mensaje..." disabled={isLoading || isTyping} style={{
+                  placeholder={t('brivo_placeholder')} disabled={isLoading || isTyping} style={{
                     flex: 1, background: "transparent", border: "none", color: "#E2E8F0",
                     fontSize: "13px", outline: "none", padding: "8px 0", fontFamily: "inherit",
                   }}

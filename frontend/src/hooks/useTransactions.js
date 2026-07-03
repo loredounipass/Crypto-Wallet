@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
+import i18n from '../languages/i18n';
 import Transaction from '../services/transaction';
 
 export default function useTransitions(coin) {
@@ -94,8 +95,8 @@ export default function useTransitions(coin) {
                 id: `${completedTxToNotify.transactionId}-${Date.now()}`,
                 kind: isDeposit ? 'deposit' : 'withdraw',
                 message: isDeposit
-                    ? `Deposito completado${normalizedCoin ? ` (${normalizedCoin})` : ''}`
-                    : `Retiro completado${normalizedCoin ? ` (${normalizedCoin})` : ''}`
+                    ? `${i18n.t('tx_deposit_completed')}${normalizedCoin ? ` (${normalizedCoin})` : ''}`
+                    : `${i18n.t('tx_withdraw_completed')}${normalizedCoin ? ` (${normalizedCoin})` : ''}`
             });
         }
     }, [coin]);

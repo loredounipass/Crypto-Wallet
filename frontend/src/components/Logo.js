@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '../ui/material';
 
 const Logo = ({ variant = 'auth' }) => {
+  useTranslation();
   const isSidebarExpanded = variant === 'sidebar-expanded';
   const isSidebarCollapsed = variant === 'sidebar-collapsed';
   const hexagonPath = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, use } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Person as PersonIcon } from '../../ui/icons';
 import useAuth from '../../hooks/useAuth';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -37,6 +38,7 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
 
 /* ── main ── */
 function UserProfileComponent() {
+    const { t } = useTranslation();
     const { updateUserProfile } = useAuth();
     const { auth } = use(AuthContext);
     
@@ -80,7 +82,7 @@ function UserProfileComponent() {
     const handleSave = async () => {
 
         if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-            setToast({ kind: 'error', message: 'Nombre, apellido y correo son obligatorios.' });
+            setToast({ kind: 'error', message: t('fields_required') });
             return;
         }
 
@@ -107,7 +109,7 @@ function UserProfileComponent() {
                 lastName:  lastName.trim(),
             });
 
-            setToast({ kind: 'success', message: '¡Perfil actualizado correctamente!' });
+            setToast({ kind: 'success', message: t('profile_updated') });
         } catch (e) {
             setToast({ kind: 'error', message: e.message });
         } finally {
@@ -125,7 +127,7 @@ function UserProfileComponent() {
                     <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
                         <PersonIcon className="text-[28px]" style={{ color: 'var(--settings-primary)' }} />
                     </div>
-                    <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>Perfil de Usuario</h2>
+                    <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>{t('user_profile_title')}</h2>
                 </div>
 
                 <form
@@ -137,31 +139,31 @@ function UserProfileComponent() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <InputField
                             id="upc-firstName"
-                            label="Primer Nombre"
+                            label={t('first_name')}
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             required
-                            placeholder="Tu nombre"
+                            placeholder={t('first_name_placeholder')}
                         />
                         <InputField
                             id="upc-lastName"
-                            label="Apellido"
+                            label={t('last_name')}
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             required
-                            placeholder="Tu apellido"
+                            placeholder={t('last_name_placeholder')}
                         />
                     </div>
 
                     {/* ── Email ── */}
                     <InputField
                         id="upc-email"
-                        label="Correo Electrónico"
+                        label={t('email')}
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        placeholder="tu@correo.com"
+                        placeholder={t('email_placeholder')}
                     />
 
                     {/* ── Single save button ── */}
@@ -178,9 +180,9 @@ function UserProfileComponent() {
                         {isSubmitting ? (
                             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white" />
-                                Guardando...
+                                {t('saving')}
                             </span>
-                        ) : 'Guardar cambios'}
+                        ) : t('save_changes')}
                     </button>
 
                     {remainingMinutes > 0 && (
@@ -189,7 +191,7 @@ function UserProfileComponent() {
                             backgroundColor: 'rgba(245,158,11,0.1)', 
                             color: 'var(--settings-warning)' 
                         }}>
-                            Espera {remainingMinutes} minuto(s) antes de volver a cambiar tu cuenta.
+                            {t('profile_cooldown', { minutes: remainingMinutes })}
                         </div>
                     )}
                 </form>

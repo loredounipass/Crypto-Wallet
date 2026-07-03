@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 
 export default function P2PChatHeader({
@@ -7,6 +8,7 @@ export default function P2PChatHeader({
   isProvider,
   isSeller
 }) {
+  const { t } = useTranslation();
   const history = useHistory();
   const initial = counterpartName?.charAt(0)?.toUpperCase() || '?';
 
@@ -45,7 +47,7 @@ export default function P2PChatHeader({
           e.currentTarget.style.borderColor = 'transparent';
           e.currentTarget.style.color = '#94A3B8';
         }}
-        title="Regresar"
+        title={t('p2p_back')}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6"></polyline>
@@ -77,7 +79,7 @@ export default function P2PChatHeader({
           {counterpartName}
         </p>
         <p style={{ margin: '1px 0 0', fontSize: 12, color: '#10B981', fontWeight: 500 }}>
-          En línea
+          {t('p2p_online')}
         </p>
       </div>
       {/* Escrow shield icon */}

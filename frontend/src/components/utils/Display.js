@@ -6,15 +6,14 @@ const getDisplayableAddress = (address) => {
     return `${address.slice(0, 12)}...${address.slice(-12)}`
 }
 
-// 1. Aprobando, 2. Procesando, 3. Procesado, 4. Cancelado
 const getStatusName = (code) => {
     return {
-        0: 'Pendiente',
-        1: 'Aprobando',
-        2: 'Procesando',
-        3: 'Completado',
-        4: 'Cancelado'
-    }[code]
+        0: 'tx_status_pending',
+        1: 'tx_status_approving',
+        2: 'tx_status_processing',
+        3: 'tx_status_completed',
+        4: 'tx_status_cancelled',
+    }[code] || 'tx_status_no_info'
 }
 
 export {

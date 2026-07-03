@@ -2,6 +2,7 @@ import { useState, use } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import User from '../services/user';
+import i18n from '../languages/i18n';
 
 export default function useAuth() {
     let history = useHistory();
@@ -72,7 +73,7 @@ export default function useAuth() {
             } else if (data && (data.msg || data.message)) {
                 return data;
             } else {
-                const errorMessage = data?.error || data?.message || 'Error en la verificación';
+                const errorMessage = data?.error || data?.message || i18n.t('2fa_error_verify');
                 setError(errorMessage);
                 return { error: errorMessage };
             }

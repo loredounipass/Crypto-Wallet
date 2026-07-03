@@ -1,25 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useEscrow from '../../hooks/useEscrow';
-
-const STATUS_CONFIG = {
-  pending:    { label: 'Pendiente', color: '#94A3B8', bg: 'rgba(148,163,184,0.10)', icon: '⏳' },
-  funded:     { label: 'En Escrow', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)', icon: '🔒' },
-  buyer_paid: { label: 'Pago Confirmado', color: '#3B82F6', bg: 'rgba(59,130,246,0.10)', icon: '✅' },
-  released:   { label: 'Liberando', color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)', icon: '🚀' },
-  completed:  { label: 'Completado', color: '#10B981', bg: 'rgba(16,185,129,0.10)', icon: '🎉' },
-  disputed:   { label: 'Disputa', color: '#EF4444', bg: 'rgba(239,68,68,0.10)', icon: '⚠️' },
-  refunded:   { label: 'Reembolsado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '↩️' },
-  cancelled:  { label: 'Cancelado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '❌' },
-  expired:    { label: 'Expirado', color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '⏰' },
-};
-
-const FILTER_TABS = [
-  { key: 'all', label: 'Todas' },
-  { key: 'active', label: 'Activas' },
-  { key: 'completed', label: 'Completadas' },
-  { key: 'other', label: 'Otras' },
-];
 
 const formatName = (nameStr) => {
   if (!nameStr || nameStr.includes('@')) return nameStr;
@@ -29,8 +11,28 @@ const formatName = (nameStr) => {
 };
 
 const ProviderChatComponent = () => {
+  const { t } = useTranslation();
   const history = useHistory();
   const { providerOrders, getProviderOrders, isLoading, error } = useEscrow();
+
+  const STATUS_CONFIG = {
+    pending:    { label: t('p2p_status_pending'), color: '#94A3B8', bg: 'rgba(148,163,184,0.10)', icon: '⏳' },
+    funded:     { label: t('p2p_status_funded'), color: '#F59E0B', bg: 'rgba(245,158,11,0.10)', icon: '🔒' },
+    buyer_paid: { label: t('p2p_status_buyer_paid'), color: '#3B82F6', bg: 'rgba(59,130,246,0.10)', icon: '✅' },
+    released:   { label: t('p2p_status_released'), color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)', icon: '🚀' },
+    completed:  { label: t('p2p_status_completed'), color: '#10B981', bg: 'rgba(16,185,129,0.10)', icon: '🎉' },
+    disputed:   { label: t('p2p_status_disputed'), color: '#EF4444', bg: 'rgba(239,68,68,0.10)', icon: '⚠️' },
+    refunded:   { label: t('p2p_status_refunded'), color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '↩️' },
+    cancelled:  { label: t('p2p_status_cancelled'), color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '❌' },
+    expired:    { label: t('p2p_status_expired'), color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '⏰' },
+  };
+
+  const FILTER_TABS = [
+    { key: 'all', label: t('p2p_all') },
+    { key: 'active', label: t('p2p_active') },
+    { key: 'completed', label: t('p2p_completed_orders') },
+    { key: 'other', label: t('p2p_other') },
+  ];
   const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
@@ -70,11 +72,11 @@ const ProviderChatComponent = () => {
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
-              Órdenes P2P
+              {t('p2p_orders_title')}
             </h2>
             <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748B' }}>
-              {providerOrders.length} {providerOrders.length === 1 ? 'orden' : 'órdenes'} como proveedor
-              {activeCount > 0 && <span style={{ color: '#F59E0B', fontWeight: 600 }}> · {activeCount} activa{activeCount > 1 ? 's' : ''}</span>}
+              {t('p2p_orders_count_plural', { count: providerOrders.length })}
+              {activeCount > 0 && <span style={{ color: '#F59E0B', fontWeight: 600 }}> · {t('p2p_active_count', { count: activeCount })}</span>}
             </p>
           </div>
         </div>
@@ -103,7 +105,7 @@ const ProviderChatComponent = () => {
             <polyline points="1 20 1 14 7 14"></polyline>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
-          {isLoading ? 'Cargando...' : 'Actualizar'}
+          {t(isLoading ? 'p2p_loading' : 'p2p_refresh')}
         </button>
       </div>
 
@@ -145,7 +147,7 @@ const ProviderChatComponent = () => {
             borderRadius: '50%', animation: 'spin 0.8s linear infinite',
             display: 'inline-block',
           }} />
-          <span style={{ fontSize: 14, color: '#94A3B8' }}>Cargando órdenes...</span>
+          <span style={{ fontSize: 14, color: '#94A3B8' }}>{t('p2p_loading_orders')}</span>
         </div>
       )}
 
@@ -159,7 +161,7 @@ const ProviderChatComponent = () => {
         }}>
           <span style={{ fontSize: 18 }}>⚠️</span>
           <p style={{ margin: 0, fontSize: 13, color: '#FCA5A5' }}>
-            {error.message || 'No se pudieron cargar las órdenes del proveedor.'}
+            {error.message || t('p2p_load_error')}
           </p>
         </div>
       )}
@@ -180,8 +182,8 @@ const ProviderChatComponent = () => {
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#94A3B8' }}>Aún no tienes órdenes P2P</p>
-          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B' }}>Las órdenes asignadas aparecerán aquí</p>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#94A3B8' }}>{t('p2p_no_orders_empty')}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B' }}>{t('p2p_no_orders_desc')}</p>
         </div>
       )}
 
@@ -192,7 +194,7 @@ const ProviderChatComponent = () => {
           borderRadius: 16, backgroundColor: '#1A1A2E',
           border: '1px solid #2D2D44',
         }}>
-          <p style={{ margin: 0, fontSize: 14, color: '#64748B' }}>No hay órdenes en esta categoría</p>
+          <p style={{ margin: 0, fontSize: 14, color: '#64748B' }}>{t('p2p_no_orders_category')}</p>
         </div>
       )}
 

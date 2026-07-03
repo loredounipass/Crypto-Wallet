@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
+import i18n from '../languages/i18n';
 import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
 import useAllWallets from "../hooks/useAllWallets";
 import { useHistory } from "react-router-dom";
@@ -11,6 +13,7 @@ const SwapIcon = SwapHoriz;
 const TrendingIcon = TrendingUp;
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { allWalletInfo, walletBalance } = useAllWallets();
   const [loading, setLoading] = useState(true);
   const { transactions, toast, dismissToast } = useTransitions(null);
@@ -35,13 +38,13 @@ const Dashboard = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Buenos dias";
-    if (hour < 18) return "Buenas tardes";
-    return "Buenas noches";
+    if (hour < 12) return t('dashboard_greeting_morning');
+    if (hour < 18) return t('dashboard_greeting_afternoon');
+    return t('dashboard_greeting_evening');
   };
 
   const formatDate = () => {
-    return new Date().toLocaleDateString("es-ES", {
+    return new Date().toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -154,7 +157,7 @@ const Dashboard = () => {
                 marginTop: 0,
               }}
             >
-              Balance Total
+              {t('dashboard_total_balance')}
             </p>
             <p
               style={{ 
@@ -183,7 +186,7 @@ const Dashboard = () => {
                 marginTop: 0,
               }}
             >
-              Billeteras Activas
+              {t('dashboard_active_wallets')}
             </p>
             <p
               style={{ 
@@ -213,7 +216,7 @@ const Dashboard = () => {
                 lineHeight: 1,
               }}
             >
-              Ver mas
+              {t('dashboard_view_more')}
             </button>
           </div>
         </div>
@@ -229,7 +232,7 @@ const Dashboard = () => {
                 marginTop: 0,
               }}
             >
-              Transacciones Recientes
+              {t('dashboard_recent_transactions')}
             </p>
             <p
               style={{ 
@@ -252,7 +255,7 @@ const Dashboard = () => {
       <div className="rounded-2xl" style={sectionStyle}>
         <CoinTransactions
           transactions={transactions}
-          title="Transacciones Recientes"
+          title={t('dashboard_recent_transactions')}
           hideDateOnMobile
           compactMobile
           fixedHeight

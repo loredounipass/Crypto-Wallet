@@ -1,4 +1,5 @@
 import React, { useState, use } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Visibility,
     VisibilityOff,
@@ -43,6 +44,7 @@ const PasswordInput = ({ name, label, value, showPassword, onToggle, handleChang
 );
 
 function ChangePasswordComponent() {
+    const { t } = useTranslation();
     const { changePassword } = useAuth();
     const { auth } = use(AuthContext);
     
@@ -85,12 +87,12 @@ function ChangePasswordComponent() {
 
     const handleChangePassword = async () => {
         if (passwords.newPassword !== passwords.confirmNewPassword) {
-            setToast({ kind: 'error', message: 'Las nuevas contraseñas no coinciden.' });
+            setToast({ kind: 'error', message: t('passwords_dont_match') });
             return;
         }
 
         if (passwords.currentPassword === passwords.newPassword) {
-            setToast({ kind: 'error', message: 'La nueva contraseña no puede ser igual a la actual.' });
+            setToast({ kind: 'error', message: t('password_same_as_current') });
             return;
         }
 
@@ -116,7 +118,7 @@ function ChangePasswordComponent() {
                         <LockIcon className="text-[28px]" style={{ color: 'var(--settings-primary)' }} />
                     </div>
                     <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>
-                        Cambiar Contraseña
+                        {t('change_password_title')}
                     </h2>
                 </div>
 
@@ -127,7 +129,7 @@ function ChangePasswordComponent() {
                 >
                     <PasswordInput
                         name="currentPassword"
-                        label="Contraseña Actual"
+                        label={t('current_password')}
                         value={passwords.currentPassword}
                         showPassword={showPasswords.currentPassword}
                         onToggle={handleTogglePasswordVisibility}
@@ -135,7 +137,7 @@ function ChangePasswordComponent() {
                     />
                     <PasswordInput
                         name="newPassword"
-                        label="Nueva Contraseña"
+                        label={t('new_password')}
                         value={passwords.newPassword}
                         showPassword={showPasswords.newPassword}
                         onToggle={handleTogglePasswordVisibility}
@@ -143,7 +145,7 @@ function ChangePasswordComponent() {
                     />
                     <PasswordInput
                         name="confirmNewPassword"
-                        label="Confirmar Contraseña"
+                        label={t('confirm_password')}
                         value={passwords.confirmNewPassword}
                         showPassword={showPasswords.confirmNewPassword}
                         onToggle={handleTogglePasswordVisibility}
@@ -158,7 +160,7 @@ function ChangePasswordComponent() {
                         onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--settings-primary-hover)'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--settings-primary)'}
                     >
-                        {isSubmitting ? 'Cambiando...' : 'Cambiar Contraseña'}
+                        {isSubmitting ? t('changing') : t('change_password_btn')}
                     </button>
 
                     {remainingMinutes > 0 && (
@@ -167,7 +169,7 @@ function ChangePasswordComponent() {
                             backgroundColor: 'rgba(245,158,11,0.1)', 
                             color: 'var(--settings-warning)' 
                         }}>
-                            No puedes cambiar la contraseña por otros {remainingMinutes} minuto(s).
+                            {t('password_cooldown', { minutes: remainingMinutes })}
                         </div>
                     )}
                 </form>

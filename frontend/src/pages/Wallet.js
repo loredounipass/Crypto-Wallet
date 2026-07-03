@@ -124,23 +124,23 @@ export default function Wallet() {
         const amountNumber = Number(withdrawAmount);
 
         if (!withdrawAmount || !normalizedAddress) {
-            setError('Ingresa una dirección y cantidad válida.');
+            setError(t('wallet_error_invalid_input', 'Ingresa una dirección y cantidad válida.'));
             return;
         }
         if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-            setError('Ingresa un monto válido mayor a 0.');
+            setError(t('wallet_error_invalid_amount', 'Ingresa un monto válido mayor a 0.'));
             return;
         }
         if (!isValidAddressForCoin(normalizedAddress, coinCode)) {
-            setError(`Dirección inválida para ${coinCode.toUpperCase()}.`);
+            setError(t('wallet_error_invalid_address_coin', `Dirección inválida para ${coinCode.toUpperCase()}.`));
             return;
         }
         if (amountNumber > maxWithdrawable) {
-            setError(`Monto inválido. Máximo disponible: ${maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))}`);
+            setError(t('wallet_error_exceeds_max', `Monto inválido. Máximo disponible: ${maxWithdrawable.toFixed(getCoinDecimalsPlace(coinCode))}`));
             return;
         }
         if (amountNumber <= fee) {
-            setError(`Monto inválido. El monto debe ser mayor a la comisión (${fee} ${coinCode.toUpperCase()})`);
+            setError(t('wallet_error_fee_exceeds', `Monto inválido. El monto debe ser mayor a la comisión (${fee} ${coinCode.toUpperCase()})`));
             return;
         }
         setWithdrawLoading(true);
@@ -197,7 +197,7 @@ export default function Wallet() {
                 refreshTokens();
                 getTransactions();
             } else {
-                setError(result?.msg || result?.message || 'Error al procesar retiro');
+                setError(result?.msg || result?.message || t('wallet_error_generic'));
             }
         } catch (err) {
             setError(err.message);
@@ -207,15 +207,15 @@ export default function Wallet() {
     };
 
     const getWithdrawButtonText = () => {
-        if (withdrawLoading) return 'Procesando...';
-        if (hasInsufficientFunds) return 'Fondos Insuficientes';
-        if (!withdrawAmount || Number(withdrawAmount) <= 0) return 'Ingresa un monto';
-        if (Number(withdrawAmount) <= fee) return 'Monto debe ser > comisión';
-        if (Number(withdrawAmount) > maxWithdrawable) return 'Monto excede máximo';
-        if (Number(withdrawAmount) < minWithdraw) return 'Monto < mínimo';
-        if (!withdrawAddress) return 'Ingresa una dirección';
-        if (!isValidAddressForCoin(withdrawAddress, coinCode)) return 'Dirección Inválida';
-        return 'Retirar';
+        if (withdrawLoading) return t('wallet_btn_processing', 'Procesando...');
+        if (hasInsufficientFunds) return t('wallet_btn_insufficient_funds', 'Fondos Insuficientes');
+        if (!withdrawAmount || Number(withdrawAmount) <= 0) return t('wallet_btn_enter_amount', 'Ingresa un monto');
+        if (Number(withdrawAmount) <= fee) return t('wallet_btn_amount_gt_fee', 'Monto debe ser > comisión');
+        if (Number(withdrawAmount) > maxWithdrawable) return t('wallet_btn_exceeds_max', 'Monto excede máximo');
+        if (Number(withdrawAmount) < minWithdraw) return t('wallet_btn_lt_min', 'Monto < mínimo');
+        if (!withdrawAddress) return t('wallet_btn_enter_address', 'Ingresa una dirección');
+        if (!isValidAddressForCoin(withdrawAddress, coinCode)) return t('wallet_btn_invalid_address', 'Dirección Inválida');
+        return t('wallet_btn_withdraw', 'Retirar');
     };
 
     const canWithdraw = Number.isFinite(Number(withdrawAmount))
@@ -339,10 +339,10 @@ export default function Wallet() {
     const depositSection = (
         <div style={actionSectionStyle}>
             <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
-                Depositar
+                {t('wallet_deposit_title')}
             </h2>
             <div style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "16px" }}>
-                Tu direccion ({walletInfo?.coin || walletId} - {getNetworkName(walletInfo?.chainId || defaultNetworkId)})
+                {t('wallet_your_address', { coin: walletInfo?.coin || walletId, network: getNetworkName(walletInfo?.chainId || defaultNetworkId) })}
             </div>
             
             <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "12px", marginBottom: isMobile ? "12px" : "0" }}>
@@ -364,7 +364,7 @@ export default function Wallet() {
                         e.currentTarget.style.transform = "scale(1)";
                         e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
                     }}
-                    title="Toca para ampliar el código QR"
+                    title={t('wallet_tap_qr')}
                 >
                     <QRCode value={walletInfo?.address || ''} size={isMobile ? 120 : 160} />
                 </div>
@@ -411,8 +411,8 @@ export default function Wallet() {
                                 e.currentTarget.style.transform = "translateY(-50%) scale(1)";
                             }
                         }}
-                        aria-label="Copiar dirección"
-                        title="Copiar dirección"
+                        aria-label={t('wallet_copy_address')}
+                        title={t('wallet_copy_address')}
                     >
                         {copied ? <CheckIcon size={18} color="#4CAF50" /> : <CopyIcon size={18} color="#2186EB" />}
                     </button>
@@ -429,7 +429,7 @@ export default function Wallet() {
                 fontWeight: 500,
                 paddingLeft: "4px"
             }}>
-                ¡Dirección copiada exitosamente!
+                {t('wallet_address_copied')}
             </div>
         </div>
     );
@@ -437,7 +437,7 @@ export default function Wallet() {
     const withdrawSection = (
         <div style={actionSectionStyle}>
             <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
-                Retirar
+                {t('wallet_withdraw_title')}
             </h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -446,10 +446,10 @@ export default function Wallet() {
                         type="text"
                         value={withdrawAddress}
                         onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
-                        placeholder={`Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`}
+                        placeholder={t('wallet_address_placeholder', `Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`)}
                         style={{ ...styles.input, paddingRight: "58px" }}
                     />
-                    <button type="button" onClick={() => setIsScannerOpen(true)} style={{...styles.inputActionButton, minWidth: "44px", height: "36px"}} aria-label="Escanear QR">
+                    <button type="button" onClick={() => setIsScannerOpen(true)} style={{...styles.inputActionButton, minWidth: "44px", height: "36px"}} aria-label={t('wallet_scan_qr')}>
                         <ScanIcon size={20} />
                     </button>
                 </div>
@@ -459,7 +459,7 @@ export default function Wallet() {
                         type="number"
                         value={withdrawAmount || ''}
                         onChange={(e) => { setWithdrawAmount(e.target.value); setError(''); }}
-                        placeholder="Cantidad"
+                        placeholder={t('wallet_amount_placeholder', "Cantidad")}
                         style={{ ...styles.input, paddingRight: "58px" }}
                     />
                     <button type="button" onClick={setMaxAmount} style={styles.inputActionButton}>
@@ -477,23 +477,23 @@ export default function Wallet() {
 
                 {hasInsufficientFunds && (
                     <div style={{ color: "#F44336", fontSize: "14px", fontWeight: 500, textAlign: 'center' }}>
-                        Monto mínimo de retiro: {minWithdraw} {coinCode.toUpperCase()}
+                        {t('wallet_min_withdraw', { amount: minWithdraw, coin: coinCode.toUpperCase() })}
                     </div>
                 )}
 
                 {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
 
                 <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                    Comision de red: {fee} {walletInfo?.coin || coinCode.toUpperCase()}
+                    {t('wallet_network_fee', { fee, coin: walletInfo?.coin || coinCode.toUpperCase() })}
                 </div>
                 {withdrawAmount && Number(withdrawAmount) > 0 && (
                     <div style={{ color: "#9CA3AF", fontSize: "12px", marginTop: "-8px" }}>
-                        Recibirás: {Math.max(0, Number(withdrawAmount) - fee).toFixed(getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
+                        {t('wallet_you_will_receive', { amount: Math.max(0, Number(withdrawAmount) - fee).toFixed(getCoinDecimalsPlace(coinCode)), coin: walletInfo?.coin || coinCode.toUpperCase() })}
                     </div>
                 )}
                 {maxWithdrawable > 0 && (
                     <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                        Máximo disponible: {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))} {walletInfo?.coin || coinCode.toUpperCase()}
+                        {t('wallet_max_available', { amount: truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode)), coin: walletInfo?.coin || coinCode.toUpperCase() })}
                     </div>
                 )}
             </div>
@@ -503,7 +503,7 @@ export default function Wallet() {
     if (isWalletLoading) {
         return (
             <div style={styles.container}>
-                <div style={{ color: "#9CA3AF" }}>Cargando...</div>
+                <div style={{ color: "#9CA3AF" }}>{t('wallet_loading')}</div>
                 <TransactionToast toast={toast} onClose={dismissToast} />
             </div>
         );
@@ -517,7 +517,7 @@ export default function Wallet() {
                 onClick={() => history.push('/wallets')}
             >
                 <BackIcon size={16} color="#A5B4FC" />
-                <span>Volver a Billeteras</span>
+                <span>{t('wallet_back')}</span>
             </div>
 
             {!isWalletLoading && walletInfo ? (
@@ -642,14 +642,14 @@ export default function Wallet() {
                                         style={styles.actionTab(activeAction === 'deposit')}
                                         onClick={() => setActiveAction('deposit')}
                                     >
-                                        Depositar
+                                        {t('wallet_deposit_tab')}
                                     </button>
                                     <button
                                         type="button"
                                         style={styles.actionTab(activeAction === 'withdraw')}
                                         onClick={() => setActiveAction('withdraw')}
                                     >
-                                        Retirar
+                                        {t('wallet_withdraw_tab')}
                                     </button>
                                 </div>
                                 {activeAction === 'deposit' ? depositSection : withdrawSection}
@@ -665,7 +665,7 @@ export default function Wallet() {
                     {/* Transactions */}
                     <div className="rounded-2xl" style={styles.section}>
                         <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
-                            Transacciones
+                            {t('wallet_transactions')}
                         </h2>
                         <CoinTransactions
                             transactions={transactions}
@@ -682,14 +682,14 @@ export default function Wallet() {
             ) : walletInfo === null ? (
                 <div style={styles.section}>
                     <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, textAlign: "center", marginBottom: "12px" }}>
-                        Crear Billetera {walletId.toUpperCase()}
+                        {t('wallet_create_title', { coin: walletId.toUpperCase() })}
                     </h2>
                     <div style={{ textAlign: "center", marginBottom: "16px", color: "#9CA3AF" }}>
-                        No tienes una billetera para esta moneda
+                        {t('wallet_no_wallet')}
                     </div>
                     <div style={{ display: "flex", justifyContent: "center" }}>
                         <button onClick={handleCreateWallet} disabled={creating} style={styles.button(true)}>
-                            {creating ? 'Creando...' : 'Crear Billetera'}
+                            {creating ? t('wallet_creating') : t('wallet_create_btn')}
                         </button>
                     </div>
                 </div>
@@ -827,7 +827,7 @@ export default function Wallet() {
                             }}
                             className="mt-4 bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none rounded-xl px-4 py-3 font-semibold text-sm cursor-pointer w-full transition-opacity duration-200 hover:opacity-90"
                         >
-                            Copiar Dirección
+                            {t('wallet_copy_address')}
                         </button>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, use, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 // Force Webpack recompile
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -18,6 +19,7 @@ import useCounterpart from '../../hooks/useCounterpart';
 import useP2PChatState from '../../hooks/useP2PChatState';
 
 export default function P2POrderChat() {
+  const { t } = useTranslation();
   const { orderId } = useParams();
   const { auth } = use(AuthContext);
   
@@ -129,7 +131,7 @@ export default function P2POrderChat() {
             </svg>
           </div>
         </div>
-        Cargando orden...
+        {t('p2p_loading_order')}
       </div>
     );
   }
@@ -156,22 +158,14 @@ export default function P2POrderChat() {
         />
 
         {/* Messages */}
-        <div className="p2p-chat-messages-scroll" style={{
+        <div style={{
           flex: 1,
           minHeight: 0,
-          overflowY: 'auto',
-          padding: 16,
+          padding: '16px 16px 0',
           backgroundColor: 'transparent',
-        }}>
-          <div style={{
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100%',
-          justifyContent: 'flex-end',
-          maxWidth: 900,
-          margin: '0 auto',
-          width: '100%',
-          }}>
+        }}>
           <P2PChatMessagesList
             messages={messages}
             authId={auth?._id}
@@ -180,7 +174,6 @@ export default function P2POrderChat() {
             messagesEndRef={messagesEndRef}
             borderColor={borderColor}
           />
-          </div>
         </div>
 
         {/* Typing indicator - centered below chat */}
@@ -199,7 +192,7 @@ export default function P2POrderChat() {
                   }
                 `}
               </style>
-              <span style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 500 }}>escribiendo</span>
+              <span style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 500 }}>{t('p2p_typing')}</span>
               <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginLeft: 2 }}>
                 <div style={{ width: 4, height: 4, backgroundColor: '#FFFFFF', borderRadius: '50%', animation: 'typingDot 1.4s infinite ease-in-out both' }} />
                 <div style={{ width: 4, height: 4, backgroundColor: '#FFFFFF', borderRadius: '50%', animation: 'typingDot 1.4s infinite ease-in-out both', animationDelay: '0.2s' }} />
@@ -258,7 +251,7 @@ export default function P2POrderChat() {
             flex: 1
           }}>
           <ChatBubbleIcon />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>Chat</span>
+          <span style={{ fontSize: 12, fontWeight: 600 }}>{t('p2p_chat_tab')}</span>
         </button>
         <button 
           onClick={() => setActiveMobileTab('details')}
@@ -268,7 +261,7 @@ export default function P2POrderChat() {
             flex: 1
           }}>
           <FileTextIcon />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>Detalles</span>
+          <span style={{ fontSize: 12, fontWeight: 600 }}>{t('p2p_details_tab')}</span>
         </button>
       </div>
 

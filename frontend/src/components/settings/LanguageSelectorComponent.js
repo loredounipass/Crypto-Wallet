@@ -1,38 +1,54 @@
-import React, { useEffect } from 'react';
-import { Check as CheckIcon, Language as LanguageIcon } from '../../ui/icons';
+import React, { useEffect, useState } from 'react';
+import { Language as LanguageIcon } from '../../ui/icons';
 import { useLanguage } from '../../hooks/LanguageContext';
 import { useTranslation } from 'react-i18next';
-import i18n from '../../i18n';
 import TransactionToast from '../TransactionToast';
-import { useState } from 'react';
+import LanguagesService from '../../services/languages';
 
 import './Settings.css';
 
+const Switch = ({ checked, onChange, disabled }) => (
+  <button
+    onClick={disabled ? null : onChange}
+    className={`relative h-6 w-12 rounded-xl border-0 p-[2px] transition-colors ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+    style={{ backgroundColor: checked ? 'var(--settings-primary)' : 'var(--settings-border)' }}
+    role="switch"
+    aria-checked={checked}
+  >
+    <span
+      className={`block h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-0'}`}
+    />
+  </button>
+);
 
 function LanguageSelectorComponent() {
     const { language, handleLanguageChange } = useLanguage();
     const { t } = useTranslation();
     const [toast, setToast] = useState(null);
-    
-    
-
-    const languageOptions = {
-        es: 'Español',
-        en: 'English',
-    };
+    const [languageOptions, setLanguageOptions] = useState([]);
 
     useEffect(() => {
-        const savedLanguage = localStorage.getItem('language');
-        if (savedLanguage) {
-            handleLanguageChange(savedLanguage);
-            i18n.changeLanguage(savedLanguage);
-        }
-    }, [handleLanguageChange]);
+        const fetchLanguages = async () => {
+            try {
+                const res = await LanguagesService.getAllLanguages();
+                if (res && res.data && Array.isArray(res.data)) {
+                    setLanguageOptions(res.data);
+                }
+            } catch {
+                setLanguageOptions([
+                    { code: 'es', name: 'Spanish', nativeName: 'Español', active: language === 'es' },
+                    { code: 'en', name: 'English', nativeName: 'English', active: language === 'en' },
+                ]);
+            }
+        };
+        fetchLanguages();
+    }, [language]);
 
-    const handleSelect = (langKey) => {
-        handleLanguageChange(langKey);
-        i18n.changeLanguage(langKey);
-        localStorage.setItem('language', langKey);
+    const handleToggle = (langKey) => {
+        const newLang = langKey === language
+            ? languageOptions.find(l => l.code !== langKey)?.code || 'es'
+            : langKey;
+        handleLanguageChange(newLang);
         setToast({ kind: 'success', message: t('language_changed', 'Idioma cambiado exitosamente') });
     };
 
@@ -48,34 +64,24 @@ function LanguageSelectorComponent() {
              </div>
 
             <div className="flex flex-col gap-3">
-                {Object.entries(languageOptions).map(([key, value]) => {
-                    const isSelected = language === key;
+                {languageOptions.map((lang) => {
+                    const isSelected = language === lang.code;
                     return (
-                        <button
-                            key={key}
-                            onClick={() => handleSelect(key)}
-                            className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-5 py-4 font-medium transition-all ${isSelected ? 'bg-[rgba(33,134,235,0.05)]' : ''}`}
-                            style={{ 
-                              borderColor: isSelected ? 'var(--settings-primary)' : 'var(--settings-border)', 
-                              backgroundColor: isSelected ? 'rgba(33,134,235,0.05)' : 'var(--settings-card)', 
+                        <div
+                            key={lang.code}
+                            className="flex w-full items-center justify-between rounded-xl border px-5 py-4 transition-all"
+                            style={{
+                              borderColor: isSelected ? 'var(--settings-primary)' : 'var(--settings-border)',
+                              backgroundColor: isSelected ? 'rgba(33,134,235,0.05)' : 'var(--settings-card)',
                               color: 'var(--settings-text)'
                             }}
-                            onMouseEnter={(e) => {
-                              e.target.style.borderColor = 'var(--settings-primary)';
-                              e.target.style.backgroundColor = 'var(--settings-bg)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.borderColor = isSelected ? 'var(--settings-primary)' : 'var(--settings-border)';
-                              e.target.style.backgroundColor = isSelected ? 'rgba(33,134,235,0.05)' : 'var(--settings-card)';
-                            }}
                         >
-                            <span className="text-lg">{value}</span>
-                            {isSelected && (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--settings-primary)' }}>
-                                    <CheckIcon style={{ color: 'white', fontSize: '0.875rem' }} />
-                                </div>
-                            )}
-                        </button>
+                            <span className="text-lg">{lang.nativeName || lang.name}</span>
+                            <Switch
+                                checked={isSelected}
+                                onChange={() => handleToggle(lang.code)}
+                            />
+                        </div>
                     );
                 })}
             </div>

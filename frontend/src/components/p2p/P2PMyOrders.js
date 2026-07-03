@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 
 const STATUS_COLORS = {
@@ -8,14 +8,15 @@ const STATUS_COLORS = {
   cancelled: '#6B7280', expired: '#6B7280', pending: '#94A3B8',
 };
 
-const STATUS_LABELS = {
-  pending: 'Pendiente', funded: 'En Escrow', buyer_paid: 'Pago Confirmado',
-  released: 'Liberando', completed: 'Completado', disputed: 'En Disputa',
-  refunded: 'Reembolsado', cancelled: 'Cancelado', expired: 'Expirado',
-};
-
 export default function P2PMyOrders({ orders, userRole = 'seller' }) {
+  const { t } = useTranslation();
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
+
+  const STATUS_LABELS = {
+    pending: t('p2p_status_pending'), funded: t('p2p_status_funded'), buyer_paid: t('p2p_status_buyer_paid'),
+    released: t('p2p_status_released'), completed: t('p2p_status_completed'), disputed: t('p2p_status_disputed'),
+    refunded: t('p2p_status_refunded'), cancelled: t('p2p_status_cancelled'), expired: t('p2p_status_expired'),
+  };
   
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 640);
@@ -48,7 +49,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
             </svg>
           </div>
         </div>
-        No tienes órdenes P2P aún
+        {t('p2p_no_orders')}
       </div>
     );
   }
@@ -94,13 +95,13 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
 
               <div style={{ padding: '12px', backgroundColor: '#1A1A2E', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>Crypto</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t('p2p_crypto')}</p>
                   <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#F1F5F9' }}>
                     {order.amount} <span style={{ fontSize: 12, color: '#9CA3AF' }}>{order.coin}</span>
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>Fiat</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t('p2p_fiat')}</p>
                   <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#8B5CF6' }}>
                     ${order.fiatAmount} <span style={{ fontSize: 12, color: '#9CA3AF' }}>USD</span>
                   </p>
@@ -108,7 +109,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
               </div>
 
               <div>
-                <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{userRole === 'seller' ? 'Proveedor' : 'Vendedor'}</p>
+                <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t(userRole === 'seller' ? 'p2p_provider' : 'p2p_seller')}</p>
                 <p style={{ margin: 0, fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {counterparty}
                 </p>
@@ -128,7 +129,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
                 onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)'; }}
                 onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                Ver Orden
+                {t('p2p_view_order')}
               </button>
             </div>
           );
@@ -147,12 +148,12 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
         borderBottom: `1px solid ${'#1E1E2E'}`,
         minWidth: 700,
       }}>
-        <span>Orden</span>
-        <span>{userRole === 'seller' ? 'Proveedor' : 'Vendedor'}</span>
-        <span>Cantidad</span>
-        <span>Fiat</span>
-        <span>Estado</span>
-        <span style={{ textAlign: 'right' }}>Acción</span>
+        <span>{t('p2p_order_header')}</span>
+        <span>{t(userRole === 'seller' ? 'p2p_provider' : 'p2p_seller')}</span>
+        <span>{t('p2p_amount')}</span>
+        <span>{t('p2p_fiat')}</span>
+        <span>{t('p2p_status')}</span>
+        <span style={{ textAlign: 'right' }}>{t('p2p_action')}</span>
       </div>
 
       {/* Rows */}
@@ -245,7 +246,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
                 onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
                 onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
               >
-                Ver
+                {t('p2p_view')}
               </button>
             </div>
           </div>

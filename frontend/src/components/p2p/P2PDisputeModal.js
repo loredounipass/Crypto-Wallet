@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
   
   
@@ -38,9 +40,9 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
             <h3 style={{
               margin: 0, fontSize: 18, fontWeight: 700,
               color: '#F1F5F9',
-            }}>Abrir Disputa</h3>
+            }}>{t('p2p_dispute_title')}</h3>
             <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
-              Describe el problema con esta orden
+              {t('p2p_dispute_description')}
             </p>
           </div>
         </div>
@@ -49,7 +51,7 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Explica la razón de la disputa..."
+          placeholder={t('p2p_dispute_placeholder')}
           rows={4}
           style={{
             width: '100%', padding: 12, borderRadius: 10, fontSize: 14,
@@ -75,7 +77,7 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
               cursor: 'pointer',
             }}
           >
-            Cancelar
+            {t('p2p_cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -89,7 +91,7 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
               opacity: isLoading ? 0.7 : 1,
             }}
           >
-            {isLoading ? 'Enviando...' : 'Abrir Disputa'}
+            {t(isLoading ? 'p2p_sending' : 'p2p_dispute_title')}
           </button>
         </div>
       </div>

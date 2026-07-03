@@ -21,6 +21,7 @@ import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile';
 import { UpdateTokenStatusDto } from './dto/update-token-status.dto';
+import { UpdateLanguageDto } from './dto/update-language.dto';
 import { ForgotPasswordService } from './forgot.password.service';
 import { ResendTokenDto } from './dto/resend-token.dto';
 
@@ -98,6 +99,22 @@ export class UserController {
     return this.userService.getTokenStatus(email);
   }
 
+
+  // Route for updating the user's language preference
+  @UseGuards(AuthenticatedGuard, EmailThrottlerGuard)
+  @Patch('language')
+  async updateLanguage(@Request() req, @Body() updateLanguageDto: UpdateLanguageDto) {
+    const email = req.user.email;
+    return this.userService.updateLanguage(email, updateLanguageDto.language);
+  }
+
+  // Route for retrieving the user's language preference
+  @UseGuards(AuthenticatedGuard)
+  @Get('language')
+  async getUserLanguage(@Request() req) {
+    const email = req.user.email;
+    return this.userService.getUserLanguage(email);
+  }
 
   // Route for retrieving the authenticated user's information. It uses the AuthenticatedGuard to ensure that only authenticated users can access this route, and returns the user's data from the request object.
   @UseGuards(AuthenticatedGuard)

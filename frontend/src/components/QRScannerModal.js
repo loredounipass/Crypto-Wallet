@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Html5Qrcode } from 'html5-qrcode';
 
 const CloseIcon = ({ size = 24, color = "currentColor" }) => (
@@ -18,6 +19,7 @@ const CameraFlipIcon = ({ size = 24, color = "currentColor" }) => (
 );
 
 const QRScannerModal = ({ isOpen, onClose, onScan }) => {
+    const { t } = useTranslation();
     const facingMode = useRef("environment");
     const [error, setError] = useState("");
     const [scanSuccess, setScanSuccess] = useState(false);
@@ -290,7 +292,7 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
             </style>
             <div className="web3-container">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #2D2D44" }}>
-                    <h3 className="web3-title">Escanear Dirección</h3>
+                    <h3 className="web3-title">{t('qr_title')}</h3>
                     <div style={{ display: "flex", gap: "12px" }}>
                         <button onClick={toggleCamera} style={{ background: "none", border: "1px solid #2D2D44", color: "#FFFFFF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "6px", backgroundColor: "#2D2D44", borderRadius: "8px" }}>
                             <CameraFlipIcon size={20} />
@@ -325,7 +327,7 @@ const QRScannerModal = ({ isOpen, onClose, onScan }) => {
                         <div id="qr-reader" style={{ width: "100%", border: "none", position: "relative", zIndex: 1 }}></div>
                     </div>
                     <p className="web3-text">
-                        {scanSuccess ? "¡Código QR Encontrado!" : "Alinea el código QR dentro del marco"}
+                        {scanSuccess ? t('qr_scanned') : "Alinea el código QR dentro del marco"}
                     </p>
                 </div>
             </div>

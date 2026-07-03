@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { getDisplayableTxHash, getStatusName } from './utils/Display';
 import {
     getCoinDecimalsPlace,
@@ -51,7 +52,7 @@ export default function CoinTransactions({
     transactions,
     coin,
     chainId,
-    title = 'Historial de transacciones',
+    title,
     showCoinColumn = false,
     hideDateOnMobile = false,
     compactMobile = false,
@@ -59,6 +60,7 @@ export default function CoinTransactions({
     desktopHeight = 420,
     mobileHeight = 300
 }) {
+    const { t } = useTranslation();
     const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
     
     
@@ -250,12 +252,12 @@ export default function CoinTransactions({
         return (
             <div style={styles.container}>
                 <div style={styles.titleRow}>
-                    <h3 style={styles.title}>{title}</h3>
-                    <span style={styles.countBadge}>0 movimientos</span>
+                    <h3 style={styles.title}>{title || t('coins_table_history')}</h3>
+                    <span style={styles.countBadge}>{t('coins_movements', { count: 0 })}</span>
                 </div>
                 <div style={{ textAlign: "center", padding: "34px 20px", color: "#9CA3AF" }}>
-                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>No hay transacciones todavía</div>
-                    <div style={{ fontSize: "12px" }}>Cuando lleguen movimientos, aparecerán aquí.</div>
+                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>{t('coins_empty')}</div>
+                    <div style={{ fontSize: "12px" }}>{t('coins_empty_desc')}</div>
                 </div>
             </div>
         );
@@ -265,18 +267,18 @@ export default function CoinTransactions({
         <>
             <div style={styles.container}>
                 <div style={styles.titleRow}>
-                    <h3 style={styles.title}>{title}</h3>
-                    <span style={styles.countBadge}>{transactions.length} movimientos</span>
+                    <h3 style={styles.title}>{title || t('coins_table_history')}</h3>
+                    <span style={styles.countBadge}>{t('coins_movements', { count: transactions.length })}</span>
                 </div>
                 <div className="hide-scrollbar" style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead>
                             <tr>
-                                {showCoinColumn && <th style={styles.th}>Moneda</th>}
-                                <th style={styles.th}>ID Transaccion</th>
-                                <th style={styles.th}>Cantidad</th>
-                                <th style={styles.th}>Estado</th>
-                                {!shouldHideDate && <th style={styles.th}>Fecha</th>}
+                                {showCoinColumn && <th style={styles.th}>{t('coins_table_currency')}</th>}
+                                <th style={styles.th}>{t('coins_table_txid')}</th>
+                                <th style={styles.th}>{t('coins_table_amount')}</th>
+                                <th style={styles.th}>{t('coins_table_status')}</th>
+                                {!shouldHideDate && <th style={styles.th}>{t('coins_table_date')}</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -325,8 +327,8 @@ export default function CoinTransactions({
                                             textAlign: "center"
                                         }}>
                                             {transaction.status === 2 && transaction.confirmations > 0 
-                                                ? (isCompact ? `Conf. ${transaction.confirmations}/12` : `Confirmación ${transaction.confirmations}/12`)
-                                                : getStatusName(transaction.status)}
+                                                ? t('confirmations', { count: transaction.confirmations, total: 12 })
+                                                : t(getStatusName(transaction.status))}
                                         </span>
                                     </td>
                                     {!shouldHideDate && (
@@ -347,7 +349,7 @@ export default function CoinTransactions({
                     <div style={styles.dialogContent} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? "12px" : "20px" }}>
                             <div style={{ color: "#FFFFFF", fontSize: isMobile ? "16px" : "20px", fontWeight: 600 }}>
-                                Detalles de {selectedTransaction.nature === 1 ? 'Deposito' : 'Retiro'}
+                                {selectedTransaction.nature === 1 ? t('deposit_details') : t('withdrawal_details')}
                             </div>
                             <button 
                                 onClick={handleClose}
@@ -361,7 +363,7 @@ export default function CoinTransactions({
                                     justifyContent: "center",
                                     padding: 0,
                                 }}
-                                aria-label="Cerrar"
+                                aria-label={t('close')}
                             >
                                 <CloseIcon size={20} color={"#9CA3AF"} />
                             </button>
@@ -369,17 +371,17 @@ export default function CoinTransactions({
 
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "10px" : "16px" }}>
                             <div>
-                                <div style={styles.label}>Estado</div>
+                                <div style={styles.label}>{t('coins_table_status')}</div>
                                 <div style={{ ...styles.value, color: styles.statusBadge(selectedTransaction.status).text }}>
-                                    {getStatusName(selectedTransaction.status)}
+                                    {t(getStatusName(selectedTransaction.status))}
                                 </div>
                             </div>
                             <div>
-                                <div style={styles.label}>Fecha</div>
+                                <div style={styles.label}>{t('coins_table_date')}</div>
                                 <div style={styles.value}>{getRealDate(selectedTransaction.created_at)}</div>
                             </div>
                             <div>
-                                <div style={styles.label}>Moneda</div>
+                                <div style={styles.label}>{t('coins_table_currency')}</div>
                                 <div style={{
                                     display: "inline-flex",
                                     alignItems: "center",
@@ -399,7 +401,7 @@ export default function CoinTransactions({
                                 </div>
                             </div>
                             <div>
-                                <div style={styles.label}>Monto Bruto</div>
+                                <div style={styles.label}>{t('gross_amount')}</div>
                                 <div style={styles.value}>
                                     {selectedTransaction.nature === 1 
                                         ? formatAmount(selectedTransaction.amount, selectedTransaction)
@@ -408,14 +410,14 @@ export default function CoinTransactions({
                             </div>
                             {selectedTransaction.nature === 2 && (
                                 <div>
-                                    <div style={styles.label}>Comision</div>
+                                    <div style={styles.label}>{t('fee')}</div>
                                     <div style={{ ...styles.value, color: "#F44336" }}>
                                         -{getSafeFee(selectedTransaction)} {getTransactionSymbol(selectedTransaction)}
                                     </div>
                                 </div>
                             )}
                             <div>
-                                <div style={styles.label}>{selectedTransaction.nature === 1 ? 'Monto Recibido' : 'Monto Neto'}</div>
+                                <div style={styles.label}>{selectedTransaction.nature === 1 ? t('received_amount') : t('net_amount')}</div>
                                 <div style={{ ...styles.value, color: selectedTransaction.nature === 1 ? "#4CAF50" : ("#FFFFFF"), fontWeight: 700 }}>
                                     {selectedTransaction.nature === 1 
                                         ? formatAmount(selectedTransaction.amount, selectedTransaction)
@@ -423,14 +425,14 @@ export default function CoinTransactions({
                                 </div>
                             </div>
                             <div>
-                                <div style={styles.label}>Red</div>
+                                <div style={styles.label}>{t('network')}</div>
                                 <div style={styles.value}>{getSafeNetworkName(selectedTransaction)}</div>
                             </div>
                         </div>
 
                         {selectedTransaction.nature === 2 && (
                             <div style={{ marginTop: "16px" }}>
-                                <div style={styles.label}>Direccion</div>
+                                <div style={styles.label}>{t('coins_table_address')}</div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                     <span style={{ ...styles.value, fontFamily: "monospace", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
                                         {selectedTransaction.to}
@@ -461,7 +463,7 @@ export default function CoinTransactions({
 
                         {selectedTransaction.status > 1 && (
                             <div style={{ marginTop: "16px" }}>
-                                <div style={styles.label}>TxID</div>
+                                <div style={styles.label}>{t('txid')}</div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                     <span style={{ ...styles.value, fontFamily: "monospace", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
                                         {`${selectedTransaction.txHash.slice(0, 20)}...`}
@@ -492,7 +494,7 @@ export default function CoinTransactions({
 
                         {selectedTransaction.status > 1 && getTransactionExplorerUrl(selectedTransaction) && (
                             <div style={{ marginTop: "16px" }}>
-                                <div style={styles.label}>Explorer</div>
+                                <div style={styles.label}>{t('explorer')}</div>
                                 <a
                                     href={getTransactionExplorerUrl(selectedTransaction)}
                                     target="_blank"
@@ -505,7 +507,7 @@ export default function CoinTransactions({
                                         display: "inline-block"
                                     }}
                                 >
-                                    Ver en Explorer
+                                    {t('view_in_explorer')}
                                 </a>
                             </div>
                         )}
@@ -525,7 +527,7 @@ export default function CoinTransactions({
                                 cursor: "pointer",
                             }}
                         >
-                            Cerrar
+                            {t('close')}
                         </button>
                     </div>
                 </div>

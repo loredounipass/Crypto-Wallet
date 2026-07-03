@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import * as profileService from '../services/profile';
 import { AuthContext } from './AuthContext';
+import i18n from '../languages/i18n';
 
 /**
  * Hook para cargar y gestionar el perfil del usuario autenticado.
@@ -99,7 +100,7 @@ export default function useProfile(options = {}) {
 
     /** Actualiza el perfil (upsert) y refresca el estado local. */
     const upsertProfile = useCallback(async (body) => {
-        if (!isOwnProfile) return Promise.reject(new Error('No se puede editar el perfil de otro usuario'));
+        if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const res = await profileService.upsertProfile(body);
         const data = res?.data ?? res;
         setProfile((prev) => (prev ? { ...prev, ...data } : data));
@@ -108,7 +109,7 @@ export default function useProfile(options = {}) {
 
     /** Sube foto de perfil y actualiza profilePhotoUrl en el estado y en el AuthContext global. */
     const uploadProfilePhoto = useCallback(async (file) => {
-        if (!isOwnProfile) return Promise.reject(new Error('No se puede editar el perfil de otro usuario'));
+        if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const formData = new FormData();
         formData.append('file', file);
         const res = await profileService.uploadProfilePhoto(formData);
@@ -123,7 +124,7 @@ export default function useProfile(options = {}) {
 
     /** Sube foto de portada y actualiza coverPhotoUrl en el estado. */
     const uploadCoverPhoto = useCallback(async (file) => {
-        if (!isOwnProfile) return Promise.reject(new Error('No se puede editar el perfil de otro usuario'));
+        if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const formData = new FormData();
         formData.append('file', file);
         const res = await profileService.uploadCoverPhoto(formData);
@@ -134,7 +135,7 @@ export default function useProfile(options = {}) {
 
     /** Marca al usuario visto como seguido y actualiza contador. Solo cuando se visita el perfil de otro usuario. */
     const follow = useCallback(async () => {
-        if (isOwnProfile || !viewUserId) return Promise.reject(new Error('No hay usuario a seguir'));
+        if (isOwnProfile || !viewUserId) return Promise.reject(new Error(i18n.t('profile_no_user_follow')));
         const res = await profileService.followUser(viewUserId);
         const payload = res?.data ?? res;
         setProfile((prev) => (prev ? { ...prev, isFollowing: true, followersCount: payload?.followersCount ?? ((prev.followersCount || 0) + 1) } : prev));
@@ -143,7 +144,7 @@ export default function useProfile(options = {}) {
 
     /** Marca al usuario visto como no seguido y actualiza contador. Solo cuando se visita el perfil de otro usuario. */
     const unfollow = useCallback(async () => {
-        if (isOwnProfile || !viewUserId) return Promise.reject(new Error('No hay usuario a dejar de seguir'));
+        if (isOwnProfile || !viewUserId) return Promise.reject(new Error(i18n.t('profile_no_user_unfollow')));
         const res = await profileService.unfollowUser(viewUserId);
         const payload = res?.data ?? res;
         setProfile((prev) => (prev ? { ...prev, isFollowing: false, followersCount: payload?.followersCount ?? Math.max(0, (prev.followersCount || 0) - 1) } : prev));

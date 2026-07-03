@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import useAllWallets from '../hooks/useAllWallets';
 import useCoinPrice from '../hooks/useCoinPrice';
 import { get } from '../api/http';
@@ -34,7 +35,7 @@ ChartJS.register(
     LineController
 );
 
-const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
+const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t }) => (
     <div
         style={styles.walletCard}
         onClick={() => handleWalletClick(wallet.coin)}
@@ -70,19 +71,20 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick }) => (
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>Balance</div>
+                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>{t('wallets_balance', 'Balance')}</div>
                 <div style={{ color: "#FFFFFF", fontWeight: 600, fontSize: isMobile ? "16px" : "18px" }}>
                     {Number(wallet.balance || 0).toFixed(18).replace(/\.?0+$/, '')}
                 </div>
             </div>
             <div style={styles.walletActionPill}>
-                Ver
+                {t('wallets_view', 'Ver')}
             </div>
         </div>
     </div>
 );
 
 const Wallets = () => {
+    const { t } = useTranslation();
     const history = useHistory();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
@@ -396,10 +398,10 @@ const Wallets = () => {
             <div className="mb-3 md:mb-8" style={styles.header}>
                 <div style={styles.backLink} onClick={handleBack}>
                     <ArrowBack style={{ fontSize: 20 }} />
-                    <span style={{ fontWeight: 500 }}>Volver al Dashboard</span>
+                    <span style={{ fontWeight: 500 }}>{t('wallets_back_to_dashboard', 'Volver al Dashboard')}</span>
                 </div>
                 <h1 style={{ color: "#FFFFFF", fontSize: isMobile ? "22px" : "32px", fontWeight: 700, margin: 0 }}>
-                    Mis Billeteras
+                    {t('wallets_title', 'Mis Billeteras')}
                 </h1>
             </div>
 
@@ -407,7 +409,7 @@ const Wallets = () => {
             <div className="grid gap-3 md:gap-6" style={styles.statsGrid}>
                 <div style={styles.section}>
                     <div style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "8px" }}>
-                        Balance Total
+                        {t('wallets_total_balance', 'Balance Total')}
                     </div>
                     <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
                         ${parseFloat(walletBalance || 0).toFixed(2)}
@@ -415,7 +417,7 @@ const Wallets = () => {
                 </div>
                 <div style={styles.section}>
                     <div style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "8px" }}>
-                        Total Billeteras
+                        {t('wallets_total_count', 'Total Billeteras')}
                     </div>
                     <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
                         {allWalletInfo.length}
@@ -427,14 +429,14 @@ const Wallets = () => {
             <div className="grid gap-3 md:gap-6" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "12px" : "16px", marginBottom: isMobile ? "12px" : "24px" }}>
                 <div style={styles.createWalletCard}>
                     <h2 style={{ color: "#FFFFFF", fontSize: isMobile ? "18px" : "20px", fontWeight: 600, marginBottom: "8px" }}>
-                        Crear Nueva Billetera
+                        {t('wallets_create_new')}
                     </h2>
                     <p style={{ ...styles.sectionSubtleText, marginBottom: "12px" }}>
-                        Elige la red y crea tu wallet en segundos con configuracion segura.
+                        {t('wallets_create_desc')}
                     </p>
 
                     <label style={{ display: "block", color: "#9CA3AF", fontSize: "12px", marginBottom: "4px" }}>
-                        Selecciona una moneda
+                        {t('wallets_select_coin')}
                     </label>
                     <div style={styles.coinPickerWrap}>
                         <div ref={coinMenuRef} style={{ position: "relative", flex: 1, minWidth: 0 }}>
@@ -502,7 +504,7 @@ const Wallets = () => {
                             justifyContent: "center",
                             flexShrink: 0,
                         }}>
-                            {selectedWalletExists ? "Depositar / Retirar" : "Crear"}
+                            {selectedWalletExists ? t('wallets_deposit_withdraw', "Depositar / Retirar") : t('wallets_create', "Crear")}
                         </button>
                     </div>
                 </div>
@@ -533,7 +535,7 @@ const Wallets = () => {
                     <div style={{ padding: isMobile ? "12px" : "16px", paddingBottom: "0", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ color: "#9CA3AF", fontSize: isMobile ? "12px" : "13px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}>
-                                Mercado • {selectedCoin.toUpperCase()}
+                                {t('wallets_market', 'Mercado')} • {selectedCoin.toUpperCase()}
                             </span>
                             <span style={{
                                 color: "white",
@@ -557,21 +559,21 @@ const Wallets = () => {
             {/* Your Wallets */}
             <div style={styles.section}>
                 <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 700, marginBottom: "4px", textAlign: "center" }}>
-                    Tus Billeteras
+                    {t('wallets_your_wallets', 'Tus Billeteras')}
                 </h2>
                 <p style={{ color: "#9CA3AF", fontSize: "13px", textAlign: "center", marginTop: 0, marginBottom: "18px" }}>
-                    Administra tus activos y entra rapido a cada wallet.
+                    {t('wallets_manage_desc', 'Administra tus activos y entra rapido a cada wallet.')}
                 </p>
 
                 {allWalletInfo.length > 0 ? (
                     <div className="grid gap-3 md:gap-4" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: isMobile ? "10px" : "16px" }}>
                         {allWalletInfo.map((wallet, index) => (
-                            <WalletCard key={index} wallet={wallet} isMobile={isMobile} styles={styles} handleWalletClick={handleWalletClick} />
+                            <WalletCard key={index} wallet={wallet} isMobile={isMobile} styles={styles} handleWalletClick={handleWalletClick} t={t} />
                         ))}
                     </div>
                 ) : (
                     <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
-                        No tienes billeteras todavía
+                        {t('wallets_no_wallets', 'No tienes billeteras todavía')}
                     </div>
                 )}
             </div>

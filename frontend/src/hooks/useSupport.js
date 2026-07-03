@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import Support from '../services/support';
 import { typewriter } from '../utils/typewriter';
+import i18n from '../languages/i18n';
 
 export default function useSupport() {
     const [messages, setMessages] = useState([
-        { text: 'Hola! Soy Brivo Agent, tu asistente virtual. En que puedo ayudarte?', sender: 'agent' }
+        { text: i18n.t('agent_initial_message'), sender: 'agent' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
@@ -49,9 +50,9 @@ export default function useSupport() {
         } catch (err) {
             setIsLoading(false);
             setIsTyping(false);
-            const errMsg = err.message || 'Error al comunicarse con el asistente.';
+            const errMsg = err.message || i18n.t('agent_error');
             setError(errMsg);
-            setMessages(prev => [...prev, { text: `Error: ${errMsg}`, sender: 'agent' }]);
+            setMessages(prev => [...prev, { text: `${i18n.t('agent_error_prefix')} ${errMsg}`, sender: 'agent' }]);
             throw err;
         }
     }, []);

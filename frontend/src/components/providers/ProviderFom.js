@@ -1,17 +1,16 @@
 import React, { useState, use, useEffect } from 'react';
 import { useHistory } from 'react-router-dom'; 
+import { useTranslation } from 'react-i18next';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
 import useAllWallets from '../../hooks/useAllWallets';
 import TransactionToast from '../TransactionToast';
 import { getCoinLogo, getCoinFallbackLogo } from '../utils/Chains';
 
-const AVAILABLE_PAYMENT_METHODS = [
-  'Transferencia Bancaria', 'En persona'
-];
-
 export default function ProviderForm() {
+  const { t } = useTranslation();
   const { createNewProvider, findByEMail, checkTerms, acceptTerms } = useProvider();
+  const AVAILABLE_PAYMENT_METHODS = [t('p2p_bank_transfer'), t('p2p_in_person')];
   const { auth } = use(AuthContext);
   const history = useHistory();
   const [toast, setToast] = useState(null);
@@ -61,13 +60,13 @@ export default function ProviderForm() {
   const handleNextStep = () => {
     if (step === 1) {
       if (!form.firstName || !form.lastName || !form.idNumber || !form.email) {
-        setToast({ kind: 'withdraw', message: 'Por favor completa todos los campos personales.' });
+        setToast({ kind: 'withdraw', message: t('p2p_complete_personal') });
         return;
       }
     }
     if (step === 2) {
       if (!form.streetName || !form.city || !form.postalCode) {
-        setToast({ kind: 'withdraw', message: 'Por favor completa todos los campos de ubicación.' });
+        setToast({ kind: 'withdraw', message: t('p2p_complete_location') });
         return;
       }
     }
@@ -81,15 +80,15 @@ export default function ProviderForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedPaymentMethods.length === 0) {
-      setToast({ kind: 'withdraw', message: 'Debes seleccionar al menos un método de pago.' });
+      setToast({ kind: 'withdraw', message: t('p2p_select_payment_method') });
       return;
     }
-    if (selectedPaymentMethods.includes('Transferencia Bancaria') && !form.preferredBank) {
-      setToast({ kind: 'withdraw', message: 'Debes ingresar el nombre de tu banco de preferencia.' });
+    if (selectedPaymentMethods.includes(t('p2p_bank_transfer')) && !form.preferredBank) {
+      setToast({ kind: 'withdraw', message: t('p2p_enter_bank') });
       return;
     }
     if (destinationWallets.length === 0) {
-      setToast({ kind: 'withdraw', message: 'Debes seleccionar al menos una wallet de destino.' });
+      setToast({ kind: 'withdraw', message: t('p2p_select_wallet') });
       return;
     }
     try {
@@ -98,7 +97,7 @@ export default function ProviderForm() {
         paymentMethods: selectedPaymentMethods,
         destinationWallets
       });
-      setToast({ kind: 'deposit', message: 'Proveedor creado exitosamente' });
+      setToast({ kind: 'deposit', message: t('p2p_provider_created') });
       setTimeout(() => {
         history.push('/providerChat');
       }, 1500);
@@ -180,10 +179,10 @@ export default function ProviderForm() {
             </svg>
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            Registro P2P
+            {t('p2p_registration_title')}
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Completa tu perfil en 3 sencillos pasos
+            {t('p2p_registration_subtitle')}
           </p>
         </div>
 
@@ -202,9 +201,9 @@ export default function ProviderForm() {
                   {step > num ? '✓' : num}
                 </div>
                 <span className={`absolute mt-12 text-[10px] sm:text-xs font-medium uppercase tracking-wider ${step >= num ? 'text-blue-400' : 'text-slate-600'}`}>
-                  {num === 1 && 'Personal'}
-                  {num === 2 && 'Ubicación'}
-                  {num === 3 && 'Detalles'}
+                  {num === 1 && t('p2p_step_personal')}
+                  {num === 2 && t('p2p_step_location')}
+                  {num === 3 && t('p2p_step_details')}
                 </span>
               </div>
               {num < 3 && (
@@ -219,59 +218,59 @@ export default function ProviderForm() {
             
             {/* Step 1: Información Personal */}
             <div className={`transition-all duration-500 ${step === 1 ? 'block animate-[fadeIn_0.5s_ease-out]' : 'hidden'}`}>
-              <h3 className={sectionTitleClass}>Información Personal</h3>
+              <h3 className={sectionTitleClass}>{t('p2p_personal_info')}</h3>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
-                  <label className={labelClass}>Primer nombre</label>
-                  <input className={inputClass} name="firstName" value={form.firstName} onChange={handleChange} placeholder="Ej. Juan" readOnly={!!auth?.firstName} style={{ opacity: auth?.firstName ? 0.7 : 1 }} />
+                  <label className={labelClass}>{t('p2p_first_name')}</label>
+                  <input className={inputClass} name="firstName" value={form.firstName} onChange={handleChange} placeholder={t('p2p_first_name_placeholder')} readOnly={!!auth?.firstName} style={{ opacity: auth?.firstName ? 0.7 : 1 }} />
                 </div>
                 <div>
-                  <label className={labelClass}>Apellido</label>
-                  <input className={inputClass} name="lastName" value={form.lastName} onChange={handleChange} placeholder="Ej. Pérez" readOnly={!!auth?.lastName} style={{ opacity: auth?.lastName ? 0.7 : 1 }} />
+                  <label className={labelClass}>{t('p2p_last_name')}</label>
+                  <input className={inputClass} name="lastName" value={form.lastName} onChange={handleChange} placeholder={t('p2p_last_name_placeholder')} readOnly={!!auth?.lastName} style={{ opacity: auth?.lastName ? 0.7 : 1 }} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Número de identificación</label>
-                  <input className={inputClass} name="idNumber" value={form.idNumber} onChange={handleChange} placeholder="Documento de identidad" />
+                  <label className={labelClass}>{t('p2p_id_number')}</label>
+                  <input className={inputClass} name="idNumber" value={form.idNumber} onChange={handleChange} placeholder={t('p2p_id_placeholder')} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Correo electrónico</label>
-                  <input type="email" className={inputClass} name="email" value={form.email} onChange={handleChange} placeholder="correo@ejemplo.com" readOnly={!!auth?.email} style={{ opacity: auth?.email ? 0.7 : 1 }} />
+                  <label className={labelClass}>{t('p2p_email')}</label>
+                  <input type="email" className={inputClass} name="email" value={form.email} onChange={handleChange} placeholder={t('p2p_email_placeholder')} readOnly={!!auth?.email} style={{ opacity: auth?.email ? 0.7 : 1 }} />
                 </div>
               </div>
             </div>
 
             {/* Step 2: Ubicación */}
             <div className={`transition-all duration-500 ${step === 2 ? 'block animate-[fadeIn_0.5s_ease-out]' : 'hidden'}`}>
-              <h3 className={sectionTitleClass}>Ubicación</h3>
+              <h3 className={sectionTitleClass}>{t('p2p_location_title')}</h3>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Dirección (Calle / Av)</label>
-                  <input className={inputClass} name="streetName" value={form.streetName} onChange={handleChange} placeholder="Av. Principal 123" />
+                  <label className={labelClass}>{t('p2p_address')}</label>
+                  <input className={inputClass} name="streetName" value={form.streetName} onChange={handleChange} placeholder={t('p2p_address_placeholder')} />
                 </div>
                 <div>
-                  <label className={labelClass}>Ciudad</label>
-                  <input className={inputClass} name="city" value={form.city} onChange={handleChange} placeholder="Ciudad" />
+                  <label className={labelClass}>{t('p2p_city')}</label>
+                  <input className={inputClass} name="city" value={form.city} onChange={handleChange} placeholder={t('p2p_city_placeholder')} />
                 </div>
                 <div>
-                  <label className={labelClass}>Código Postal</label>
-                  <input className={inputClass} name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="ZIP" />
+                  <label className={labelClass}>{t('p2p_zip_code')}</label>
+                  <input className={inputClass} name="postalCode" value={form.postalCode} onChange={handleChange} placeholder={t('p2p_zip_placeholder')} />
                 </div>
               </div>
             </div>
 
             {/* Step 3: Detalles Operativos P2P */}
             <div className={`transition-all duration-500 ${step === 3 ? 'block animate-[fadeIn_0.5s_ease-out]' : 'hidden'}`}>
-              <h3 className={sectionTitleClass}>Detalles Operativos P2P</h3>
+              <h3 className={sectionTitleClass}>{t('p2p_operational_details')}</h3>
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <label className={labelClass}>Wallets de destino (para recibir crypto)</label>
-                  <p className="mb-3 text-xs text-slate-400">Selecciona las wallets donde quieres recibir los fondos.</p>
+                  <label className={labelClass}>{t('p2p_destination_wallets')}</label>
+                  <p className="mb-3 text-xs text-slate-400">{t('p2p_destination_wallets_desc')}</p>
                   
                   {!allWalletInfo || allWalletInfo.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-[#1F1F33] p-6 text-center">
-                      <p className="text-slate-400 mb-4 text-sm">No tienes wallets creadas aún.</p>
+                      <p className="text-slate-400 mb-4 text-sm">{t('p2p_no_wallets')}</p>
                       <button type="button" onClick={() => history.push('/wallets')} className={btnSecondary}>
-                        Crear Wallet
+                        {t('p2p_create_wallet')}
                       </button>
                     </div>
                   ) : (
@@ -320,8 +319,8 @@ export default function ProviderForm() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>Métodos de pago aceptados</label>
-                  <p className="mb-3 text-xs text-slate-400">Selecciona los métodos por los cuales puedes recibir o enviar dinero fiat.</p>
+                  <label className={labelClass}>{t('p2p_payment_methods_label')}</label>
+                  <p className="mb-3 text-xs text-slate-400">{t('p2p_payment_methods_desc')}</p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {AVAILABLE_PAYMENT_METHODS.map((pm) => (
                       <button
@@ -344,17 +343,17 @@ export default function ProviderForm() {
                   
                   {selectedPaymentMethods.includes('Transferencia Bancaria') && (
                     <div className="mt-5 animate-[fadeIn_0.3s_ease-out]">
-                      <label className={labelClass}>Banco de Preferencia</label>
+                      <label className={labelClass}>{t('p2p_preferred_bank')}</label>
                       <input
                         type="text"
                         name="preferredBank"
                         value={form.preferredBank}
                         onChange={handleChange}
-                        placeholder="Ej. Banco Santander, BBVA, BCP..."
+                        placeholder={t('p2p_bank_placeholder')}
                         className={inputClass}
                       />
                       <p className="mt-1 text-xs text-slate-400">
-                        Indica el banco principal donde recibirás o desde donde enviarás las transferencias.
+                        {t('p2p_bank_desc')}
                       </p>
                     </div>
                   )}
@@ -366,7 +365,7 @@ export default function ProviderForm() {
             <div className="mt-10 flex items-center justify-between border-t border-slate-700/50 pt-6">
               {step > 1 ? (
                 <button type="button" onClick={handlePrevStep} className={btnSecondary}>
-                  ← Atrás
+                  {t('p2p_back_button')}
                 </button>
               ) : (
                 <div /> /* Empty div to keep 'Next' button on the right */
@@ -375,7 +374,7 @@ export default function ProviderForm() {
               {step < 3 ? (
                 <button type="button" onClick={handleNextStep} className={btnPrimary}>
                   <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] px-6 py-3 font-bold text-white transition-all group-hover:from-[#7C3AED] group-hover:to-[#4F46E5]">
-                    Siguiente →
+                    {t('p2p_next')}
                   </div>
                 </button>
               ) : (
@@ -385,7 +384,7 @@ export default function ProviderForm() {
                   className={btnPrimary}
                 >
                   <div className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] px-8 py-3 font-bold text-white transition-all group-hover:from-[#7C3AED] group-hover:to-[#4F46E5]">
-                    Completar Registro
+                    {t('p2p_complete_registration')}
                   </div>
                 </button>
               )}
@@ -405,12 +404,10 @@ export default function ProviderForm() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-center text-xl font-bold text-white">Verificación de Identidad</h3>
+            <h3 className="text-center text-xl font-bold text-white">{t('p2p_kyc_title')}</h3>
             <div className="mt-4 flex flex-col gap-5 text-slate-300">
               <div className="rounded-xl bg-slate-800/50 p-4 text-sm leading-relaxed border border-slate-700/50">
-                Al registrarte como proveedor P2P en nuestra plataforma, aceptas someterte a un proceso de verificación de identidad (KYC).
-                <br /><br />
-                Nos tomamos muy en serio la seguridad de nuestra red. Tus datos serán tratados con estricta confidencialidad y utilizados únicamente con fines de autenticación y cumplimiento normativo.
+                {t('p2p_kyc_terms')}
               </div>
               
               <label className="group flex cursor-pointer items-start gap-3 rounded-lg border border-transparent p-2 transition-colors hover:bg-slate-800/50">
@@ -426,7 +423,7 @@ export default function ProviderForm() {
                   </svg>
                 </div>
                 <span className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
-                  He leído y acepto los términos y condiciones de proveedor P2P.
+                  {t('p2p_accept_terms')}
                 </span>
               </label>
 
@@ -436,7 +433,7 @@ export default function ProviderForm() {
                 onClick={handleAcceptTerms}
                 className="mt-2 w-full rounded-xl bg-blue-600 py-3 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-500 hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
               >
-                Aceptar y Continuar
+                {t('p2p_accept_continue')}
               </button>
             </div>
           </div>

@@ -1,4 +1,6 @@
 import axios from 'axios'
+import i18n from '../languages/i18n';
+
 
 const baseApi = process.env.REACT_APP_API_BASE_URL;
 const api = axios.create({
@@ -32,7 +34,7 @@ api.interceptors.response.use(
             msg = JSON.stringify(msg);
         }
 
-        error.message = msg;
+        error.message = i18n.isInitialized ? i18n.t(msg, { defaultValue: msg }) : msg;
         return Promise.reject(error);
     }
 );
@@ -109,6 +111,10 @@ const supportChatApi = `${baseApi}/support/chat`
 
 // Endpoints donations
 const donationsWalletsApi = `${baseApi}/donations/wallets`
+
+// Endpoints languages
+const languagesApi = `${baseApi}/languages`
+const userLanguageApi = `${baseApi}/user/language`
 
 // Endpoints news
 // const newsApi = `${baseApi}/news`
@@ -246,5 +252,7 @@ export {
     feedPostViewsApi,
     feedPostSharesApi,
     feedCommentDeleteApi,
-    donationsWalletsApi
+    donationsWalletsApi,
+    languagesApi,
+    userLanguageApi
 };

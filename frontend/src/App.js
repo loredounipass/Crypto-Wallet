@@ -25,7 +25,7 @@ import EmailVerificationComponent from './components/settings/verify'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider } from './hooks/LanguageContext';
-import './i18n';
+import './languages/i18n';
 import Chatcomponent from './components/providers/Chat';
 import ProviderChatComponent from './components/providers/ProviderChatComponent';
 import Dashboard from './pages/Dashboard'

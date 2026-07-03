@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Link } from '../ui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import Logo from './Logo';
@@ -36,6 +37,7 @@ const footerStyle = {
 };
 
 const AuthLayout = ({ children, subtitle }) => {
+  const { t } = useTranslation();
   return (
     <Box className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-[#0F0F1A] box-border">
       <Box className="w-full max-w-[360px]" sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -51,7 +53,7 @@ const AuthLayout = ({ children, subtitle }) => {
       </Box>
       <Box sx={footerStyle}>
         <Link component={RouterLink} to="/landing" sx={{ color: '#94a3b8', textDecoration: 'none', '&:hover': { color: '#8B5CF6' } }}>
-          Home
+          {t('auth_home')}
         </Link>
         <Link component={RouterLink} to="/privacy" sx={{ color: '#94a3b8', textDecoration: 'none', '&:hover': { color: '#8B5CF6' } }}>
           Privacy Policy

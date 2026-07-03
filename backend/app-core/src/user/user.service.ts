@@ -147,6 +147,24 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     return { isTokenEnabled: !!user.isTokenEnabled };
   }
 
+  async updateLanguage(email: string, language: string) {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+    user.language = language;
+    await user.save();
+    return { msg: 'Language updated successfully.' };
+  }
+
+  async getUserLanguage(email: string) {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+    return { language: user.language || 'es' };
+  }
+
 
 // Change the user's password by verifying the current password and updating it with the new password in the database
   async changePassword(email: string, changePasswordDto: ChangePasswordDto) {

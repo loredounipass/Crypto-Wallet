@@ -1,11 +1,13 @@
 import React, { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Send as SendIcon } from '../../ui/icons';
 import { AuthContext } from '../../hooks/AuthContext';
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import { get } from '../../api/http';
 
 const ChatComponent = () => {
+    const { t } = useTranslation();
     const [messageContent, setMessageContent] = useState('');
     const location = useLocation();
     const providerEmail = location.state?.providerEmail || null;
@@ -35,14 +37,14 @@ const ChatComponent = () => {
                     joinChat(foundId);
                     fetchMyMessages();
                 } else {
-                    setLocalError('Proveedor no encontrado en el sistema.');
+                    setLocalError(t('p2p_provider_not_found'));
                 }
             } catch (err) {
                 setLocalError(err.message);
             }
         };
         fetchCounterpart();
-    }, [providerEmail, auth?._id, joinChat, fetchMyMessages]);
+    }, [providerEmail, auth?._id, joinChat, fetchMyMessages, t]);
 
 
 
@@ -90,7 +92,7 @@ const ChatComponent = () => {
         <div className="mx-auto h-[calc(85vh-40px)] w-[85%] max-w-[800px] rounded-xl bg-slate-100 p-2">
             <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white shadow">
                 <div className="border-b border-slate-200 bg-white p-4">
-                    <h2 className="text-center text-lg font-semibold text-slate-900">Chat</h2>
+                    <h2 className="text-center text-lg font-semibold text-slate-900">{t('p2p_chat_title')}</h2>
                 </div>
 
                 <div className="flex flex-1 flex-col justify-end bg-white p-4">
@@ -102,7 +104,7 @@ const ChatComponent = () => {
                     )}
                     {messages.length === 0 ? (
                         <p className="text-center text-sm text-slate-500">
-                            Aún no hay mensajes
+                            {t('p2p_no_messages_chat')}
                         </p>
                     ) : (
                         <ul className="w-full space-y-2">
@@ -117,7 +119,7 @@ const ChatComponent = () => {
                                         className={`max-w-[70%] rounded-xl px-3 py-2 ${isMe ? 'bg-cyan-50 text-cyan-800' : 'bg-lime-50 text-lime-800'}`}
                                     >
                                         <p className="text-xs font-bold">
-                                            {isMe ? 'You' : providerEmail}
+                                            {isMe ? t('p2p_you_label') : providerEmail}
                                         </p>
 
                                         {message.multimediaUrl && message.type === 'image' && (
@@ -136,8 +138,8 @@ const ChatComponent = () => {
                                                 <track kind="captions" />
                                             </video>
                                         )}
-                                        {message.multimediaStatus === 'uploading' && <p className="text-xs italic opacity-80">Subiendo archivo...</p>}
-                                        {message.multimediaStatus === 'processing' && <p className="text-xs italic opacity-80">Procesando archivo...</p>}
+                                        {message.multimediaStatus === 'uploading' && <p className="text-xs italic opacity-80">{t('p2p_uploading_file')}</p>}
+                                        {message.multimediaStatus === 'processing' && <p className="text-xs italic opacity-80">{t('p2p_processing_file')}</p>}
 
                                         <p className="text-sm">{message.content || message.message}</p>
                                     </div>
@@ -152,7 +154,7 @@ const ChatComponent = () => {
                     <div className="relative flex items-center gap-2">
                         <input
                             className="flex-1 rounded-xl border border-slate-300 py-2 pl-3 pr-12 text-sm outline-none focus:border-blue-500"
-                            placeholder="Escribe tu mensaje..."
+                            placeholder={t('p2p_message_placeholder')}
                             value={messageContent}
                             onChange={(e) => setMessageContent(e.target.value)}
                             onKeyDown={(e) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import P2POrderStatus from './P2POrderStatus';
 
@@ -13,6 +14,7 @@ export default function P2POrderDetailsPanel({
   authEmail,
   counterpartName
 }) {
+  const { t } = useTranslation();
   const history = useHistory();
   const borderColor = '#1F1F33';
 
@@ -62,7 +64,7 @@ export default function P2POrderDetailsPanel({
             margin: 0, fontSize: 14, fontWeight: 700,
             color: '#F1F5F9', letterSpacing: '-0.01em',
           }}>
-            Estado de la Orden
+            {t('p2p_order_status')}
           </h3>
         </div>
         <P2POrderStatus status={currentOrder?.status} />
@@ -93,17 +95,17 @@ export default function P2POrderDetailsPanel({
             margin: 0, fontSize: 14, fontWeight: 700,
             color: '#F1F5F9', letterSpacing: '-0.01em',
           }}>
-            Detalles
+            {t('p2p_details')}
           </h3>
         </div>
 
         {/* Detail rows */}
         {[
-          { label: 'Cantidad', value: `${currentOrder?.amount} ${currentOrder?.coin}`, highlight: true },
-          { label: 'Monto USD', value: `$${currentOrder?.fiatAmount}`, color: '#10B981' },
-          { label: 'Método de Pago', value: currentOrder?.paymentMethod },
-          { label: 'Tu rol', value: isSeller ? '🏷️ Vendedor' : '🏪 Proveedor' },
-          { label: 'Orden ID', value: currentOrder?.orderId?.slice(0, 12) + '...' },
+          { label: t('p2p_amount'), value: `${currentOrder?.amount} ${currentOrder?.coin}`, highlight: true },
+          { label: t('p2p_amount_usd'), value: `$${currentOrder?.fiatAmount}`, color: '#10B981' },
+          { label: t('p2p_payment_method'), value: currentOrder?.paymentMethod },
+          { label: t('p2p_your_role'), value: isSeller ? t('p2p_role_seller') : t('p2p_role_provider') },
+          { label: t('p2p_order_id'), value: currentOrder?.orderId?.slice(0, 12) + '...' },
         ].map((item, i) => (
           <div key={i} style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -138,7 +140,7 @@ export default function P2POrderDetailsPanel({
               onMouseEnter={e => { if (actionLoading !== 'confirm') e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              {actionLoading === 'confirm' ? 'Confirmando...' : '✅ Confirmar Pago Recibido'}
+              {t(actionLoading === 'confirm' ? 'p2p_confirming' : 'p2p_confirm_payment')}
             </button>
           )}
 
@@ -157,7 +159,7 @@ export default function P2POrderDetailsPanel({
               onMouseEnter={e => { if (actionLoading !== 'release') e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              {actionLoading === 'release' ? 'Liberando...' : '🔓 Liberar Fondos'}
+              {t(actionLoading === 'release' ? 'p2p_releasing' : 'p2p_release_funds')}
             </button>
           )}
 
@@ -173,7 +175,7 @@ export default function P2POrderDetailsPanel({
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.05)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.2)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              ⚠️ Abrir Disputa
+              {t('p2p_open_dispute')}
             </button>
           )}
 
@@ -190,7 +192,7 @@ export default function P2POrderDetailsPanel({
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#94A3B8'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = borderColor; }}
             >
-              {actionLoading === 'cancel' ? 'Cancelando...' : 'Cancelar Orden'}
+              {t(actionLoading === 'cancel' ? 'p2p_cancelling' : 'p2p_cancel_order')}
             </button>
           )}
 
@@ -203,10 +205,10 @@ export default function P2POrderDetailsPanel({
             }}>
               <p style={{ margin: 0, fontSize: 24, marginBottom: 6 }}>🎉</p>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#10B981' }}>
-                ¡Orden completada exitosamente!
+                {t('p2p_order_completed')}
               </p>
               <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748B' }}>
-                Los fondos han sido transferidos
+                {t('p2p_funds_transferred')}
               </p>
             </div>
           )}
@@ -225,14 +227,14 @@ export default function P2POrderDetailsPanel({
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#EF4444' }}>
-                  Disputa abierta
+                  {t('p2p_dispute_opened')}
                 </p>
               </div>
               <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
                 {currentOrder?.disputeReason}
               </p>
               <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
-                Por: {currentOrder?.disputeOpenedBy === authEmail ? 'Tú' : (counterpartName || currentOrder?.disputeOpenedBy)}
+                Por: {currentOrder?.disputeOpenedBy === authEmail ? t('p2p_you') : (counterpartName || currentOrder?.disputeOpenedBy)}
               </p>
             </div>
           )}
@@ -253,13 +255,13 @@ export default function P2POrderDetailsPanel({
                   {currentOrder?.resolutionType === 'revert' ? '↩️' : '✅'}
                 </span>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: currentOrder?.resolutionType === 'revert' ? '#F59E0B' : '#10B981' }}>
-                  Disputa resuelta
+                  {t('p2p_dispute_resolved')}
                 </p>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
                 {currentOrder?.resolutionType === 'revert'
-                  ? 'Los fondos han sido devueltos al vendedor.'
-                  : 'Los fondos han sido entregados al proveedor.'}
+                  ? t('p2p_funds_returned')
+                  : t('p2p_funds_delivered')}
               </p>
             </div>
           )}
@@ -274,7 +276,7 @@ export default function P2POrderDetailsPanel({
             }}>
               <span style={{ fontSize: 14 }}>⏳</span>
               <p style={{ margin: 0, fontSize: 12, color: '#F59E0B', fontWeight: 500 }}>
-                Esperando confirmación del proveedor...
+                {t('p2p_waiting_provider_confirmation')}
               </p>
             </div>
           )}
@@ -287,7 +289,7 @@ export default function P2POrderDetailsPanel({
             }}>
               <span style={{ fontSize: 14 }}>⏳</span>
               <p style={{ margin: 0, fontSize: 12, color: '#3B82F6', fontWeight: 500 }}>
-                Esperando liberación de fondos...
+                {t('p2p_waiting_funds_release')}
               </p>
             </div>
           )}
@@ -305,7 +307,7 @@ export default function P2POrderDetailsPanel({
                 display: 'inline-block', flexShrink: 0,
               }} />
               <p style={{ margin: 0, fontSize: 12, color: '#8B5CF6', fontWeight: 500 }}>
-                Procesando on-chain...
+                {t('p2p_processing_onchain')}
               </p>
             </div>
           )}
@@ -340,7 +342,7 @@ export default function P2POrderDetailsPanel({
           <polyline points="16 17 21 12 16 7"></polyline>
           <line x1="21" y1="12" x2="9" y2="12"></line>
         </svg>
-        Salir
+        {t('p2p_exit')}
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import i18n from '../languages/i18n';
 import Escrow from '../services/escrow';
 
 export default function useEscrow() {
@@ -26,7 +27,7 @@ export default function useEscrow() {
     socket.on('escrowStatusUpdated', (event) => {
       console.log('[Escrow Socket] Actualización recibida:', event);
       
-      setToast({ kind: 'success', message: `Orden ${event.orderId} actualizada a ${event.status}` });
+      setToast({ kind: 'success', message: i18n.t('p2p_status_updated', { orderId: event.orderId, status: event.status }) });
 
       // Actualizar currentOrder si estamos viéndola
       setCurrentOrder((prev) => {
@@ -61,11 +62,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.createOrder(body);
       setError(null);
-      setToast({ kind: 'success', message: 'Orden creada exitosamente' });
+      setToast({ kind: 'success', message: i18n.t('escrow_order_created') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al crear orden' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_create') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -81,7 +82,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al obtener mis órdenes' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_my_orders') });
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -97,7 +98,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al obtener órdenes del proveedor' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_provider_orders') });
       setProviderOrders([]);
     } finally {
       setIsLoading(false);
@@ -113,7 +114,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al obtener orden' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_get_order') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -125,11 +126,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.confirmPayment(orderId);
       setError(null);
-      setToast({ kind: 'success', message: 'Pago confirmado' });
+      setToast({ kind: 'success', message: i18n.t('escrow_payment_confirmed') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al confirmar pago' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_confirm_payment') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -141,11 +142,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.releaseFunds(orderId);
       setError(null);
-      setToast({ kind: 'success', message: 'Fondos liberados' });
+      setToast({ kind: 'success', message: i18n.t('escrow_funds_released') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al liberar fondos' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_release_funds') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -157,11 +158,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.openDispute(orderId, reason);
       setError(null);
-      setToast({ kind: 'success', message: 'Disputa abierta' });
+      setToast({ kind: 'success', message: i18n.t('escrow_dispute_opened') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al abrir disputa' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_open_dispute') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -173,11 +174,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.cancelOrder(orderId);
       setError(null);
-      setToast({ kind: 'success', message: 'Orden cancelada' });
+      setToast({ kind: 'success', message: i18n.t('escrow_order_cancelled') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al cancelar orden' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_cancel_order') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -192,7 +193,7 @@ export default function useEscrow() {
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al obtener órdenes en disputa' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_get_disputed') });
       throw err;
     } finally {
       setIsLoading(false);
@@ -204,11 +205,11 @@ export default function useEscrow() {
     try {
       const res = await Escrow.resolveDispute(orderId, type);
       setError(null);
-      setToast({ kind: 'success', message: `Disputa resuelta: fondos ${type === 'revert' ? 'devueltos al vendedor' : 'entregados al proveedor'}` });
+      setToast({ kind: 'success', message: type === 'revert' ? i18n.t('escrow_dispute_resolved_revert') : i18n.t('escrow_dispute_resolved_release') });
       return res;
     } catch (err) {
       setError(err.message);
-      setToast({ kind: 'error', message: err.message || 'Error al resolver disputa' });
+      setToast({ kind: 'error', message: err.message || i18n.t('escrow_error_resolve_dispute') });
       throw err;
     } finally {
       setIsLoading(false);

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import SecureAudio from './SecureAudio';
 
 const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter 
@@ -13,6 +14,7 @@ export default function P2PChatMessagesList({
   messagesEndRef,
   borderColor
 }) {
+  const { t } = useTranslation();
   const [selectedImage, setSelectedImage] = useState(null);
 
   const handleDownloadImage = async (url) => {
@@ -41,18 +43,23 @@ export default function P2PChatMessagesList({
     return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
   };
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, messagesEndRef]);
+
   return (
     <>
       <div className="p2p-chat-messages-scroll" style={{
-        flex: 1, padding: '16px 16px 8px', overflowY: 'auto', display: 'flex', flexDirection: 'column',
+        flex: 1, padding: '0 0 8px', overflowY: 'auto', display: 'flex', flexDirection: 'column',
+        justifyContent: messages.length === 0 ? 'center' : 'flex-end',
       }}>
         {messages.length === 0 ? (
           <div style={{ margin: 'auto', textAlign: 'center', color: '#94A3B8' }}>
             <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 24 }}>💬</span>
             </div>
-            <p style={{ margin: 0, fontSize: 14 }}>No hay mensajes aún.</p>
-            <p style={{ margin: '4px 0 0', fontSize: 13 }}>¡Escribe "Hola" para comenzar!</p>
+            <p style={{ margin: 0, fontSize: 14 }}>{t('p2p_no_messages')}</p>
+            <p style={{ margin: '4px 0 0', fontSize: 13 }}>{t('p2p_start_chat')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -139,7 +146,7 @@ export default function P2PChatMessagesList({
                           {isMediaMsg && msg.type === 'image' && fullUrl && mediaReady && (
                             <img
                               src={fullUrl}
-                              alt="imagen"
+                              alt={t('p2p_image_alt')}
                               style={{
                                 width: '100%',
                                 maxHeight: 280,
@@ -153,7 +160,7 @@ export default function P2PChatMessagesList({
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.style.display = 'none';
-                                e.target.insertAdjacentHTML('afterend', '<p style="font-size:12px;color:#F59E0B;margin:4px 0 8px;">⚠️ No se pudo cargar la imagen</p>');
+                                e.target.insertAdjacentHTML('afterend', `<p style="font-size:12px;color:#F59E0B;margin:4px 0 8px;">${t('p2p_image_load_error')}</p>`);
                               }}
                             />
                           )}
@@ -193,13 +200,13 @@ export default function P2PChatMessagesList({
                                 display: 'inline-block', flexShrink: 0,
                               }} />
                               <span style={{ fontSize: 12, color: '#A78BFA' }}>
-                                {msg.multimediaStatus === 'uploading' ? 'Subiendo...' : 'Procesando...'}
+                                {t(msg.multimediaStatus === 'uploading' ? 'p2p_uploading' : 'p2p_processing')}
                               </span>
                             </div>
                           )}
                           {/* Failed state */}
                           {isMediaMsg && msg.multimediaStatus === 'failed' && (
-                            <p style={{ fontSize: 12, color: '#EF4444', margin: '4px 0 8px' }}>❌ Error al procesar</p>
+                            <p style={{ fontSize: 12, color: '#EF4444', margin: '4px 0 8px' }}>{t('p2p_process_error')}</p>
                           )}
                         </>
                       );
@@ -273,7 +280,7 @@ export default function P2PChatMessagesList({
               }}
               onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-              title="Descargar Imagen"
+              title={t('p2p_download_image')}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -291,7 +298,7 @@ export default function P2PChatMessagesList({
               }}
               onMouseOver={e => e.currentTarget.style.background = 'rgba(239,68,68,0.3)'}
               onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-              title="Cerrar"
+              title={t('p2p_close')}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -302,7 +309,7 @@ export default function P2PChatMessagesList({
 
           <img
             src={selectedImage}
-            alt="Ampliación"
+            alt={t('p2p_enlargement')}
             style={{
               maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain',
               borderRadius: 8, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'

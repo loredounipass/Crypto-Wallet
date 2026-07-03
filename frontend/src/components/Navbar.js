@@ -1,4 +1,5 @@
 import React, { use, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { styled } from "../ui/styles";
 import {
   AppBar as MuiAppBar,
@@ -46,6 +47,7 @@ const AppBarStyled = styled(MuiAppBar)(({ theme, open }) => ({
 }));
 
 function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
+  const { t } = useTranslation();
   const { auth } = use(AuthContext);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const isLoggingOut = React.useRef(false);
@@ -84,16 +86,16 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   if (!auth) return null;
 
   const settings = [
-    { label: `Hi, ${auth.firstName}`, icon: null },
-    { label: "Mis billeteras", icon: <WalletIcon sx={{ mr: 1 }} /> },
-    { label: "Settings", icon: <SettingsIcon sx={{ mr: 1 }} /> },
-    { label: "Logout", icon: <LogoutIcon sx={{ mr: 1 }} /> },
+    { label: t('nav_hi_user', { firstName: auth.firstName }), icon: null },
+    { label: t('nav_wallets'), icon: <WalletIcon sx={{ mr: 1 }} /> },
+    { label: t('nav_settings'), icon: <SettingsIcon sx={{ mr: 1 }} /> },
+    { label: t('nav_logout'), icon: <LogoutIcon sx={{ mr: 1 }} /> },
   ];
 
   const navItems = [
-    { href: "/welcome", label: "Crypto Soporte", Icon: SupportAgentIcon },
-    { href: "/providers", label: "Vender P2P", Icon: QrCodeIcon },
-    { href: "/create", label: "Comprar P2P", Icon: QrCodeIcon },
+    { href: "/welcome", label: t('nav_crypto_support'), Icon: SupportAgentIcon },
+    { href: "/providers", label: t('nav_sell_p2p'), Icon: QrCodeIcon },
+    { href: "/create", label: t('nav_buy_p2p'), Icon: QrCodeIcon },
   ];
 
   const navLinkStyle = {
@@ -219,7 +221,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
         {renderNavLinks()}
 
         <Box style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Tooltip title="Open settings">
+          <Tooltip title={t('nav_settings')}>
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();

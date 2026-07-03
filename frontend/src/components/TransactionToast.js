@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, Close, WarningAmber } from '../ui/icons';
 
 
 export default function TransactionToast({ toast, onClose }) {
+    const { t } = useTranslation();
     
     useEffect(() => {
         if (!toast) return;
@@ -20,11 +22,11 @@ export default function TransactionToast({ toast, onClose }) {
     
     let subtitle = toast.subtitle;
     if (!subtitle) {
-        if (toast.kind === 'deposit') subtitle = 'Entrada confirmada en tu wallet';
-        else if (toast.kind === 'withdraw') subtitle = 'Salida confirmada en tu wallet';
-        else if (toast.kind === 'success') subtitle = 'Operación exitosa';
-        else if (toast.kind === 'error') subtitle = 'Se produjo un error';
-        else subtitle = 'Notificación';
+        if (toast.kind === 'deposit') subtitle = t('toast_deposit');
+        else if (toast.kind === 'withdraw') subtitle = t('toast_withdraw');
+        else if (toast.kind === 'success') subtitle = t('toast_success');
+        else if (toast.kind === 'error') subtitle = t('toast_error');
+        else subtitle = t('toast_generic');
     }
 
     const Icon = isDeposit ? CheckCircle : WarningAmber;
@@ -61,7 +63,7 @@ export default function TransactionToast({ toast, onClose }) {
             <button
                 type="button"
                 onClick={onClose}
-                aria-label="Cerrar notificacion"
+                aria-label={t('toast_close')}
                 style={{
                     border: 'none',
                     background: 'transparent',

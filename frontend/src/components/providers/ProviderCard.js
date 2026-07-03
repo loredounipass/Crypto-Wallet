@@ -1,9 +1,11 @@
 import React, { useEffect, useState, use, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
 import { useHistory } from 'react-router-dom';
 
 export default function ProviderCard() {
+  const { t } = useTranslation();
   const { getAllProviders } = useProvider();
   const { auth } = use(AuthContext);
   const history = useHistory();
@@ -18,14 +20,14 @@ export default function ProviderCard() {
         setProviders(res);
         setError(null);
       } else {
-        setError({ message: 'No se encontraron proveedores.' });
+        setError({ message: t('p2p_no_providers_found') });
         setProviders([]);
       }
     } catch (err) {
       setError(err);
       setProviders([]);
     }
-  }, [getAllProviders]);
+  }, [getAllProviders, t]);
 
   const handleCreateChat = async (providerEmail) => {
     if (!auth?.email) return;
@@ -56,7 +58,7 @@ export default function ProviderCard() {
                   {provider.firstName} {provider.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Correo electrónico: {provider.email}
+                  {t('p2p_email_label')} {provider.email}
                 </p>
                 <div className="mt-3">
                   <button
@@ -68,7 +70,7 @@ export default function ProviderCard() {
                     {isCreatingChat ? (
                       <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
-                      'Vender P2P'
+                      t('p2p_sell_title')
                     )}
                   </button>
                 </div>

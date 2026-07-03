@@ -1,4 +1,5 @@
 import React, { useState, useEffect, use } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../hooks/AuthContext';
 import User from '../../services/user';
 import useAuth from '../../hooks/useAuth';
@@ -24,6 +25,7 @@ const Switch = ({ checked, onChange, disabled }) => (
 );
 
 const TwoFactorAuthComponent = () => {
+  const { t } = useTranslation();
   const { auth } = use(AuthContext);
   const { updateTokenStatus, error: authError } = useAuth();
   
@@ -114,14 +116,14 @@ const TwoFactorAuthComponent = () => {
           <div className="flex items-center justify-center rounded-xl bg-[rgba(33,134,235,0.1)] p-3">
             <CheckCircleIcon className="text-[28px]" style={{ color: 'var(--settings-primary)' }} />
           </div>
-          <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>2FA Auth</h2>
+          <h2 className="m-0 text-[20px] font-semibold" style={{ color: 'var(--settings-text)' }}>{t('two_factor_auth_title')}</h2>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between rounded-xl border p-4" style={{ borderColor: 'var(--settings-border)', backgroundColor: 'var(--settings-bg)' }}>
         <div style={{ color: 'var(--settings-text)' }}>
           <span style={{ marginRight: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-            {isTokenEnabled ? 'Desactivar' : 'Activar'}
+            {isTokenEnabled ? t('disable') : t('enable')}
           </span>
           {isTokenEnabled && <CheckCircleIcon style={{ color: 'var(--settings-success)', fontSize: '1.125rem' }} />}
         </div>
@@ -134,7 +136,7 @@ const TwoFactorAuthComponent = () => {
 
       {isTokenEnabled && (
         <p className="mb-4 text-sm" style={{ color: 'var(--settings-success)' }}>
-          La autenticación de dos factores está activa.
+          {t('two_factor_active')}
         </p>
       )}
 
@@ -146,7 +148,7 @@ const TwoFactorAuthComponent = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start' }}>
             <WarningIcon style={{ color: 'var(--settings-danger)', marginRight: '0.5rem' }} fontSize="small" />
-            <span>Desactivar la autenticación de dos factores pone en riesgo tu cuenta.</span>
+            <span>{t('two_factor_disable_warning')}</span>
           </div>
         </div>
       )}
@@ -155,9 +157,9 @@ const TwoFactorAuthComponent = () => {
       {confirmDialogOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[rgba(0,0,0,0.6)] p-4 backdrop-blur-[4px]">
           <div className="w-full max-w-[400px] rounded-2xl border p-6 shadow-[0_10px_25px_rgba(0,0,0,0.2)]" style={{ borderColor: 'var(--settings-border)', backgroundColor: 'var(--settings-card)' }}>
-            <h3 className="m-0 mb-3 text-[18px] font-semibold" style={{ color: 'var(--settings-text)' }}>Confirmar Desactivación</h3>
+            <h3 className="m-0 mb-3 text-[18px] font-semibold" style={{ color: 'var(--settings-text)' }}>{t('confirm_disable_title')}</h3>
             <p className="mb-6 text-sm leading-[1.5]" style={{ color: 'var(--settings-muted)' }}>
-              ¿Estás seguro de que deseas desactivar la autenticación de dos factores? Esto pone en riesgo tu cuenta a cibercriminales.
+              {t('confirm_disable_message')}
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -167,14 +169,14 @@ const TwoFactorAuthComponent = () => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--settings-danger-hover)'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--settings-danger)'}
               >
-                Cancelar
+                {t('cancel')}
               </button>
               <button
                 onClick={() => handleConfirmDialogClose(true)}
                 className="cursor-pointer rounded-[10px] border px-4 py-[10px] text-sm font-semibold transition-all hover:opacity-80"
                 style={{ borderColor: 'var(--settings-border)', backgroundColor: 'var(--settings-bg)', color: 'var(--settings-text)' }}
               >
-                Desactivar
+                {t('disable')}
               </button>
             </div>
           </div>

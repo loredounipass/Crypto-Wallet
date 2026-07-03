@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { get } from '../api/http';
+import i18n from '../languages/i18n';
 
 export default function useCounterpart(counterpartEmail) {
   const [counterpartId, setCounterpartId] = useState(null);
@@ -21,7 +22,7 @@ export default function useCounterpart(counterpartEmail) {
         } else {
           setCounterpartId(null);
           setCounterpartUser(null);
-          setCounterpartError('No se encontró el usuario contraparte para esta orden.');
+          setCounterpartError(i18n.t('counterpart_not_found'));
         }
       } catch (e) {
         console.error('Failed to fetch counterpart user', e);

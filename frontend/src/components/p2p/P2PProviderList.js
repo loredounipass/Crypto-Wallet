@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 export default function P2PProviderList({ providers, onSelectProvider }) {
+  const { t } = useTranslation();
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
 
   React.useEffect(() => {
@@ -25,7 +27,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             </svg>
           </div>
         </div>
-        No hay proveedores P2P disponibles
+        {t('p2p_no_providers')}
       </div>
     );
   }
@@ -66,12 +68,12 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 color: '#10B981', fontSize: 12, fontWeight: 600,
               }}>
                 {provider.completedOrders || 0}
-                <span style={{ fontSize: 10, fontWeight: 400 }}>órdenes</span>
+                <span style={{ fontSize: 10, fontWeight: 400 }}>{t('p2p_orders')}</span>
               </div>
             </div>
 
             <div>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Métodos de Pago</p>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_payment_methods')}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {(provider.paymentMethods || []).map((pm, i) => {
                   const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank)
@@ -89,13 +91,13 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                   );
                 })}
                 {(!provider.paymentMethods || provider.paymentMethods.length === 0) && (
-                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin métodos</span>
+                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
                 )}
               </div>
             </div>
 
             <div>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tokens</p>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_tokens')}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {(provider.destinationWallets || []).filter(w => w.enabled).map((w, i) => (
                   <span key={i} style={{
@@ -107,7 +109,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                   </span>
                 ))}
                 {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
-                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin tokens</span>
+                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
                 )}
               </div>
             </div>
@@ -128,7 +130,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 transition: 'all 0.2s',
               }}
             >
-              Vender a este proveedor
+              {t('p2p_sell_to_provider')}
             </button>
           </div>
         ))}
@@ -146,11 +148,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
         borderBottom: `1px solid ${'#1E1E2E'}`,
         minWidth: 700,
       }}>
-        <span>Proveedor</span>
-        <span>Órdenes</span>
-        <span>Métodos de Pago</span>
-        <span>Tokens</span>
-        <span style={{ textAlign: 'right' }}>Acción</span>
+        <span>{t('p2p_provider_header')}</span>
+        <span>{t('p2p_orders_header')}</span>
+        <span>{t('p2p_payment_methods_header')}</span>
+        <span>{t('p2p_tokens_header')}</span>
+        <span style={{ textAlign: 'right' }}>{t('p2p_action')}</span>
       </div>
 
       {/* Rows */}
@@ -196,7 +198,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               color: '#10B981', fontSize: 13, fontWeight: 600,
             }}>
               {provider.completedOrders || 0}
-              <span style={{ fontSize: 11, fontWeight: 400 }}>completadas</span>
+              <span style={{ fontSize: 11, fontWeight: 400 }}>{t('p2p_completed')}</span>
             </span>
           </div>
 
@@ -223,7 +225,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               </span>
             )}
             {(!provider.paymentMethods || provider.paymentMethods.length === 0) && (
-              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin métodos</span>
+              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
             )}
           </div>
 
@@ -239,7 +241,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               </span>
             ))}
             {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
-              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin tokens</span>
+              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
             )}
           </div>
 
@@ -260,7 +262,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 transition: 'all 0.2s',
               }}
             >
-              Vender
+              {t('p2p_sell')}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import FeedService from '../services/feed';
 import { io } from 'socket.io-client';
+import i18n from '../languages/i18n';
 
 export default function useFeed(isVideoOnly = false) {
     const [posts, setPosts] = useState([]);
@@ -18,7 +19,7 @@ export default function useFeed(isVideoOnly = false) {
             
             setPosts(data || []);
         } catch (err) {
-            setError(err.message || 'Error al cargar el feed');
+            setError(err.message || i18n.t('feed_load_error'));
         } finally {
             setLoading(false);
         }

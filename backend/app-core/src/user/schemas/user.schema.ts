@@ -34,6 +34,9 @@ export class User {
 
     @Prop({ default: false })
     isTokenEnabled: boolean;
+
+    @Prop({ default: 'es' })
+    language: string;
     
     // Email verification fields
     @Prop()

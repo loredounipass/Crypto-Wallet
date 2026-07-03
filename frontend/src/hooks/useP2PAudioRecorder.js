@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import i18n from '../languages/i18n';
 // Force Webpack recompile
 
 export default function useP2PAudioRecorder(onSendAudio, onError) {
@@ -43,7 +44,7 @@ export default function useP2PAudioRecorder(onSendAudio, onError) {
       }, 1000);
     } catch (err) {
       console.error('Microphone access denied:', err);
-      if (onError) onError('Permiso de micrófono denegado o no disponible.');
+      if (onError) onError(i18n.t('mic_permission_denied'));
     }
   };
 
