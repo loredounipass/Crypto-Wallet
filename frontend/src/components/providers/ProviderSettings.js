@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useProviderSettings from '../../hooks/useProviderSettings';
 import useAllWallets from '../../hooks/useAllWallets';
+import { AuthContext } from '../../hooks/AuthContext';
 
 const inputStyle = {
   width: '100%',
@@ -70,17 +71,41 @@ const toggleThumb = (enabled) => ({
 
 export default function ProviderSettings({ open, onClose }) {
   const { t } = useTranslation();
+  const { auth } = use(AuthContext);
   const { settings, isLoading, getSettings, addPaymentMethod, deletePaymentMethod, toggleDestinationWallet } = useProviderSettings();
   const { allWalletInfo: wallets, refreshWallets } = useAllWallets();
 
   const [newMethod, setNewMethod] = useState('');
 
+  const authRef = useRef(auth);
   useEffect(() => {
-    if (open) {
-      getSettings();
-      refreshWallets();
+    authRef.current = auth;
+  });
+
+  useEffect(() => {
+    if (!open || !auth?._id) return;
+
+    const controller = new AbortController();
+
+    const doFetch = async () => {
+      if (!authRef.current?._id) return;
+      await getSettings(controller.signal);
+      if (authRef.current?._id) {
+        refreshWallets();
+      }
+    };
+    doFetch();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, auth, getSettings, refreshWallets]);
+
+  useEffect(() => {
+    if (open && !auth?._id) {
+      onClose();
     }
-  }, [open, getSettings, refreshWallets]);
+  }, [open, auth, onClose]);
 
   if (!open) return null;
 

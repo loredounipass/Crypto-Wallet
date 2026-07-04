@@ -17,7 +17,7 @@ export default function useEscrow() {
   useEffect(() => {
     const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/escrow`, {
       withCredentials: true,
-      transports: ['polling']
+      transports: ['websocket', 'polling']
     });
 
     socket.on('connect', () => {

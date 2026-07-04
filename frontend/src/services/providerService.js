@@ -47,8 +47,8 @@ export default class Provider {
         return data
     }
 
-    static async getSettings() {
-        const { data } = await get(providerSettingsApi)
+    static async getSettings(signal) {
+        const { data } = await get(providerSettingsApi, {}, { signal })
         return data
     }
 

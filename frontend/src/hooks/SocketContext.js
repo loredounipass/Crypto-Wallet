@@ -28,7 +28,7 @@ export const SocketProvider = ({ children }) => {
 
         const newSocket = io(`${socketOrigin}/messages`, {
             withCredentials: true,
-            transports: ['polling'],
+            transports: ['websocket', 'polling'],
         });
 
         newSocket.on('connect', () => {

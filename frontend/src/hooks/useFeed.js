@@ -35,7 +35,7 @@ export default function useFeed(isVideoOnly = false) {
             const socketOrigin = new URL(process.env.REACT_APP_API_BASE_URL).origin;
             const socket = io(`${socketOrigin}/feed`, {
                 withCredentials: true,
-                transports: ['polling'],
+                transports: ['websocket', 'polling'],
             });
             socketRef.current = socket;
 

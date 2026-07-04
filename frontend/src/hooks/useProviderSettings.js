@@ -6,16 +6,15 @@ export default function useProviderSettings() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getSettings = useCallback(async () => {
+  const getSettings = useCallback(async (signal) => {
     setIsLoading(true);
     try {
-      const res = await Provider.getSettings();
+      const res = await Provider.getSettings(signal);
       setSettings(res);
       setError(null);
       return res;
     } catch (err) {
       setError(err.message);
-      throw err;
     } finally {
       setIsLoading(false);
     }

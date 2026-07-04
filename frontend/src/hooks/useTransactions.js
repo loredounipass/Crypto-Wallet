@@ -106,7 +106,7 @@ export default function useTransitions(coin) {
     useEffect(() => {
         const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/transactions`, {
             withCredentials: true,
-            transports: ['polling']
+            transports: ['websocket', 'polling']
         });
 
         const handler = (data) => upsertTransactionRef.current(data);
