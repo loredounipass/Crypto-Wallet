@@ -4,7 +4,7 @@ import { CreateProviderDto } from './dto/provider.dto';
 import { CreateChatDto } from './dto/chat.dto';
 import { CreateMessageDto } from './dto/message.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
-import { AddPaymentMethodDto, UpdateDestinationWalletDto } from './dto/provider-settings.dto';
+import { AddPaymentMethodDto, UpdateDestinationWalletDto, ToggleDestinationWalletDto } from './dto/provider-settings.dto';
 import { Provider } from './schemas/provider.schema';
 import { Chat } from './schemas/chat-schema/chat.schema';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
@@ -89,5 +89,14 @@ export class ProviderController {
     @Body() dto: UpdateDestinationWalletDto
   ): Promise<Provider> {
     return this.providerService.updateDestinationWallet(req.user.email, dto);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Post('settings/destination-wallets/toggle')
+  toggleDestinationWallet(
+    @Request() req,
+    @Body() dto: ToggleDestinationWalletDto
+  ): Promise<Provider> {
+    return this.providerService.toggleDestinationWallet(req.user.email, dto);
   }
 }

@@ -6,7 +6,8 @@ import { Provider, ProviderSchema } from './schemas/provider.schema';
 import { ProviderTerms, ProviderTermsSchema } from './provider-terms.schema';
 import { Chat, ChatSchema } from './schemas/chat-schema/chat.schema';
 import { Message, MessageSchema } from './schemas/chat-schema/message.schema';
-import { UserModule } from '../user/user.module'; 
+import { UserModule } from '../user/user.module';
+import { Wallet, WalletSchema } from '../wallet/schemas/wallet.schema';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from '../user/user.module';
       { name: ProviderTerms.name, schema: ProviderTermsSchema },
       { name: Chat.name, schema: ChatSchema }, 
       { name: Message.name, schema: MessageSchema }, 
+      { name: Wallet.name, schema: WalletSchema },
     ]),
     UserModule, 
   ],

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsMongoId } from 'class-validator';
 
 export class AddPaymentMethodDto {
   @IsNotEmpty()
@@ -22,4 +22,10 @@ export class UpdateDestinationWalletDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+}
+
+export class ToggleDestinationWalletDto {
+  @IsNotEmpty()
+  @IsString()
+  address: string;
 }

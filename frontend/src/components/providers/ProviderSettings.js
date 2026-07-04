@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useProviderSettings from '../../hooks/useProviderSettings';
+import useAllWallets from '../../hooks/useAllWallets';
 
 const inputStyle = {
   width: '100%',
@@ -44,18 +45,42 @@ const sectionCard = {
   marginBottom: 16,
 };
 
+const toggleTrack = (enabled) => ({
+  width: 44,
+  height: 24,
+  borderRadius: 12,
+  backgroundColor: enabled ? '#7C3AED' : '#2D2D44',
+  position: 'relative',
+  cursor: 'pointer',
+  transition: 'background-color 0.2s',
+  flexShrink: 0,
+});
+
+const toggleThumb = (enabled) => ({
+  width: 18,
+  height: 18,
+  borderRadius: '50%',
+  backgroundColor: '#FFF',
+  position: 'absolute',
+  top: 3,
+  left: enabled ? 23 : 3,
+  transition: 'left 0.2s',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+});
+
 export default function ProviderSettings({ open, onClose }) {
   const { t } = useTranslation();
-  const { settings, isLoading, getSettings, addPaymentMethod, deletePaymentMethod, updateDestinationWallet } = useProviderSettings();
+  const { settings, isLoading, getSettings, addPaymentMethod, deletePaymentMethod, toggleDestinationWallet } = useProviderSettings();
+  const { allWalletInfo: wallets, refreshWallets } = useAllWallets();
 
   const [newMethod, setNewMethod] = useState('');
-  const [walletAddr, setWalletAddr] = useState('');
-  const [walletCoin, setWalletCoin] = useState('');
-  const [walletChainId, setWalletChainId] = useState('');
 
   useEffect(() => {
-    if (open) getSettings();
-  }, [open, getSettings]);
+    if (open) {
+      getSettings();
+      refreshWallets();
+    }
+  }, [open, getSettings, refreshWallets]);
 
   if (!open) return null;
 
@@ -77,21 +102,18 @@ export default function ProviderSettings({ open, onClose }) {
     }
   };
 
-  const handleUpdateWallet = async () => {
-    if (!walletAddr.trim() || !walletCoin.trim() || !walletChainId) return;
+  const handleToggle = async (address) => {
     try {
-      await updateDestinationWallet({
-        address: walletAddr.trim(),
-        coin: walletCoin.trim().toUpperCase(),
-        chainId: Number(walletChainId),
-        enabled: true,
-      });
-      setWalletAddr('');
-      setWalletCoin('');
-      setWalletChainId('');
+      await toggleDestinationWallet({ address });
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const isWalletEnabled = (walletAddr) => {
+    if (!settings?.destinationWallets) return false;
+    const found = settings.destinationWallets.find(w => w.address === walletAddr);
+    return found ? found.enabled : false;
   };
 
   return (
@@ -163,71 +185,56 @@ export default function ProviderSettings({ open, onClose }) {
               </div>
             </div>
 
-            {/* Destination Wallets */}
+            {/* Destination Wallets - Toggle from existing wallets */}
             <div style={sectionCard}>
               <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: '#F1F5F9' }}>
                 {t('p2p_destination_wallets')}
               </h4>
 
-              {settings.destinationWallets.length === 0 && (
+              {wallets.length === 0 && (
                 <p style={{ margin: '0 0 12px', fontSize: 13, color: '#64748B' }}>
                   {t('p2p_no_wallets')}
                 </p>
               )}
 
-              {settings.destinationWallets.map((w, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '8px 12px', borderRadius: 8, marginBottom: 6,
-                  backgroundColor: 'rgba(15,15,26,0.5)',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 600 }}>
-                      {w.coin} <span style={{ color: '#64748B', fontWeight: 400 }}>(Chain {w.chainId})</span>
+              {wallets.map((w) => {
+                const enabled = isWalletEnabled(w.address);
+                return (
+                  <div key={w.address} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 12px', borderRadius: 8, marginBottom: 6,
+                    backgroundColor: 'rgba(15,15,26,0.5)',
+                    opacity: enabled ? 1 : 0.5,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 600 }}>
+                        {w.coin} <span style={{ color: '#64748B', fontWeight: 400 }}>(Chain {w.chainId})</span>
+                      </div>
+                      <div style={{
+                        fontSize: 12, color: '#64748B', fontFamily: 'monospace',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {w.address}
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: 12, color: '#64748B', fontFamily: 'monospace',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {w.address}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+                        backgroundColor: enabled ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)',
+                        color: enabled ? '#10B981' : '#64748B',
+                      }}>
+                        {enabled ? t('p2p_enabled') : t('p2p_disabled')}
+                      </span>
+                      <div
+                        style={toggleTrack(enabled)}
+                        onClick={() => handleToggle(w.address)}
+                      >
+                        <div style={toggleThumb(enabled)} />
+                      </div>
                     </div>
                   </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-                    backgroundColor: w.enabled ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)',
-                    color: w.enabled ? '#10B981' : '#64748B',
-                  }}>
-                    {w.enabled ? t('p2p_enabled') : t('p2p_disabled')}
-                  </span>
-                </div>
-              ))}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                <input
-                  style={inputStyle}
-                  placeholder={t('p2p_wallet_address_placeholder')}
-                  value={walletAddr}
-                  onChange={(e) => setWalletAddr(e.target.value)}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    style={{ ...inputStyle, flex: 1 }}
-                    placeholder={t('p2p_wallet_coin_placeholder')}
-                    value={walletCoin}
-                    onChange={(e) => setWalletCoin(e.target.value)}
-                  />
-                  <input
-                    style={{ ...inputStyle, width: 120 }}
-                    placeholder={t('p2p_wallet_chain_placeholder')}
-                    value={walletChainId}
-                    onChange={(e) => setWalletChainId(e.target.value)}
-                    type="number"
-                  />
-                </div>
-                <button onClick={handleUpdateWallet} style={btnPrimary}>
-                  {t('p2p_add_wallet')}
-                </button>
-              </div>
+                );
+              })}
             </div>
           </>
         )}

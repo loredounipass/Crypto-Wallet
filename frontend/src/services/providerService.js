@@ -12,7 +12,8 @@ import {
     providerSettingsApi,
     providerAddPaymentMethodApi,
     providerDeletePaymentMethodApi,
-    providerUpdateDestinationWalletApi
+    providerUpdateDestinationWalletApi,
+    providerToggleDestinationWalletApi
 } from '../api/http';
 
 export default class Provider {
@@ -63,6 +64,11 @@ export default class Provider {
 
     static async updateDestinationWallet(body) {
         const { data } = await patch(providerUpdateDestinationWalletApi, body)
+        return data
+    }
+
+    static async toggleDestinationWallet(body) {
+        const { data } = await post(providerToggleDestinationWalletApi, body)
         return data
     }
 

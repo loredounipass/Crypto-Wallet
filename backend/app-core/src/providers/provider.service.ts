@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Provider, ProviderDocument } from './schemas/provider.schema';
 import { ProviderTerms, ProviderTermsDocument } from './provider-terms.schema';
 import { Chat, ChatDocument } from './schemas/chat-schema/chat.schema';
@@ -9,7 +9,9 @@ import { CreateChatDto } from './dto/chat.dto';
 import { CreateProviderDto } from './dto/provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { CreateMessageDto } from './dto/message.dto';  
-import { AddPaymentMethodDto, UpdateDestinationWalletDto } from './dto/provider-settings.dto';
+import { AddPaymentMethodDto, UpdateDestinationWalletDto, ToggleDestinationWalletDto } from './dto/provider-settings.dto';
+import { User, UserDocument } from '../user/schemas/user.schema';
+import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 import { v4 as uuidv4 } from 'uuid';  
 
 @Injectable()
@@ -26,6 +28,12 @@ export class ProviderService {
 
     @InjectModel(Message.name)
     private readonly messageModel: Model<MessageDocument>,
+
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+
+    @InjectModel(Wallet.name)
+    private readonly walletModel: Model<WalletDocument>,
   ) {}
 
   
@@ -148,6 +156,46 @@ export class ProviderService {
         enabled: dto.enabled ?? true,
       });
     }
+    return provider.save();
+  }
+
+  async toggleDestinationWallet(
+    email: string,
+    dto: ToggleDestinationWalletDto
+  ): Promise<Provider> {
+    const user = await this.userModel.findOne({ email }).populate('wallets').exec();
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const wallet = (user.wallets as any).find(
+      (w: any) => w.address === dto.address
+    );
+    if (!wallet) {
+      throw new BadRequestException('Wallet not found or does not belong to this user.');
+    }
+
+    const provider = await this.providerModel.findOne({ email });
+    if (!provider) {
+      throw new NotFoundException('Provider not found.');
+    }
+
+    const existingIndex = provider.destinationWallets.findIndex(
+      (w) => w.address === dto.address
+    );
+
+    if (existingIndex >= 0) {
+      provider.destinationWallets[existingIndex].enabled =
+        !provider.destinationWallets[existingIndex].enabled;
+    } else {
+      provider.destinationWallets.push({
+        address: wallet.address,
+        coin: wallet.coin,
+        chainId: wallet.chainId,
+        enabled: true,
+      });
+    }
+
     return provider.save();
   }
 }

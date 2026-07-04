@@ -6,7 +6,7 @@ const baseApi = process.env.REACT_APP_API_BASE_URL;
 const api = axios.create({
     baseURL: baseApi,
     withCredentials: true,
-    timeout: 10000,
+    timeout: 30000,
 });
 
 const apiOrigin = new URL(baseApi).origin;
@@ -109,6 +109,7 @@ const providerSettingsApi = `${baseApi}/providers/settings`
 const providerAddPaymentMethodApi = `${baseApi}/providers/settings/payment-methods`
 const providerDeletePaymentMethodApi = (method) => `${baseApi}/providers/settings/payment-methods/${encodeURIComponent(method)}`
 const providerUpdateDestinationWalletApi = `${baseApi}/providers/settings/destination-wallet`
+const providerToggleDestinationWalletApi = `${baseApi}/providers/settings/destination-wallets/toggle`
 
 // Endpoints support
 const supportChatApi = `${baseApi}/support/chat`
@@ -230,6 +231,7 @@ export {
     providerAddPaymentMethodApi,
     providerDeletePaymentMethodApi,
     providerUpdateDestinationWalletApi,
+    providerToggleDestinationWalletApi,
     messagesApi,
     messagesUploadApi,
     myMessagesApi,

@@ -66,6 +66,21 @@ export default function useProviderSettings() {
     }
   };
 
+  const toggleDestinationWallet = async (body) => {
+    setIsLoading(true);
+    try {
+      const res = await Provider.toggleDestinationWallet(body);
+      setSettings(res);
+      setError(null);
+      return res;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     settings,
     error,
@@ -74,5 +89,6 @@ export default function useProviderSettings() {
     addPaymentMethod,
     deletePaymentMethod,
     updateDestinationWallet,
+    toggleDestinationWallet,
   };
 }
