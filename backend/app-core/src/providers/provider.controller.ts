@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Get, Param, Request, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Request, UseGuards, Patch, Delete } from '@nestjs/common';
 import { ProviderService } from './provider.service';
 import { CreateProviderDto } from './dto/provider.dto';
 import { CreateChatDto } from './dto/chat.dto';
 import { CreateMessageDto } from './dto/message.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { AddPaymentMethodDto, UpdateDestinationWalletDto } from './dto/provider-settings.dto';
 import { Provider } from './schemas/provider.schema';
 import { Chat } from './schemas/chat-schema/chat.schema';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
@@ -55,5 +56,38 @@ export class ProviderController {
     @Body() updateProviderDto: UpdateProviderDto
   ): Promise<Provider> {
     return this.providerService.updateProvider(req.user.email, updateProviderDto);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('settings')
+  getSettings(@Request() req): Promise<Provider> {
+    return this.providerService.getProviderSettings(req.user.email);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Post('settings/payment-methods')
+  addPaymentMethod(
+    @Request() req,
+    @Body() dto: AddPaymentMethodDto
+  ): Promise<Provider> {
+    return this.providerService.addPaymentMethod(req.user.email, dto);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Delete('settings/payment-methods/:method')
+  deletePaymentMethod(
+    @Request() req,
+    @Param('method') method: string
+  ): Promise<Provider> {
+    return this.providerService.deletePaymentMethod(req.user.email, method);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Patch('settings/destination-wallet')
+  updateDestinationWallet(
+    @Request() req,
+    @Body() dto: UpdateDestinationWalletDto
+  ): Promise<Provider> {
+    return this.providerService.updateDestinationWallet(req.user.email, dto);
   }
 }

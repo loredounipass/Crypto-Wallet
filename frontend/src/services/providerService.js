@@ -2,12 +2,17 @@ import {
     get,
     post,
     patch,
+    del,
     createProvider,
     findByEMail,
     getAllProviders,
     updateProviderApi,
     checkTermsApi,
-    acceptTermsApi
+    acceptTermsApi,
+    providerSettingsApi,
+    providerAddPaymentMethodApi,
+    providerDeletePaymentMethodApi,
+    providerUpdateDestinationWalletApi
 } from '../api/http';
 
 export default class Provider {
@@ -38,6 +43,26 @@ export default class Provider {
 
     static async acceptTerms() {
         const { data } = await post(acceptTermsApi)
+        return data
+    }
+
+    static async getSettings() {
+        const { data } = await get(providerSettingsApi)
+        return data
+    }
+
+    static async addPaymentMethod(body) {
+        const { data } = await post(providerAddPaymentMethodApi, body)
+        return data
+    }
+
+    static async deletePaymentMethod(method) {
+        const { data } = await del(providerDeletePaymentMethodApi(method))
+        return data
+    }
+
+    static async updateDestinationWallet(body) {
+        const { data } = await patch(providerUpdateDestinationWalletApi, body)
         return data
     }
 

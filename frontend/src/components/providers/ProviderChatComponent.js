@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useEscrow from '../../hooks/useEscrow';
+import ProviderSettings from './ProviderSettings';
 
 const formatName = (nameStr) => {
   if (!nameStr || nameStr.includes('@')) return nameStr;
@@ -26,6 +27,8 @@ const ProviderChatComponent = () => {
     cancelled:  { label: t('p2p_status_cancelled'), color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '❌' },
     expired:    { label: t('p2p_status_expired'), color: '#6B7280', bg: 'rgba(107,114,128,0.10)', icon: '⏰' },
   };
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const FILTER_TABS = [
     { key: 'all', label: t('p2p_all') },
@@ -80,34 +83,62 @@ const ProviderChatComponent = () => {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={getProviderOrders}
-          disabled={isLoading}
-          style={{
-            borderRadius: 10,
-            border: '1px solid #2D2D44',
-            backgroundColor: 'transparent',
-            color: '#94A3B8',
-            padding: '9px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', gap: 6,
-            transition: 'all 0.2s',
-            opacity: isLoading ? 0.6 : 1,
-          }}
-          onMouseEnter={e => { if (!isLoading) { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}>
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-          {t(isLoading ? 'p2p_loading' : 'p2p_refresh')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            onClick={getProviderOrders}
+            disabled={isLoading}
+            style={{
+              borderRadius: 10,
+              border: '1px solid #2D2D44',
+              backgroundColor: 'transparent',
+              color: '#94A3B8',
+              padding: '9px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              transition: 'all 0.2s',
+              opacity: isLoading ? 0.6 : 1,
+            }}
+            onMouseEnter={e => { if (!isLoading) { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; } }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}>
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            {t(isLoading ? 'p2p_loading' : 'p2p_refresh')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            style={{
+              borderRadius: 10,
+              border: '1px solid #2D2D44',
+              backgroundColor: 'transparent',
+              color: '#94A3B8',
+              padding: '9px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            {t('p2p_settings')}
+          </button>
+        </div>
       </div>
+
+      <ProviderSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {/* Filter Tabs */}
       <div style={{

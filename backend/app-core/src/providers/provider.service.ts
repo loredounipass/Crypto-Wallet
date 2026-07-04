@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Provider, ProviderDocument } from './schemas/provider.schema';
@@ -9,6 +9,7 @@ import { CreateChatDto } from './dto/chat.dto';
 import { CreateProviderDto } from './dto/provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { CreateMessageDto } from './dto/message.dto';  
+import { AddPaymentMethodDto, UpdateDestinationWalletDto } from './dto/provider-settings.dto';
 import { v4 as uuidv4 } from 'uuid';  
 
 @Injectable()
@@ -88,5 +89,65 @@ export class ProviderService {
     return provider.save();
   }
 
-  
+  async getProviderSettings(email: string): Promise<Provider> {
+    const provider = await this.providerModel.findOne({ email }).exec();
+    if (!provider) {
+      throw new NotFoundException('Provider not found.');
+    }
+    return provider;
+  }
+
+  async addPaymentMethod(
+    email: string,
+    dto: AddPaymentMethodDto
+  ): Promise<Provider> {
+    const provider = await this.providerModel.findOne({ email });
+    if (!provider) {
+      throw new NotFoundException('Provider not found.');
+    }
+    if (!provider.paymentMethods.includes(dto.paymentMethod)) {
+      provider.paymentMethods.push(dto.paymentMethod);
+    }
+    return provider.save();
+  }
+
+  async deletePaymentMethod(email: string, method: string): Promise<Provider> {
+    const provider = await this.providerModel.findOne({ email });
+    if (!provider) {
+      throw new NotFoundException('Provider not found.');
+    }
+    provider.paymentMethods = provider.paymentMethods.filter(
+      (pm) => pm !== method
+    );
+    return provider.save();
+  }
+
+  async updateDestinationWallet(
+    email: string,
+    dto: UpdateDestinationWalletDto
+  ): Promise<Provider> {
+    const provider = await this.providerModel.findOne({ email });
+    if (!provider) {
+      throw new NotFoundException('Provider not found.');
+    }
+    const existingIndex = provider.destinationWallets.findIndex(
+      (w) => w.coin === dto.coin && w.chainId === dto.chainId
+    );
+    if (existingIndex >= 0) {
+      provider.destinationWallets[existingIndex] = {
+        address: dto.address,
+        coin: dto.coin,
+        chainId: dto.chainId,
+        enabled: dto.enabled ?? true,
+      };
+    } else {
+      provider.destinationWallets.push({
+        address: dto.address,
+        coin: dto.coin,
+        chainId: dto.chainId,
+        enabled: dto.enabled ?? true,
+      });
+    }
+    return provider.save();
+  }
 }

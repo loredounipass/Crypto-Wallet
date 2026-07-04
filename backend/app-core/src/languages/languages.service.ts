@@ -36,7 +36,7 @@ export class LanguagesService implements OnModuleInit {
   }
 
   async getAllLanguages(userLang?: string): Promise<any[]> {
-    let languages = await this.languageModel.find().lean().exec();
+    let languages: any[] = await this.languageModel.find().lean().exec();
     if (!languages || languages.length === 0) {
       languages = [];
     }

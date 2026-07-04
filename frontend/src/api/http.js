@@ -105,6 +105,10 @@ const getAllProviders = `${baseApi}/providers/allProviders`
 const updateProviderApi = `${baseApi}/providers/update`
 const checkTermsApi = `${baseApi}/providers/terms/check`
 const acceptTermsApi = `${baseApi}/providers/terms/accept`
+const providerSettingsApi = `${baseApi}/providers/settings`
+const providerAddPaymentMethodApi = `${baseApi}/providers/settings/payment-methods`
+const providerDeletePaymentMethodApi = (method) => `${baseApi}/providers/settings/payment-methods/${encodeURIComponent(method)}`
+const providerUpdateDestinationWalletApi = `${baseApi}/providers/settings/destination-wallet`
 
 // Endpoints support
 const supportChatApi = `${baseApi}/support/chat`
@@ -222,6 +226,10 @@ export {
     updateProviderApi,
     checkTermsApi,
     acceptTermsApi,
+    providerSettingsApi,
+    providerAddPaymentMethodApi,
+    providerDeletePaymentMethodApi,
+    providerUpdateDestinationWalletApi,
     messagesApi,
     messagesUploadApi,
     myMessagesApi,
