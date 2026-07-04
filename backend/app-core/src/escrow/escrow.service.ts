@@ -167,14 +167,29 @@ export class EscrowService {
 
     const orderId = uuidv4();
 
-    if (wallet.balance < dto.amount) {
-      throw new BadRequestException(`Insufficient balance. Required: ${dto.amount} ${dto.coin}`);
+    // 2b. Calculate gas fee upfront
+    const gasEstimate = await this.getGasEstimate(dto.coin, wallet.chainId);
+    const gasFee = gasEstimate.gasFee;
+
+    if (dto.amount <= gasFee) {
+      throw new BadRequestException(
+        `Amount must be greater than network gas fee. Amount: ${dto.amount} ${dto.coin}, Gas: ${gasFee} ${dto.coin}`
+      );
     }
 
-    // 3. Debit seller's wallet (lock funds in escrow)
+    const totalDeduction = dto.amount + gasFee;
+
+    if (wallet.balance < totalDeduction) {
+      throw new BadRequestException(
+        `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
+      );
+    }
+
+    // 3. Debit seller's wallet (amount + gasFee)
+    //    amount goes to escrow, gasFee stays in hot wallet to cover on-chain costs
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
-      { $inc: { balance: -dto.amount } }
+      { $inc: { balance: -totalDeduction } }
     );
 
     // 4. Create the chatroom for the order
@@ -203,6 +218,7 @@ export class EscrowService {
       status: 'pending',
       chatroomId,
       expiresAt: new Date(Date.now() + expirySeconds * 1000),
+      gasFee,
     });
 
     await escrowOrder.save();
@@ -238,6 +254,41 @@ export class EscrowService {
       coin: dto.coin,
       providerEmail: dto.providerEmail,
       paymentMethod: dto.paymentMethod,
+      gasFee,
+    };
+  }
+
+  // Calculate gas fee for a P2P order (covers funding + release/refund)
+  async getGasEstimate(coin: string, chainId: number): Promise<{ gasFee: number; gasFeeFormatted: string }> {
+    const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
+    const interactor = new EscrowContractInteractor(chainId);
+    const gasPrice = BigInt(await interactor.web3.eth.getGasPrice());
+
+    let gasLimit: bigint;
+    try {
+      const from = interactor.hotWalletAddress || interactor.relayerAddress;
+      const to = interactor.escrowWalletAddress;
+      gasLimit = BigInt(await interactor.web3.eth.estimateGas({
+        from,
+        to,
+        value: '0',
+      }));
+      gasLimit = gasLimit * BigInt(120) / BigInt(100);
+    } catch {
+      gasLimit = BigInt(30000);
+    }
+
+    // 2 transfers: funding + release (or funding + refund)
+    const totalGasWei = gasPrice * gasLimit * BigInt(2);
+
+    const coinsInfo = require('../../../config/coins/info.js');
+    const decimals = coinsInfo[coin.toUpperCase()]?.decimals || 18;
+    const { formatUnits } = require('ethers');
+    const gasFee = Number(parseFloat(formatUnits(totalGasWei, decimals)).toFixed(8));
+
+    return {
+      gasFee,
+      gasFeeFormatted: gasFee.toFixed(8),
     };
   }
 

@@ -1,6 +1,7 @@
 import {
     get,
     post,
+    escrowGasEstimateApi,
     escrowCreateOrderApi,
     escrowMyOrdersApi,
     escrowProviderOrdersApi,
@@ -14,6 +15,11 @@ import {
 } from '../api/http';
 
 export default class Escrow {
+    static async getGasEstimate(coin, chainId) {
+        const { data } = await get(escrowGasEstimateApi, { coin, chainId })
+        return data
+    }
+
     static async createOrder(body) {
         const { data } = await post(escrowCreateOrderApi, body)
         return data

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import useAllWallets from '../../hooks/useAllWallets';
 import Price from '../../services/price';
+import Escrow from '../../services/escrow';
 
 
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
@@ -28,6 +29,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [coinPriceUsd, setCoinPriceUsd] = useState(0);
+  const [gasFee, setGasFee] = useState(0);
+  const [gasLoading, setGasLoading] = useState(false);
 
   const availablePaymentMethods = provider?.paymentMethods?.length > 0
     ? provider.paymentMethods.map(pm =>
@@ -38,8 +41,12 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     : ['Transferencia Bancaria'];
 
   const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
-  const balance = selectedWallet?.balance || 0;
-  const availableAfterFee = useMemo(() => Math.max(0, Number(balance || 0)), [balance]);
+  const balance = Number(selectedWallet?.balance || 0);
+  const chainId = selectedWallet?.chainId || 0;
+  // Available balance (user enters a gross amount that already includes gas)
+  const availableBalance = useMemo(() => {
+    return balance || 0;
+  }, [balance]);
 
   const truncateToDecimals = (value, decimals = 8) => {
     const numeric = Number(value);
@@ -72,15 +79,45 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     return () => { isMounted = false; };
   }, [coin]);
 
+  // Fetch gas estimate when coin/wallet changes
+  useEffect(() => {
+    let isMounted = true;
+    async function loadGasEstimate() {
+      if (!coin || !chainId) {
+        if (isMounted) setGasFee(0);
+        return;
+      }
+      setGasLoading(true);
+      try {
+        const data = await Escrow.getGasEstimate(coin, chainId);
+        if (isMounted) setGasFee(Number(data.gasFee || 0));
+      } catch {
+        if (isMounted) setGasFee(0);
+      } finally {
+        if (isMounted) setGasLoading(false);
+      }
+    }
+    loadGasEstimate();
+    return () => { isMounted = false; };
+  }, [coin, chainId]);
+
+  const amountNum = parseFloat(amount) || 0;
+  const netAmount = Math.max(0, amountNum - gasFee);
+
   const fiatAmount = useMemo(() => {
-    const qty = Number(amount || 0);
+    const qty = netAmount;
     if (!qty || !coinPriceUsd) return '';
     const totalUsd = truncateToDecimals(qty * coinPriceUsd, 2);
     return totalUsd ? totalUsd.toFixed(2) : '';
-  }, [amount, coinPriceUsd]);
+  }, [netAmount, coinPriceUsd]);
 
-  const isValid = coin && parseFloat(amount) > 0 && parseFloat(fiatAmount) > 0
-    && paymentMethod && parseFloat(amount) <= availableAfterFee;
+  const isValid = coin && amountNum > 0 && parseFloat(fiatAmount) > 0
+    && paymentMethod
+    && netAmount > 0
+    && amountNum <= balance;
+
+  const insufficientBalance = amountNum > 0 && amountNum > balance;
+  const amountBelowGas = amountNum > 0 && amountNum < gasFee;
 
   const resolvePaymentMethod = (displayValue) => {
     if (provider?.paymentMethods?.includes(displayValue)) return displayValue;
@@ -92,7 +129,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     if (!isValid) return;
     onSubmit({
       coin: coin.toUpperCase(),
-      amount: parseFloat(amount),
+      amount: netAmount,
       fiatAmount: parseFloat(fiatAmount),
       providerEmail: provider.email,
       paymentMethod: resolvePaymentMethod(paymentMethod),
@@ -100,8 +137,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   };
 
   const handleSetMax = () => {
-    if (!coin || availableAfterFee <= 0) return;
-    setAmount(formatTrimmed(availableAfterFee, 8));
+    if (!coin || availableBalance <= 0) return;
+    setAmount(formatTrimmed(availableBalance, 8));
   };
 
   const inputStyle = {
@@ -171,7 +208,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
           <label style={labelStyle}>{t('p2p_cryptocurrency')}</label>
           <select
             value={coin}
-            onChange={e => setCoin(e.target.value)}
+            onChange={e => { setCoin(e.target.value); setAmount(''); }}
             style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
           >
             <option value="">{t('p2p_select_crypto')}</option>
@@ -188,12 +225,12 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         </div>
 
         {/* Amount */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 12 }}>
           <div style={labelStyle}>
             <span>{t('p2p_amount_to_sell')}</span>
             {selectedWallet && (
               <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>
-                {t('p2p_available')} <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableAfterFee, 8).toFixed(8)} {coin?.toUpperCase()}</span>
+                {t('p2p_available')} <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableBalance, 8).toFixed(8)} {coin?.toUpperCase()}</span>
               </span>
             )}
           </div>
@@ -210,7 +247,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             <button
               type="button"
               onClick={handleSetMax}
-              disabled={!coin || availableAfterFee <= 0}
+              disabled={!coin || availableBalance <= 0}
               style={{
                 position: 'absolute',
                 right: 10,
@@ -224,20 +261,46 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: '0.3px',
-                cursor: !coin || availableAfterFee <= 0 ? 'not-allowed' : 'pointer',
-                opacity: !coin || availableAfterFee <= 0 ? 0.4 : 1,
+                cursor: !coin || availableBalance <= 0 ? 'not-allowed' : 'pointer',
+                opacity: !coin || availableBalance <= 0 ? 0.4 : 1,
                 transition: 'all 0.15s',
               }}
             >
               {t('p2p_max')}
             </button>
           </div>
-          {parseFloat(amount) > availableAfterFee && availableAfterFee >= 0 && (
-            <p style={{ color: '#EF4444', fontSize: 11, margin: '6px 0 0', fontWeight: 500 }}>
-              {t('p2p_insufficient_balance')}
-            </p>
-          )}
         </div>
+
+        {/* Network Gas Fee */}
+        {coin && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>NETWORK GAS</label>
+            <div style={{
+              padding: '10px 14px', borderRadius: 10,
+              backgroundColor: 'rgba(255,183,77,0.08)',
+              border: '1px solid rgba(255,183,77,0.2)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontSize: 13, color: '#FCD34D' }}>
+                {t('p2p_network_gas_label') || 'Network Gas (prepaid)'}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#FCD34D' }}>
+                {gasLoading ? '...' : `${gasFee.toFixed(8)} ${coin?.toUpperCase()}`}
+              </span>
+            </div>
+            {netAmount <= 0 && amountNum > 0 && (
+              <p style={{ color: '#EF4444', fontSize: 11, margin: '6px 0 0', fontWeight: 500 }}>
+                {t('p2p_amount_below_gas') || `Amount must be greater than network gas (${gasFee.toFixed(8)} ${coin?.toUpperCase()})`}
+              </p>
+            )}
+          </div>
+        )}
+
+        {insufficientBalance && (
+          <p style={{ color: '#EF4444', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
+            {t('p2p_insufficient_balance')}
+          </p>
+        )}
 
         {/* Fiat Amount */}
         <div style={{ marginBottom: 20 }}>
@@ -290,7 +353,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         </div>
 
         {/* Summary */}
-        {coin && parseFloat(amount) > 0 && (
+        {coin && amountNum > 0 && (
           <div style={{
             padding: '14px 16px', borderRadius: 12, marginBottom: 20,
             backgroundColor: 'rgba(139,92,246,0.06)',
@@ -300,7 +363,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               {t('p2p_order_summary')}
             </p>
             <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
-              {amount} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
+              {netAmount.toFixed(8)} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
+            </p>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#FCD34D' }}>
+              Network Gas: {gasFee.toFixed(8)} {coin?.toUpperCase()} (prepaid)
+            </p>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94A3B8' }}>
+              Total deduction: {amountNum.toFixed(8)} {coin?.toUpperCase()}
             </p>
             {paymentMethod && (
               <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8B5CF6' }}>

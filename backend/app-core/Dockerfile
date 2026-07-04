@@ -15,6 +15,8 @@ COPY src ./src
 
 RUN pnpm build
 
+COPY languages ./languages
+
 FROM node:20-alpine
 
 RUN apk add --no-cache wget && \
@@ -28,6 +30,7 @@ RUN --mount=type=cache,id=pnpm-core-prod,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/languages ./languages
 
 ENV NODE_ENV=production
 

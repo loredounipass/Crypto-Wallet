@@ -84,6 +84,9 @@ export class EscrowOrder {
 
     @Prop()
     refundTxHash: string;
+
+    @Prop({ default: 0 })
+    gasFee: number;
 }
 
 export const EscrowOrderSchema = SchemaFactory.createForClass(EscrowOrder);

@@ -15,7 +15,7 @@ const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Worker, Queue } = require(`${appRoot}/config/bullmq`)
-const { parseUnits, formatUnits } = require('ethers')
+const { parseUnits } = require('ethers')
 const ObjectId = require('mongoose').Types.ObjectId
 
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
@@ -152,22 +152,14 @@ const processEscrowCancel = async (jobData) => {
         if (escrowBalance < amountWei) {
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow wallet balance (${escrowBalance}) is less than amount (${amountWei}). Refund already processed on-chain, skipping...`)
         } else {
-            // Estimate gas cost and deduct from refund (user pays gas)
-            const requiredWei = await interactor._estimateNativeTransferRequiredWei(
-                interactor.escrowWalletAddress,
-                order.sellerWalletAddress,
-                amountWei
-            )
-            const gasCost = requiredWei - amountWei
-            const refundAmount = amountWei - gasCost
-            if (refundAmount <= 0n) {
-                throw new Error(`Order amount too small to cover gas costs: amountWei=${amountWei} gasCost=${gasCost}`)
-            }
-            const gasCostEth = formatUnits(gasCost, decimals)
-            refundAmountEth = formatUnits(refundAmount, decimals)
-            console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refunding ${refundAmountEth} (gas deducted: ${gasCostEth})...`)
+            // Gas was prepaid at order creation (gasFee). Top up escrow wallet if needed,
+            // then refund the FULL amount (no gas deduction).
+            await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
 
-            const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, refundAmount)
+            refundAmountEth = order.amount
+            console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refunding full amount ${refundAmountEth} (gas prepaid at creation)...`)
+
+            const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
             if (receipt && receipt.status) {
                 refundTxHash = receipt.transactionHash
                 console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow Wallet refund successful! TxHash: ${refundTxHash}`)

@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Get, Param, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { EscrowService } from './escrow.service';
 import { CreateEscrowOrderDto } from './dto/create-escrow-order.dto';
 import { EscrowActionDto } from './dto/escrow-action.dto';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
+import { GasEstimateQueryDto } from './dto/gas-estimate-query.dto';
 
 
 @Controller('escrow')
@@ -74,6 +75,12 @@ export class EscrowController {
     @Body() dto: EscrowActionDto
   ) {
     return this.escrowService.cancelOrder(dto.orderId, req.user.email);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('gas-estimate')
+  getGasEstimate(@Query() query: GasEstimateQueryDto) {
+    return this.escrowService.getGasEstimate(query.coin, query.chainId);
   }
 
   @UseGuards(AuthenticatedGuard)

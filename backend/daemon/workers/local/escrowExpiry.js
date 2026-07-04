@@ -16,7 +16,7 @@ require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const ObjectId = require('mongoose').Types.ObjectId
-const { parseUnits, formatUnits } = require('ethers')
+const { parseUnits } = require('ethers')
 
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
@@ -129,26 +129,17 @@ const refundSellerWallet = async (order) => {
             // Idempotency check: if escrow wallet already empty, refund was already processed
             const escrowBalance = await interactor.getNativeBalance(interactor.escrowWalletAddress)
             if (escrowBalance >= amountWei) {
-                // Estimate gas cost and deduct from refund (user pays gas)
-                const requiredWei = await interactor._estimateNativeTransferRequiredWei(
-                    interactor.escrowWalletAddress,
-                    order.sellerWalletAddress,
-                    amountWei
-                )
-                const gasCost = requiredWei - amountWei
-                const refundAmount = amountWei - gasCost
-                if (refundAmount <= 0n) {
-                    throw new Error(`Order amount too small to cover gas costs: amountWei=${amountWei} gasCost=${gasCost}`)
-                }
-                const gasCostEth = formatUnits(gasCost, decimals)
-                refundAmountEth = formatUnits(refundAmount, decimals)
+                // Gas was prepaid at order creation (gasFee). Top up escrow wallet if needed,
+                // then refund the FULL amount (no gas deduction).
+                await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
 
-                console.log('[ESCROW-EXPIRY] Refunding from Escrow Wallet:', {
+                refundAmountEth = order.amount
+
+                console.log('[ESCROW-EXPIRY] Refunding from Escrow Wallet (full amount, gas prepaid):', {
                     orderId: order.orderId,
                     refundAmount: refundAmountEth,
-                    gasDeducted: gasCostEth
                 })
-                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, refundAmount)
+                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
             } else {
                 console.log('[ESCROW-EXPIRY] Escrow wallet balance is less than amount. Refund already processed on-chain, skipping:', {
                     orderId: order.orderId,

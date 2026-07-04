@@ -138,6 +138,7 @@ const feedPostSharesApi = (id) => `${baseApi}/feed/${id}/shares`
 const feedCommentDeleteApi = (commentId) => `${baseApi}/feed/comments/${commentId}`
 
 // Endpoints escrow P2P
+const escrowGasEstimateApi = `${baseApi}/escrow/gas-estimate`
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
 const escrowMyOrdersApi = `${baseApi}/escrow/orders`
 const escrowProviderOrdersApi = `${baseApi}/escrow/provider-orders`
@@ -240,6 +241,7 @@ export {
     profileByIdApi,
     profileUploadProfilePhotoApi,
     supportChatApi,
+    escrowGasEstimateApi,
     escrowCreateOrderApi,
     escrowMyOrdersApi,
     escrowProviderOrdersApi,
