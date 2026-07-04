@@ -73,6 +73,7 @@ $ cd backend/tasks/+
 $ pnpm install -g hardhat  
 $ npx hardhat run scripts/deploy.js --network (--network name--)  
 $ node generate.js (--number of wallets--) + (--network ID--)
+$ docker exec crypto-wallet-backend-daemons-workers-1 node /usr/src/app/tasks/wallet-generator/evm/generate.js 5 80002
 ```
 
 # pnpm setup
