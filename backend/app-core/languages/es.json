@@ -633,7 +633,7 @@
   "wallet_withdraw_insufficient": "Fondos Insuficientes",
   "wallet_withdraw_invalid_address": "Dirección Inválida",
   "wallet_withdraw_max": "Máx",
-  "wallet_withdraw_placeholder_addr": "Dirección {{network}}",
+  "wallet_withdraw_placeholder_addr": "Dirección de retiro {{network}}",
   "wallet_withdraw_placeholder_amount": "Cantidad",
   "wallet_withdraw_processing": "Procesando...",
   "wallet_withdraw_tab": "Retirar",

@@ -21,22 +21,42 @@ export class LanguagesService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    const count = await this.languageModel.countDocuments().exec();
-    if (count === 0) {
-      await this.languageModel.insertMany([
-        { code: 'en', name: 'English', nativeName: 'English' },
-        { code: 'es', name: 'Spanish', nativeName: 'Español' },
-      ]);
+    const languages = [
+      { code: 'en', name: 'English', nativeName: 'English' },
+      { code: 'es', name: 'Spanish', nativeName: 'Español' },
+      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+    ];
+    for (const lang of languages) {
+      await this.languageModel.updateOne(
+        { code: lang.code },
+        { $setOnInsert: lang },
+        { upsert: true },
+      );
     }
   }
 
   async getAllLanguages(userLang?: string): Promise<any[]> {
-    const languages = await this.languageModel.find().lean().exec();
+    let languages = await this.languageModel.find().lean().exec();
     if (!languages || languages.length === 0) {
-      return [
-        { code: 'en', name: 'English', nativeName: 'English', active: userLang === 'en' },
-        { code: 'es', name: 'Spanish', nativeName: 'Español', active: userLang === 'es' || !userLang },
-      ];
+      languages = [];
+    }
+    const defaultLanguages = [
+      { code: 'en', name: 'English', nativeName: 'English' },
+      { code: 'es', name: 'Spanish', nativeName: 'Español' },
+      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+    ];
+    const existingCodes = new Set(languages.map(l => l.code));
+    for (const lang of defaultLanguages) {
+      if (!existingCodes.has(lang.code)) {
+        languages.push(lang);
+        try {
+          await this.languageModel.updateOne(
+            { code: lang.code },
+            { $setOnInsert: lang },
+            { upsert: true },
+          );
+        } catch {}
+      }
     }
     return languages.map(lang => ({
       ...lang,

@@ -27,18 +27,29 @@ function LanguageSelectorComponent() {
     const [toast, setToast] = useState(null);
     const [languageOptions, setLanguageOptions] = useState([]);
 
+    const defaultLanguages = [
+        { code: 'en', name: 'English', nativeName: 'English' },
+        { code: 'es', name: 'Spanish', nativeName: 'Español' },
+        { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+    ];
+
     useEffect(() => {
         const fetchLanguages = async () => {
             try {
                 const res = await LanguagesService.getAllLanguages();
-                if (res && res.data && Array.isArray(res.data)) {
-                    setLanguageOptions(res.data);
+                const apiLangs = (res?.data && Array.isArray(res.data)) ? res.data : [];
+                const existingCodes = new Set(apiLangs.map(l => l.code));
+                const merged = [...apiLangs];
+                for (const lang of defaultLanguages) {
+                    if (!existingCodes.has(lang.code)) {
+                        merged.push({ ...lang, active: language === lang.code });
+                    }
                 }
+                setLanguageOptions(merged);
             } catch {
-                setLanguageOptions([
-                    { code: 'es', name: 'Spanish', nativeName: 'Español', active: language === 'es' },
-                    { code: 'en', name: 'English', nativeName: 'English', active: language === 'en' },
-                ]);
+                setLanguageOptions(
+                    defaultLanguages.map(lang => ({ ...lang, active: language === lang.code }))
+                );
             }
         };
         fetchLanguages();

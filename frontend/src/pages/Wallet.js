@@ -446,7 +446,7 @@ export default function Wallet() {
                         type="text"
                         value={withdrawAddress}
                         onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
-                        placeholder={t('wallet_address_placeholder', `Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`)}
+                        placeholder={t('wallet_withdraw_placeholder_addr', { defaultValue: `Direccion de ${getNetworkName(walletInfo?.chainId || defaultNetworkId)}`, network: getNetworkName(walletInfo?.chainId || defaultNetworkId) })}
                         style={{ ...styles.input, paddingRight: "58px" }}
                     />
                     <button type="button" onClick={() => setIsScannerOpen(true)} style={{...styles.inputActionButton, minWidth: "44px", height: "36px"}} aria-label={t('wallet_scan_qr')}>
