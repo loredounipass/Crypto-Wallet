@@ -79,7 +79,7 @@ services:
       replicas: 2
       resources:
         limits:
-          memory: 2g
+          memory: 700m
           cpus: "0.5"
 
   app-core:
