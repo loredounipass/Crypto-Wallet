@@ -162,9 +162,14 @@ class EscrowContractInteractor {
         }
 
         const senderBalance = BigInt(await this.web3.eth.getBalance(from))
-        const requiredBalance = BigInt(valueWei) + (gasPrice * gasLimit)
-        if (senderBalance < requiredBalance) {
-            throw new Error(`Insufficient balance in sender wallet: required=${requiredBalance} available=${senderBalance}`)
+        const gasCost = gasPrice * gasLimit
+        if (senderBalance < BigInt(valueWei) + gasCost) {
+            const adjustedValue = senderBalance - gasCost
+            if (adjustedValue <= 0n) {
+                throw new Error(`Insufficient balance in sender wallet: required=${BigInt(valueWei) + gasCost} available=${senderBalance}`)
+            }
+            console.warn(`[SEND] Balance insufficient for full transfer. Reducing from ${valueWei} to ${adjustedValue} (reserving ${gasCost} for gas)`)
+            valueWei = adjustedValue
         }
 
         const transaction = {

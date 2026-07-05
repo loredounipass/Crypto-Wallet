@@ -234,6 +234,7 @@ export class EscrowService {
       amount: dto.amount,
       coin: dto.coin,
       chainId: wallet.chainId,
+      gasFee,
       sellerEmail,
       providerEmail: dto.providerEmail,
     }, {

@@ -152,8 +152,6 @@ const processEscrowCancel = async (jobData) => {
         if (escrowBalance < amountWei) {
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow wallet balance (${escrowBalance}) is less than amount (${amountWei}). Refund already processed on-chain, skipping...`)
         } else {
-            // Gas was prepaid at order creation (gasFee). Top up escrow wallet if needed,
-            // then refund the FULL amount (no gas deduction).
             await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
 
             refundAmountEth = order.amount
