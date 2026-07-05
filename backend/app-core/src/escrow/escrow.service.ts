@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Queue, QueueEvents } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
 import { CreateEscrowOrderDto } from './dto/create-escrow-order.dto';
@@ -29,6 +29,9 @@ export class EscrowService {
     @InjectQueue(EscrowQueueType.ESCROW_RELEASE) private readonly escrowReleaseQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_STATUS_EVENTS) private readonly escrowStatusQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_CANCEL) private readonly escrowCancelQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_GAS_ESTIMATE) private readonly escrowGasEstimateQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_DISPUTE_MARK) private readonly escrowDisputeMarkQueue: Queue,
+    @InjectQueue(EscrowQueueType.ESCROW_REFUND) private readonly escrowRefundQueue: Queue,
     private readonly configService: ConfigService,
   ) { }
 
@@ -258,38 +261,33 @@ export class EscrowService {
     };
   }
 
-  // Calculate gas fee for a P2P order (covers funding + release/refund)
   async getGasEstimate(coin: string, chainId: number): Promise<{ gasFee: number; gasFeeFormatted: string }> {
-    const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
-    const interactor = new EscrowContractInteractor(chainId);
-    const gasPrice = BigInt(await interactor.web3.eth.getGasPrice());
-
-    let gasLimit: bigint;
+    console.log('[P2P Gas Estimate] Delegating to worker:', { coin, chainId });
+    const queueEvents = new QueueEvents(EscrowQueueType.ESCROW_GAS_ESTIMATE, {
+      connection: {
+        host: this.configService.get('REDIS_HOST'),
+        port: parseInt(this.configService.get('REDIS_PORT') || '6379'),
+        password: this.configService.get('REDIS_PASS') || undefined,
+      },
+    });
     try {
-      const from = interactor.hotWalletAddress || interactor.relayerAddress;
-      const to = interactor.escrowWalletAddress;
-      gasLimit = BigInt(await interactor.web3.eth.estimateGas({
-        from,
-        to,
-        value: '0',
-      }));
-      gasLimit = gasLimit * BigInt(120) / BigInt(100);
-    } catch {
-      gasLimit = BigInt(30000);
+      const job = await this.escrowGasEstimateQueue.add('estimate', { coin, chainId }, {
+        removeOnComplete: true,
+        removeOnFail: 50,
+      });
+      const result = await job.waitUntilFinished(queueEvents, 30000);
+      return result as { gasFee: number; gasFeeFormatted: string };
+    } catch (err) {
+      console.error('[P2P Gas Estimate] Worker did not respond in time:', err instanceof Error ? err.message : err);
+      const coinsInfo = require('../../../config/coins/info.js');
+      const fee = coinsInfo[coin.toUpperCase()]?.fee || 0.005;
+      return {
+        gasFee: fee,
+        gasFeeFormatted: fee.toFixed(8),
+      };
+    } finally {
+      await queueEvents.close();
     }
-
-    // 2 transfers: funding + release (or funding + refund)
-    const totalGasWei = gasPrice * gasLimit * BigInt(2);
-
-    const coinsInfo = require('../../../config/coins/info.js');
-    const decimals = coinsInfo[coin.toUpperCase()]?.decimals || 18;
-    const { formatUnits } = require('ethers');
-    const gasFee = Number(parseFloat(formatUnits(totalGasWei, decimals)).toFixed(8));
-
-    return {
-      gasFee,
-      gasFeeFormatted: gasFee.toFixed(8),
-    };
   }
 
   // Get orders where user is the seller
@@ -306,10 +304,10 @@ export class EscrowService {
         continue;
       }
 
-      const provider = await this.providerModel.findOne({ 
-        email: { $regex: new RegExp(`^${order.providerEmail.trim()}$`, 'i') } 
+      const provider = await this.providerModel.findOne({
+        email: { $regex: new RegExp(`^${order.providerEmail.trim()}$`, 'i') }
       }).lean().exec();
-      
+
       if (provider && (provider.firstName || provider.lastName)) {
         (order as any).counterpartName = `${provider.firstName || ''} ${provider.lastName || ''}`.trim();
       } else {
@@ -334,14 +332,14 @@ export class EscrowService {
       }
 
       // Search case-insensitively
-      let user: any = await this.userModel.findOne({ 
-        email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
+      let user: any = await this.userModel.findOne({
+        email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
       }).lean().exec();
 
       // If not found in User for some reason, search in Provider
       if (!user) {
-        user = await this.providerModel.findOne({ 
-          email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') } 
+        user = await this.providerModel.findOne({
+          email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
         }).lean().exec();
       }
 
@@ -486,20 +484,16 @@ export class EscrowService {
     order.disputeOpenedBy = email;
     await order.save();
 
-    const useEscrowContract = this.configService.get<string>('ESCROW_USE_CONTRACT') === 'true';
-    if (order.escrowTxHash && useEscrowContract) {
-      try {
-        const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
-        const interactor = new EscrowContractInteractor(order.chainId);
-        const contractAvailable = await interactor.isContractAvailable();
-        if (contractAvailable) {
-          console.log(`[ESCROW] Marking order ${orderId} as disputed on-chain...`);
-          await interactor.markDisputedOnChain(orderId);
-        }
-      } catch (err) {
-        console.warn(`[ESCROW] Failed to mark disputed on-chain:`, (err as Error).message);
-      }
-    }
+    await this.escrowDisputeMarkQueue.add('mark-dispute', {
+      orderId,
+      chainId: order.chainId,
+      escrowTxHash: order.escrowTxHash,
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 3000 },
+      removeOnComplete: true,
+      removeOnFail: 50,
+    });
 
     await this.escrowStatusQueue.add('status-update', {
       orderId,
@@ -645,72 +639,33 @@ export class EscrowService {
         // Refund on-chain when escrow was already funded
         if (order.escrowTxHash) {
           try {
-            const EscrowContractInteractor = require('../../../config/utils/EscrowContractInteractor.js');
-            const interactor = new EscrowContractInteractor(order.chainId);
-            const { parseUnits } = require('ethers');
-            const decimals = require('../../../config/coins/info.js')[order.coin.toUpperCase()]?.decimals || 18;
-            const amountWei = parseUnits(String(order.amount), decimals);
-            let refunded = false;
-            const contractAvailable = await interactor.isContractAvailable();
-
-            const useEscrowContract = this.configService.get<string>('ESCROW_USE_CONTRACT') === 'true';
-            if (useEscrowContract && contractAvailable) {
-              try {
-                console.log(`[ESCROW-EXPIRE] Refunding order ${order.orderId} via escrow contract...`);
-                const receipt = await interactor.refundFundsOnChain(order.orderId);
-                if (receipt && receipt.status) {
-                  refunded = true;
-                  refundTxHash = receipt.transactionHash;
-                  console.log(`[ESCROW-EXPIRE] Contract refund successful.`);
-                }
-              } catch (contractRefundError) {
-                console.warn(`[ESCROW-EXPIRE] Contract refund failed:`, (contractRefundError as Error).message);
-              }
-            }
-
-            // Strategy 2: Top up escrow wallet if needed, then refund
-            if (!refunded) {
-              try {
-                await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei);
-                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei);
-                if (receipt && receipt.status) {
-                  refunded = true;
-                  refundTxHash = receipt.transactionHash;
-                  console.log(`[ESCROW-EXPIRE] Escrow wallet refund successful.`);
-                }
-              } catch (escrowWalletErr) {
-                console.warn(`[ESCROW-EXPIRE] Escrow wallet refund failed:`, (escrowWalletErr as Error).message);
-              }
-            }
-
-            // Strategy 3: Direct hot wallet → seller
-            if (!refunded && interactor.hotWalletAddress) {
-              try {
-                console.log(`[ESCROW-EXPIRE] Last resort: refunding from hot wallet directly...`);
-                const receipt = await interactor._sendNativeTransfer(
-                  interactor.hotWalletAddress,
-                  interactor.hotWalletPrivateKey,
-                  order.sellerWalletAddress,
-                  amountWei,
-                );
-                if (receipt && receipt.status) {
-                  refunded = true;
-                  refundTxHash = receipt.transactionHash;
-                  console.log(`[ESCROW-EXPIRE] Hot wallet direct refund successful.`);
-                }
-              } catch (hotWalletErr) {
-                console.warn(`[ESCROW-EXPIRE] Hot wallet direct refund failed:`, (hotWalletErr as Error).message);
-              }
-            }
-
-            // Strategy 4 was removed. We do not do internal refunds for on-chain orders.
-
-            if (!refunded) {
-              throw new Error('All refund strategies failed');
+            const queueEvents = new QueueEvents(EscrowQueueType.ESCROW_REFUND, {
+              connection: {
+                host: this.configService.get('REDIS_HOST'),
+                port: parseInt(this.configService.get('REDIS_PORT') || '6379'),
+                password: this.configService.get('REDIS_PASS') || undefined,
+              },
+            });
+            try {
+              const job = await this.escrowRefundQueue.add('refund', {
+                orderId: order.orderId,
+                chainId: order.chainId,
+                sellerWalletAddress: order.sellerWalletAddress,
+                amount: order.amount,
+                coin: order.coin,
+              }, {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5000 },
+                removeOnComplete: true,
+                removeOnFail: 50,
+              });
+              refundTxHash = await job.waitUntilFinished(queueEvents, 60000);
+            } finally {
+              await queueEvents.close();
             }
           } catch (err) {
             console.error(`[ESCROW-EXPIRE] Failed to refund:`, (err as Error).message);
-            continue; // Skip DB refund if on-chain fails to avoid state mismatch
+            continue;
           }
         }
 

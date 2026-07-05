@@ -88,10 +88,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         return;
       }
       setGasLoading(true);
+      console.log('[P2P Gas] Fetching estimate:', { coin, chainId, selectedWallet: selectedWallet ? { address: selectedWallet.address, balance: selectedWallet.balance, chainId: selectedWallet.chainId } : 'none' });
       try {
         const data = await Escrow.getGasEstimate(coin, chainId);
+        console.log('[P2P Gas] Response:', data);
         if (isMounted) setGasFee(Number(data.gasFee || 0));
-      } catch {
+      } catch (err) {
+        console.error('[P2P Gas] Error:', err?.response?.data || err?.message || err);
         if (isMounted) setGasFee(0);
       } finally {
         if (isMounted) setGasLoading(false);
@@ -99,7 +102,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     }
     loadGasEstimate();
     return () => { isMounted = false; };
-  }, [coin, chainId]);
+  }, [coin, chainId, selectedWallet]);
 
   const amountNum = parseFloat(amount) || 0;
   const netAmount = Math.max(0, amountNum - gasFee);
@@ -117,7 +120,6 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     && amountNum <= balance;
 
   const insufficientBalance = amountNum > 0 && amountNum > balance;
-  const amountBelowGas = amountNum > 0 && amountNum < gasFee;
 
   const resolvePaymentMethod = (displayValue) => {
     if (provider?.paymentMethods?.includes(displayValue)) return displayValue;

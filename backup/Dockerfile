@@ -1,6 +1,7 @@
-FROM alpine:3.20
+FROM alpine:3.21
 
-RUN apk add --no-cache mongodb-tools redis bash
+RUN apk upgrade --no-cache && \
+    apk add --no-cache mongodb-tools redis bash
 
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh

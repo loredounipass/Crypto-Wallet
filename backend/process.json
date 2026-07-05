@@ -67,6 +67,18 @@
         {
             "name": "ME: ERC20 Backfill NODE",
             "script": "./daemon/subscriptions/chain/evm/erc20-tokens/erc20-backfill-runner.js"
+        },
+        {
+            "name": "ME: Escrow Gas Estimate Worker NODE",
+            "script": "./daemon/workers/local/escrowGasEstimate.js"
+        },
+        {
+            "name": "ME: Escrow Dispute Mark Worker NODE",
+            "script": "./daemon/workers/local/escrowDisputeMark.js"
+        },
+        {
+            "name": "ME: Escrow Refund Worker NODE",
+            "script": "./daemon/workers/local/escrowRefund.js"
         }
     ]
 }

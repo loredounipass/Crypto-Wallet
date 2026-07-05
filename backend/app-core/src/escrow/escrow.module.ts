@@ -37,6 +37,15 @@ import { default as EscrowQueueType } from './queue/types.queue';
     BullModule.registerQueue({
       name: EscrowQueueType.ESCROW_CANCEL,
     }),
+    BullModule.registerQueue({
+      name: EscrowQueueType.ESCROW_GAS_ESTIMATE,
+    }),
+    BullModule.registerQueue({
+      name: EscrowQueueType.ESCROW_DISPUTE_MARK,
+    }),
+    BullModule.registerQueue({
+      name: EscrowQueueType.ESCROW_REFUND,
+    }),
   ],
   controllers: [EscrowController],
   providers: [EscrowService, EscrowGateway, EscrowStatusProcessor],
