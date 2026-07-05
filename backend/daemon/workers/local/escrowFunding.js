@@ -146,19 +146,13 @@ const processEscrowFunding = async (jobData) => {
 
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = toWeiAmount(amount, decimals)
-    const gasFeeWei = toWeiAmount(gasFee, decimals)
-    const totalWei = amountWei + gasFeeWei
 
     let escrowTxHash = null
 
     try {
         const interactor = new EscrowContractInteractor(chainId)
-        console.log('[ESCROW-FUNDING] Funding escrow wallet:', {
-            amountWei: amountWei.toString(),
-            gasFeeWei: gasFeeWei.toString(),
-            totalWei: totalWei.toString()
-        })
-        const receipt = await interactor.fundEscrowWallet(orderId, totalWei)
+        console.log('[ESCROW-FUNDING] Funding escrow wallet...')
+        const receipt = await interactor.fundEscrowWallet(orderId, amountWei)
         if (!receipt || !receipt.status) {
             throw new Error('[ESCROW-FUNDING] Escrow wallet funding failed')
         }

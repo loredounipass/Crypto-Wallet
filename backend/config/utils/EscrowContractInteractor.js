@@ -161,15 +161,15 @@ class EscrowContractInteractor {
             gasLimit = 30000n
         }
 
-        const senderBalance = BigInt(await this.web3.eth.getBalance(from))
         const gasCost = gasPrice * gasLimit
-        if (senderBalance < BigInt(valueWei) + gasCost) {
-            const adjustedValue = senderBalance - gasCost
-            if (adjustedValue <= 0n) {
-                throw new Error(`Insufficient balance in sender wallet: required=${BigInt(valueWei) + gasCost} available=${senderBalance}`)
-            }
-            console.warn(`[SEND] Balance insufficient for full transfer. Reducing from ${valueWei} to ${adjustedValue} (reserving ${gasCost} for gas)`)
-            valueWei = adjustedValue
+        if (BigInt(valueWei) <= gasCost) {
+            throw new Error(`Amount too small to cover gas: amount=${valueWei} gas=${gasCost}`)
+        }
+        valueWei = BigInt(valueWei) - gasCost
+
+        const senderBalance = BigInt(await this.web3.eth.getBalance(from))
+        if (senderBalance < gasCost + BigInt(valueWei)) {
+            throw new Error(`Insufficient balance in sender wallet: required=${gasCost + BigInt(valueWei)} available=${senderBalance}`)
         }
 
         const transaction = {
@@ -237,14 +237,23 @@ class EscrowContractInteractor {
         }
 
         const missingWei = requiredWei - escrowBalance
+        // _sendNativeTransfer deducts gas, so add gas buffer so escrow receives missingWei
+        const gasPrice_ = BigInt(await this.web3.eth.getGasPrice())
+        const gasLimit_ = BigInt(await this.web3.eth.estimateGas({
+            from: this.hotWalletAddress,
+            to: this.escrowWalletAddress,
+            value: '0'
+        }).catch(() => 30000n))
+        const topupGasCost = gasPrice_ * gasLimit_ * 120n / 100n
         console.log('[ESCROW-WALLET] Insufficient escrow balance, topping up from hot wallet:', {
             orderId,
             requiredWei: requiredWei.toString(),
             escrowBalance: escrowBalance.toString(),
-            missingWei: missingWei.toString()
+            missingWei: missingWei.toString(),
+            topupGasCost: topupGasCost.toString()
         })
 
-        await this.fundEscrowWallet(`topup-${orderId}`, missingWei)
+        await this.fundEscrowWallet(`topup-${orderId}`, missingWei + topupGasCost)
 
         const updatedBalance = await this.getNativeBalance(this.escrowWalletAddress)
         if (updatedBalance < requiredWei) {
