@@ -69,16 +69,25 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
     }
 
     const isInternal = !txHash
-    const transaction = new Transaction({
-        nature: 1,
-        amount: Number(order.amount || 0),
-        created_at: Date.now(),
-        status: isInternal ? 3 : 1,
-        confirmations: 0,
-        txHash: txHashToUse,
-        to: recipientAddress
-    })
-    await transaction.save()
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 1,
+            amount: Number(order.amount || 0),
+            created_at: Date.now(),
+            status: isInternal ? 3 : 1,
+            confirmations: 0,
+            txHash: txHashToUse,
+            to: recipientAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            transaction = await Transaction.findOne({ txHash: txHashToUse })
+            console.log('[DISP-RESOLVE] Duplicate txHash, using existing:', { txHash: txHashToUse, transactionId: transaction._id.toString() })
+        } else {
+            throw err
+        }
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },

@@ -63,16 +63,25 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
 
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
-    const transaction = new Transaction({
-        nature: 1, // Deposit (Refund)
-        amount: actualAmount,
-        created_at: Date.now(),
-        status: isInternal ? 3 : 1,
-        confirmations: 0,
-        txHash: txHashToUse,
-        to: order.sellerWalletAddress
-    })
-    await transaction.save()
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 1,
+            amount: actualAmount,
+            created_at: Date.now(),
+            status: isInternal ? 3 : 1,
+            confirmations: 0,
+            txHash: txHashToUse,
+            to: order.sellerWalletAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            transaction = await Transaction.findOne({ txHash: txHashToUse })
+            console.log('[ESCROW-CANCEL-WORKER] Duplicate txHash, using existing:', { txHash: txHashToUse, transactionId: transaction._id.toString() })
+        } else {
+            throw err
+        }
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },

@@ -8,7 +8,8 @@ const transactionScheme = mongoose.Schema({
     },
     txHash: {
         type: String,
-        index: true,
+        unique: true,
+        sparse: true,
     },
     amount: Number,
     fee: {

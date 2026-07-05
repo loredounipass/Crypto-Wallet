@@ -62,16 +62,25 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
         return null
     }
 
-    const transaction = new Transaction({
-        nature: 2,
-        amount: -1 * Number(order.amount || 0),
-        created_at: Date.now(),
-        status: 1,
-        confirmations: 0,
-        txHash: escrowTxHash,
-        to: escrowTargetAddress
-    })
-    await transaction.save()
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 2,
+            amount: -1 * Number(order.amount || 0),
+            created_at: Date.now(),
+            status: 1,
+            confirmations: 0,
+            txHash: escrowTxHash,
+            to: escrowTargetAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            transaction = await Transaction.findOne({ txHash: escrowTxHash })
+            console.log('[ESCROW-FUNDING] Duplicate txHash, using existing:', { txHash: escrowTxHash, transactionId: transaction._id.toString() })
+        } else {
+            throw err
+        }
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },

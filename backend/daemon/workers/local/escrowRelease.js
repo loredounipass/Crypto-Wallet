@@ -66,16 +66,25 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
         return null
     }
 
-    const transaction = new Transaction({
-        nature: 1,
-        amount: Number(order.amount || 0),
-        created_at: Date.now(),
-        status: 1,
-        confirmations: 0,
-        txHash: releaseTxHash,
-        to: order.providerWalletAddress
-    })
-    await transaction.save()
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 1,
+            amount: Number(order.amount || 0),
+            created_at: Date.now(),
+            status: 1,
+            confirmations: 0,
+            txHash: releaseTxHash,
+            to: order.providerWalletAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            transaction = await Transaction.findOne({ txHash: releaseTxHash })
+            console.log('[ESCROW-RELEASE] Duplicate txHash, using existing:', { txHash: releaseTxHash, transactionId: transaction._id.toString() })
+        } else {
+            throw err
+        }
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
