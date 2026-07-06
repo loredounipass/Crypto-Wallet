@@ -663,21 +663,16 @@ export default function Wallet() {
                     </div>
 
                     {/* Transactions */}
-                    <div className="rounded-2xl" style={styles.section}>
-                        <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
-                            {t('wallet_transactions')}
-                        </h2>
-                        <CoinTransactions
-                            transactions={transactions}
-                            chainId={defaultNetworkId}
-                            coin={walletId}
-                            hideDateOnMobile
-                            compactMobile
-                            fixedHeight
-                            desktopHeight={390}
-                            mobileHeight={270}
-                        />
-                    </div>
+                    <CoinTransactions
+                        transactions={transactions}
+                        chainId={defaultNetworkId}
+                        coin={walletId}
+                        hideDateOnMobile
+                        compactMobile
+                        fixedHeight
+                        desktopHeight={390}
+                        mobileHeight={270}
+                    />
                 </>
             ) : walletInfo === null ? (
                 <div style={styles.section}>

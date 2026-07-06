@@ -252,17 +252,15 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="rounded-2xl" style={sectionStyle}>
-        <CoinTransactions
-          transactions={transactions}
-          title={t('dashboard_recent_transactions')}
-          hideDateOnMobile
-          compactMobile
-          fixedHeight
-          desktopHeight={360}
-          mobileHeight={230}
-        />
-      </div>
+      <CoinTransactions
+        transactions={transactions}
+        title={t('dashboard_recent_transactions')}
+        hideDateOnMobile
+        compactMobile
+        fixedHeight
+        desktopHeight={360}
+        mobileHeight={230}
+      />
       <TransactionToast toast={toast} onClose={dismissToast} />
     </div>
   );
