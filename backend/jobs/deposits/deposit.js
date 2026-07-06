@@ -67,13 +67,23 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
         value
     })
 
-    const existingTx = await Transaction.findById(transactionId)
-    if (existingTx && existingTx.status === 3) {
+    // Atomic claim: only one concurrent job will succeed in marking status=3
+    const claimed = await Transaction.findOneAndUpdate(
+        { _id: new ObjectId(transactionId), status: { $ne: 3 } },
+        { $set: { status: 3, confirmations: MIN_CONFIRMATIONS } }
+    )
+    if (!claimed) {
         console.log('[DEPOSIT] Transaction already processed (status=3), skipping duplicate balance credit:', {
             transactionId
         })
         return 'deposit_already_processed'
     }
+
+    await publishTransactionStatusUpdate({
+        transactionId,
+        status: 3,
+        confirmations: MIN_CONFIRMATIONS
+    })
 
     const result = await Wallet.updateOne({
         address, coin, chainId
@@ -88,12 +98,13 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
             coin,
             chainId
         })
-        await _updateTransactionState(transactionId, 4)
+        await Transaction.updateOne(
+            { _id: new ObjectId(transactionId) },
+            { $set: { status: 4 } }
+        )
         reject('err: wallet not found for deposit')
         return
     }
-
-    await _updateTransactionState(transactionId, 3, value)
     const wallet = await Wallet.findOne({
         transactions: new ObjectId(transactionId)
     })

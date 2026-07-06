@@ -52,21 +52,31 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
 
-    const transaction = await Transaction.findOneAndUpdate(
-        { txHash: txHashToUse },
-        {
-            $setOnInsert: {
-                nature: 1,
-                amount: actualAmount,
-                created_at: Date.now(),
-                status: isInternal ? 3 : 1,
-                confirmations: 0,
-                txHash: txHashToUse,
-                to: order.sellerWalletAddress
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 1,
+            amount: actualAmount,
+            created_at: Date.now(),
+            status: isInternal ? 3 : 1,
+            confirmations: 0,
+            txHash: txHashToUse,
+            to: order.sellerWalletAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            console.log('[ESCROW-EXPIRY] Duplicate txHash, skipping deposit enqueue (subscription will handle):', { txHash: txHashToUse })
+            const existing = await Transaction.findOne({ txHash: txHashToUse })
+            if (existing) {
+                await Wallet.updateOne(
+                    { _id: new ObjectId(wallet._id) },
+                    { $addToSet: { transactions: existing._id } }
+                )
             }
-        },
-        { upsert: true, returnDocument: 'after' }
-    )
+            return existing || null
+        }
+        throw err
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
@@ -84,7 +94,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         }, {
             attempts: 20,
             backoff: { type: 'exponential', delay: 5000 },
-            removeOnComplete: true,
+            removeOnComplete: { age: 86400, count: 1000 },
             removeOnFail: 50
         })
         console.log('[ESCROW-EXPIRY] Registered refund tx for confirmation tracking:', {

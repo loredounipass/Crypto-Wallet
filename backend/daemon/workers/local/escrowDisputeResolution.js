@@ -82,8 +82,8 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
         }).save()
     } catch (err) {
         if (err.code === 11000) {
-            transaction = await Transaction.findOne({ txHash: txHashToUse })
-            console.log('[DISP-RESOLVE] Duplicate txHash, using existing:', { txHash: txHashToUse, transactionId: transaction._id.toString() })
+            console.log('[DISP-RESOLVE] Duplicate txHash, skipping deposit enqueue (subscription will handle):', { txHash: txHashToUse })
+            return await Transaction.findOne({ txHash: txHashToUse })
         } else {
             throw err
         }
@@ -105,7 +105,7 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
         }, {
             attempts: 20,
             backoff: { type: 'exponential', delay: 5000 },
-            removeOnComplete: true,
+            removeOnComplete: { age: 86400, count: 1000 },
             removeOnFail: 50
         })
         console.log('[DISP-RESOLVE] Registered resolution tx for confirmation tracking:', {

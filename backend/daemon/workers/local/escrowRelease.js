@@ -56,21 +56,34 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
         return null
     }
 
-    const transaction = await Transaction.findOneAndUpdate(
-        { txHash: releaseTxHash },
-        {
-            $setOnInsert: {
-                nature: 1,
-                amount: Number(order.amount || 0),
-                created_at: Date.now(),
-                status: 1,
-                confirmations: 0,
-                txHash: releaseTxHash,
-                to: order.providerWalletAddress
+    let transaction
+    try {
+        transaction = await new Transaction({
+            nature: 1,
+            amount: Number(order.amount || 0),
+            created_at: Date.now(),
+            status: 1,
+            confirmations: 0,
+            txHash: releaseTxHash,
+            to: order.providerWalletAddress
+        }).save()
+    } catch (err) {
+        if (err.code === 11000) {
+            console.log('[ESCROW-RELEASE] Tx already exists on-chain (duplicate txHash), skipping deposit enqueue:', {
+                orderId: order.orderId,
+                txHash: releaseTxHash
+            })
+            const existing = await Transaction.findOne({ txHash: releaseTxHash })
+            if (existing) {
+                await Wallet.updateOne(
+                    { _id: new ObjectId(wallet._id) },
+                    { $addToSet: { transactions: existing._id } }
+                )
             }
-        },
-        { upsert: true, returnDocument: 'after' }
-    )
+            return existing || null
+        }
+        throw err
+    }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
@@ -91,7 +104,7 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
             type: 'exponential',
             delay: 5000
         },
-        removeOnComplete: true,
+        removeOnComplete: { age: 86400, count: 1000 },
         removeOnFail: 50
     })
 
