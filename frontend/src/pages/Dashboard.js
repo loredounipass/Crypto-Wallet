@@ -259,8 +259,8 @@ const Dashboard = () => {
           hideDateOnMobile
           compactMobile
           fixedHeight
-          desktopHeight={420}
-          mobileHeight={280}
+          desktopHeight={360}
+          mobileHeight={230}
         />
       </div>
       <TransactionToast toast={toast} onClose={dismissToast} />

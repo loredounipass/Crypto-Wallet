@@ -674,8 +674,8 @@ export default function Wallet() {
                             hideDateOnMobile
                             compactMobile
                             fixedHeight
-                            desktopHeight={460}
-                            mobileHeight={320}
+                            desktopHeight={390}
+                            mobileHeight={270}
                         />
                     </div>
                 </>
