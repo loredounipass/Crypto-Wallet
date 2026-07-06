@@ -32,17 +32,9 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
 
-    let txHashToUse = refundTxHash || `internal-refund-${order.orderId}`
-
-    const existing = await Transaction.findOne({ txHash: txHashToUse })
-    if (existing) {
-        console.log('[ESCROW-EXPIRY] Existing transaction found for refund, skipping registration:', {
-            orderId: order.orderId,
-            txHash: txHashToUse,
-            transactionId: existing._id.toString()
-        })
-        return existing
-    }
+    const txHashToUse = refundTxHash || `internal-refund-${order.orderId}`
+    const isInternal = !refundTxHash
+    const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
 
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
@@ -60,28 +52,21 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
 
-    // Si hay txHash (on-chain), se marca pendiente (status 1). Si es interna, se marca completada (status 3).
-    const isInternal = !refundTxHash
-    const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
-    let transaction
-    try {
-        transaction = await new Transaction({
-            nature: 1,
-            amount: actualAmount,
-            created_at: Date.now(),
-            status: isInternal ? 3 : 1,
-            confirmations: 0,
-            txHash: txHashToUse,
-            to: order.sellerWalletAddress
-        }).save()
-    } catch (err) {
-        if (err.code === 11000) {
-            transaction = await Transaction.findOne({ txHash: txHashToUse })
-            console.log('[ESCROW-EXPIRY] Duplicate txHash, using existing:', { txHash: txHashToUse, transactionId: transaction._id.toString() })
-        } else {
-            throw err
-        }
-    }
+    const transaction = await Transaction.findOneAndUpdate(
+        { txHash: txHashToUse },
+        {
+            $setOnInsert: {
+                nature: 1,
+                amount: actualAmount,
+                created_at: Date.now(),
+                status: isInternal ? 3 : 1,
+                confirmations: 0,
+                txHash: txHashToUse,
+                to: order.sellerWalletAddress
+            }
+        },
+        { upsert: true, returnDocument: 'after' }
+    )
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
@@ -89,7 +74,6 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
     )
 
     if (!isInternal) {
-        // Enviar a la cola de depósitos para confirmación
         const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
         await depositsQueue.add('deposit', {
             walletAddress: order.sellerWalletAddress,

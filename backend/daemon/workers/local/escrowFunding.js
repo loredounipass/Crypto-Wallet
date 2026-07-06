@@ -36,16 +36,6 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
 
-    const existing = await Transaction.findOne({ txHash: escrowTxHash })
-    if (existing) {
-        console.log('[ESCROW-FUNDING] Existing transaction found for tx hash, skipping registration:', {
-            orderId: order.orderId,
-            txHash: escrowTxHash,
-            transactionId: existing._id.toString()
-        })
-        return existing
-    }
-
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
         coin,
@@ -62,25 +52,21 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
         return null
     }
 
-    let transaction
-    try {
-        transaction = await new Transaction({
-            nature: 2,
-            amount: -1 * Number(order.amount || 0),
-            created_at: Date.now(),
-            status: 1,
-            confirmations: 0,
-            txHash: escrowTxHash,
-            to: escrowTargetAddress
-        }).save()
-    } catch (err) {
-        if (err.code === 11000) {
-            transaction = await Transaction.findOne({ txHash: escrowTxHash })
-            console.log('[ESCROW-FUNDING] Duplicate txHash, using existing:', { txHash: escrowTxHash, transactionId: transaction._id.toString() })
-        } else {
-            throw err
-        }
-    }
+    const transaction = await Transaction.findOneAndUpdate(
+        { txHash: escrowTxHash },
+        {
+            $setOnInsert: {
+                nature: 2,
+                amount: -1 * Number(order.amount || 0),
+                created_at: Date.now(),
+                status: 1,
+                confirmations: 0,
+                txHash: escrowTxHash,
+                to: escrowTargetAddress
+            }
+        },
+        { upsert: true, returnDocument: 'after' }
+    )
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },

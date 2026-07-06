@@ -15,58 +15,59 @@ const createTransaction
             coin,
             amount
         })
-        const transaction = new Transaction({
-            nature: 1,
-            amount: typeof amount === 'number' ? amount : undefined,
-            created_at: Date.now(),
-            txHash: transactionHash
+        const transaction = await Transaction.findOneAndUpdate(
+            { txHash: transactionHash },
+            {
+                $setOnInsert: {
+                    nature: 1,
+                    amount: typeof amount === 'number' ? amount : undefined,
+                    created_at: Date.now(),
+                    txHash: transactionHash
+                }
+            },
+            { upsert: true, returnDocument: 'after' }
+        )
+
+        await publishTransactionStatusUpdate({
+            transactionId: transaction._id.toString(),
+            status: transaction.status || 1,
+            confirmations: transaction.confirmations || 0
         })
 
-        var result = await transaction.save()
-        if (result) {
-            await publishTransactionStatusUpdate({
-                transactionId: transaction._id.toString(),
-                status: transaction.status || 1,
-                confirmations: transaction.confirmations || 0
-            })
+        const result = await Wallet.updateOne({
+            address: walletAddress,
+            chainId,
+            coin: coin.toUpperCase()
+        }, {
+            $addToSet: {
+                transactions: transaction._id
+            }
+        })
 
-            result = await Wallet.updateOne({
-                address: walletAddress,
+        if (result) {
+            const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
+            depositsQueue.add('deposit', {
+                walletAddress,
+                transactionHash,
                 chainId,
-                coin: coin.toUpperCase()
+                coin,
+                transactionId: transaction._id.toString(),
+                uuid: uuidv4()
             }, {
-                $push: {
-                    transactions: transaction._id
+                attempts: 20,
+                backoff: {
+                    type: 'exponential',
+                    delay: 5000,
                 }
             })
-
-            if (result) {
-                const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
-                depositsQueue.add('deposit', {
-                    walletAddress,
-                    transactionHash,
-                    chainId,
-                    coin,
-                    transactionId: transaction._id.toString(),
-                    uuid: uuidv4()
-                }, {
-                    attempts: 20,
-                    backoff: {
-                        type: 'exponential',
-                        delay: 5000,
-                    }
-                })
-                console.log('[DEPOSIT_TX] deposit job enqueued', {
-                    queue: `${coin.toLowerCase()}-deposits`,
-                    transactionId: transaction._id.toString(),
-                    transactionHash
-                })
-            }
-
-            return 'deposit'
+            console.log('[DEPOSIT_TX] deposit job enqueued', {
+                queue: `${coin.toLowerCase()}-deposits`,
+                transactionId: transaction._id.toString(),
+                transactionHash
+            })
         }
 
-        throw 'err: not processed'
+        return 'deposit'
     }
 
 module.exports = createTransaction

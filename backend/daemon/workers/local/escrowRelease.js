@@ -40,16 +40,6 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
     const providerAddress = String(order.providerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
 
-    const existing = await Transaction.findOne({ txHash: releaseTxHash })
-    if (existing) {
-        console.log('[ESCROW-RELEASE] Existing transaction found for tx hash, skipping registration:', {
-            orderId: order.orderId,
-            txHash: releaseTxHash,
-            transactionId: existing._id.toString()
-        })
-        return existing
-    }
-
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${providerAddress}$`, 'i'),
         coin,
@@ -66,25 +56,21 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
         return null
     }
 
-    let transaction
-    try {
-        transaction = await new Transaction({
-            nature: 1,
-            amount: Number(order.amount || 0),
-            created_at: Date.now(),
-            status: 1,
-            confirmations: 0,
-            txHash: releaseTxHash,
-            to: order.providerWalletAddress
-        }).save()
-    } catch (err) {
-        if (err.code === 11000) {
-            transaction = await Transaction.findOne({ txHash: releaseTxHash })
-            console.log('[ESCROW-RELEASE] Duplicate txHash, using existing:', { txHash: releaseTxHash, transactionId: transaction._id.toString() })
-        } else {
-            throw err
-        }
-    }
+    const transaction = await Transaction.findOneAndUpdate(
+        { txHash: releaseTxHash },
+        {
+            $setOnInsert: {
+                nature: 1,
+                amount: Number(order.amount || 0),
+                created_at: Date.now(),
+                status: 1,
+                confirmations: 0,
+                txHash: releaseTxHash,
+                to: order.providerWalletAddress
+            }
+        },
+        { upsert: true, returnDocument: 'after' }
+    )
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
