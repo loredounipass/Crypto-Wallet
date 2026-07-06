@@ -21,6 +21,7 @@ async function bootstrap() {
   // Trust proxy for secure cookies
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', 1);
+  expressApp.disable('x-powered-by');
 
   // Security headers are handled by Nginx completely.
 

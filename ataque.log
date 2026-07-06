@@ -1,0 +1,225 @@
+=== Ataque de Fuerza Bruta - Login ===
+Usuario: erickcedeno558@gmail.com
+Fecha: Mon Jul 06 2026
+Endpoint: POST https://redesigned-lamp-wp9r7579jgj359rw-80.app.github.dev/secure/api/user/login
+
+Nota: El rate limiter se activó en la ronda anterior (intento #10).
+En esta ronda todos los intentos fueron bloqueados porque el
+limiter aún no se había reiniciado (ventana de 15 min).
+
+=== Attempt 1 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 2 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 3 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 4 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 5 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 6 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 7 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 8 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 9 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 10 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 11 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 12 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 13 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 14 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 15 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 16 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 17 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 18 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 19 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 20 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 21 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 22 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 23 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 24 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 25 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 26 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 27 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 28 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 29 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Attempt 30 ===
+{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Too many attempts. Please try again in 15 minute(s)."
+}
+
+=== Resumen ===
+- Total intentos: 30
+- HTTP 429 (Rate Limited): 30
+- HTTP 401 (Wrong password, previa ronda): 9
+- HTTP 200 (Success): 0
+- Protecciones detectadas: Rate limiting (ventana de 15 min), respuestas sin información sensible

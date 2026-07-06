@@ -108,15 +108,6 @@ const Dashboard = () => {
     justifyContent: "center",
   });
 
-  const sectionStyle = {
-    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
-    borderRadius: "16px",
-    padding: isMobile ? "0" : "24px",
-    border: "1px solid #1F1F33",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-    overflow: "hidden",
-  };
-
   return (
     <div className="mx-auto w-full" style={containerStyle}>
       {/* Header */}
