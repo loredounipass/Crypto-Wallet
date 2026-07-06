@@ -13,6 +13,8 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from '../auth/auth.service';
 import { TwoFactorAuthService } from '../two-factor/verification.module';
 import { UserService } from './user.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyTokenDto } from 'src/two-factor/dto';
 import { LocalAuthGuard } from '../guard/auth/local-auth.guard';
@@ -214,7 +216,7 @@ export class UserController {
   // Route for handling the forgot password functionality. It accepts an email address in the request body and calls the requestPasswordReset method of the ForgotPasswordService to initiate the password reset process. If successful, it returns a message indicating that a reset email has been sent; otherwise, it throws a BadRequestException with an error message.
   @UseGuards(EmailThrottlerGuard)
   @Post('forgot-password')
-  async forgotPassword(@Body() body: { email: string }) {
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
     const { email } = body;
     try {
       await this.forgotPasswordService.requestPasswordReset(email);
@@ -229,7 +231,7 @@ export class UserController {
   // Route for resetting the user's password. It accepts an email address, a reset token, a new password, and a confirmation of the new password in the request body. It calls the resetPassword method of the ForgotPasswordService to update the user's password. If successful, it returns a success message; otherwise, it throws a BadRequestException with an error message.
   @UseGuards(EmailThrottlerGuard)
   @Post('reset-password')
-  async resetPassword(@Body() body: { email: string; token: string; newPassword: string; confirmNewPassword: string }) {
+  async resetPassword(@Body() body: ResetPasswordDto) {
     const { email, token, newPassword, confirmNewPassword } = body;
     try {
       return await this.forgotPasswordService.resetPassword(email, token, newPassword, confirmNewPassword);
