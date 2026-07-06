@@ -310,6 +310,8 @@
   "p2p_location_title": "Location",
   "p2p_marketplace": "Marketplace",
   "p2p_max": "MAX",
+  "p2p_sell_escrow_desc": "Sell your crypto directly to verified providers with escrow protection",
+  "p2p_trading": "P2P Trading",
   "p2p_message_placeholder": "Write your message...",
   "p2p_my_orders": "My Orders",
   "p2p_network_gas_label": "Network Gas (prepaid)",

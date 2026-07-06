@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useEscrow from '../hooks/useEscrow';
 import useProviders from '../hooks/useProviders';
 import P2PProviderList from '../components/p2p/P2PProviderList';
@@ -31,13 +32,14 @@ const BriefcaseIcon = (props) => (
   </svg>
 );
 
-const TABS = [
-  { key: 'marketplace', label: 'Marketplace', icon: StorefrontIcon },
-  { key: 'my-orders', label: 'Mis Órdenes', icon: FileTextIcon },
-  { key: 'provider-orders', label: 'Proveedor', icon: BriefcaseIcon },
+const TAB_CONFIG = [
+  { key: 'marketplace', labelKey: 'p2p_marketplace', icon: StorefrontIcon },
+  { key: 'my-orders', labelKey: 'p2p_my_orders', icon: FileTextIcon },
+  { key: 'provider-orders', labelKey: 'p2p_provider', icon: BriefcaseIcon },
 ];
 
 export default function P2P() {
+  const { t } = useTranslation();
   const history = useHistory();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -91,12 +93,12 @@ export default function P2P() {
           color: '#F1F5F9',
           letterSpacing: '-0.5px',
         }}>
-          P2P Trading
+          {t('p2p_trading')}
         </h1>
         <p style={{
           margin: '6px 0 0', fontSize: 14, color: '#94A3B8',
         }}>
-          Vende tu crypto directamente a proveedores verificados con protección escrow
+          {t('p2p_sell_escrow_desc')}
         </p>
       </div>
 
@@ -110,7 +112,7 @@ export default function P2P() {
           backgroundColor: '#080811',
           marginBottom: 20,
         }}>
-          {TABS.map((tab) => (
+          {TAB_CONFIG.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -124,7 +126,7 @@ export default function P2P() {
                 transition: 'all 0.2s',
               }}
             >
-              {tab.label}
+              {t(tab.labelKey)}
               {tab.key === 'my-orders' && orders.length > 0 && (
                 <span style={{
                   marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
@@ -189,7 +191,7 @@ export default function P2P() {
           display: 'flex', justifyContent: 'space-around', alignItems: 'center',
           padding: '10px 0', zIndex: 100, margin: 0,
         }}>
-          {TABS.map((tab) => {
+          {TAB_CONFIG.map((tab) => {
             const IconComponent = tab.icon;
             const isActive = activeTab === tab.key;
             return (
@@ -202,7 +204,7 @@ export default function P2P() {
                   flex: 1, position: 'relative'
                 }}>
                 <IconComponent />
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{tab.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{t(tab.labelKey)}</span>
                 {tab.key === 'my-orders' && orders.length > 0 && (
                   <span style={{
                     position: 'absolute', top: -5, right: '15%',
