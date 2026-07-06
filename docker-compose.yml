@@ -76,11 +76,11 @@ services:
     security_opt:
       - no-new-privileges:true
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
-          memory: 700m
-          cpus: "0.5"
+          memory: 1g
+          cpus: "1.5"
 
   app-core:
     build:

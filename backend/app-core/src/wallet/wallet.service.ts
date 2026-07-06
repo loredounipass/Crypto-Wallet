@@ -297,61 +297,63 @@ export class WalletService {
       let wallet = data.find(w => w.walletsData.length > 0)
       if (wallet) {
         wallet = wallet.walletsData[0];
-        const data = await this.walletModel.findOne(
-          { _id: new Types.ObjectId(wallet._id) },
-          { _id: 0, transactions: 0, __v: 0 }
-        ).exec();
 
-        if (data && data.balance >= withdrawDto.amount) {
-          const transaction = new this.transactionModel({
-            nature: 2,
-            amount: -1 * withdrawDto.amount,
-            created_at: Date.now(),
-            status: 1,
-            txHash: uuidv4(),
-            to: withdrawDto.to
+        const transaction = new this.transactionModel({
+          nature: 2,
+          amount: -1 * withdrawDto.amount,
+          created_at: Date.now(),
+          status: 1,
+          txHash: uuidv4(),
+          to: withdrawDto.to
+        });
+
+        const saved = await transaction.save();
+
+        if (saved) {
+          await this.transactionStatusQueue.add('status-update', {
+            transactionId: transaction._id.toString(),
+            status: transaction.status,
+            confirmations: transaction.confirmations ?? 0,
+            source: 'app-core-withdraw'
+          }, {
+            removeOnComplete: true,
+            removeOnFail: 50
           });
 
-          const saved = await transaction.save();
-
-          if (saved) {
-            await this.transactionStatusQueue.add('status-update', {
-              transactionId: transaction._id.toString(),
-              status: transaction.status,
-              confirmations: transaction.confirmations ?? 0,
-              source: 'app-core-withdraw'
-            }, {
-              removeOnComplete: true,
-              removeOnFail: 50
+          const result = await this.walletModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(wallet._id), balance: { $gte: withdrawDto.amount } },
+            {
+              $push: { transactions: transaction },
+              $inc: { balance: transaction.amount }
             });
 
-            const result = await this.walletModel.updateOne(
-              { _id: new Types.ObjectId(wallet._id) },
-              {
-                $push: { transactions: transaction },
-                $inc: { balance: transaction.amount }
-              });
+          if (result) {
+            await this.withdrawQueue.add('request', {
+              transactionId: transaction._id.toString(),
+              walletId: wallet._id.toString(),
+              amount: withdrawDto.amount,
+              withdrawAddress: withdrawDto.to,
+            });
 
-            if (result) {
-              await this.withdrawQueue.add('request', {
-                transactionId: transaction._id.toString(),
-                walletId: wallet._id.toString(),
-                amount: withdrawDto.amount,
-                withdrawAddress: withdrawDto.to,
-              });
-
-              return {
-                error: null,
-                data: 'success'
-              };
-            }
+            return {
+              error: null,
+              data: 'success'
+            };
           }
-        } else {
-          return {
-            error: true,
-            msg: 'Insuficient balance'
-          };
+
+          await this.transactionModel.deleteOne({ _id: transaction._id });
+          await this.transactionStatusQueue.add('status-update', {
+            transactionId: transaction._id.toString(),
+            status: 4,
+            confirmations: 0,
+            source: 'app-core-withdraw-cancelled'
+          }, { removeOnComplete: true, removeOnFail: 50 });
         }
+
+        return {
+          error: true,
+          msg: 'Insuficient balance'
+        };
 
       }
     }

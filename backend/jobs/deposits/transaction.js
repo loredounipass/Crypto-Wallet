@@ -15,18 +15,33 @@ const createTransaction
             coin,
             amount
         })
-        const transaction = await Transaction.findOneAndUpdate(
-            { txHash: transactionHash },
-            {
-                $setOnInsert: {
-                    nature: 1,
-                    amount: typeof amount === 'number' ? amount : undefined,
-                    created_at: Date.now(),
-                    txHash: transactionHash
+        let transaction
+        try {
+            transaction = await new Transaction({
+                nature: 1,
+                amount: typeof amount === 'number' ? amount : undefined,
+                created_at: Date.now(),
+                txHash: transactionHash
+            }).save()
+        } catch (err) {
+            if (err.code === 11000) {
+                console.log('[DEPOSIT_TX] Transaction already exists (duplicate txHash), skipping enqueue:', {
+                    transactionHash
+                })
+                const existing = await Transaction.findOne({ txHash: transactionHash })
+                if (existing) {
+                    await Wallet.updateOne({
+                        address: walletAddress,
+                        chainId,
+                        coin: coin.toUpperCase()
+                    }, {
+                        $addToSet: { transactions: existing._id }
+                    }).catch(e => console.error('[DEPOSIT_TX] Failed to add existing tx ref:', e.message))
                 }
-            },
-            { upsert: true, returnDocument: 'after' }
-        )
+                return 'deposit_tx_exists'
+            }
+            throw err
+        }
 
         await publishTransactionStatusUpdate({
             transactionId: transaction._id.toString(),

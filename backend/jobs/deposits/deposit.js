@@ -66,6 +66,15 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
         address,
         value
     })
+
+    const existingTx = await Transaction.findById(transactionId)
+    if (existingTx && existingTx.status === 3) {
+        console.log('[DEPOSIT] Transaction already processed (status=3), skipping duplicate balance credit:', {
+            transactionId
+        })
+        return 'deposit_already_processed'
+    }
+
     const result = await Wallet.updateOne({
         address, coin, chainId
     }, {

@@ -78,7 +78,7 @@ const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
                         type: 'exponential',
                         delay: 5000
                     },
-                    removeOnComplete: true,
+                    removeOnComplete: { age: 86400, count: 1000 },
                     removeOnFail: 50
                 })
                 console.log(`[SUB][${coin}] transaction queued tx:`, result.transactionHash, 'wallet:', wallet.address)

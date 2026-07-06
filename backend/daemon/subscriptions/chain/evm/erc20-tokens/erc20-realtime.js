@@ -75,7 +75,7 @@ const connectAndSubscribeRealtime = async ({ chainId, tokenAddress, wssUrl }) =>
                     priority: 2097151 - (Number(result.blockNumber) % 2097152),
                     attempts: 5,
                     backoff: { type: 'exponential', delay: 5000 },
-                    removeOnComplete: true,
+                    removeOnComplete: { age: 86400, count: 1000 },
                     removeOnFail: 100
                 })
 
