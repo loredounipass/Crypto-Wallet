@@ -38,14 +38,16 @@ function LanguageSelectorComponent() {
             try {
                 const res = await LanguagesService.getAllLanguages();
                 const apiLangs = (res?.data && Array.isArray(res.data)) ? res.data : [];
-                const existingCodes = new Set(apiLangs.map(l => l.code));
-                const merged = [...apiLangs];
+                const langMap = new Map();
+                for (const lang of apiLangs) {
+                    langMap.set(lang.code, lang);
+                }
                 for (const lang of defaultLanguages) {
-                    if (!existingCodes.has(lang.code)) {
-                        merged.push({ ...lang, active: language === lang.code });
+                    if (!langMap.has(lang.code)) {
+                        langMap.set(lang.code, { ...lang, active: language === lang.code });
                     }
                 }
-                setLanguageOptions(merged);
+                setLanguageOptions(Array.from(langMap.values()));
             } catch {
                 setLanguageOptions(
                     defaultLanguages.map(lang => ({ ...lang, active: language === lang.code }))

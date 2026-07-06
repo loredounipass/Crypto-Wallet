@@ -14,6 +14,7 @@ export class LanguagesController {
   }
 
   @Get(':lang')
+  @UseGuards(AuthenticatedGuard)
   getLanguage(@Param('lang') lang: string) {
     return this.languagesService.getLanguageTranslations(lang);
   }
