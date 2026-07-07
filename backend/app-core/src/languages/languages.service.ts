@@ -12,12 +12,7 @@ export class LanguagesService implements OnModuleInit {
   constructor(
     @InjectModel(Language.name) private languageModel: Model<LanguageDocument>,
   ) {
-    const candidates = [
-      path.join(__dirname, '..', '..', 'languages'),
-      path.join(process.cwd(), 'languages'),
-      path.join(process.cwd(), 'backend', 'app-core', 'languages'),
-    ];
-    this.languagesPath = candidates.find(p => fs.existsSync(p)) || candidates[0];
+    this.languagesPath = path.join(__dirname, 'data');
   }
 
   async onModuleInit() {

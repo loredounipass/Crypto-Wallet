@@ -27,7 +27,7 @@ export default function useAuth() {
         try {
             await User.logout();
             setAuth(null);
-            history.push('/login');
+            window.location.reload();
         } catch (err) {
             setError(err.message);
         }
@@ -52,6 +52,7 @@ export default function useAuth() {
             if (data && ('msg' in data || 'message' in data)) {
                 if (data.msg === 'Logged in!' || data.message === 'Logged in!') {
                     await setUserContext();
+                    window.location.reload();
                 }
                 return data;
             } else {

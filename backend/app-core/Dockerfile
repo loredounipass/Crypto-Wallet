@@ -15,8 +15,6 @@ COPY src ./src
 
 RUN pnpm build
 
-COPY languages ./languages
-
 FROM node:20-alpine
 
 RUN apk add --no-cache wget su-exec && \
@@ -30,7 +28,6 @@ RUN --mount=type=cache,id=pnpm-core-prod,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/languages ./languages
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 RUN chown -R node:node /usr/src/app && \
