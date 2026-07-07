@@ -148,7 +148,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     { text: t("sidebar_dashboard", "Dashboard"), icon: DashboardIcon, path: "/", matchPaths: ["/"] },
     { text: t("sidebar_my_wallets", "Mis Billeteras"), icon: WalletIcon, path: "/wallets", matchPaths: ["/wallets"] },
     { text: t("sidebar_sell_p2p", "Vender P2P"), icon: P2PIcon, path: "/p2p", matchPaths: ["/p2p"] },
-    { text: t("sidebar_buy_p2p", "Comprar P2P"), icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/providerChat"] },
+    { text: t("sidebar_buy_p2p", "Comprar P2P"), icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/provider-dashboard"] },
     { text: t("sidebar_swap", "Swap"), icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
     { text: t("sidebar_feed", "Feed"), icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
     { text: t("sidebar_chat", "Chat"), icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },

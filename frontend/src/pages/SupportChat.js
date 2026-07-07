@@ -69,7 +69,7 @@ const SupportChat = () => {
 
   const handleClose = () => {
     setOpenMainDialog(false);
-    history.push('/providerchat');
+    history.push('/provider-dashboard');
   };
 
   const handleCancel = () => {

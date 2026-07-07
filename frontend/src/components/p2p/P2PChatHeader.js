@@ -14,7 +14,7 @@ export default function P2PChatHeader({
 
   const handleBack = () => {
     if (isProvider) {
-      history.push('/providerChat');
+      history.push('/provider-dashboard');
     } else {
       history.push('/p2p');
     }

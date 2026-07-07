@@ -11,7 +11,7 @@ const formatName = (nameStr) => {
     .join(' ');
 };
 
-const ProviderChatComponent = () => {
+const ProviderDashboard = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const { providerOrders, getProviderOrders, isLoading, error } = useEscrow();
@@ -351,4 +351,4 @@ const ProviderChatComponent = () => {
   );
 };
 
-export default ProviderChatComponent;
+export default ProviderDashboard;

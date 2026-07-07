@@ -316,7 +316,7 @@ export default function P2POrderDetailsPanel({
 
       {/* Exit Button */}
       <button
-        onClick={() => history.push(isProvider ? '/providerChat' : '/p2p')}
+        onClick={() => history.push(isProvider ? '/provider-dashboard' : '/p2p')}
         style={{
           width: '100%', padding: '13px', borderRadius: 12,
           border: '1px solid #1F1F33',

@@ -27,7 +27,7 @@ import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider } from './hooks/LanguageContext';
 import './languages/i18n';
 import Chatcomponent from './components/providers/Chat';
-import ProviderChatComponent from './components/providers/ProviderChatComponent';
+import ProviderDashboard from './components/providers/ProviderDashboard';
 import Dashboard from './pages/Dashboard'
 import P2P from './pages/P2P'
 import P2POrderChat from './components/p2p/P2POrderChat'
@@ -144,7 +144,7 @@ function AppContent() {
                                 <PrivateRoute exact path='/settings' component={Settings} />
                                 <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent} />
                                 <PrivateRoute exact path='/chat' component={Chatcomponent} />
-                                <PrivateRoute exact path='/providerchat' component={ProviderChatComponent} />
+                                <PrivateRoute exact path='/provider-dashboard' component={ProviderDashboard} />
                                 <PrivateRoute exact path='/p2p' component={P2P} />
                                 <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat} />
                                 <PrivateRoute exact path='/swap' component={Swap} />

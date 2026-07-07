@@ -99,7 +99,7 @@ export default function ProviderForm() {
       });
       setToast({ kind: 'deposit', message: t('p2p_provider_created') });
       setTimeout(() => {
-        history.push('/providerChat');
+        history.push('/provider-dashboard');
       }, 1500);
     } catch (err) {
       setToast({ 
@@ -132,7 +132,7 @@ export default function ProviderForm() {
         try {
           const response = await findByEMail(auth.email);
           if (response) {
-            history.push('/providerChat');
+            history.push('/provider-dashboard');
           } else {
             const hasAcceptedTerms = await checkTerms();
             if (!hasAcceptedTerms) {

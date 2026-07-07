@@ -1,12 +1,9 @@
-import { Controller, Post, Body, Get, Param, Request, UseGuards, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Request, UseGuards, Patch, Delete, ForbiddenException } from '@nestjs/common';
 import { ProviderService } from './provider.service';
 import { CreateProviderDto } from './dto/provider.dto';
-import { CreateChatDto } from './dto/chat.dto';
-import { CreateMessageDto } from './dto/message.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { AddPaymentMethodDto, UpdateDestinationWalletDto, ToggleDestinationWalletDto } from './dto/provider-settings.dto';
 import { Provider } from './schemas/provider.schema';
-import { Chat } from './schemas/chat-schema/chat.schema';
 import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
 
 @Controller('providers')
@@ -35,6 +32,15 @@ export class ProviderController {
   async checkTerms(@Request() req): Promise<{ accepted: boolean }> {
     const accepted = await this.providerService.checkTerms(req.user.email);
     return { accepted };
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('findByEMail/:email')
+  findByEMail(@Request() req, @Param('email') email: string): Promise<Provider> {
+    if (req.user.email !== email) {
+      throw new ForbiddenException('You can only access your own provider profile');
+    }
+    return this.providerService.findProviderByEmail(email);
   }
 
   @UseGuards(AuthenticatedGuard)
