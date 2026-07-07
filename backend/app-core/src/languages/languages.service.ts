@@ -60,6 +60,9 @@ export class LanguagesService implements OnModuleInit {
   }
 
   getLanguageTranslations(lang: string): any {
+    if (!/^[a-zA-Z0-9_-]+$/.test(lang)) {
+      throw new NotFoundException(`Invalid language code: '${lang}'`);
+    }
     try {
       const filePath = path.join(this.languagesPath, `${lang}.json`);
       if (!fs.existsSync(filePath)) {

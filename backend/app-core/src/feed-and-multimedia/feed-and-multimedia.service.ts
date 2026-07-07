@@ -245,7 +245,7 @@ export class FeedAndMultimediaService implements OnModuleInit {
 
     // upload to staging first - use safe extension only, never user-controlled filename
     const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.svg', '.webm', '.ogg'];
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.webm', '.ogg'];
     const safeExt = allowedExts.includes(ext) ? ext : '.bin';
     const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);

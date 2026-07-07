@@ -17,12 +17,18 @@ export class TransactionService {
   ) { }
 
 
-  // Get a specific transaction by its ID
-  async getTransaction(queryDto: QueryDto) {
-    const tx = await this.transactionModel.findOne(
-      { _id: new Types.ObjectId(queryDto.transactionId) },
-      { _id: 0, __v: 0 }
-    ).exec();
+  // Get a specific transaction by its ID (scoped to user)
+  async getTransaction(email: string, queryDto: QueryDto) {
+    const user = await this.userModel.findOne({ email }).populate({
+      path: 'wallets',
+      populate: { path: 'transactions', match: { _id: new Types.ObjectId(queryDto.transactionId) } }
+    }).lean().exec();
+
+    if (!user) return null;
+
+    const tx = (user.wallets as any[])
+      .flatMap((w: any) => w.transactions || [])
+      .find((t: any) => t._id.toString() === queryDto.transactionId);
 
     if (tx) {
       return {

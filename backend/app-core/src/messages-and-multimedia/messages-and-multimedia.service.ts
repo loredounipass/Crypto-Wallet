@@ -252,7 +252,7 @@ export class MessagesAndMultimediaService implements OnModuleInit {
 
     // upload to staging (temporary storage) - use a crypto UUID and safe extension for uniqueness under concurrency
     const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.svg', '.webm', '.ogg'];
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.webm', '.ogg'];
     const safeExt = allowedExts.includes(ext) ? ext : '.bin';
     const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);

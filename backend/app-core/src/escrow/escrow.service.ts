@@ -520,7 +520,7 @@ export class EscrowService {
       throw new ForbiddenException('Only the seller can cancel the order.');
     }
 
-    if (order.status !== 'pending' && order.status !== 'funded') {
+    if (order.status !== 'pending') {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 

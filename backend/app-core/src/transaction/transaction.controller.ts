@@ -27,8 +27,8 @@ export class TransactionController {
   // Endpoint to retrieve a specific transaction by its ID
   @UseGuards(AuthenticatedGuard)
   @Get('info')
-  transaction(@Query() queryDto: QueryDto) {
-    return this.transactionService.getTransaction(queryDto)
+  transaction(@Request() req, @Query() queryDto: QueryDto) {
+    return this.transactionService.getTransaction(req.user.email, queryDto)
   }
 
 }
