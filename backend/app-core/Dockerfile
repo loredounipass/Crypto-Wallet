@@ -19,7 +19,7 @@ COPY languages ./languages
 
 FROM node:20-alpine
 
-RUN apk add --no-cache wget && \
+RUN apk add --no-cache wget su-exec && \
     npm install -g pnpm
 
 WORKDIR /usr/src/app
@@ -31,14 +31,15 @@ RUN --mount=type=cache,id=pnpm-core-prod,target=/root/.local/share/pnpm/store \
 
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/languages ./languages
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+RUN chown -R node:node /usr/src/app && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV NODE_ENV=production
-
-RUN chown -R node:node /usr/src/app
-
-USER node
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider --server-response http://localhost:4000/ 2>&1 | grep -q "HTTP/" || exit 1
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/main"]

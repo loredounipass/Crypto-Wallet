@@ -38,9 +38,9 @@ export class ProviderController {
   }
 
   @UseGuards(AuthenticatedGuard)
-  @Get('findByEMail/:email')
-  findProviderByEmail(@Param('email') email: string): Promise<Provider> {
-    return this.providerService.findProviderByEmail(email);
+  @Get('my-profile')
+  findMyProvider(@Request() req): Promise<Provider> {
+    return this.providerService.findProviderByEmail(req.user.email);
   }
 
   @UseGuards(AuthenticatedGuard)

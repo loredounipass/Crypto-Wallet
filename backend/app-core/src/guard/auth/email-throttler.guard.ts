@@ -7,25 +7,52 @@ export class EmailThrottlerGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-
+    const ip = request.ip;
     const email = request.user?.email || request.body?.email?.toString().trim().toLowerCase();
-    const identifier = email || request.ip;
-
-    if (!identifier) return true;
-
     const path = request.route?.path || request.url;
-    const key = `rate-limit:email:${path}:${identifier}`;
 
+    // Rate limit GLOBAL por IP
+    const isRegister = path?.includes('register');
+    const ipLimit = isRegister ? 5 : 60;
+    const ipWindow = isRegister ? 60 : 60;
+    const ipKey = `rate-limit:ip:${path}:${ip}`;
+
+    try {
+      const ipRequests = await this.redisClient.incr(ipKey);
+      if (ipRequests === 1) {
+        await this.redisClient.expire(ipKey, ipWindow);
+      }
+
+      if (ipRequests > ipLimit) {
+        const ttl = await this.redisClient.ttl(ipKey);
+        const remainingSeconds = ttl > 0 ? ttl : ipWindow;
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            error: 'Too Many Requests',
+            message: `Too many requests from this IP. Please try again later.`,
+          },
+          HttpStatus.TOO_MANY_REQUESTS
+        );
+      }
+    } catch (err) {
+      if (err instanceof HttpException) throw err;
+    }
+
+    // Rate limit por email
+    if (!email) return true;
+
+    const emailKey = `rate-limit:email:${path}:${email}`;
     const limit = 10;
     const windowSeconds = 900;
 
     try {
-      const currentRequests = await this.redisClient.incr(key);
+      const currentRequests = await this.redisClient.incr(emailKey);
       if (currentRequests === 1) {
-        await this.redisClient.expire(key, windowSeconds);
+        await this.redisClient.expire(emailKey, windowSeconds);
       }
 
-      const ttl = await this.redisClient.ttl(key);
+      const ttl = await this.redisClient.ttl(emailKey);
 
       if (currentRequests > limit) {
         const remainingSeconds = ttl > 0 ? ttl : windowSeconds;

@@ -1,4 +1,4 @@
-import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -19,11 +19,9 @@ import { SupportModule } from './support/support.module';
 import { RedisModule } from './redis/redis.module';
 // import { NewsModule } from './news/news.module';
 import { CsrfModule } from './csrf/csrf.module';
-import { CsrfMiddleware } from './csrf/csrf.middleware';
 import { FeedAndMultimediaModule } from './feed-and-multimedia/feed-and-multimedia.module';
 import { DonationsModule } from './donations/donations.module';
 import { LanguagesModule } from './languages/languages.module';
-
 
 // This is the main application module that imports and configures various modules such as ConfigModule for environment variables, MongooseModule for MongoDB connection, ThrottlerModule for rate limiting, BullModule for Redis-based queues, and other feature modules like UserModule, WalletModule, AuthModule, TransactionModule, ProviderModule, and TwoFactorAuthModule. It also provides the AppService for handling application-level logic.
 @Module({
@@ -61,19 +59,8 @@ import { LanguagesModule } from './languages/languages.module';
     // NewsModule,
     FeedAndMultimediaModule,
     DonationsModule,
-    LanguagesModule
+    LanguagesModule,
   ],
   providers: [],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(CsrfMiddleware)
-      .forRoutes(
-        { path: '(.*)', method: RequestMethod.POST },
-        { path: '(.*)', method: RequestMethod.PATCH },
-        { path: '(.*)', method: RequestMethod.PUT },
-        { path: '(.*)', method: RequestMethod.DELETE },
-      );
-  }
-}
+export class AppModule {}

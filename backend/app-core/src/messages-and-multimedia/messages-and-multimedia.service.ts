@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as path from 'path';
 import { Types } from 'mongoose';
 import { Multimedia, MultimediaDocument } from './schemas/multimedia.schema';
 import { MessageRepository } from 'src/repositories/message.repository';
@@ -249,8 +250,11 @@ export class MessagesAndMultimediaService implements OnModuleInit {
     const receiverExists = await this.userService.getUserById(dto.receiverId);
     if (!receiverExists) throw new NotFoundException('Receiver not found');
 
-    // upload to staging (temporary storage) - use a crypto UUID for uniqueness under concurrency
-    const stagingKey = `staging/${crypto.randomUUID()}-${file.originalname}`;
+    // upload to staging (temporary storage) - use a crypto UUID and safe extension for uniqueness under concurrency
+    const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.svg', '.webm', '.ogg'];
+    const safeExt = allowedExts.includes(ext) ? ext : '.bin';
+    const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);
     console.log(`[MessagesService] 📤 File uploaded to staging | key=${stagingKey} | url=${uploadResult.url} | size=${uploadResult.size}`);
 

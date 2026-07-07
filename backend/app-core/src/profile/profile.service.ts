@@ -6,6 +6,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { LocalStorageProvider } from '../storage/local.storage.provider';
 import sharp from 'sharp';
 import * as crypto from 'crypto';
+import * as path from 'path';
 
 /** Lightweight interface matching the Multer file shape used by NestJS. */
 interface MulterFile {
@@ -89,7 +90,10 @@ export class ProfileService {
     if (!file) throw new BadRequestException('File missing');
     if (!userId || !Types.ObjectId.isValid(userId)) throw new BadRequestException('Invalid user id');
 
-    const baseKey = `${type}/${crypto.randomUUID()}-${file.originalname}`;
+    const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '.jpg';
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const safeExt = allowedExts.includes(ext) ? ext : '.jpg';
+    const baseKey = `${type}/${crypto.randomUUID()}${safeExt}`;
 
     // Optimize image and create thumbnail
     const tmpOptimized = await sharp(file.buffer).toBuffer();
@@ -97,7 +101,7 @@ export class ProfileService {
 
     // Upload optimized + thumbnail
     const uploadRes = await this.storage.upload(tmpOptimized, `final/${baseKey}`, file.mimetype);
-    const thumbRes = await this.storage.upload(thumbBuf, `thumbs/${crypto.randomUUID()}-${file.originalname}`, 'image/jpeg');
+    const thumbRes = await this.storage.upload(thumbBuf, `thumbs/${crypto.randomUUID()}${safeExt}`, 'image/jpeg');
 
     const publicUrl = uploadRes.url;
 

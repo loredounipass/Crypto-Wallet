@@ -60,16 +60,31 @@ export class AuthService {
   }
 
 
-  // This private method performs the login operation by using Passport's req.login to establish a session for the user. It returns a promise that resolves with a success message if the login is successful, or rejects with an UnauthorizedException if there is an error during the login process. Additionally, it sends a login notification email to the user after a successful login.
+  // This private method performs the login operation by regenerating the session ID (to prevent session fixation) and using Passport's req.login to establish a session for the user. It returns a promise that resolves with a success message if the login is successful, or rejects with an UnauthorizedException if there is an error during the login process. Additionally, it sends a login notification email to the user after a successful login.
   private performLogin(user: any, req: any) {
     return new Promise((resolve, reject) => {
-      req.login(user, async (err) => {
-        if (err) return reject(new UnauthorizedException('Error logging in.'));
+      const session = req.session;
+      if (session) {
+        session.regenerate((err) => {
+          if (err) return reject(new UnauthorizedException('Error logging in.'));
 
-        void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+          req.login(user, async (err) => {
+            if (err) return reject(new UnauthorizedException('Error logging in.'));
 
-        resolve({ msg: 'Logged in!' });
-      });
+            void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+
+            resolve({ msg: 'Logged in!' });
+          });
+        });
+      } else {
+        req.login(user, async (err) => {
+          if (err) return reject(new UnauthorizedException('Error logging in.'));
+
+          void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+
+          resolve({ msg: 'Logged in!' });
+        });
+      }
     });
   }
 }

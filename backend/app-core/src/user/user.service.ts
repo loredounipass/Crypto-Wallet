@@ -302,7 +302,7 @@ async sendVerificationEmail(email: string): Promise<boolean> {
 
     // Enforce maximum limit of 20 results to prevent abuse
     const MAX_LIMIT = 20;
-    const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('-password').lean().exec();
+    const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('_id firstName lastName email language').lean().exec();
 
     // Fetch profile photos for the matching users and merge into results so frontend can render avatars
     try {
@@ -313,14 +313,23 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         for (const p of profiles) {
           if (p && p.owner) photoMap[p.owner.toString()] = (p as any).profilePhotoUrl || '';
         }
-        return users.map((u: any) => ({ ...u, profilePhotoUrl: photoMap[u._id?.toString()] || undefined }));
+        return users.map((u: any) => {
+          const { _id, firstName, lastName, email, language } = u;
+          return { _id, firstName, lastName, email, language, profilePhotoUrl: photoMap[u._id?.toString()] || undefined };
+        });
       }
     } catch (err) {
       // if profile lookup fails, just return users without photos
-      return users;
+      return users.map((u: any) => {
+        const { _id, firstName, lastName, email, language } = u;
+        return { _id, firstName, lastName, email, language };
+      });
     }
 
-    return users;
+    return users.map((u: any) => {
+      const { _id, firstName, lastName, email, language } = u;
+      return { _id, firstName, lastName, email, language };
+    });
   }
 
 }

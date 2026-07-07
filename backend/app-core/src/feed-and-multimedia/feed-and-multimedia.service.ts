@@ -17,6 +17,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { LocalStorageProvider } from 'src/storage/local.storage.provider';
 import * as crypto from 'crypto';
+import * as path from 'path';
 
 @Injectable()
 export class FeedAndMultimediaService implements OnModuleInit {
@@ -242,8 +243,11 @@ export class FeedAndMultimediaService implements OnModuleInit {
       authorId: authorId,
     } as CreatePostDto;
 
-    // upload to staging first
-    const stagingKey = `staging/${crypto.randomUUID()}-${file.originalname}`;
+    // upload to staging first - use safe extension only, never user-controlled filename
+    const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.svg', '.webm', '.ogg'];
+    const safeExt = allowedExts.includes(ext) ? ext : '.bin';
+    const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);
 
     // Use transaction to guarantee consistency between multimedia and feed post.
