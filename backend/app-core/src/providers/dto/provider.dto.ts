@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail, IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
+import { IsNotEmpty, IsEmail, IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreateProviderDto {
   @IsNotEmpty()
@@ -28,9 +28,6 @@ export class CreateProviderDto {
   @IsNotEmpty()
   @IsString()
   postalCode: string;
-
-  @IsBoolean()
-  isValid: boolean = false;
 
   @IsOptional()
   @IsArray()

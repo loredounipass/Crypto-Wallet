@@ -45,7 +45,10 @@ export class ProviderService {
     if (existing) {
       throw new BadRequestException('Provider with this email or ID number already exists.');
     }
-    const newProvider = new this.providerModel(createProviderDto);
+    const newProvider = new this.providerModel({
+      ...createProviderDto,
+      isValid: false,
+    });
     return newProvider.save();
   }
 
