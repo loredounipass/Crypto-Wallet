@@ -1,11 +1,15 @@
-require("@nomicfoundation/hardhat-toolbox");
-const fs = require('fs');
-const appRoot = require('app-root-path');
+import "@nomicfoundation/hardhat-toolbox";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+import appRoot from 'app-root-path';
 
-// Carregar variáveis de ambiente (adaptado do script original)
-require('dotenv').config({ path: `${appRoot}/config/.env` });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 
-// Função para construir redes a partir da pasta chains original
+import('dotenv').then(dotenv => dotenv.config({ path: `${appRoot}/config/.env` }));
+
 const buildNetworks = () => {
     const networks = {};
     const __dir = `${appRoot}/config/chains`;
@@ -15,7 +19,7 @@ const buildNetworks = () => {
 
         files.forEach(file => {
             const info = require(`${__dir}/${file}`);
-            const network_id = require('path').parse(file).name;
+            const network_id = path.parse(file).name;
 
             networks[info.name] = {
                 url: info.rpc || "http://127.0.0.1:8545",
@@ -25,14 +29,12 @@ const buildNetworks = () => {
         });
     }
 
-    // Configuración para localhost/hardhat
     networks.hardhat = {};
 
     return networks;
 };
 
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+export default {
   solidity: "0.8.20",
   networks: buildNetworks(),
   paths: {

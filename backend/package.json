@@ -11,17 +11,17 @@
   "license": "ISC",
   "dependencies": {
     "app-root-path": "^3.1.0",
-    "bullmq": "^5.78.0",
+    "bullmq": "^5.80.9",
     "dotenv": "^17.4.2",
-    "ethers": "^6.16.0",
-    "mongoose": "^9.6.3",
-    "nodemailer": "8.0.10",
-    "uuid": "^14.0.0",
+    "ethers": "^6.17.0",
+    "mongoose": "^9.7.4",
+    "nodemailer": "9.0.3",
+    "uuid": "^14.0.1",
     "web3": "^4.16.0"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.28.6"
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "hardhat": "^3.10.0"
   },
   "pnpm": {
     "overrides": {
