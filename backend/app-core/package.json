@@ -51,7 +51,7 @@
     "ioredis": "^5.11.1",
     "mongoose": "^9.6.3",
     "multer": ">=2.2.0",
-    "nodemailer": "8.0.10",
+    "nodemailer": ">=9.0.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "redis": "^6.0.0",
@@ -91,7 +91,8 @@
   "pnpm": {
     "overrides": {
         "uuid": ">=8.3.3",
-        "multer": ">=2.2.0"
+        "multer": ">=2.2.0",
+        "nodemailer": ">=9.0.1"
     },
     "onlyBuiltDependencies": [
       "@nestjs/core",
