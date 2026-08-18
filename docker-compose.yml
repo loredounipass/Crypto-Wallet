@@ -73,13 +73,14 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    stop_grace_period: 1m
     security_opt:
       - no-new-privileges:true
     deploy:
       replicas: 1
       resources:
         limits:
-          memory: 2g
+          memory: 1g
           cpus: "1.6"
 
   app-core:
@@ -113,7 +114,7 @@ services:
       replicas: 2
       resources:
         limits:
-          memory: 512m
+          memory: 768m
           cpus: "0.5"
 
   nginx:
@@ -126,7 +127,7 @@ services:
       - "443:443"
     depends_on:
       app-core:
-        condition: service_started
+        condition: service_healthy
     networks:
       - backend
     restart: unless-stopped
