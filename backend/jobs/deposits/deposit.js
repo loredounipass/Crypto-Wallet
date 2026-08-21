@@ -67,6 +67,13 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
         value
     })
 
+    // Early check: if transaction is already completed, skip immediately
+    const txCheck = await Transaction.findOne({ _id: new ObjectId(transactionId) })
+    if (txCheck && txCheck.status === 3) {
+        console.log('[DEPOSIT] Transaction already completed (early check), skipping:', { transactionId })
+        return 'deposit_already_processed'
+    }
+
     // Atomic claim: only one concurrent job will succeed in marking status=3
     const claimed = await Transaction.findOneAndUpdate(
         { _id: new ObjectId(transactionId), status: { $ne: 3 } },

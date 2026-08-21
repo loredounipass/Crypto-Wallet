@@ -450,6 +450,7 @@ export class EscrowService {
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, {
+      jobId: `escrow-release-${order.orderId}`,
       attempts: 5,
       backoff: { type: 'exponential', delay: 5000 },
     });

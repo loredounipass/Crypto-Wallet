@@ -64,7 +64,7 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
             created_at: Date.now(),
             status: 1,
             confirmations: 0,
-            txHash: releaseTxHash,
+            txHash: String(releaseTxHash).toLowerCase(),
             to: order.providerWalletAddress
         }).save()
     } catch (err) {
@@ -73,7 +73,7 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
                 orderId: order.orderId,
                 txHash: releaseTxHash
             })
-            const existing = await Transaction.findOne({ txHash: releaseTxHash })
+            const existing = await Transaction.findOne({ txHash: String(releaseTxHash).toLowerCase() })
             if (existing) {
                 await Wallet.updateOne(
                     { _id: new ObjectId(wallet._id) },
@@ -90,29 +90,15 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
         { $addToSet: { transactions: transaction._id } }
     )
 
-    // Reuse the normal deposit worker so confirmations/balance update follow the same path.
-    const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
-    await depositsQueue.add('deposit', {
-        walletAddress: order.providerWalletAddress,
-        transactionHash: releaseTxHash,
-        chainId,
-        coin,
-        transactionId: transaction._id.toString()
-    }, {
-        attempts: 20,
-        backoff: {
-            type: 'exponential',
-            delay: 5000
-        },
-        removeOnComplete: { age: 86400, count: 1000 },
-        removeOnFail: 50
-    })
+    // NOTE: We do NOT enqueue a deposit job here. The on-chain WSS subscription
+    // will independently detect this transaction and enqueue it through the normal
+    // deposit pipeline (transaction.js → deposit.js). Enqueueing here as well
+    // caused double-credit of the provider's balance (the duplication bug).
 
     console.log('[ESCROW-RELEASE] Registered release tx for confirmation tracking:', {
         orderId: order.orderId,
         txHash: releaseTxHash,
-        transactionId: transaction._id.toString(),
-        walletId: wallet._id.toString()
+        transactionId: transaction._id.toString()
     })
 
     return transaction
