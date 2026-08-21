@@ -77,7 +77,6 @@ services:
     security_opt:
       - no-new-privileges:true
     deploy:
-      replicas: 1
       resources:
         limits:
           memory: 1g

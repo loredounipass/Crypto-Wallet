@@ -1,5 +1,5 @@
 const { ethers } = require('ethers');
-const getGeneratorFactoryContract = require('../contracts/abis/GeneratorFactoryContract.cjs');
+const getGeneratorFactoryContract = require('../contracts/abis/GeneratorFactoryContract.js');
 
 class GeneratorFactory {
     constructor(rpc, privateKeys) {
