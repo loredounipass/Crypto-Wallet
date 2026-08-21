@@ -172,8 +172,12 @@ const processEscrowRelease = async (jobData) => {
         }
     )
 
-    // 2. Register tx in normal confirmation pipeline (wallet gets credited after confirmations)
-    await registerEscrowReleaseTransaction(order, releaseTxHash)
+    // NOTE: We no longer call registerEscrowReleaseTransaction() here.
+    // The on-chain WSS subscription will detect this transfer arriving at
+    // the provider's wallet and will create the Transaction document +
+    // process it through the normal deposit pipeline (transaction.js → deposit.js).
+    // Creating a Transaction doc here caused duplicate records because this
+    // function and the WSS path raced to create docs with the same txHash.
 
     // 3. Update provider stats
     const providerResult = await Provider.updateOne(
