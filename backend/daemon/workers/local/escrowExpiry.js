@@ -32,7 +32,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
 
-    const txHashToUse = refundTxHash || `internal-refund-${order.orderId}`
+    const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
 
@@ -52,57 +52,37 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
 
-    let transaction
+    let transaction = new Transaction({
+        nature: 1,
+        amount: actualAmount,
+        created_at: Date.now(),
+        status: isInternal ? 3 : 1,
+        confirmations: 0,
+        txHash: txHashToUse,
+        to: order.sellerWalletAddress
+    })
+    
+    let savedTransaction = transaction;
     try {
-        transaction = await new Transaction({
-            nature: 1,
-            amount: actualAmount,
-            created_at: Date.now(),
-            status: isInternal ? 3 : 1,
-            confirmations: 0,
-            txHash: txHashToUse,
-            to: order.sellerWalletAddress
-        }).save()
+        await transaction.save()
     } catch (err) {
         if (err.code === 11000) {
-            console.log('[ESCROW-EXPIRY] Duplicate txHash, skipping deposit enqueue (subscription will handle):', { txHash: txHashToUse })
+            console.log('[ESCROW-EXPIRY] Duplicate txHash on refund, using existing tracking doc for order:', order.orderId)
             const existing = await Transaction.findOne({ txHash: txHashToUse })
             if (existing) {
-                await Wallet.updateOne(
-                    { _id: new ObjectId(wallet._id) },
-                    { $addToSet: { transactions: existing._id } }
-                )
+                savedTransaction = existing
             }
-            return existing || null
+        } else {
+            throw err
         }
-        throw err
     }
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
-        { $addToSet: { transactions: transaction._id } }
+        { $addToSet: { transactions: savedTransaction._id } }
     )
 
-    if (!isInternal) {
-        const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
-        await depositsQueue.add('deposit', {
-            walletAddress: order.sellerWalletAddress,
-            transactionHash: txHashToUse,
-            chainId,
-            coin,
-            transactionId: transaction._id.toString()
-        }, {
-            attempts: 20,
-            backoff: { type: 'exponential', delay: 5000 },
-            removeOnComplete: { age: 86400, count: 1000 },
-            removeOnFail: 50
-        })
-        console.log('[ESCROW-EXPIRY] Registered refund tx for confirmation tracking:', {
-            orderId: order.orderId,
-            txHash: txHashToUse,
-            transactionId: transaction._id.toString()
-        })
-    } else {
+    if (isInternal) {
         // Reembolso interno inmediato
         await Wallet.updateOne(
             { _id: new ObjectId(wallet._id) },
@@ -114,9 +94,15 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             coin: order.coin,
             seller: order.sellerEmail
         })
+    } else {
+        console.log('[ESCROW-EXPIRY] Registered refund tx for confirmation tracking (WSS will handle deposit enqueue):', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: savedTransaction._id.toString()
+        })
     }
 
-    return transaction
+    return savedTransaction
 }
 
 const refundSellerWallet = async (order) => {

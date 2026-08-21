@@ -33,7 +33,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
 
-    let txHashToUse = refundTxHash || `internal-refund-${order.orderId}`
+    let txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`
 
     const existing = await Transaction.findOne({ txHash: txHashToUse })
     if (existing) {
@@ -88,26 +88,7 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         { $addToSet: { transactions: transaction._id } }
     )
 
-    if (!isInternal) {
-        const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
-        await depositsQueue.add('deposit', {
-            walletAddress: order.sellerWalletAddress,
-            transactionHash: txHashToUse,
-            chainId,
-            coin,
-            transactionId: transaction._id.toString()
-        }, {
-            attempts: 20,
-            backoff: { type: 'exponential', delay: 5000 },
-            removeOnComplete: { age: 86400, count: 1000 },
-            removeOnFail: 50
-        })
-        console.log('[ESCROW-CANCEL-WORKER] Registered refund tx for confirmation tracking:', {
-            orderId: order.orderId,
-            txHash: txHashToUse,
-            transactionId: transaction._id.toString()
-        })
-    } else {
+    if (isInternal) {
         await Wallet.updateOne(
             { _id: new ObjectId(wallet._id) },
             { $inc: { balance: order.amount } }
@@ -117,6 +98,12 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             amount: order.amount,
             coin: order.coin,
             seller: order.sellerEmail
+        })
+    } else {
+        console.log('[ESCROW-CANCEL-WORKER] Registered refund tx for confirmation tracking (WSS will handle deposit enqueue):', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: transaction._id.toString()
         })
     }
 

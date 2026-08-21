@@ -37,7 +37,7 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
     const coin = String(order.coin || '').toUpperCase()
     const chainId = Number(order.chainId)
 
-    let txHashToUse = txHash || `internal-resolve-${resolutionType}-${order.orderId}`
+    let txHashToUse = txHash ? String(txHash).toLowerCase() : `internal-resolve-${resolutionType}-${order.orderId}`
     const recipientAddress = resolutionType === 'award'
         ? String(order.providerWalletAddress || '').toLowerCase()
         : String(order.sellerWalletAddress || '').toLowerCase()
@@ -69,21 +69,26 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
     }
 
     const isInternal = !txHash
-    let transaction
+    let transaction = new Transaction({
+        nature: 1,
+        amount: Number(order.amount || 0),
+        created_at: Date.now(),
+        status: isInternal ? 3 : 1,
+        confirmations: 0,
+        txHash: txHashToUse,
+        to: recipientAddress
+    })
+    
+    let savedTransaction = transaction;
     try {
-        transaction = await new Transaction({
-            nature: 1,
-            amount: Number(order.amount || 0),
-            created_at: Date.now(),
-            status: isInternal ? 3 : 1,
-            confirmations: 0,
-            txHash: txHashToUse,
-            to: recipientAddress
-        }).save()
+        await transaction.save()
     } catch (err) {
         if (err.code === 11000) {
-            console.log('[DISP-RESOLVE] Duplicate txHash, skipping deposit enqueue (subscription will handle):', { txHash: txHashToUse })
-            return await Transaction.findOne({ txHash: txHashToUse })
+            console.log('[DISP-RESOLVE] Duplicate txHash on resolution, using existing tracking doc for order:', order.orderId)
+            const existing = await Transaction.findOne({ txHash: txHashToUse })
+            if (existing) {
+                savedTransaction = existing
+            }
         } else {
             throw err
         }
@@ -91,30 +96,10 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
 
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
-        { $addToSet: { transactions: transaction._id } }
+        { $addToSet: { transactions: savedTransaction._id } }
     )
 
-    if (!isInternal) {
-        const depositsQueue = new Queue(`${coin.toLowerCase()}-deposits`)
-        await depositsQueue.add('deposit', {
-            walletAddress: recipientAddress,
-            transactionHash: txHashToUse,
-            chainId,
-            coin,
-            transactionId: transaction._id.toString()
-        }, {
-            attempts: 20,
-            backoff: { type: 'exponential', delay: 5000 },
-            removeOnComplete: { age: 86400, count: 1000 },
-            removeOnFail: 50
-        })
-        console.log('[DISP-RESOLVE] Registered resolution tx for confirmation tracking:', {
-            orderId: order.orderId,
-            txHash: txHashToUse,
-            transactionId: transaction._id.toString(),
-            type: resolutionType
-        })
-    } else {
+    if (isInternal) {
         await Wallet.updateOne(
             { _id: new ObjectId(wallet._id) },
             { $inc: { balance: order.amount } }
@@ -125,9 +110,16 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
             coin: order.coin,
             type: resolutionType
         })
+    } else {
+        console.log('[DISP-RESOLVE] Registered resolution tx for confirmation tracking (WSS will handle deposit enqueue):', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: savedTransaction._id.toString(),
+            type: resolutionType
+        })
     }
 
-    return transaction
+    return savedTransaction
 }
 
 /**

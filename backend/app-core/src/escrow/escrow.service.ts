@@ -40,7 +40,7 @@ export class EscrowService {
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase();
     const chainId = Number(order.chainId);
 
-    const txHashToUse = refundTxHash || `internal-refund-${order.orderId}`;
+    const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`;
 
     const existing = await this.transactionModel.findOne({ txHash: txHashToUse });
     if (existing) {
@@ -87,36 +87,39 @@ export class EscrowService {
       txHash: txHashToUse,
       to: order.sellerWalletAddress
     });
-    await transaction.save();
+    let savedTransaction = transaction;
+    try {
+      await transaction.save();
+    } catch (err: any) {
+      if (err.code === 11000) {
+        console.log(`[ESCROW] Duplicate txHash on refund, using existing tracking doc for order ${order.orderId}`);
+        const existingDoc = await this.transactionModel.findOne({ txHash: txHashToUse });
+        if (existingDoc) {
+          savedTransaction = existingDoc;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
-      { $addToSet: { transactions: transaction._id } }
+      { $addToSet: { transactions: savedTransaction._id } }
     );
 
-    if (!isInternal) {
-      const { Queue: BullMQQueue } = require('../../../config/bullmq');
-      const depositsQueue = new BullMQQueue(`${coin.toLowerCase()}-deposits`);
-      await depositsQueue.add('deposit', {
-        walletAddress: order.sellerWalletAddress,
-        transactionHash: txHashToUse,
-        chainId,
-        coin,
-        transactionId: transaction._id.toString()
-      }, {
-        attempts: 20,
-        backoff: { type: 'exponential', delay: 5000 },
-        removeOnComplete: true,
-        removeOnFail: 50
-      });
-    } else {
+    if (isInternal) {
       await this.walletModel.updateOne(
         { _id: new Types.ObjectId(wallet._id) },
         { $inc: { balance: order.amount } }
       );
+    } else {
+      // NOTE: We do NOT enqueue a deposit job for on-chain refunds.
+      // The on-chain WSS subscription will independently detect this transaction
+      // and enqueue it through the normal deposit pipeline. Enqueueing here
+      // as well would cause a double-credit of the seller's balance.
     }
 
-    return transaction;
+    return savedTransaction;
   }
 
   // Create a new escrow P2P order
