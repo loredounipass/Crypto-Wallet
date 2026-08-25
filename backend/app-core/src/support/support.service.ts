@@ -22,10 +22,16 @@ export class SupportService implements OnModuleInit {
         this.apiUrl = this.configService.get<string>('NVIDIA_API_URL') || 'http://localhost:11434/v1/chat/completions';
     }
 
+
+
+    // SE EJECUTA AUTOMATICAMENTE AL INICIAR EL MODULO PARA CARGAR EN MEMORIA EL CONTEXTO DE LA APLICACION
     async onModuleInit() {
         this.appContext = await this.loadContext();
     }
 
+
+
+    // LEE EL ARCHIVO JSON LOCAL Y EXTRAE LAS INSTRUCCIONES FORMATEANDO EL TEXTO PARA ALIMENTAR A LA INTELIGENCIA ARTIFICIAL
     private async loadContext(): Promise<string> {
         try {
             const contextPath = path.join(__dirname, 'contextapp.json');
@@ -40,6 +46,9 @@ export class SupportService implements OnModuleInit {
         }
     }
 
+
+
+    // GESTIONA EL FLUJO DE COMUNICACION CON LA IA Y REGISTRA TANTO LA PREGUNTA COMO LA RESPUESTA EN LA BASE DE DATOS
     async query(dto: ChatQueryDto, userEmail: string): Promise<{ response: string }> {
         let aiResponse: string;
         try {
@@ -48,16 +57,17 @@ export class SupportService implements OnModuleInit {
             const message = err instanceof Error ? err.message : 'Error desconocido';
             throw new InternalServerErrorException(`Error al contactar el asistente: ${message}`);
         }
-
         await this.chatMessageModel.create({
             userEmail,
             message: dto.message,
             response: aiResponse,
         });
-
         return { response: aiResponse };
     }
 
+
+
+    // CONSTRUYE Y ENVIA LA PETICION HTTP HACIA LA API EXTERNA O LOCAL DEL MODELO DE LENGUAJE CONFIGURADO
     private async callAiApi(message: string): Promise<string> {
         try {
             const { data } = await axios.post<any>(
@@ -85,7 +95,6 @@ export class SupportService implements OnModuleInit {
                     timeout: 30000,
                 },
             );
-
             const content = data.choices?.[0]?.message?.content;
             if (!content) {
                 return 'No se recibio respuesta del asistente.';
@@ -105,6 +114,9 @@ export class SupportService implements OnModuleInit {
         }
     }
 
+
+
+    // DETERMINA AUTOMATICAMENTE QUE MODELO DE LENGUAJE UTILIZAR BASANDOSE EN LAS VARIABLES DE ENTORNO DISPONIBLES
     private inferModel(): string {
         const configured = this.configService.get<string>('NVIDIA_MODEL');
         if (configured) return configured;

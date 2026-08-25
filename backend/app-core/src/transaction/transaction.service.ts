@@ -6,8 +6,6 @@ import { Transaction, TransactionDocument } from './schemas/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { QueryDto } from './dto/query.dto';
 
-
-// This service handles operations related to transactions, such as retrieving specific transactions and fetching all transactions for a user based on their email and the specified coin.
 @Injectable()
 export class TransactionService {
   constructor(
@@ -17,19 +15,17 @@ export class TransactionService {
   ) { }
 
 
-  // Get a specific transaction by its ID (scoped to user)
+
+  // RECUPERA LOS DETALLES EXACTOS DE UNA TRANSACCION ESPECIFICA COMPROBANDO QUE PERTENEZCA A LA BILLETERA DEL USUARIO
   async getTransaction(email: string, queryDto: QueryDto) {
     const user = await this.userModel.findOne({ email }).populate({
       path: 'wallets',
       populate: { path: 'transactions', match: { _id: new Types.ObjectId(queryDto.transactionId) } }
     }).lean().exec();
-
     if (!user) return null;
-
     const tx = (user.wallets as any[])
       .flatMap((w: any) => w.transactions || [])
       .find((t: any) => t._id.toString() === queryDto.transactionId);
-
     if (tx) {
       return {
         nature: tx.nature,
@@ -47,7 +43,8 @@ export class TransactionService {
   }
 
 
-  // Get all transactions for a user based on their email and the specified coin
+
+  // CONSULTA Y COMBINA LAS BILLETERAS DEL USUARIO PARA GENERAR LA LISTA COMPLETA DE TRANSACCIONES DE UNA MONEDA
   async getTransactions(email: string, queryDto: QueryDto) {
     const data = await this.userModel.aggregate([
       { $match: { email } },
@@ -67,7 +64,6 @@ export class TransactionService {
         }
       }
     ]).exec();
-
     if (data && data.length > 0) {
       let wallet = data.find(w => w.walletsData.length > 0);
       if (wallet) {
@@ -85,7 +81,6 @@ export class TransactionService {
             }
           }
         ]).exec();
-
         if (data && data.length > 0) {
           return data.map(transaction => {
             const tx = transaction.transactionData[0];
@@ -108,5 +103,4 @@ export class TransactionService {
       }
     }
   }
-
 }

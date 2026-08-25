@@ -41,6 +41,9 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
     private readonly userModel: Model<UserDocument>,
   ) {}
 
+
+
+  // SEPARA Y DECODIFICA LAS COOKIES ENVIADAS EN LOS ENCABEZADOS DE LA CONEXION DEL CLIENTE DE WEBSOCKETS
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';
     return rc
@@ -58,11 +61,17 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
       }, {});
   }
 
+
+
+  // CONSULTA LA BASE DE DATOS EN REDIS PARA RECUPERAR LOS DATOS DE LA SESION ACTIVA DEL USUARIO CONECTADO
   private async getSession(sid: string): Promise<any> {
     const data = await this.redisClient.get(`sess:${sid}`);
     return data ? JSON.parse(data) : null;
   }
 
+
+
+  // VERIFICA LA AUTENTICACION DEL SOCKET ENTRANTE Y UNE AL CLIENTE A SU SALA PERSONAL PARA RECIBIR NOTIFICACIONES
   async handleConnection(client: Socket) {
     try {
       const cookies = this.parseCookies(
@@ -74,12 +83,10 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
         client.disconnect();
         return;
       }
-
       let sid = rawSid;
       if (sid.startsWith('s:')) {
         sid = sid.slice(2).split('.')[0];
       }
-
       const sess = await this.getSession(sid);
       const passportUser = sess?.passport?.user;
       if (!passportUser?._id) {
@@ -87,7 +94,6 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
         client.disconnect();
         return;
       }
-
       client.data.user = passportUser;
       const userId = passportUser._id.toString();
       client.join(`user:${userId}`);
@@ -99,10 +105,16 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
     }
   }
 
+
+
+  // REGISTRA EN LOS LOGS DEL SISTEMA CADA VEZ QUE UN CLIENTE CIERRA SU CONEXION DE WEBSOCKETS CON EL SERVIDOR
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
+
+
+  // SUSCRIBE AL CLIENTE A LA SALA ESPECIFICA DE UNA TRANSACCION PARA RECIBIR TODAS SUS ACTUALIZACIONES DE ESTADO
   @SubscribeMessage('watchTransaction')
   handleWatchTransaction(client: Socket, payload: { transactionId: string }) {
     if (!client.data?.user?._id) {
@@ -116,6 +128,9 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
     client.join(`tx:${payload.transactionId}`);
   }
 
+
+
+  // CONSTRUYE EL EVENTO DE ACTUALIZACION DE ESTADO Y LO EMITE TANTO A LA SALA DEL USUARIO COMO A LA SALA DE LA TRANSACCION
   async emitTransactionStatus(event: TransactionStatusEvent) {
     try {
       if (!event?.transactionId) return;
@@ -139,14 +154,11 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
           { _id: 1, coin: 1, chainId: 1 },
         ).lean(),
       ]);
-
       if (!transaction || !wallet?._id) return;
-
       const user = await this.userModel
         .findOne({ wallets: wallet._id }, { _id: 1 })
         .lean();
       if (!user?._id) return;
-
       const payload = {
         transactionId: transaction._id.toString(),
         txHash: transaction.txHash,
@@ -160,7 +172,6 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
         coin: wallet.coin,
         chainId: wallet.chainId,
       };
-
       const userRoom = `user:${user._id.toString()}`;
       void this.server.to(userRoom).emit('transactionStatusUpdated', payload);
       void this.server.to(`tx:${payload.transactionId}`).emit('transactionStatusUpdated', payload);

@@ -2,8 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 
-/**
- * Marks a route handler as public (no authentication required).
- * This signals to NestJS Doctor that the missing @UseGuards() is intentional.
- */
+
+
+// MARCA UN ENDPOINT ESPECIFICO COMO PUBLICO PERMITIENDO EL ACCESO A CUALQUIER USUARIO SIN NECESIDAD DE AUTENTICACION
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);

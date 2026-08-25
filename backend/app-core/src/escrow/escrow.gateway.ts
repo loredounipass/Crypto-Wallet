@@ -37,6 +37,9 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>
   ) {}
 
+
+
+  // EXTRAE Y FORMATEA LAS COOKIES DEL ENCABEZADO DE LA PETICION PARA BUSCAR LA SESION DEL USUARIO
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';
     return rc
@@ -54,11 +57,17 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }, {});
   }
 
+
+
+  // CONSULTA EL ALMACENAMIENTO DE REDIS PARA RECUPERAR LOS DATOS DE SESION ASOCIADOS AL IDENTIFICADOR PROPORCIONADO
   private async getSession(sid: string): Promise<any> {
     const data = await this.redisClient.get(`sess:${sid}`);
     return data ? JSON.parse(data) : null;
   }
 
+
+
+  // VERIFICA LA AUTENTICACION DEL USUARIO AL CONECTARSE Y LO SUSCRIBE A SU SALA PRIVADA DE NOTIFICACIONES
   async handleConnection(client: Socket) {
     try {
       const cookies = this.parseCookies(
@@ -70,12 +79,10 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.disconnect();
         return;
       }
-
       let sid = rawSid;
       if (sid.startsWith('s:')) {
         sid = sid.slice(2).split('.')[0];
       }
-
       const sess = await this.getSession(sid);
       const passportUser = sess?.passport?.user;
       if (!passportUser?.email) {
@@ -83,7 +90,6 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.disconnect();
         return;
       }
-
       client.data.user = passportUser;
       const userEmail = passportUser.email;
       client.join(`escrow:user:${userEmail}`);
@@ -95,10 +101,16 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // REGISTRA EN LOS LOGS DEL SISTEMA CADA VEZ QUE UN USUARIO CIERRA SU CONEXION DE WEBSOCKET
   handleDisconnect(client: Socket) {
     this.logger.log(`Escrow client disconnected: ${client.id}`);
   }
 
+
+
+  // PERMITE AL USUARIO SUSCRIBIRSE PARA RECIBIR ACTUALIZACIONES EN TIEMPO REAL SOBRE UNA ORDEN ESPECIFICA
   @SubscribeMessage('watchOrder')
   async handleWatchOrder(client: Socket, payload: { orderId: string }) {
     const userEmail = client.data?.user?.email;
@@ -110,19 +122,16 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
       void client.emit('error', { message: 'Missing orderId' });
       return;
     }
-
     try {
       const order = await this.escrowOrderModel.findOne({ orderId: payload.orderId });
       if (!order) {
         void client.emit('error', { message: 'Order not found' });
         return;
       }
-
       if (order.sellerEmail !== userEmail && order.providerEmail !== userEmail) {
         void client.emit('error', { message: 'Forbidden' });
         return;
       }
-
       client.join(`escrow:order:${payload.orderId}`);
     } catch (error) {
       this.logger.error(`Error in watchOrder: ${error}`);
@@ -130,15 +139,14 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // DISTRIBUYE LOS EVENTOS DE CAMBIO DE ESTADO TANTO A LA SALA DE LA ORDEN COMO A LOS USUARIOS INVOLUCRADOS
   emitEscrowStatusUpdate(event: EscrowStatusEvent) {
     if (!event?.orderId) return;
-
-    // Emit to the order room
     void this.server
       .to(`escrow:order:${event.orderId}`)
       .emit('escrowStatusUpdated', event);
-
-    // Emit to both the seller's and provider's user rooms
     if (event.sellerEmail) {
       void this.server
         .to(`escrow:user:${event.sellerEmail}`)

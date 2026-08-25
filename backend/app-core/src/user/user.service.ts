@@ -8,7 +8,6 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile';
 import { EmailService } from './email.service';
 
-// Service to handle user-related operations such as registration, password management, and profile updates
 @Injectable()
 export class UserService {
   constructor(
@@ -20,27 +19,29 @@ export class UserService {
 
 
 
-  // Retrieve a user by their email address from the database
+  // BUSCA EN LA BASE DE DATOS Y DEVUELVE LA INFORMACION DEL USUARIO QUE COINCIDA EXACTAMENTE CON EL CORREO INDICADO
   getUserByEmail(email: string) {
     return this.userRepository.findOne({ email });
   }
 
+
+
+  // LOCALIZA Y RETORNA EL DOCUMENTO COMPLETO DE UN USUARIO UTILIZANDO UNICAMENTE SU IDENTIFICADOR UNICO
   getUserById(id: string) {
     return this.userRepository.findById(id);
   }
 
 
-  //Register a new user, hash the password, and save to the database
+
+  // VALIDA LOS DATOS ENCRIPTA LA CONTRASENA Y GUARDA UN NUEVO REGISTRO DE USUARIO EN EL SISTEMA
   async register(createUserDto: CreateUserDto) {
     if (createUserDto.password !== createUserDto.confirmPassword) {
       throw new BadRequestException("Passwords do not match");
     }
-
     const user = await this.getUserByEmail(createUserDto.email);
     if (user) {
       throw new BadRequestException("This email is already registered");
     }
-
     const createUser = {
       ...createUserDto,
       password: await this.hashService.hashPassword(createUserDto.password),
@@ -49,42 +50,38 @@ export class UserService {
   }
 
 
-// Check if the user's email is verified by looking at the isValid field in the database
+
+  // COMPRUEBA SI LA CUENTA ASOCIADA AL CORREO DEL USUARIO YA HA SIDO CONFIRMADA MEDIANTE EL ESTADO INTERNO
   async isEmailVerified(email: string): Promise<{ isVerified: boolean; message: string }> {
     const user = await this.getUserByEmail(email);
     if (!user) {
         throw new BadRequestException('The user with the provided email does not exist.');
     }
-    
     if (user.isValid) {
         return { isVerified: true, message: 'Email verified successfully.' };
     } else {
         return { isVerified: false, message: 'The email is not yet verified.' };
     }
-}
+  }
 
 
-// Verify the user's email by setting the isValid field to true in the database
-async verifyEmail(email: string, token: string): Promise<boolean> {
+
+  // COMPARA EL TOKEN ENVIADO CON EL REGISTRADO Y MARCA LA CUENTA COMO VERIFICADA SI SON IGUALES
+  async verifyEmail(email: string, token: string): Promise<boolean> {
   const user = await this.getUserByEmail(email);
-  
   if (!user) {
       throw new BadRequestException('User does not exist.');
   }
-  
   if (user.isValid) {
       throw new BadRequestException('Email already verified.');
   }
-
   if (!user.verifyEmailTokenHash || !user.verifyEmailExpires || user.verifyEmailExpires < new Date()) {
       throw new BadRequestException('The token is invalid or has expired.');
   }
-
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   if (user.verifyEmailTokenHash !== tokenHash) {
       throw new BadRequestException('The token is invalid or has expired.');
   }
-  
   try {
       user.isValid = true;
       user.verifyEmailTokenHash = undefined;
@@ -98,26 +95,21 @@ async verifyEmail(email: string, token: string): Promise<boolean> {
 
 
 
-// Verify the user's email by setting the isValid field to true in the database
-async sendVerificationEmail(email: string): Promise<boolean> {
+  // CREA Y GUARDA UN NUEVO CODIGO TEMPORAL PARA LUEGO ENVIARLO AL CORREO ELECTRONICO DEL USUARIO SOLICITANTE
+  async sendVerificationEmail(email: string): Promise<boolean> {
   const user = await this.getUserByEmail(email);
-  
   if (!user) {
       throw new BadRequestException('User does not exist.');
   }
-
   if (user.isValid) {
       throw new BadRequestException('Email already verified. Cannot resend.');
   }
-  
   try {
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-      
       user.verifyEmailTokenHash = tokenHash;
-      user.verifyEmailExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      user.verifyEmailExpires = new Date(Date.now() + 60 * 60 * 1000);
       await user.save();
-
       await this.emailService.sendVerificationEmail(user.email, token);
       return true;
   } catch {
@@ -126,7 +118,8 @@ async sendVerificationEmail(email: string): Promise<boolean> {
 }
 
 
-// Update the user's token status (enable or disable) in the database
+
+  // MODIFICA DIRECTAMENTE EN LA BASE DE DATOS LA OPCION PARA EXIGIR UN CODIGO ADICIONAL AL INICIAR SESION
   async updateTokenStatus(email: string, isTokenEnabled: boolean) {
     const user = await this.getUserByEmail(email);
     if (!user) {
@@ -138,7 +131,8 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   }
 
 
-// Get the user's token status (enabled or disabled) from the database
+
+  // REVISA Y DEVUELVE SI EL USUARIO TIENE ACTUALMENTE ACTIVADA O DESACTIVADA LA AUTENTICACION EN DOS PASOS
   async getTokenStatus(email: string) {
     const user = await this.getUserByEmail(email);
     if (!user) {
@@ -147,6 +141,9 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     return { isTokenEnabled: !!user.isTokenEnabled };
   }
 
+
+
+  // CAMBIA LA PREFERENCIA DE IDIOMA EN EL REGISTRO DEL USUARIO PARA PERSONALIZAR LA INTERFAZ A FUTURO
   async updateLanguage(email: string, language: string) {
     const user = await this.getUserByEmail(email);
     if (!user) {
@@ -157,6 +154,9 @@ async sendVerificationEmail(email: string): Promise<boolean> {
     return { msg: 'Language updated successfully.' };
   }
 
+
+
+  // EXTRAE DEL DOCUMENTO DEL USUARIO SU IDIOMA CONFIGURADO O DEVUELVE ESPANOL COMO VALOR PREDETERMINADO
   async getUserLanguage(email: string) {
     const user = await this.getUserByEmail(email);
     if (!user) {
@@ -166,25 +166,21 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   }
 
 
-// Change the user's password by verifying the current password and updating it with the new password in the database
+
+  // VALIDA LA CONTRASENA ACTUAL APLICA RESTRICCIONES DE TIEMPO Y GUARDA LA NUEVA CLAVE DE FORMA SEGURA
   async changePassword(email: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.getUserByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
     const isPasswordValid = await this.hashService.comparePassword(changePasswordDto.currentPassword, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Current password is incorrect');
     }
-
-    // Prevent changing to the same password
     const isSameAsCurrent = await this.hashService.comparePassword(changePasswordDto.newPassword, user.password);
     if (isSameAsCurrent) {
       throw new BadRequestException('The new password cannot be the same as the previous one');
     }
-
-    // Prevent password changes more than once within a 10-minute window
     const TEN_MINUTES_MS = 10 * 60 * 1000;
     if (user.lastPasswordChange) {
       const elapsed = Date.now() - user.lastPasswordChange;
@@ -193,11 +189,9 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         throw new BadRequestException(`You cannot change the password until ${remainingMinutes} minute(s) have passed since the last change.`);
       }
     }
-
     if (changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword) {
       throw new BadRequestException('The new passwords do not match');
     }
-
     user.password = await this.hashService.hashPassword(changePasswordDto.newPassword);
     user.lastPasswordChange = Date.now();
     await user.save();
@@ -205,14 +199,13 @@ async sendVerificationEmail(email: string): Promise<boolean> {
   }
 
 
-// Update the user's profile information (first name, last name, and email) in the database
+
+  // VERIFICA RESTRICCIONES TEMPORALES Y ACTUALIZA LOS DATOS PERSONALES DEL USUARIO ACTUALIZANDO TAMBIEN LA SESION ACTIVA
   async updateProfile(email: string, updateProfileDto: UpdateProfileDto, req?: any) {
     const user = await this.getUserByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    // Prevent profile updates more than once within a 10-minute window
     const TEN_MINUTES_MS = 10 * 60 * 1000;
     if (user.lastProfileUpdate) {
       const elapsed = Date.now() - user.lastProfileUpdate;
@@ -221,16 +214,12 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         throw new BadRequestException(`You cannot update your profile until ${remainingMinutes} minute(s) have passed since the last update.`);
       }
     }
-
     const providedFirstName = updateProfileDto.firstName !== undefined && updateProfileDto.firstName !== null;
     const providedLastName = updateProfileDto.lastName !== undefined && updateProfileDto.lastName !== null;
     const providedEmail = updateProfileDto.email !== undefined && updateProfileDto.email !== null;
-
     const firstNameChanged = providedFirstName && updateProfileDto.firstName !== user.firstName;
     const lastNameChanged = providedLastName && updateProfileDto.lastName !== user.lastName;
     const emailChanged = providedEmail && updateProfileDto.email !== user.email;
-
-    // If none of the provided fields actually change the stored values, reject the update
     if (!firstNameChanged && !lastNameChanged && !emailChanged) {
       if ((providedFirstName || providedLastName) && !providedEmail) {
         throw new BadRequestException('You must use different names than the previous one');
@@ -240,32 +229,24 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         throw new BadRequestException('You must provide different values than the current ones');
       }
     }
-
-    // If email is being changed, ensure it's not already used by another user
     if (providedEmail && emailChanged) {
       const existingUser = await this.userRepository.findOne({ email: updateProfileDto.email });
       if (existingUser && existingUser.email !== email) {
         throw new BadRequestException('The email is already in use');
       }
       user.email = updateProfileDto.email!;
-      user.isValid = false; // Revoke verification status
+      user.isValid = false;
     }
-
     if (firstNameChanged) user.firstName = updateProfileDto.firstName!;
     if (lastNameChanged) user.lastName = updateProfileDto.lastName!;
-
-    // update lastProfileUpdate timestamp
     user.lastProfileUpdate = Date.now();
     await user.save();
-
     const result = { message: 'Profile updated successfully' };
-
     if (req) {
       const updatedUser = await this.getUserByEmail(updateProfileDto.email || email);
       if (!updatedUser) {
         throw new BadRequestException('Error updating user session.');
       }
-
       return new Promise((resolve, reject) => {
         req.login(updatedUser, (err) => {
           if (err) {
@@ -276,35 +257,27 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         });
       });
     }
-
     return result;
   }
 
-   // Search users by query -- supports partial name/email and exact ObjectId
+
+
+  // LOCALIZA USUARIOS LIMITADOS EN CANTIDAD BASANDOSE EN EXPRESIONES REGULARES E INCLUYE SUS FOTOS DE PERFIL SI EXISTEN
   async searchUsers(q: string) {
     if (!q) return [];
-    
-    // Sanitize input to prevent ReDoS attacks - escape regex special characters
     const sanitized = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!sanitized) return [];
-    
     const regex = new RegExp(sanitized, 'i');
     const or: any[] = [
       { email: regex },
       { firstName: regex },
       { lastName: regex },
     ];
-
-    // If q looks like a Mongo ObjectId, include exact _id match
     if (/^[0-9a-fA-F]{24}$/.test(q)) {
       or.push({ _id: q });
     }
-
-    // Enforce maximum limit of 20 results to prevent abuse
     const MAX_LIMIT = 20;
     const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('_id firstName lastName email language').lean().exec();
-
-    // Fetch profile photos for the matching users and merge into results so frontend can render avatars
     try {
       const ids = users.map((u: any) => u._id).filter(Boolean);
       if (ids.length > 0) {
@@ -319,17 +292,14 @@ async sendVerificationEmail(email: string): Promise<boolean> {
         });
       }
     } catch (err) {
-      // if profile lookup fails, just return users without photos
       return users.map((u: any) => {
         const { _id, firstName, lastName, email, language } = u;
         return { _id, firstName, lastName, email, language };
       });
     }
-
     return users.map((u: any) => {
       const { _id, firstName, lastName, email, language } = u;
       return { _id, firstName, lastName, email, language };
     });
   }
-
 }

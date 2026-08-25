@@ -4,13 +4,11 @@ export interface TokenInfo {
     coinGeckoId: string;
 }
 
-// Default token registry — can be extended via SUPPORTED_TOKEN_ADDRESSES env var.
 const DEFAULT_TOKENS: Record<string, TokenInfo> = {};
 
-/**
- * Build token map from environment variable (JSON) with defaults fallback.
- * Env format: SUPPORTED_TOKEN_ADDRESSES='{"0xaddr":{"symbol":"X","decimals":18,"coinGeckoId":"x"}}'
- */
+
+
+// LEE LA VARIABLE DE ENTORNO PARA CONSTRUIR UN MAPA DE TOKENS SOPORTADOS RETORNANDO EL OBJETO CONFIGURADO O POR DEFECTO
 function buildTokenMap(): Record<string, TokenInfo> {
     const envTokens = process.env.SUPPORTED_TOKEN_ADDRESSES;
     if (envTokens) {
@@ -18,7 +16,6 @@ function buildTokenMap(): Record<string, TokenInfo> {
             const parsed = JSON.parse(envTokens) as Record<string, TokenInfo>;
             return { ...DEFAULT_TOKENS, ...parsed };
         } catch {
-            // Invalid JSON — fall back to defaults
         }
     }
     return { ...DEFAULT_TOKENS };
@@ -26,6 +23,9 @@ function buildTokenMap(): Record<string, TokenInfo> {
 
 const tokens: Record<string, TokenInfo> = buildTokenMap();
 
+
+
+// RECUPERA Y DEVUELVE LA INFORMACION DETALLADA DEL TOKEN CONSULTANDO EL MAPA CON LA DIRECCION EN MINUSCULAS
 export function getTokenInfo(tokenAddress: string): TokenInfo | null {
     return tokens[tokenAddress.toLowerCase()] || null;
 }

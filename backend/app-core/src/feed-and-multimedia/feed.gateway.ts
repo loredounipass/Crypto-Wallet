@@ -15,6 +15,9 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @Inject(REDIS_CLIENT) private readonly redisClient: any,
   ) {}
 
+
+
+  // EXTRAE Y FORMATEA LAS COOKIES DEL ENCABEZADO DE LA PETICION PARA BUSCAR LA SESION DEL USUARIO
   private parseCookies(cookieHeader: string | undefined) {
     const rc = cookieHeader || '';
     return rc.split(';').map(c => c.trim()).filter(Boolean).reduce((acc: any, item) => {
@@ -28,6 +31,9 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }, {});
   }
 
+
+
+  // VERIFICA LA AUTENTICACION DEL USUARIO AL CONECTARSE Y LO SUSCRIBE A SU SALA PRIVADA DE NOTIFICACIONES
   async handleConnection(client: Socket) {
     try {
       const cookies = this.parseCookies(client.handshake.headers.cookie as string | undefined);
@@ -38,24 +44,20 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.disconnect();
         return;
       }
-
       let sid = rawSid;
       if (sid.startsWith('s:')) sid = sid.slice(2).split('.')[0];
-
       const sess = await this.getSession(sid);
       if (!sess) {
         void client.emit('error', { message: 'Unauthorized' });
         client.disconnect();
         return;
       }
-
       const passportUser = sess.passport && sess.passport.user ? sess.passport.user : null;
       if (!passportUser) {
         void client.emit('error', { message: 'Unauthorized' });
         client.disconnect();
         return;
       }
-
       client.data.user = passportUser;
       const userId = passportUser._id.toString();
       client.join(`user:${userId}`);
@@ -67,6 +69,9 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // CONSULTA EL ALMACENAMIENTO DE REDIS PARA RECUPERAR LOS DATOS DE SESION ASOCIADOS AL IDENTIFICADOR PROPORCIONADO
   private async getSession(sid: string): Promise<any> {
     try {
       const sessionKey = `sess:${sid}`;
@@ -79,14 +84,19 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // REGISTRA EN LOS LOGS DEL SISTEMA CADA VEZ QUE UN USUARIO CIERRA SU CONEXION DE WEBSOCKET
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
+
+
+  // ESCUCHA EL EVENTO DE CREACION DE PUBLICACION Y NOTIFICA EN TIEMPO REAL AL AUTOR A TRAVES DE SU SOCKET
   @OnEvent('post.created')
   async handlePostCreated(payload: any) {
     try {
-      // emit sanitized post payload to author's sockets and any post-specific room
       const authorId = payload.author;
       if (!authorId) return;
       const out = {
@@ -106,7 +116,6 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         createdAt: payload.createdAt,
         updatedAt: payload.updatedAt,
       };
-
       const authorSockets = await this.server.in(`user:${authorId}`).allSockets();
       for (const s of authorSockets) void this.server.to(s).emit('postCreated', out);
     } catch (e) {
@@ -114,12 +123,14 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // ESCUCHA EVENTOS DE ACTUALIZACION EN UNA PUBLICACION Y EMITE LOS CAMBIOS A LOS SUBSCRIPTORES Y AL AUTOR
   @OnEvent('post.updated')
   async handlePostUpdated(payload: any) {
     try {
       const authorId = payload.author;
       if (!authorId) return;
-
       const out = {
         _id: payload._id,
         description: payload.description,
@@ -137,11 +148,8 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         createdAt: payload.createdAt,
         updatedAt: payload.updatedAt,
       };
-
       const authorSockets = await this.server.in(`user:${authorId}`).allSockets();
       for (const s of authorSockets) void this.server.to(s).emit('postUpdated', out);
-
-      // also notify any post room subscribers
       const postId = payload._id;
       if (postId) {
       const sockets = await this.server.in(`post:${postId}`).allSockets();
@@ -152,6 +160,9 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // ESCUCHA CUANDO SE AGREGA UN NUEVO COMENTARIO Y NOTIFICA TANTO A LOS SUBSCRIPTORES COMO AL AUTOR DEL POST
   @OnEvent('comment.created')
   async handleCommentCreated(payload: any) {
     try {
@@ -167,11 +178,8 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         post: payload.post,
         createdAt: payload.createdAt,
       };
-
       const sockets = await this.server.in(postRoom).allSockets();
       for (const s of sockets) void this.server.to(s).emit('commentCreated', out);
-
-      // also notify the post author via user room if included in payload
       if (payload.author) {
         const authorSockets = await this.server.in(`user:${payload.author}`).allSockets();
         for (const s of authorSockets) void this.server.to(s).emit('commentCreated', out);
@@ -181,6 +189,9 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+
+
+  // UNE A UN CLIENTE CONECTADO A LA SALA DE NOTIFICACIONES DE UNA PUBLICACION ESPECIFICA PARA RECIBIR ACTUALIZACIONES
   @SubscribeMessage('joinPost')
   handleJoinPost(client: Socket, payload: { postId: string }) {
       if (!client.data?.user || !client.data.user._id) {
@@ -192,7 +203,6 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     const room = `post:${payload.postId}`;
-    // Avoid duplicate joins/log spam if client already in the room
     try {
       const alreadyIn = client.rooms && client.rooms.has && client.rooms.has(room);
       if (!alreadyIn) {
@@ -202,7 +212,6 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.debug(`Socket ${client.id} already in post room ${room}`);
       }
     } catch (err) {
-      // conservative join in case of unexpected socket structure
       try { client.join(room) } catch(_){}
       this.logger.log(`Socket ${client.id} joined post room ${room}`);
     }

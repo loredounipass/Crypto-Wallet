@@ -35,8 +35,6 @@ export class EscrowOrder {
     @Prop({ required: true })
     paymentMethod: string;
 
-    // pending → funded → buyer_paid → released → completed
-    // Also: disputed, refunded, cancelled, expired
     @Prop({ required: true, default: 'pending', index: true })
     status: string;
 

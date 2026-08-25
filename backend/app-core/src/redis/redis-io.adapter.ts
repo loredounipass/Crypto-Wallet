@@ -6,6 +6,9 @@ import { createClient } from 'redis';
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor: ReturnType<typeof createAdapter>;
 
+
+
+  // ESTABLECE LA CONEXION A REDIS CONFIGURANDO CLIENTES INDEPENDIENTES PARA PUBLICACION Y SUSCRIPCION DE EVENTOS
   async connectToRedis(): Promise<void> {
     const pubClient = createClient({
       socket: {
@@ -14,15 +17,14 @@ export class RedisIoAdapter extends IoAdapter {
       },
       password: process.env.REDIS_PASS,
     });
-    
-    // Duplicate the client for subscriptions
     const subClient = pubClient.duplicate();
-
     await Promise.all([pubClient.connect(), subClient.connect()]);
-
     this.adapterConstructor = createAdapter(pubClient, subClient);
   }
 
+
+
+  // CREA Y CONFIGURA LA INSTANCIA DEL SERVIDOR DE WEBSOCKETS VINCULANDO EL ADAPTADOR DE REDIS PARA ESCALABILIDAD
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
     server.adapter(this.adapterConstructor);

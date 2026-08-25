@@ -14,8 +14,6 @@ import { Chat, ChatDocument } from '../providers/schemas/chat-schema/chat.schema
 import { Transaction, TransactionDocument } from '../transaction/schemas/transaction.schema';
 import { default as EscrowQueueType } from './queue/types.queue';
 
-// Top-level constants evaluating process.env removed to ensure ConfigModule loads them first
-
 @Injectable()
 export class EscrowService {
   constructor(
@@ -35,26 +33,26 @@ export class EscrowService {
     private readonly configService: ConfigService,
   ) { }
 
-  /**
-   * Truncate a number to N decimal places (floor) to avoid IEEE 754 floating-point drift.
-   */
+
+
+  // REDUCE LOS DECIMALES DE UN VALOR FLOTANTE PARA EVITAR PROBLEMAS DE PRECISION MATEMATICA EN LA BLOCKCHAIN
   private truncateToDecimals(value: number, decimals: number = 8): number {
     const factor = 10 ** decimals;
     return Math.floor(value * factor) / factor;
   }
 
+
+
+  // BUSCA LA BILLETERA DEL USUARIO Y REGISTRA EN LA BASE DE DATOS EL REEMBOLSO DE UNA TRANSACCION FALLIDA O CANCELADA
   private async registerRefundTransaction(order: any, refundTxHash: string | null) {
     const coin = String(order.coin || '').toUpperCase();
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase();
     const chainId = Number(order.chainId);
-
     const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`;
-
     const existing = await this.transactionModel.findOne({ txHash: txHashToUse });
     if (existing) {
       return existing;
     }
-
     const walletData = await this.userModel.aggregate([
       { $match: { email: order.sellerEmail } },
       { $unwind: '$wallets' },
@@ -71,7 +69,6 @@ export class EscrowService {
         }
       }
     ]).exec();
-
     let wallet = null;
     if (walletData && walletData.length > 0) {
       const walletEntry = walletData.find(w => w.walletsData.length > 0);
@@ -79,18 +76,16 @@ export class EscrowService {
         wallet = walletEntry.walletsData[0];
       }
     }
-
     if (!wallet) {
       console.error(`[ESCROW] Wallet not found for refund: seller=${order.sellerEmail} coin=${order.coin} chainId=${order.chainId}`);
       throw new Error(`Wallet not found for refund: order ${order.orderId}`);
     }
-
     const isInternal = !refundTxHash;
     const transaction = new this.transactionModel({
-      nature: 1, // Deposit
+      nature: 1,
       amount: Number(order.amount || 0),
       created_at: Date.now(),
-      status: isInternal ? 3 : 1, // Completed if internal, pending if on-chain
+      status: isInternal ? 3 : 1,
       confirmations: 0,
       txHash: txHashToUse,
       to: order.sellerWalletAddress
@@ -109,32 +104,24 @@ export class EscrowService {
         throw err;
       }
     }
-
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
       { $addToSet: { transactions: savedTransaction._id } }
     );
-
     if (isInternal) {
       await this.walletModel.updateOne(
         { _id: new Types.ObjectId(wallet._id) },
         { $inc: { balance: order.amount } }
       );
-    } else {
-      // NOTE: We do NOT enqueue a deposit job for on-chain refunds.
-      // The on-chain WSS subscription will independently detect this transaction
-      // and enqueue it through the normal deposit pipeline. Enqueueing here
-      // as well would cause a double-credit of the seller's balance.
     }
-
     return savedTransaction;
   }
 
-  // Create a new escrow P2P order
+
+
+  // VALIDA LOS FONDOS DEL USUARIO COBRA LAS TARIFAS CORRESPONDIENTES Y CREA EL REGISTRO DE UNA NUEVA ORDEN P2P EN ESPERA
   async createOrder(dto: CreateEscrowOrderDto, email: string) {
     const sellerEmail = email;
-
-    // 1. Find the provider and validate
     const provider = await this.providerModel.findOne({ email: dto.providerEmail, isValid: true });
     if (!provider) {
       throw new BadRequestException('Provider not found or not verified.');
@@ -149,8 +136,6 @@ export class EscrowService {
     if (!provider.paymentMethods.includes(dto.paymentMethod)) {
       throw new BadRequestException('Provider does not accept this payment method.');
     }
-
-    // 2. Find seller's wallet and validate balance
     const userData = await this.userModel.aggregate([
       { $match: { email: sellerEmail } },
       { $unwind: '$wallets' },
@@ -167,55 +152,38 @@ export class EscrowService {
         }
       }
     ]).exec();
-
     if (!userData || userData.length === 0) {
       throw new BadRequestException('No wallet found for the specified coin.');
     }
-
     const walletEntry = userData.find(w => w.walletsData.length > 0);
     if (!walletEntry) {
       throw new BadRequestException('No wallet found for the specified coin.');
     }
-
     const wallet = walletEntry.walletsData[0];
-
     const orderId = uuidv4();
-
-    // 2b. Calculate gas fee upfront
     const gasEstimate = await this.getGasEstimate(dto.coin, wallet.chainId);
     const gasFee = gasEstimate.gasFee;
-
     if (dto.amount <= gasFee) {
       throw new BadRequestException(
         `Amount must be greater than network gas fee. Amount: ${dto.amount} ${dto.coin}, Gas: ${gasFee} ${dto.coin}`
       );
     }
-
     let totalDeduction = dto.amount + gasFee;
-
-    // Auto-adjust: if user's amount + gas exceeds balance but balance can cover gas,
-    // reduce the amount so that amount + gas fits within balance (sell maximum possible)
     if (wallet.balance < totalDeduction && wallet.balance > gasFee * 2) {
       const adjustedAmount = this.truncateToDecimals(wallet.balance - gasFee, 8);
       console.log(`[ESCROW] Auto-adjusting amount: ${dto.amount} → ${adjustedAmount} ${dto.coin} (balance=${wallet.balance}, gas=${gasFee})`);
       dto.amount = adjustedAmount;
       totalDeduction = dto.amount + gasFee;
     }
-
     if (wallet.balance < totalDeduction) {
       throw new BadRequestException(
         `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
       );
     }
-
-    // 3. Debit seller's wallet (amount + gasFee)
-    //    amount goes to escrow, gasFee stays in hot wallet to cover on-chain costs
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet._id) },
       { $inc: { balance: -totalDeduction } }
     );
-
-    // 4. Create the chatroom for the order
     const chatroomId = uuidv4();
     const chat = new this.chatModel({
       chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
@@ -224,8 +192,6 @@ export class EscrowService {
       latestMessage: 'P2P Order created. Funds are in escrow.',
     });
     await chat.save();
-
-    // 5. Create escrow order
     const expirySeconds = parseInt(this.configService.get<string>('ESCROW_ORDER_EXPIRY_SECONDS') || '1800');
     const escrowOrder = new this.escrowOrderModel({
       orderId,
@@ -243,10 +209,7 @@ export class EscrowService {
       expiresAt: new Date(Date.now() + expirySeconds * 1000),
       gasFee,
     });
-
     await escrowOrder.save();
-
-    // 6. Enqueue on-chain funding via smart contract
     await this.escrowFundingQueue.add('fund', {
       orderId,
       sellerWalletAddress: wallet.address,
@@ -261,15 +224,12 @@ export class EscrowService {
       attempts: 3,
       backoff: { type: 'exponential', delay: 3000 },
     });
-
-    // 7. Emit status event
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'pending',
       sellerEmail,
       providerEmail: dto.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return {
       orderId,
       chatroomId,
@@ -282,6 +242,9 @@ export class EscrowService {
     };
   }
 
+
+
+  // SE COMUNICA CON EL WORKER EN SEGUNDO PLANO PARA ESTIMAR EL COSTO ACTUAL DEL GAS EN LA RED SELECCIONADA
   async getGasEstimate(coin: string, chainId: number): Promise<{ gasFee: number; gasFeeFormatted: string }> {
     console.log('[P2P Gas Estimate] Delegating to worker:', { coin, chainId });
     const queueEvents = new QueueEvents(EscrowQueueType.ESCROW_GAS_ESTIMATE, {
@@ -311,24 +274,23 @@ export class EscrowService {
     }
   }
 
-  // Get orders where user is the seller
+
+
+  // RECUPERA DE LA BASE DE DATOS TODAS LAS ORDENES DONDE EL USUARIO PARTICIPA COMO CREADOR O COMPRADOR
   async getMyOrders(email: string) {
     const orders = await this.escrowOrderModel
       .find({ sellerEmail: email })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
-
     for (const order of orders) {
       if (!order.providerEmail) {
         (order as any).counterpartName = 'Unknown';
         continue;
       }
-
       const provider = await this.providerModel.findOne({
         email: { $regex: new RegExp(`^${order.providerEmail.trim()}$`, 'i') }
       }).lean().exec();
-
       if (provider && (provider.firstName || provider.lastName)) {
         (order as any).counterpartName = `${provider.firstName || ''} ${provider.lastName || ''}`.trim();
       } else {
@@ -338,32 +300,28 @@ export class EscrowService {
     return orders;
   }
 
-  // Get orders where user is the provider
+
+
+  // RECUPERA DE LA BASE DE DATOS TODAS LAS ORDENES DONDE EL USUARIO OFRECE LIQUIDEZ COMO PROVEEDOR
   async getProviderOrders(email: string) {
     const orders = await this.escrowOrderModel
       .find({ providerEmail: email })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
-
     for (const order of orders) {
       if (!order.sellerEmail) {
         (order as any).counterpartName = 'Unknown';
         continue;
       }
-
-      // Search case-insensitively
       let user: any = await this.userModel.findOne({
         email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
       }).lean().exec();
-
-      // If not found in User for some reason, search in Provider
       if (!user) {
         user = await this.providerModel.findOne({
           email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
         }).lean().exec();
       }
-
       if (user && (user.firstName || user.lastName)) {
         (order as any).counterpartName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
       } else {
@@ -373,7 +331,9 @@ export class EscrowService {
     return orders;
   }
 
-  // Get a single order by orderId, only if user is involved
+
+
+  // BUSCA UNA ORDEN POR SU IDENTIFICADOR UNICO Y VERIFICA QUE EL USUARIO TENGA PERMISOS PARA VERLA
   async getOrder(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId }).lean().exec();
     if (!order) {
@@ -385,37 +345,35 @@ export class EscrowService {
     return order;
   }
 
-  // Provider confirms they received the external payment
+
+
+  // ACTUALIZA EL ESTADO DE LA ORDEN INDICANDO QUE EL PROVEEDOR YA RECIBIO EL PAGO FIAT EN SU CUENTA
   async confirmPayment(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
-
-    // Only provider can confirm payment receipt
     if (order.providerEmail !== email) {
       throw new ForbiddenException('Only the provider can confirm payment.');
     }
-
     if (order.status !== 'funded') {
       throw new BadRequestException(`Cannot confirm payment for order with status: ${order.status}`);
     }
-
     order.status = 'buyer_paid';
     order.buyerConfirmedPayment = true;
     await order.save();
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'buyer_paid',
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return { orderId, status: 'buyer_paid' };
   }
 
-  // Check if the escrow funding transaction has reached 12 confirmations
+
+
+  // COMPRUEBA DIRECTAMENTE EN LA BLOCKCHAIN SI LA TRANSACCION ORIGINAL YA ALCANZO LAS CONFIRMACIONES NECESARIAS
   private async isFundingConfirmed(order: any): Promise<boolean> {
     if (!order.escrowTxHash) {
       return false;
@@ -430,36 +388,30 @@ export class EscrowService {
     return !!fundingTx;
   }
 
-  // Seller releases funds to the provider after confirming external payment receipt
+
+
+  // INICIA EL PROCESO DE LIBERACION DE FONDOS ENVIANDO LA TAREA A LA COLA DE TRABAJO PARA SU EJECUCION ON CHAIN
   async releaseFunds(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
-
-    // Only seller can release funds
     if (order.sellerEmail !== email) {
       throw new ForbiddenException('Only the seller can release funds.');
     }
-
     if (order.status !== 'buyer_paid') {
       throw new BadRequestException(`Cannot release funds for order with status: ${order.status}`);
     }
-
     if (!order.escrowTxHash) {
       throw new BadRequestException('The funds are not yet locked in escrow. Wait a few seconds and try again.');
     }
-
     const funded = await this.isFundingConfirmed(order);
     if (!funded) {
       throw new BadRequestException('The escrow funds are still pending confirmation. Please wait until the transaction reaches 12 confirmations before releasing.');
     }
-
     order.status = 'released';
     order.sellerConfirmedRelease = true;
     await order.save();
-
-    // Enqueue the actual fund transfer
     await this.escrowReleaseQueue.add('release', {
       orderId: order.orderId,
       providerWalletAddress: order.providerWalletAddress,
@@ -474,38 +426,34 @@ export class EscrowService {
       attempts: 5,
       backoff: { type: 'exponential', delay: 5000 },
     });
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'released',
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return { orderId, status: 'released' };
   }
 
-  // Either party can open a dispute
+
+
+  // MARCA LA ORDEN COMO DISPUTADA Y ENVIA UNA ALERTA PARA QUE LOS ADMINISTRADORES INTERVENGAN EN EL CONFLICTO
   async openDispute(orderId: string, email: string, reason: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
-
     if (order.sellerEmail !== email && order.providerEmail !== email) {
       throw new ForbiddenException('You are not part of this order.');
     }
-
     const validStatuses = ['funded', 'buyer_paid'];
     if (!validStatuses.includes(order.status)) {
       throw new BadRequestException(`Cannot open dispute for order with status: ${order.status}`);
     }
-
     order.status = 'disputed';
     order.disputeReason = reason || 'No reason provided';
     order.disputeOpenedBy = email;
     await order.save();
-
     await this.escrowDisputeMarkQueue.add('mark-dispute', {
       orderId,
       chainId: order.chainId,
@@ -516,7 +464,6 @@ export class EscrowService {
       removeOnComplete: true,
       removeOnFail: 50,
     });
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'disputed',
@@ -525,30 +472,26 @@ export class EscrowService {
       disputeReason: order.disputeReason,
       disputeOpenedBy: email,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return { orderId, status: 'disputed' };
   }
 
-  // Cancel order - allowed while pending or funded (before provider confirms payment)
+
+
+  // CANCELA LA ORDEN EN EL SISTEMA Y PONE EN COLA LA DEVOLUCION DE LOS FONDOS AL WALLET ORIGINAL DEL CREADOR
   async cancelOrder(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
-
-    // Only seller can cancel
     if (order.sellerEmail !== email) {
       throw new ForbiddenException('Only the seller can cancel the order.');
     }
-
     const cancellableStatuses = ['pending', 'funded'];
     if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
-
     order.status = 'cancelled';
     await order.save();
-
     await this.escrowCancelQueue.add('cancel', {
       orderId: order.orderId,
       sellerEmail: order.sellerEmail,
@@ -557,18 +500,18 @@ export class EscrowService {
       attempts: 20,
       backoff: { type: 'exponential', delay: 5000 },
     });
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'cancelled',
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return { orderId, status: 'cancelled' };
   }
 
-  // Get all disputed orders (admin only)
+
+
+  // FILTRA Y DEVUELVE UNICAMENTE LAS ORDENES QUE ESTAN EN ESTADO DE DISPUTA PARA EL PANEL DE ADMINISTRACION
   async getDisputedOrders(email: string) {
     const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
     if (!adminEmails.includes(email.toLowerCase())) {
@@ -577,13 +520,14 @@ export class EscrowService {
     return await this.escrowOrderModel.find({ status: 'disputed' }).sort({ createdAt: -1 }).lean().exec();
   }
 
-  // Admin resolves a dispute: sets isReverted or isAwarded flag
+
+
+  // APLICA LA DECISION DEL ADMINISTRADOR SOBRE UNA DISPUTA MARCANDO QUIEN SE QUEDA CON LOS FONDOS RETENIDOS
   async resolveDispute(orderId: string, type: 'revert' | 'award', email: string) {
     const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
     if (!adminEmails.includes(email.toLowerCase())) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }
-
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
       throw new BadRequestException('Order not found.');
@@ -597,16 +541,13 @@ export class EscrowService {
     if (order.isReverted || order.isAwarded) {
       throw new BadRequestException('Dispute already resolved.');
     }
-
     if (type === 'revert') {
       order.isReverted = true;
     } else {
       order.isAwarded = true;
     }
     await order.save();
-
     console.log(`[ESCROW] Admin resolved dispute: ${orderId} -> ${type}`);
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'disputed',
@@ -614,22 +555,20 @@ export class EscrowService {
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     return { orderId, status: 'disputed', isReverted: order.isReverted, isAwarded: order.isAwarded };
   }
 
-  // Mark order as completed (called by the release worker after successful transfer)
+
+
+  // ACTUALIZA LAS ESTADISTICAS DEL PROVEEDOR Y MARCA LA ORDEN COMO COMPLETADA TRAS UNA LIBERACION EXITOSA
   async markCompleted(orderId: string, releaseTxHash?: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) return;
-
     order.status = 'completed';
     if (releaseTxHash) {
       order.releaseTxHash = releaseTxHash;
     }
     await order.save();
-
-    // Update provider stats
     await this.providerModel.updateOne(
       { email: order.providerEmail },
       {
@@ -639,7 +578,6 @@ export class EscrowService {
         }
       }
     );
-
     await this.escrowStatusQueue.add('status-update', {
       orderId,
       status: 'completed',
@@ -648,18 +586,17 @@ export class EscrowService {
     }, { removeOnComplete: true, removeOnFail: 50 });
   }
 
-  // Mark expired orders (called by expiry worker)
+
+
+  // BUSCA TODAS LAS ORDENES QUE SUPERARON SU TIEMPO LIMITE Y EMITE AUTOMATICAMENTE LOS REEMBOLSOS CORRESPONDIENTES
   async expireOrders() {
     const expiredOrders = await this.escrowOrderModel.find({
       status: { $in: ['pending', 'funded'] },
       expiresAt: { $lt: new Date() },
     }).exec();
-
     for (const order of expiredOrders) {
       try {
         let refundTxHash = null;
-
-        // Refund on-chain when escrow was already funded
         if (order.escrowTxHash) {
           try {
             const queueEvents = new QueueEvents(EscrowQueueType.ESCROW_REFUND, {
@@ -691,25 +628,20 @@ export class EscrowService {
             continue;
           }
         }
-
         await this.registerRefundTransaction(order, refundTxHash);
-
         order.status = 'expired';
         await order.save();
-
         await this.escrowStatusQueue.add('status-update', {
           orderId: order.orderId,
           status: 'expired',
           sellerEmail: order.sellerEmail,
           providerEmail: order.providerEmail,
         }, { removeOnComplete: true, removeOnFail: 50 });
-
         console.log(`[ESCROW-EXPIRE] Order expired and refunded: ${order.orderId}`);
       } catch (orderError) {
         console.error(`[ESCROW-EXPIRE] Error processing expired order:`, order.orderId, (orderError as Error).message);
       }
     }
-
     return { expired: expiredOrders.length };
   }
 }

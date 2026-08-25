@@ -53,10 +53,8 @@ export class FeedPost {
 
 export const FeedPostSchema = SchemaFactory.createForClass(FeedPost);
 
-// Common indexes to serve feed queries
 FeedPostSchema.index({ author: 1, createdAt: -1 });
 FeedPostSchema.index({ createdAt: -1 });
-// index to quickly resolve by multimedia reference
 FeedPostSchema.index({ multimediaId: 1 });
 
 FeedPostSchema.set('toJSON', {

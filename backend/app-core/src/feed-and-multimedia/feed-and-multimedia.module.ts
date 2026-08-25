@@ -1,6 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { FeedAndMultimediaService } from './feed-and-multimedia.service';
 import { FeedAndMultimediaController } from './feed-and-multimedia.controller';
 import { FeedPost, FeedPostSchema } from './schemas/feed.schema';
 import { Comment, CommentSchema } from './schemas/comment.schema';
@@ -13,6 +12,10 @@ import { BullModule } from '@nestjs/bull';
 import { LocalStorageProvider } from '../storage/local.storage.provider';
 import { FeedRepository } from './feed.repository';
 import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
+import { FeedPostsService } from './services/feed-posts.service';
+import { FeedCommentsService } from './services/feed-comments.service';
+import { FeedInteractionsService } from './services/feed-interactions.service';
+import { FeedEventsService } from './services/feed-events.service';
 
 @Module({
   imports: [
@@ -28,7 +31,10 @@ import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
   ],
   controllers: [FeedAndMultimediaController],
   providers: [
-    FeedAndMultimediaService,
+    FeedPostsService,
+    FeedCommentsService,
+    FeedInteractionsService,
+    FeedEventsService,
     FeedGateway,
     LocalStorageProvider,
     FeedRepository,

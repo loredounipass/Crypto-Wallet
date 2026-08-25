@@ -27,6 +27,9 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
 export class RedisModule implements OnModuleDestroy {
   constructor(@Inject(REDIS_CLIENT) private readonly redisClient: any) {}
 
+
+
+  // CIERRA LA CONEXION GLOBAL DE REDIS DE FORMA SEGURA CUANDO EL MODULO SE DESTRUYE O LA APLICACION SE DETIENE
   async onModuleDestroy() {
     await this.redisClient.disconnect();
   }

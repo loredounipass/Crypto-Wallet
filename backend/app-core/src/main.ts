@@ -10,30 +10,22 @@ import { RedisStore } from 'connect-redis';
 import session from 'express-session';
 import passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
-// helmet removed as Nginx handles security headers
 import { REDIS_CLIENT } from './redis/redis.module';
 import { RedisIoAdapter } from './redis/redis-io.adapter';
 import { csrfSynchronisedProtection } from './csrf/csrf.config';
 
 
-// This is the main entry point of the application. It sets up the NestJS application, configures CORS, global prefix, validation pipes, session management with Redis, and initializes Passport for authentication. Finally, it starts the application on the specified port.
+
+// INICIALIZA Y CONFIGURA TODOS LOS SERVICIOS GLOBALES DE LA APLICACION INCLUYENDO SEGURIDAD Y SESIONES
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Trust proxy for secure cookies
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', 1);
   expressApp.disable('x-powered-by');
-
-  // Security headers are handled by Nginx completely.
-
   app.enableCors({
     origin: [process.env.CORS_ORIGIN],
     credentials: true
   });
-
-
-  // Set a global prefix for all routes
   app.setGlobalPrefix('secure/api', {
     exclude: ['/csrf-token', ''],
   });
@@ -43,17 +35,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true
     })
   );
-
-  // Configure Redis for WebSockets to support multiple replicas
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
-
-
-  // Configure session management using Redis as the session store
-
   const redisClient = app.get(REDIS_CLIENT);
-
   const isProduction = process.env.NODE_ENV === 'production';
   const sameSite = process.env.SAME_SITE_COOKIE || (isProduction ? 'none' : 'lax');
   const sessionCookie = {
@@ -63,7 +48,6 @@ async function bootstrap() {
     sameSite: sameSite as 'strict' | 'lax' | 'none',
     path: '/'
   };
-
   app.use(
     session({
       store: new RedisStore({ client: redisClient as any }),
@@ -73,14 +57,9 @@ async function bootstrap() {
       cookie: sessionCookie
     })
   );
-
   app.use(passport.initialize());
   app.use(passport.session());
-
-  // CSRF protection runs after sessions are initialized
   app.use(csrfSynchronisedProtection);
-
-  // Servir archivos multimedia con autenticación
   const uploadsDir = resolve(process.cwd(), 'uploads');
   app.use('/uploads', (req: any, res: any, next: any) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -96,7 +75,6 @@ async function bootstrap() {
     }
     res.sendFile(fullPath);
   });
-
   await app.listen(parseInt(process.env.PORT!));
 }
 bootstrap();

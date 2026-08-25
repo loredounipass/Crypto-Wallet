@@ -13,11 +13,13 @@ export class TransactionStatusProcessor extends WorkerHost {
     super();
   }
 
+
+
+  // PROCESA LOS TRABAJOS ENCOLADOS Y EMITE EVENTOS DE ACTUALIZACION DE ESTADO A TRAVES DEL GATEWAY DE WEBSOCKETS
   async process(job: Job<any>): Promise<any> {
     if (job.name !== 'status-update') {
       return;
     }
-
     try {
       await this.transactionGateway.emitTransactionStatus(job.data);
     } catch (error) {

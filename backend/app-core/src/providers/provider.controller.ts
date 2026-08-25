@@ -10,6 +10,9 @@ import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
 export class ProviderController {
   constructor(private readonly providerService: ProviderService) {}
 
+
+
+  // CREA UN NUEVO PERFIL DE PROVEEDOR ASOCIANDOLO AL CORREO ELECTRONICO DEL USUARIO ACTUALMENTE AUTENTICADO
   @UseGuards(AuthenticatedGuard)
   @Post('create')
   createProvider(
@@ -20,6 +23,9 @@ export class ProviderController {
     return this.providerService.createProvider(createProviderDto);
   }
 
+
+
+  // REGISTRA LA ACEPTACION DE LOS TERMINOS Y CONDICIONES POR PARTE DEL USUARIO PARA ACTIVAR SU CUENTA
   @UseGuards(AuthenticatedGuard)
   @Post('terms/accept')
   async acceptTerms(@Request() req): Promise<any> {
@@ -27,6 +33,9 @@ export class ProviderController {
     return { accepted: terms.accepted };
   }
 
+
+
+  // VERIFICA SI EL USUARIO YA HA ACEPTADO LOS TERMINOS Y CONDICIONES PREVIAMENTE EN LA PLATAFORMA
   @UseGuards(AuthenticatedGuard)
   @Get('terms/check')
   async checkTerms(@Request() req): Promise<{ accepted: boolean }> {
@@ -34,6 +43,9 @@ export class ProviderController {
     return { accepted };
   }
 
+
+
+  // BUSCA UN PROVEEDOR POR SU CORREO VERIFICANDO ESTRICTAMENTE QUE COINCIDA CON LA SESION DEL USUARIO SOLICITANTE
   @UseGuards(AuthenticatedGuard)
   @Get('findByEMail/:email')
   findByEMail(@Request() req, @Param('email') email: string): Promise<Provider> {
@@ -43,18 +55,27 @@ export class ProviderController {
     return this.providerService.findProviderByEmail(email);
   }
 
+
+
+  // RECUPERA DIRECTAMENTE EL PERFIL DE PROVEEDOR ASOCIADO A LA SESION ACTUAL DEL USUARIO
   @UseGuards(AuthenticatedGuard)
   @Get('my-profile')
   findMyProvider(@Request() req): Promise<Provider> {
     return this.providerService.findProviderByEmail(req.user.email);
   }
 
+
+
+  // OBTIENE LA LISTA DE TODOS LOS PROVEEDORES VALIDADOS EXCLUYENDO AL USUARIO QUE REALIZA LA PETICION
   @UseGuards(AuthenticatedGuard)
   @Get('allProviders')
   findAllProviders(@Request() req): Promise<Provider[]> {
     return this.providerService.findAllProviders(req.user.email);
   }
 
+
+
+  // MODIFICA LOS DATOS DEL PERFIL DEL PROVEEDOR COMO SUS METODOS DE PAGO Y BILLETERAS DE DESTINO
   @UseGuards(AuthenticatedGuard)
   @Patch('update')
   updateProvider(
@@ -64,12 +85,18 @@ export class ProviderController {
     return this.providerService.updateProvider(req.user.email, updateProviderDto);
   }
 
+
+
+  // SOLICITA TODA LA CONFIGURACION ASOCIADA AL PERFIL DEL PROVEEDOR EN LA SESION ACTUAL
   @UseGuards(AuthenticatedGuard)
   @Get('settings')
   getSettings(@Request() req): Promise<Provider> {
     return this.providerService.getProviderSettings(req.user.email);
   }
 
+
+
+  // AGREGA UN NUEVO METODO DE PAGO A LA LISTA DE OPCIONES DISPONIBLES DEL PROVEEDOR
   @UseGuards(AuthenticatedGuard)
   @Post('settings/payment-methods')
   addPaymentMethod(
@@ -79,6 +106,9 @@ export class ProviderController {
     return this.providerService.addPaymentMethod(req.user.email, dto);
   }
 
+
+
+  // ELIMINA UN METODO DE PAGO ESPECIFICO DE LA CONFIGURACION DEL PROVEEDOR
   @UseGuards(AuthenticatedGuard)
   @Delete('settings/payment-methods/:method')
   deletePaymentMethod(
@@ -88,6 +118,9 @@ export class ProviderController {
     return this.providerService.deletePaymentMethod(req.user.email, method);
   }
 
+
+
+  // ACTUALIZA LA DIRECCION Y RED DE UNA BILLETERA DE DESTINO O LA AGREGA SI AUN NO EXISTE
   @UseGuards(AuthenticatedGuard)
   @Patch('settings/destination-wallet')
   updateDestinationWallet(
@@ -97,6 +130,9 @@ export class ProviderController {
     return this.providerService.updateDestinationWallet(req.user.email, dto);
   }
 
+
+
+  // ALTERNA EL ESTADO DE ACTIVACION DE UNA BILLETERA DE DESTINO HABILITANDOLA O DESHABILITANDOLA SEGUN CORRESPONDA
   @UseGuards(AuthenticatedGuard)
   @Post('settings/destination-wallets/toggle')
   toggleDestinationWallet(

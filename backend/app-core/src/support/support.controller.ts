@@ -8,6 +8,9 @@ import { AuthenticatedGuard } from '../guard/auth/authenticated.guard';
 export class SupportController {
     constructor(private readonly supportService: SupportService) {}
 
+
+
+    // PROCESA LA CONSULTA DEL USUARIO Y LA ENVIA AL SERVICIO DE INTELIGENCIA ARTIFICIAL PARA OBTENER UNA RESPUESTA
     @UseGuards(AuthenticatedGuard, ThrottlerGuard)
     @Post('chat')
     async chat(@Request() req, @Body() dto: ChatQueryDto) {

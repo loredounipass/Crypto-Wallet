@@ -11,14 +11,23 @@ export class FeedRepository {
     @InjectModel(Comment.name) private readonly commentModel: Model<CommentDocument>,
   ) {}
 
+
+
+  // DEVUELVE LA REFERENCIA AL MODELO DE DATOS DE LAS PUBLICACIONES DEL FEED
   get feed() {
     return this.feedModel;
   }
 
+
+
+  // DEVUELVE LA REFERENCIA AL MODELO DE DATOS DE LOS COMENTARIOS DE LAS PUBLICACIONES
   get comment() {
     return this.commentModel;
   }
 
+
+
+  // DEVUELVE LA CONEXION A LA BASE DE DATOS UTILIZADA POR ESTE REPOSITORIO
   get db() {
     return this.feedModel.db;
   }

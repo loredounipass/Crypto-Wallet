@@ -16,8 +16,6 @@ import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction, TransactionDocument } from '../transaction/schemas/transaction.schema';
 
-
-// This service handles operations related to wallets, such as creating a new wallet for a user, retrieving wallet information, and processing withdrawal requests. It interacts with the User, Wallet, WalletContract, and Transaction models to perform these operations and uses a queue to handle withdrawal requests asynchronously.
 @Injectable()
 export class WalletService {
   constructor(
@@ -32,7 +30,8 @@ export class WalletService {
   ) { }
 
 
-  // Create a new wallet for a user based on the provided email, coin, and chainId. If the user already has a wallet for the specified coin and chainId, it returns the existing wallet information. Otherwise, it reserves a new wallet from the wallet contract collection, creates a new wallet document, and associates it with the user.
+
+  // RESERVA UNA BILLETERA DEL POOL DE CONTRATOS PREGENERADOS Y LA VINCULA EXCLUSIVAMENTE AL USUARIO
   async create(createWalletDto: CreateWalletDto) {
     let data = await this.userModel.aggregate([
       { $match: { email: createWalletDto.email } },
@@ -55,11 +54,9 @@ export class WalletService {
         }
       }
     ]).exec();
-
     let exists = true;
     if (!data || data.length === 0)
       exists = false;
-
     let wallet = exists ? data.find(w => w.walletsData.length > 0) : undefined;
     if (wallet) {
       wallet = wallet.walletsData[0];
@@ -70,7 +67,6 @@ export class WalletService {
         walletId: wallet._id
       }
     } else {
-      // Reserve a pre-generated wallet contract atomically
       const contract = await this.walletContractModel.findOneAndUpdate(
         { chainId: createWalletDto.chainId, reserved: false },
         { reserved: true },
@@ -79,9 +75,6 @@ export class WalletService {
       if (!contract) {
         throw new BadRequestException('No available wallet contracts for this chain.');
       }
-
-      // Re-check: another concurrent request may have created a wallet
-      // for this user+coin+chainId while we were reserving the contract.
       const reCheck = await this.userModel.aggregate([
         { $match: { email: createWalletDto.email } },
         { $unwind: '$wallets' },
@@ -100,7 +93,6 @@ export class WalletService {
         { $match: { 'walletsData.0': { $exists: true } } }
       ]).exec();
       if (reCheck.length > 0) {
-        // Another request beat us — unreserve our contract and return the existing wallet
         await this.walletContractModel.updateOne(
           { _id: contract._id },
           { reserved: false }
@@ -113,9 +105,6 @@ export class WalletService {
           walletId: existingWallet._id
         };
       }
-
-      // Create wallet document. The unique index on `address` prevents
-      // duplicate wallets at the database level.
       try {
         const wallet = new this.walletModel({
           address: contract.address,
@@ -123,12 +112,10 @@ export class WalletService {
           coin: createWalletDto.coin
         });
         const saved = await wallet.save();
-
         const result = await this.userModel.updateOne(
           { email: createWalletDto.email },
           { $push: { wallets: wallet._id } }
         );
-
         if (result.modifiedCount > 0) {
           return {
             address: wallet.address,
@@ -137,19 +124,15 @@ export class WalletService {
             walletId: wallet._id
           };
         }
-        // $push didn't modify — user record not found or edge case
         throw new Error('Failed to link wallet to user.');
       } catch (error: any) {
         if (error.code === 11000) {
-          // Duplicate key on `address` — another request already created this wallet.
           await this.walletContractModel.updateOne(
             { _id: contract._id },
             { reserved: false }
           ).catch(e => console.error('[WALLET] Failed to unreserve contract on duplicate:', e.message));
-
           const existingByAddress = await this.walletModel.findOne({ address: contract.address });
           if (existingByAddress) {
-            // Ensure the user is linked to this wallet
             await this.userModel.updateOne(
               { email: createWalletDto.email, wallets: { $ne: existingByAddress._id } },
               { $push: { wallets: existingByAddress._id } }
@@ -168,7 +151,8 @@ export class WalletService {
   }
 
 
-  // Get a specific wallet for a user based on their email, coin, and chainId. It retrieves the wallet information from the user's associated wallets and returns it if found.
+
+  // EXTRAE LA INFORMACION DE UNA UNICA BILLETERA BUSCANDOLA POR EL TIPO DE MONEDA REQUERIDO
   async getWallet(email: string, queryDto: QueryDto) {
     const data = await this.userModel.aggregate([
       { $match: { email } },
@@ -188,7 +172,6 @@ export class WalletService {
         }
       }
     ]).exec();
-
     if (data && data.length > 0) {
       let wallet = data.find(w => w.walletsData.length > 0)
       if (wallet) {
@@ -197,7 +180,6 @@ export class WalletService {
           { _id: new Types.ObjectId(wallet._id) },
           { _id: 0, transactions: 0, __v: 0 }
         ).exec();
-
         if (data) {
           return data;
         }
@@ -206,7 +188,8 @@ export class WalletService {
   }
 
 
-  // Get all wallets for a user based on their email. It retrieves the wallet information from the user's associated wallets and returns it as a list.
+
+  // RECOPILA Y DEVUELVE UN ARREGLO CON TODAS LAS BILLETERAS CREADAS ACTUALMENTE POR EL USUARIO
   async getWallets(email: string) {
     const data = await this.userModel.aggregate([
       { $match: { email } },
@@ -224,8 +207,6 @@ export class WalletService {
         }
       }
     ]).exec();
-
-
     if (data && data.length > 0) {
       const wallets = data.map(wallet => {
         return {
@@ -241,15 +222,15 @@ export class WalletService {
   }
 
 
+
+  // CONSULTA EL LIBRO MAYOR DE TOKENS PARA CALCULAR LOS SALDOS REALES Y BLOQUEADOS DE CADA DIRECCION
   async getTokenBalances(email: string) {
     const wallets = await this.getWallets(email);
     if (!wallets || wallets.length === 0) return [];
-
     const addresses = wallets.map(w => w.address.toLowerCase());
     const ledgerEntries = await this.erc20LedgerModel.find({
       walletAddress: { $in: addresses }
     }).exec();
-
     return ledgerEntries.map(entry => {
       const info = getTokenInfo(entry.tokenAddress);
       const available = entry.available_balance || 0;
@@ -272,7 +253,8 @@ export class WalletService {
   }
 
 
-  // Process a withdrawal request for a user based on the provided email, coin, amount, and destination address. It checks if the user has sufficient balance in their wallet, creates a new transaction for the withdrawal, updates the wallet balance, and adds the withdrawal request to a queue for asynchronous processing.
+
+  // CREA UNA TRANSACCION DESCUENTA EL SALDO NATIVO Y ENCOLA EL TRABAJO PARA PROCESAR EL RETIRO EN LA BLOCKCHAIN
   async withdraw(withdrawDto: WithdrawDto) {
     const data = await this.userModel.aggregate([
       { $match: { email: withdrawDto.email } },
@@ -292,12 +274,10 @@ export class WalletService {
         }
       }
     ]).exec();
-
     if (data && data.length > 0) {
       let wallet = data.find(w => w.walletsData.length > 0)
       if (wallet) {
         wallet = wallet.walletsData[0];
-
         const transaction = new this.transactionModel({
           nature: 2,
           amount: -1 * withdrawDto.amount,
@@ -306,9 +286,7 @@ export class WalletService {
           txHash: uuidv4(),
           to: withdrawDto.to
         });
-
         const saved = await transaction.save();
-
         if (saved) {
           await this.transactionStatusQueue.add('status-update', {
             transactionId: transaction._id.toString(),
@@ -319,14 +297,12 @@ export class WalletService {
             removeOnComplete: true,
             removeOnFail: 50
           });
-
           const result = await this.walletModel.findOneAndUpdate(
             { _id: new Types.ObjectId(wallet._id), balance: { $gte: withdrawDto.amount } },
             {
               $push: { transactions: transaction },
               $inc: { balance: transaction.amount }
             });
-
           if (result) {
             await this.withdrawQueue.add('request', {
               transactionId: transaction._id.toString(),
@@ -334,13 +310,11 @@ export class WalletService {
               amount: withdrawDto.amount,
               withdrawAddress: withdrawDto.to,
             });
-
             return {
               error: null,
               data: 'success'
             };
           }
-
           await this.transactionModel.deleteOne({ _id: transaction._id });
           await this.transactionStatusQueue.add('status-update', {
             transactionId: transaction._id.toString(),
@@ -349,36 +323,32 @@ export class WalletService {
             source: 'app-core-withdraw-cancelled'
           }, { removeOnComplete: true, removeOnFail: 50 });
         }
-
         return {
           error: true,
           msg: 'Insuficient balance'
         };
-
       }
     }
   }
 
+
+
+  // VERIFICA FONDOS DE TOKENS REGISTRA LA OPERACION Y ENVIA EL RETIRO A LA COLA DE PROCESAMIENTO SECUNDARIO
   async withdrawToken(tokenWithdrawDto: TokenWithdrawDto) {
     const wallets = await this.getWallets(tokenWithdrawDto.email);
     if (!wallets || wallets.length === 0) {
       return { error: true, msg: 'No wallets found' };
     }
-
     const chainEntries = await this.erc20LedgerModel.find({
       walletAddress: { $in: wallets.map(w => w.address.toLowerCase()) },
       tokenAddress: tokenWithdrawDto.tokenAddress
     }).exec();
-
     if (!chainEntries || chainEntries.length === 0) {
       return { error: true, msg: 'No token balance found for this wallet' };
     }
-
     const entry = chainEntries[0];
     let available = entry.available_balance || 0;
     const locked = entry.locked_for_forward || 0;
-
-    // Re-credit if a previous withdrawal failed (available === 0 but locked > 0)
     if (available === 0 && locked > 0) {
       await this.erc20LedgerModel.updateOne(
         { walletAddress: entry.walletAddress, tokenAddress: entry.tokenAddress, chainId: entry.chainId },
@@ -386,16 +356,13 @@ export class WalletService {
       );
       available = locked;
     }
-
     if (available < tokenWithdrawDto.amount) {
       return { error: true, msg: 'Insufficient token balance' };
     }
-
     const wallet = wallets.find(w => w.address.toLowerCase() === entry.walletAddress);
     if (!wallet) {
       return { error: true, msg: 'Wallet not found' };
     }
-
     const tokenInfo = getTokenInfo(tokenWithdrawDto.tokenAddress);
     const transaction = new this.transactionModel({
       nature: 2,
@@ -409,14 +376,12 @@ export class WalletService {
     if (!saved) {
       return { error: true, msg: 'Failed to create transaction' };
     }
-
     await this.transactionStatusQueue.add('status-update', {
       transactionId: transaction._id.toString(),
       status: transaction.status,
       confirmations: transaction.confirmations ?? 0,
       source: 'app-core-withdraw-token'
     }, { removeOnComplete: true, removeOnFail: 50 });
-
     await this.withdrawTokenQueue.add('request', {
       transactionId: transaction._id.toString(),
       walletAddress: entry.walletAddress,
@@ -427,7 +392,6 @@ export class WalletService {
       symbol: tokenInfo?.symbol || 'UNKNOWN',
       deductLocked: Math.min(tokenWithdrawDto.amount, locked)
     });
-
     return { error: null, data: 'success', transactionId: transaction._id.toString() };
   }
 }

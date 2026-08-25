@@ -25,6 +25,4 @@ export class CreateEscrowOrderDto {
 
     @IsString()
     paymentMethod: string;
-
-
 }

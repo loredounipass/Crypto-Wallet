@@ -96,8 +96,8 @@ export class EmailService {
   private readonly FROM_NAME = 'BrivoTrust';
   private readonly FROM_EMAIL = 'noreply@brivotrust.com';
   private readonly FRONTEND_URL: string;
-
   private transporter: any;
+
   constructor(private readonly configService: ConfigService) {
     this.FRONTEND_URL = this.configService.get<string>('FRONTEND_URL') || 'https://tudominio.com';
     this.transporter = nodemailer.createTransport({
@@ -109,6 +109,9 @@ export class EmailService {
     });
   }
 
+
+
+  // ENVIA UN CORREO CON UN TOKEN NUMERICO NECESARIO PARA VERIFICAR LA IDENTIDAD DURANTE EL INICIO DE SESION
   async sendTokenLogin(toEmail: string, token: string): Promise<void> {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
@@ -125,7 +128,6 @@ export class EmailService {
         ${TIPS_HTML}
       `),
     };
-
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
@@ -133,15 +135,20 @@ export class EmailService {
     }
   }
 
+
+
+  // GENERA DE MANERA ALEATORIA Y SEGURA UN CODIGO NUMERICO DE SEIS DIGITOS PARA LA AUTENTICACION
   async generateToken(): Promise<string> {
     const num = randomInt(0, 1000000);
     await Promise.resolve();
     return String(num).padStart(6, '0');
   }
 
+
+
+  // ENVIA UN ENLACE DE CONFIRMACION AL CORREO DEL USUARIO PARA ACTIVAR Y VALIDAR SU CUENTA RECIEN CREADA
   async sendVerificationEmail(email: string, token: string): Promise<void> {
     const verificationUrl = `${this.FRONTEND_URL}/verifyemail?token=${encodeURIComponent(token)}`;
-
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
@@ -159,7 +166,6 @@ export class EmailService {
         <p style="color:#9CA3AF;font-size:13px">Tips to protect your account: use 2FA and do not share your credentials.</p>
       `),
     };
-
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
@@ -167,11 +173,13 @@ export class EmailService {
     }
   }
 
+
+
+  // ENVIA AL USUARIO UN ENLACE DE RECUPERACION CON UN TOKEN UNICO PARA QUE PUEDA RESTABLECER SU CONTRASENA
   async sendForgotPasswordEmail(email: string, token: string): Promise<void> {
     const resetUrl = `${this.FRONTEND_URL}/reset-password?email=${encodeURIComponent(
       email,
     )}&token=${encodeURIComponent(token)}`;
-
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
       to: email,
@@ -189,7 +197,6 @@ export class EmailService {
         <p style="color:#9CA3AF;font-size:13px">Tips to protect your account: use 2FA and do not share your credentials.</p>
       `),
     };
-
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
@@ -197,6 +204,9 @@ export class EmailService {
     }
   }
 
+
+
+  // NOTIFICA AL USUARIO INMEDIATAMENTE VIA CORREO ELECTRONICO CUANDO SE DETECTA UN INICIO DE SESION EXITOSO
   async sendLoginNotificationEmail(toEmail: string): Promise<void> {
     const mailOptions = {
       from: `${this.FROM_NAME} <${this.FROM_EMAIL}>`,
@@ -213,7 +223,6 @@ export class EmailService {
         ${TIPS_HTML}
       `),
     };
-
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {

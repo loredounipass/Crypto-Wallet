@@ -15,6 +15,9 @@ export class LanguagesService implements OnModuleInit {
     this.languagesPath = path.join(__dirname, 'data');
   }
 
+
+
+  // INICIALIZA LOS IDIOMAS POR DEFECTO EN LA BASE DE DATOS AL ARRANCAR EL MODULO PARA ASEGURAR SU DISPONIBILIDAD
   async onModuleInit() {
     const languages = [
       { code: 'en', name: 'English', nativeName: 'English' },
@@ -30,6 +33,9 @@ export class LanguagesService implements OnModuleInit {
     }
   }
 
+
+
+  // CONSULTA TODOS LOS IDIOMAS REGISTRADOS Y ESTABLECE COMO ACTIVO AQUEL QUE COINCIDA CON LA PREFERENCIA DEL USUARIO
   async getAllLanguages(userLang?: string): Promise<any[]> {
     let languages: any[] = await this.languageModel.find().lean().exec();
     if (!languages || languages.length === 0) {
@@ -59,6 +65,9 @@ export class LanguagesService implements OnModuleInit {
     }));
   }
 
+
+
+  // LEE EL ARCHIVO JSON CORRESPONDIENTE AL IDIOMA SOLICITADO Y DEVUELVE SUS TRADUCCIONES LISTAS PARA USARSE
   getLanguageTranslations(lang: string): any {
     if (!/^[a-zA-Z0-9_-]+$/.test(lang)) {
       throw new NotFoundException(`Invalid language code: '${lang}'`);
@@ -68,7 +77,6 @@ export class LanguagesService implements OnModuleInit {
       if (!fs.existsSync(filePath)) {
         throw new NotFoundException(`Language file for '${lang}' not found`);
       }
-
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const data = JSON.parse(fileContent);
       return { data, lang, active: true };

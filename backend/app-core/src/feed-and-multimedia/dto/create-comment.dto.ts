@@ -13,7 +13,6 @@ export class CreateCommentDto {
   @IsNotEmpty()
   authorId: string;
 
-  // Optional parent comment id for replies
   @IsString()
   parentId?: string;
 }
