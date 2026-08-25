@@ -14,23 +14,31 @@ const NonceV2 = mongoose.models.NonceV2 || mongoose.model('NonceV2', nonceSchema
 class TxManager {
 
 
-    // OBTIENE Y RESERVA ATOMICAMENTE UN NUMERO DE TRANSACCION UNICO PARA LA DIRECCION Y CADENA ESPECIFICADAS
+    // OBTIENE Y RESERVA ATOMICAMENTE UN NUMERO DE TRANSACCION UNICO PARA LA DIRECCION ASEGURANDO PROTECCION CONTRA CONDICIONES DE CARRERA
     static async getNonce(web3, address, chainId) {
         const key = address.toLowerCase()
-        const doc = await NonceV2.findOneAndUpdate(
+        
+        let doc = await NonceV2.findOne({ address: key, chainId })
+        
+        if (!doc) {
+            const chainNonce = Number(await web3.eth.getTransactionCount(address, 'pending'))
+            try {
+                await NonceV2.updateOne(
+                    { address: key, chainId },
+                    { $setOnInsert: { nonce: chainNonce, lastSyncedAt: new Date() } },
+                    { upsert: true }
+                )
+            } catch (e) {
+            }
+        }
+
+        const updatedDoc = await NonceV2.findOneAndUpdate(
             { address: key, chainId },
             { $inc: { nonce: 1 }, $set: { lastUsedAt: new Date() } },
-            { new: true, upsert: true }
+            { returnDocument: 'after' }
         )
-        if (doc.nonce === 1) {
-            const chainNonce = await web3.eth.getTransactionCount(address, 'pending')
-            await NonceV2.updateOne(
-                { address: key, chainId },
-                { $set: { nonce: chainNonce + 1, lastSyncedAt: new Date() } }
-            )
-            return Number(chainNonce)
-        }
-        return Number(doc.nonce) - 1
+        
+        return Number(updatedDoc.nonce) - 1
     }
 
 

@@ -67,6 +67,10 @@
         {
             "name": "ME: Stale Lock Monitor NODE",
             "script": "./daemon/workers/local/staleLockMonitor.js"
+        },
+        {
+            "name": "ME: Stale Order Sweeper NODE",
+            "script": "./daemon/workers/local/staleOrderSweeper.js"
         }
     ]
 }
