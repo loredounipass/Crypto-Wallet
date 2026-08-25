@@ -1,16 +1,3 @@
-/**
- * Escrow Cancel Worker
- * 
- * BullMQ worker that processes the 'escrow-cancel' queue.
- * When a seller cancels an order, this worker:
- *   1. Refunds funds directly from escrow wallet to seller
- *   2. Registers the refund transaction for 12 confirmations
- *   3. Updates EscrowOrder status to 'cancelled'
- *   4. Emits status update event via escrow-status-events queue
- * 
- * Queue: 'escrow-cancel'
- */
-
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
@@ -24,17 +11,21 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
+
+
+// CONVIERTE UNA CANTIDAD LEGIBLE A SU EQUIVALENTE EN WEI CONSIDERANDO LOS DECIMALES
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
+
+
+// REGISTRA LA TRANSACCION DE REEMBOLSO DEL ESCROW ASOCIANDOLA A LA BILLETERA DEL VENDEDOR
 const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
-
     let txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`
-
     const existing = await Transaction.findOne({ txHash: txHashToUse })
     if (existing) {
         console.log('[ESCROW-CANCEL-WORKER] Existing transaction found for refund, skipping registration:', {
@@ -44,13 +35,11 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         return existing
     }
-
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
         coin,
         chainId
     })
-
     if (!wallet) {
         console.error('[ESCROW-CANCEL-WORKER] Seller wallet not found for refund registration, will retry:', {
             orderId: order.orderId,
@@ -60,7 +49,6 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
-
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
     let transaction
@@ -82,12 +70,10 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             throw err
         }
     }
-
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
     )
-
     if (isInternal) {
         await Wallet.updateOne(
             { _id: new ObjectId(wallet._id) },
@@ -106,59 +92,48 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             transactionId: transaction._id.toString()
         })
     }
-
     return transaction
 }
 
+
+
+// PROCESA LA CANCELACION DE LA ORDEN DE ESCROW REEMBOLSANDO LOS FONDOS Y ACTUALIZANDO EL ESTADO
 const processEscrowCancel = async (jobData) => {
     const { orderId, sellerEmail, providerEmail } = jobData
-
     console.log(`[ESCROW-CANCEL-WORKER] [Job ${jobData.orderId}] Processing cancel request...`)
-
     const order = await EscrowOrder.findOne({ orderId })
     if (!order || order.status !== 'cancelled') {
         console.error(`[ESCROW-CANCEL-WORKER] Invalid order state: ${order?.status || 'not found'}`)
         throw new Error(`[ESCROW-CANCEL-WORKER] Invalid order state: ${order?.status || 'not found'}`)
     }
-
-    // Idempotency: check if refund was already processed
     if (order.refundTxHash) {
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refund already processed (refundTxHash=${order.refundTxHash}), skipping`)
         return 'success'
     }
-
     let refundTxHash = null
     let refundAmountEth = null
-
     if (order.escrowTxHash) {
-        // Wait for funding transaction to reach 12 confirmations (status === 3)
         const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
         if (fundingTx && fundingTx.status !== 3) {
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Blocked: Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx.status}). Retrying later to avoid blockchain race conditions...`)
             throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
         }
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Funding transaction confirmed. Proceeding with refund...`)
-
         const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
         const amountWei = toWeiAmount(order.amount, decimals)
         const interactor = new EscrowContractInteractor(order.chainId)
-
-        // Idempotency check: if escrow wallet already empty, refund was already processed
         const escrowBalance = await interactor.getNativeBalance(interactor.escrowWalletAddress)
         if (escrowBalance < amountWei) {
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow wallet balance (${escrowBalance}) is less than amount (${amountWei}). Refund already processed on-chain, skipping...`)
         } else {
             await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
-
             refundAmountEth = order.amount
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refunding full amount ${refundAmountEth} (gas prepaid at creation)...`)
-
             const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
             if (receipt && receipt.status) {
                 refundTxHash = receipt.transactionHash
                 console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow Wallet refund successful! TxHash: ${refundTxHash}`)
             }
-
             if (!refundTxHash) {
                 throw new Error('[ESCROW-CANCEL-WORKER] Escrow wallet refund failed')
             }
@@ -166,9 +141,7 @@ const processEscrowCancel = async (jobData) => {
     } else {
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] No on-chain transaction found (escrowTxHash is null). Proceeding with internal DB refund...`)
     }
-
     await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
-
     const cancelRefundTxHash = refundTxHash || `internal-refund-${order.orderId}`
     await EscrowOrder.updateOne(
         { orderId },
@@ -179,7 +152,6 @@ const processEscrowCancel = async (jobData) => {
             }
         }
     )
-
     const statusQueue = new Queue('escrow-status-events')
     statusQueue.add('status-update', {
         orderId,
@@ -187,7 +159,6 @@ const processEscrowCancel = async (jobData) => {
         sellerEmail,
         providerEmail
     }, { removeOnComplete: true, removeOnFail: 50 })
-
     console.log('[ESCROW-CANCEL-WORKER] ✅ Complete:', { orderId, txHash: refundTxHash })
     return 'success'
 }

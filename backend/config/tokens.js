@@ -1,5 +1,3 @@
-// Mapa de tokenAddress (lowercase) → { symbol, decimals, coinGeckoId }
-// Usado tanto por daemon workers como por app-core API
 const TOKEN_MAP = {
     '0xdac17f958d2ee523a2206206994597c13d831ec7': {
         symbol: 'USDT',
@@ -13,6 +11,9 @@ const TOKEN_MAP = {
     },
 }
 
+
+
+// RECUPERA Y DEVUELVE LA INFORMACION COMPLETA DEL TOKEN USANDO SU DIRECCION EN MINUSCULAS COMO REFERENCIA
 function getTokenInfo(tokenAddress) {
     return TOKEN_MAP[tokenAddress.toLowerCase()] || null
 }

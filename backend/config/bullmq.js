@@ -12,6 +12,9 @@ const connection = {
 }
 
 class CustomWorker extends Worker {
+
+
+    // INICIALIZA UN TRABAJADOR PERSONALIZADO Y REGISTRA EVENTOS PARA MONITOREAR EL ESTADO DE LOS TRABAJOS
     constructor(name, processor, opts = {}) {
         super(name, processor, { connection, ...opts })
         this.on('active', (job) => {
@@ -29,12 +32,12 @@ class CustomWorker extends Worker {
 }
 
 class CustomQueue extends Queue {
+
+
+    // CONFIGURA UNA COLA PERSONALIZADA INYECTANDO AUTOMATICAMENTE LOS PARAMETROS DE CONEXION DE REDIS
     constructor(name, opts = {}) {
         super(name, { connection, ...opts })
     }
 }
 
-module.exports = {
-    Worker: CustomWorker,
-    Queue: CustomQueue
-}
+module.exports = { Worker: CustomWorker, Queue: CustomQueue }

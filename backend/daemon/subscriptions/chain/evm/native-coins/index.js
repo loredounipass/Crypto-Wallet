@@ -10,23 +10,31 @@ const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const RECONNECT_BASE_DELAY_MS = 5000
 const RECONNECT_MAX_DELAY_MS = 60000
 
+
+
+// CREA Y DEVUELVE UNA NUEVA INSTANCIA DE WEB3 CONECTADA AL WEBSOCKET PROPORCIONADO
 const getWeb3WssInstance = (wss) => {
     console.log('getWeb3WssInstance called with wss:', wss);
     const web3 = new Web3(wss);
     return web3;
 }
 
+
+
+// INICIALIZA LA CONEXION Y SUSCRIPCION A LOS EVENTOS DE LA BLOCKCHAIN PARA LA MONEDA ESPECIFICADA
 const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
     const transactionsQueue = new Queue(queueName)
     const topic = Web3.utils.sha3('DepositedOnMetaDapp()')
     let retryDelay = RECONNECT_BASE_DELAY_MS
     let web3
 
+
+
+    // ESTABLECE LA SUSCRIPCION A LOS REGISTROS DE LA BLOCKCHAIN Y MANEJA LOS EVENTOS ENTRANTES
     const subscribe = async () => {
         web3 = getWeb3WssInstance(wssUrl)
         console.log(`[SUB][${coin}] subscription started on chainId:`, chainId)
         console.log(`[SUB][${coin}] listening topic:`, topic)
-
         if (web3.currentProvider && typeof web3.currentProvider.on === 'function') {
             web3.currentProvider.on('error', (e) => {
                 console.error(`[SUB][${coin}] Web3 provider error:`, e.message || e)
@@ -37,7 +45,6 @@ const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
                 scheduleReconnect()
             })
         }
-
         let subscription
         try {
             subscription = await web3.eth.subscribe('logs', { topics: [topic] })
@@ -46,25 +53,20 @@ const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
             scheduleReconnect()
             return
         }
-
         retryDelay = RECONNECT_BASE_DELAY_MS
-
         subscription.on('data', async (result) => {
             try {
                 const eventAddress = (result.address || '').toLowerCase()
                 console.log(`[SUB][${coin}] log detected tx:`, result.transactionHash, 'address:', result.address)
-
                 const wallet = await Wallet.findOne({
                     chainId,
                     coin,
                     address: new RegExp(`^${eventAddress}$`, 'i')
                 })
-
                 if (!wallet) {
                     console.log(`[SUB][${coin}] no wallet match for address:`, result.address)
                     return
                 }
-
                 await transactionsQueue.add('transaction', {
                     walletAddress: wallet.address,
                     transactionHash: result.transactionHash,
@@ -86,12 +88,14 @@ const connectAndSubscribe = async ({ chainId, coin, wssUrl, queueName }) => {
                 console.error(`[SUB][${coin}] data handler error:`, error.message || error)
             }
         })
-
         subscription.on('error', (error) => {
             console.error(`[SUB][${coin}] subscription error:`, error.message || error)
         })
     }
 
+
+
+    // PROGRAMA UN REINTENTO DE CONEXION CON RETRASO EXPONENCIAL EN CASO DE FALLO DE WEBSOCKET
     const scheduleReconnect = () => {
         setTimeout(async () => {
             console.log(`[SUB][${coin}] attempting reconnection...`)

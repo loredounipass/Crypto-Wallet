@@ -8,30 +8,34 @@ const nonceSchema = new mongoose.Schema({
 const Nonce = mongoose.models.Nonce || mongoose.model('Nonce', nonceSchema)
 
 class TxManager {
+
+
+    // OBTIENE Y RESERVA ATOMICAMENTE UN NUMERO DE TRANSACCION UNICO PARA LA DIRECCION ESPECIFICADA
     static async getNonce(web3, address) {
         const key = address.toLowerCase()
-
-        // Atomic increment: atomically reserves a unique nonce
         const doc = await Nonce.findOneAndUpdate(
             { address: key },
             { $inc: { nonce: 1 } },
             { new: true, upsert: true }
         )
-
         if (doc.nonce === 1) {
-            // First time — initialize from chain state
             const chainNonce = await web3.eth.getTransactionCount(address, 'pending')
             await Nonce.updateOne({ address: key }, { $set: { nonce: chainNonce + 1 } })
             return Number(chainNonce)
         }
-
         return Number(doc.nonce) - 1
     }
 
+
+
+    // REINICIA EL CONTADOR DE TRANSACCIONES ELIMINANDO EL REGISTRO DE LA BASE DE DATOS PARA FORZAR LA SINCRONIZACION
     static async resetNonce(address) {
         await Nonce.deleteOne({ address: address.toLowerCase() })
     }
 
+
+
+    // ANALIZA EL MENSAJE DE ERROR Y CLASIFICA LA FALLA PARA DETERMINAR LA ESTRATEGIA DE REINTENTO
     static async classifyFailure(error) {
         const msg = error.message.toLowerCase()
         if (msg.includes('nonce') || msg.includes('replacement transaction underpriced')) return 'NONCE_COLLISION'

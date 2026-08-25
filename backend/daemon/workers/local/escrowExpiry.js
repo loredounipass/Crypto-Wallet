@@ -1,16 +1,3 @@
-/**
- * Escrow Expiry Worker
- * 
- * Polling worker that checks for expired escrow orders every 60 seconds.
- * When an order expires (expiresAt < now && status in ['pending', 'funded']):
- *   1. Refunds funds from escrow wallet to seller
- *   2. Refunds the seller's wallet balance in MongoDB
- *   3. Sets the order status to 'expired'
- *   4. Emits a status update event via the escrow-status-events queue
- * 
- * This worker runs as a daemon, not a BullMQ queue consumer.
- */
-
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
@@ -25,23 +12,23 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 const coins = require(`${appRoot}/config/coins/info`)
 
-const POLL_INTERVAL_MS = 60000 // Check every 60 seconds
+const POLL_INTERVAL_MS = 60000
 
+
+
+// REGISTRA EL REEMBOLSO COMO UNA NUEVA TRANSACCION ASOCIADA A LA BILLETERA DEL VENDEDOR
 const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
-
     const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
-
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
         coin,
         chainId
     })
-
     if (!wallet) {
         console.error('[ESCROW-EXPIRY] Seller wallet not found for refund registration, will retry:', {
             orderId: order.orderId,
@@ -51,7 +38,6 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
-
     let transaction = new Transaction({
         nature: 1,
         amount: actualAmount,
@@ -61,7 +47,6 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         txHash: txHashToUse,
         to: order.sellerWalletAddress
     })
-    
     let savedTransaction = transaction;
     try {
         await transaction.save()
@@ -76,14 +61,11 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             throw err
         }
     }
-
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: savedTransaction._id } }
     )
-
     if (isInternal) {
-        // Reembolso interno inmediato
         await Wallet.updateOne(
             { _id: new ObjectId(wallet._id) },
             { $inc: { balance: order.amount } }
@@ -101,34 +83,36 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             transactionId: savedTransaction._id.toString()
         })
     }
-
     return savedTransaction
 }
 
+
+
+// REEMBOLSA LOS FONDOS DIRECTAMENTE DESDE LA BILLETERA ESCROW HACIA LA BILLETERA DEL VENDEDOR
 const refundSellerWallet = async (order) => {
     let refundTxHash = null;
     let refundAmountEth = null;
-
     if (order.escrowTxHash) {
         try {
             const interactor = new EscrowContractInteractor(order.chainId)
             const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
             const amountWei = parseUnits(String(order.amount), decimals)
-
-            // Idempotency check: if escrow wallet already empty, refund was already processed
             const escrowBalance = await interactor.getNativeBalance(interactor.escrowWalletAddress)
             if (escrowBalance >= amountWei) {
-                // Gas was prepaid at order creation (gasFee). Top up escrow wallet if needed,
-                // then refund the FULL amount (no gas deduction).
                 await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
-
                 refundAmountEth = order.amount
-
                 console.log('[ESCROW-EXPIRY] Refunding from Escrow Wallet (full amount, gas prepaid):', {
                     orderId: order.orderId,
                     refundAmount: refundAmountEth,
                 })
                 const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
+                if (receipt && receipt.status) {
+                    refundTxHash = receipt.transactionHash
+                    console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
+                        orderId: order.orderId,
+                        txHash: refundTxHash
+                    })
+                }
             } else {
                 console.log('[ESCROW-EXPIRY] Escrow wallet balance is less than amount. Refund already processed on-chain, skipping:', {
                     orderId: order.orderId,
@@ -136,15 +120,7 @@ const refundSellerWallet = async (order) => {
                     amount: amountWei.toString()
                 })
             }
-            if (receipt && receipt.status) {
-                refundTxHash = receipt.transactionHash
-                console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {
-                    orderId: order.orderId,
-                    txHash: refundTxHash
-                })
-            }
-
-            if (!refundTxHash) {
+            if (!refundTxHash && escrowBalance >= amountWei) {
                 throw new Error('[ESCROW-EXPIRY] Escrow wallet refund failed')
             }
         } catch (error) {
@@ -152,10 +128,12 @@ const refundSellerWallet = async (order) => {
             throw error
         }
     }
-
     await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
 }
 
+
+
+// CONSULTA PERIÓDICAMENTE LAS ORDENES EXPIRADAS PARA PROCESAR EL REEMBOLSO Y CAMBIAR SU ESTADO
 const checkExpiredOrders = async () => {
     try {
         const pendingOrders = await EscrowOrder.find({
@@ -163,15 +141,10 @@ const checkExpiredOrders = async () => {
             expiresAt: { $lt: new Date() },
             expiryLockedAt: null
         }).exec()
-
         if (pendingOrders.length === 0) return
-
         console.log(`[ESCROW-EXPIRY] Found ${pendingOrders.length} expired orders`)
-
         const statusQueue = new Queue('escrow-status-events')
-
         for (const order of pendingOrders) {
-            // Atomic lock: claim this order exclusively
             const claimed = await EscrowOrder.findOneAndUpdate(
                 {
                     orderId: order.orderId,
@@ -181,34 +154,25 @@ const checkExpiredOrders = async () => {
                 },
                 { $set: { expiryLockedAt: new Date() } }
             )
-
             if (!claimed) {
                 console.log(`[ESCROW-EXPIRY] Order ${order.orderId} already claimed by another process, skipping`)
                 continue
             }
-
             try {
-                // Refund seller (on-chain + DB)
                 await refundSellerWallet(order)
-
-                // Update order status
                 await EscrowOrder.updateOne(
                     { orderId: order.orderId },
                     { $set: { status: 'expired' } }
                 )
-
-                // Emit status event
                 statusQueue.add('status-update', {
                     orderId: order.orderId,
                     status: 'expired',
                     sellerEmail: order.sellerEmail,
                     providerEmail: order.providerEmail,
                 }, { removeOnComplete: true, removeOnFail: 50 })
-
                 console.log('[ESCROW-EXPIRY] Order expired and refunded:', order.orderId)
             } catch (orderError) {
                 console.error('[ESCROW-EXPIRY] Error processing expired order:', order.orderId, orderError.message)
-                // Clear lock for retry on next poll cycle
                 await EscrowOrder.updateOne(
                     { orderId: order.orderId },
                     { $set: { expiryLockedAt: null } }
@@ -222,10 +186,6 @@ const checkExpiredOrders = async () => {
 
 connectDB.then(() => {
     console.log('[ESCROW-EXPIRY] Worker started, polling every', POLL_INTERVAL_MS, 'ms')
-
-    // Run immediately on start
     checkExpiredOrders()
-
-    // Then poll on interval
     setInterval(checkExpiredOrders, POLL_INTERVAL_MS)
 })

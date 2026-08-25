@@ -1,17 +1,3 @@
-/**
- * Escrow Funding Worker
- * 
- * BullMQ worker that processes the 'escrow-funding' queue.
- * When a seller creates a P2P order, this worker:
- *   1. Takes the order details from the queue
- *   2. Transfers funds from hot wallet to escrow wallet
- *   3. Updates the EscrowOrder in MongoDB with the tx hash
- *   4. Emits a status update event via the escrow-status-events queue
- * 
- * Queue: 'escrow-funding'
- * Job data: { orderId, sellerWalletAddress, providerWalletAddress, amount, coin, chainId, sellerEmail, providerEmail }
- */
-
 const appRoot = require('app-root-path')
 require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
@@ -25,23 +11,26 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
+
+
+// CONVIERTE UNA CANTIDAD LEGIBLE A SU EQUIVALENTE EN WEI CONSIDERANDO LOS DECIMALES
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
+
+
+// REGISTRA LA TRANSACCION DE FONDEO DEL ESCROW ASOCIANDOLA A LA BILLETERA DEL VENDEDOR
 const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTargetAddress) => {
     if (!escrowTxHash || escrowTxHash.startsWith('offchain-')) return null
-
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
-
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
         coin,
         chainId
     })
-
     if (!wallet) {
         console.warn('[ESCROW-FUNDING] Seller wallet not found for escrow transaction registration:', {
             orderId: order.orderId,
@@ -51,7 +40,6 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
         })
         return null
     }
-
     const transaction = await Transaction.findOneAndUpdate(
         { txHash: escrowTxHash },
         {
@@ -67,13 +55,10 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
         },
         { upsert: true, returnDocument: 'after' }
     )
-
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
     )
-
-    // Reuse the normal withdraw confirmation worker (status updates on chain confirmations).
     const withdrawQueue = new Queue(`${coin.toLowerCase()}-withdraws`)
     await withdrawQueue.add('withdraw', {
         walletAddress: order.sellerWalletAddress,
@@ -90,51 +75,43 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
         removeOnComplete: true,
         removeOnFail: 50
     })
-
     console.log('[ESCROW-FUNDING] Registered funding tx for confirmation tracking:', {
         orderId: order.orderId,
         txHash: escrowTxHash,
         transactionId: transaction._id.toString(),
         walletId: wallet._id.toString()
     })
-
     return transaction
 }
 
+
+
+// PROCESA EL FONDEO DE LA ORDEN DE ESCROW TRANSFIRIENDO LOS FONDOS DESDE LA BILLETERA CALIENTE
 const processEscrowFunding = async (jobData) => {
     const {
         orderId, sellerWalletAddress, providerWalletAddress,
         amount, coin, chainId, gasFee, sellerEmail, providerEmail
     } = jobData
-
     console.log('[ESCROW-FUNDING] Processing:', {
         orderId, amount, coin, chainId,
         seller: sellerWalletAddress?.slice(0, 10) + '...',
         provider: providerWalletAddress?.slice(0, 10) + '...'
     })
-
     const order = await EscrowOrder.findOne({ orderId })
     if (!order) {
         throw new Error(`[ESCROW-FUNDING] Order not found: ${orderId}`)
     }
-
-    // Idempotency: if escrowTxHash is already set, skip (funding already completed)
     if (order.escrowTxHash && order.fundingMethod) {
         console.log(`[ESCROW-FUNDING] Order ${orderId} already funded (method=${order.fundingMethod}, tx=${order.escrowTxHash}), skipping`)
         return 'success'
     }
-
-    // Only fund orders in 'pending' status (set by escrow.service createOrder)
     if (order.status !== 'pending') {
         console.log(`[ESCROW-FUNDING] Order ${orderId} status is '${order.status}', expected 'pending', skipping funding`)
         return 'skipped'
     }
-
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = toWeiAmount(amount, decimals)
-
     let escrowTxHash = null
-
     try {
         const interactor = new EscrowContractInteractor(chainId)
         console.log('[ESCROW-FUNDING] Funding escrow wallet...')
@@ -147,7 +124,6 @@ const processEscrowFunding = async (jobData) => {
         console.error('[ESCROW-FUNDING] On-chain funding failed:', error.message)
         throw error
     }
-
     const fundingMethod = 'wallet'
     await EscrowOrder.updateOne(
         { orderId },
@@ -159,10 +135,7 @@ const processEscrowFunding = async (jobData) => {
             }
         }
     )
-
     await registerEscrowFundingTransaction(order, escrowTxHash, process.env.ESCROW_WALLET_ADDRESS)
-
-    // Emit status event
     const statusQueue = new Queue('escrow-status-events')
     statusQueue.add('status-update', {
         orderId,
@@ -171,7 +144,6 @@ const processEscrowFunding = async (jobData) => {
         providerEmail,
         escrowTxHash
     }, { removeOnComplete: true, removeOnFail: 50 })
-
     console.log('[ESCROW-FUNDING] Complete:', { orderId, escrowTxHash, fundingMethod })
     return 'success'
 }
