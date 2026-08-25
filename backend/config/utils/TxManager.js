@@ -2,25 +2,32 @@ const mongoose = require('mongoose')
 const { Web3 } = require('web3')
 
 const nonceSchema = new mongoose.Schema({
-    address: { type: String, required: true, unique: true, lowercase: true },
-    nonce: { type: Number, required: true, default: 0 }
+    address: { type: String, required: true, lowercase: true },
+    chainId: { type: Number, required: true },
+    nonce: { type: Number, required: true, default: 0 },
+    lastUsedAt: { type: Date, default: null },
+    lastSyncedAt: { type: Date, default: null }
 })
-const Nonce = mongoose.models.Nonce || mongoose.model('Nonce', nonceSchema)
+nonceSchema.index({ address: 1, chainId: 1 }, { unique: true })
+const NonceV2 = mongoose.models.NonceV2 || mongoose.model('NonceV2', nonceSchema)
 
 class TxManager {
 
 
-    // OBTIENE Y RESERVA ATOMICAMENTE UN NUMERO DE TRANSACCION UNICO PARA LA DIRECCION ESPECIFICADA
-    static async getNonce(web3, address) {
+    // OBTIENE Y RESERVA ATOMICAMENTE UN NUMERO DE TRANSACCION UNICO PARA LA DIRECCION Y CADENA ESPECIFICADAS
+    static async getNonce(web3, address, chainId) {
         const key = address.toLowerCase()
-        const doc = await Nonce.findOneAndUpdate(
-            { address: key },
-            { $inc: { nonce: 1 } },
+        const doc = await NonceV2.findOneAndUpdate(
+            { address: key, chainId },
+            { $inc: { nonce: 1 }, $set: { lastUsedAt: new Date() } },
             { new: true, upsert: true }
         )
         if (doc.nonce === 1) {
             const chainNonce = await web3.eth.getTransactionCount(address, 'pending')
-            await Nonce.updateOne({ address: key }, { $set: { nonce: chainNonce + 1 } })
+            await NonceV2.updateOne(
+                { address: key, chainId },
+                { $set: { nonce: chainNonce + 1, lastSyncedAt: new Date() } }
+            )
             return Number(chainNonce)
         }
         return Number(doc.nonce) - 1
@@ -29,8 +36,8 @@ class TxManager {
 
 
     // REINICIA EL CONTADOR DE TRANSACCIONES ELIMINANDO EL REGISTRO DE LA BASE DE DATOS PARA FORZAR LA SINCRONIZACION
-    static async resetNonce(address) {
-        await Nonce.deleteOne({ address: address.toLowerCase() })
+    static async resetNonce(address, chainId) {
+        await NonceV2.deleteOne({ address: address.toLowerCase(), chainId })
     }
 
 

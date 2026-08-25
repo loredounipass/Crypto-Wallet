@@ -53,22 +53,6 @@
             "script": "./daemon/workers/local/escrowDisputeResolution.js"
         },
         {
-            "name": "ME: ERC20 Broadcast NODE",
-            "script": "./daemon/subscriptions/chain/evm/erc20-tokens/erc20-runner.js"
-        },
-        {
-            "name": "ME: ERC20 Worker NODE",
-            "script": "./daemon/workers/chain/erc20.js"
-        },
-        {
-            "name": "ME: ERC20 Withdraw Worker NODE",
-            "script": "./daemon/workers/local/erc20-withdraw.js"
-        },
-        {
-            "name": "ME: ERC20 Backfill NODE",
-            "script": "./daemon/subscriptions/chain/evm/erc20-tokens/erc20-backfill-runner.js"
-        },
-        {
             "name": "ME: Escrow Gas Estimate Worker NODE",
             "script": "./daemon/workers/local/escrowGasEstimate.js"
         },
@@ -79,6 +63,10 @@
         {
             "name": "ME: Escrow Refund Worker NODE",
             "script": "./daemon/workers/local/escrowRefund.js"
+        },
+        {
+            "name": "ME: Stale Lock Monitor NODE",
+            "script": "./daemon/workers/local/staleLockMonitor.js"
         }
     ]
 }

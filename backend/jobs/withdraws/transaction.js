@@ -6,6 +6,7 @@ const coins = require(`${appRoot}/config/coins/info`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const { Web3 } = require('web3')
 const { parseUnits } = require('ethers')
+const TxManager = require(`${appRoot}/config/utils/TxManager`)
 const { publishTransactionStatusUpdate } = require('../notifications/transactionStatusQueue')
 
 let web3
@@ -74,8 +75,8 @@ const sendTransaction = async (valueWei, toAddress) => {
         throw new Error(`Insufficient hot wallet balance. required=${requiredBalance.toString()} available=${senderBalance.toString()}`)
     }
 
-    const nonce = await web3.eth.getTransactionCount(fromAddress, 'pending')
     const chainId = await web3.eth.getChainId()
+    const nonce = await TxManager.getNonce(web3, fromAddress, Number(chainId))
     const transaction = {
         from: fromAddress,
         chainId,
@@ -94,6 +95,10 @@ const sendTransaction = async (valueWei, toAddress) => {
     try {
         return await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
     } catch (error) {
+        const failureType = await TxManager.classifyFailure(error)
+        if (failureType === 'NONCE_COLLISION') {
+            await TxManager.resetNonce(fromAddress, Number(chainId))
+        }
         const errorMessage = error?.message || 'unknown sendSignedTransaction error'
         throw new Error(`Withdraw tx failed: ${errorMessage}`)
     }

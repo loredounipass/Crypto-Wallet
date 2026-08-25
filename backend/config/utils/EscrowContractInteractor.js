@@ -3,6 +3,7 @@ const { Web3 } = require('web3')
 const { keccak256, toUtf8Bytes } = require('ethers')
 const fs = require('fs')
 const path = require('path')
+const TxManager = require(`${appRoot}/config/utils/TxManager`)
 
 class EscrowContractInteractor {
     constructor(chainId) {
@@ -73,7 +74,7 @@ class EscrowContractInteractor {
         if (!this.contractAddress) {
             throw new Error('Escrow contract address is not configured')
         }
-        const nonce = await this.web3.eth.getTransactionCount(fromAddress, 'pending')
+        const nonce = await TxManager.getNonce(this.web3, fromAddress, this.chainId)
         const gasPrice = await this.web3.eth.getGasPrice()
         const chainId = await this.web3.eth.getChainId()
         let gasLimit
@@ -106,7 +107,15 @@ class EscrowContractInteractor {
             transaction,
             this._normalizePrivateKey(privateKey)
         )
-        return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+        try {
+            return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+        } catch (error) {
+            const failureType = await TxManager.classifyFailure(error)
+            if (failureType === 'NONCE_COLLISION') {
+                await TxManager.resetNonce(fromAddress, this.chainId)
+            }
+            throw error
+        }
     }
 
 
@@ -122,7 +131,7 @@ class EscrowContractInteractor {
     async _sendNativeTransfer(fromAddress, privateKey, toAddress, valueWei) {
         const from = this.web3.utils.toChecksumAddress(fromAddress)
         const to = this.web3.utils.toChecksumAddress(toAddress)
-        const nonce = await this.web3.eth.getTransactionCount(from, 'pending')
+        const nonce = await TxManager.getNonce(this.web3, from, this.chainId)
         const gasPrice = BigInt(await this.web3.eth.getGasPrice())
         const chainId = await this.web3.eth.getChainId()
         let gasLimit
@@ -167,7 +176,15 @@ class EscrowContractInteractor {
             transaction,
             this._normalizePrivateKey(privateKey)
         )
-        return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+        try {
+            return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+        } catch (error) {
+            const failureType = await TxManager.classifyFailure(error)
+            if (failureType === 'NONCE_COLLISION') {
+                await TxManager.resetNonce(from, this.chainId)
+            }
+            throw error
+        }
     }
 
 

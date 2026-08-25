@@ -139,7 +139,7 @@ const processForwardExecution = async (job) => {
         }
 
         try {
-            const nonce = await TxManager.getNonce(web3, account.address)
+            const nonce = await TxManager.getNonce(web3, account.address, chainId)
 
             execution.tx_state = 'QUEUED'
             execution.nonce = nonce
@@ -190,7 +190,7 @@ const processForwardExecution = async (job) => {
             await execution.save()
 
             if (execution.failure_type === 'NONCE_COLLISION') {
-                await TxManager.resetNonce(account.address)
+                await TxManager.resetNonce(account.address, chainId)
             }
 
             console.error(`[FORWARDER] Tx failed:`, txError.message)
