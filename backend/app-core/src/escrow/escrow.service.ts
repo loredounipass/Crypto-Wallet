@@ -35,6 +35,14 @@ export class EscrowService {
     private readonly configService: ConfigService,
   ) { }
 
+  /**
+   * Truncate a number to N decimal places (floor) to avoid IEEE 754 floating-point drift.
+   */
+  private truncateToDecimals(value: number, decimals: number = 8): number {
+    const factor = 10 ** decimals;
+    return Math.floor(value * factor) / factor;
+  }
+
   private async registerRefundTransaction(order: any, refundTxHash: string | null) {
     const coin = String(order.coin || '').toUpperCase();
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase();
@@ -183,7 +191,16 @@ export class EscrowService {
       );
     }
 
-    const totalDeduction = dto.amount + gasFee;
+    let totalDeduction = dto.amount + gasFee;
+
+    // Auto-adjust: if user's amount + gas exceeds balance but balance can cover gas,
+    // reduce the amount so that amount + gas fits within balance (sell maximum possible)
+    if (wallet.balance < totalDeduction && wallet.balance > gasFee * 2) {
+      const adjustedAmount = this.truncateToDecimals(wallet.balance - gasFee, 8);
+      console.log(`[ESCROW] Auto-adjusting amount: ${dto.amount} → ${adjustedAmount} ${dto.coin} (balance=${wallet.balance}, gas=${gasFee})`);
+      dto.amount = adjustedAmount;
+      totalDeduction = dto.amount + gasFee;
+    }
 
     if (wallet.balance < totalDeduction) {
       throw new BadRequestException(
@@ -512,7 +529,7 @@ export class EscrowService {
     return { orderId, status: 'disputed' };
   }
 
-  // Cancel order - only if funded and funds haven't moved
+  // Cancel order - allowed while pending or funded (before provider confirms payment)
   async cancelOrder(orderId: string, email: string) {
     const order = await this.escrowOrderModel.findOne({ orderId });
     if (!order) {
@@ -524,7 +541,8 @@ export class EscrowService {
       throw new ForbiddenException('Only the seller can cancel the order.');
     }
 
-    if (order.status !== 'pending') {
+    const cancellableStatuses = ['pending', 'funded'];
+    if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException(`Cannot cancel order with status: ${order.status}`);
     }
 

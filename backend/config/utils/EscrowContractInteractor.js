@@ -261,7 +261,9 @@ class EscrowContractInteractor {
         await this.fundEscrowWallet(`topup-${orderId}`, missingWei + topupGasCost)
 
         const updatedBalance = await this.getNativeBalance(this.escrowWalletAddress)
-        if (updatedBalance < requiredWei) {
+        // Allow 2% tolerance for gas price fluctuations between estimation and execution
+        const toleranceRequired = requiredWei * 98n / 100n
+        if (updatedBalance < toleranceRequired) {
             throw new Error(`Escrow top-up failed: required=${requiredWei} available=${updatedBalance}`)
         }
 

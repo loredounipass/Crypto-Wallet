@@ -129,9 +129,10 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
   const handleSubmit = () => {
     if (!isValid) return;
+    const safeNetAmount = truncateToDecimals(netAmount, 8);
     onSubmit({
       coin: coin.toUpperCase(),
-      amount: netAmount,
+      amount: safeNetAmount,
       fiatAmount: parseFloat(fiatAmount),
       providerEmail: provider.email,
       paymentMethod: resolvePaymentMethod(paymentMethod),

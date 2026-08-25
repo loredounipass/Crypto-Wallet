@@ -25,7 +25,8 @@ const processGasEstimate = async (jobData) => {
         gasLimit = BigInt(30000)
     }
 
-    const totalGasWei = gasPrice * gasLimit * BigInt(2)
+    const gasMultiplier = BigInt(process.env.ESCROW_GAS_MULTIPLIER || '150')
+    const totalGasWei = gasPrice * gasLimit * gasMultiplier / BigInt(100)
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const gasFee = Number(parseFloat(formatUnits(totalGasWei, decimals)).toFixed(8))
 
