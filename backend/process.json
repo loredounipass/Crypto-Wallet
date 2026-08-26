@@ -1,6 +1,14 @@
 {
     "apps": [
         {
+            "name": "ME: S Broadcast NODE",
+            "script": "./daemon/subscriptions/chain/evm/native-coins/s.js"
+        },
+        {
+            "name": "ME: Sonic Worker NODE",
+            "script": "./daemon/workers/chain/sonic.js"
+        },
+        {
             "name": "ME: MATIC Broadcast NODE",
             "script": "./daemon/subscriptions/chain/evm/native-coins/matic.js"
         },

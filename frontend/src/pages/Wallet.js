@@ -112,7 +112,7 @@ export default function Wallet() {
         if (!trimmed) return false;
 
         // Current supported coins are EVM-based in this UI.
-        if (['bnb', 'avax', 'eth', 'matic', 'ftm', 'op'].includes(coin)) {
+        if (['bnb', 'avax', 'eth', 'matic', 's', 'op'].includes(coin)) {
             return /^0x[a-fA-F0-9]{40}$/.test(trimmed);
         }
 

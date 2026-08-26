@@ -6,7 +6,7 @@ const normalizeCoin = (coin) => {
         ethereum: 'eth',
         polygon: 'matic',
         avalanche: 'avax',
-        fantom: 'ftm',
+        sonic: 's',
         optimism: 'op',
         'binance smart chain': 'bnb',
         binance: 'bnb'
@@ -22,7 +22,7 @@ const getCoinFallbackLogo = (coin) => {
         avax: 'AVAX',
         eth: 'ETH',
         matic: 'MATIC',
-        ftm: 'FTM',
+        s: 'S',
         op: 'OP'
     }
     const colors = {
@@ -30,7 +30,7 @@ const getCoinFallbackLogo = (coin) => {
         avax: '#E84142',
         eth: '#627EEA',
         matic: '#8247E5',
-        ftm: '#1969FF',
+        s: '#1969FF',
         op: '#FF0420'
     }
     const label = labels[normalizedCoin] || (String(coin || 'COIN').trim().toUpperCase().slice(0, 6) || 'COIN')
@@ -49,7 +49,7 @@ const getCoinList = () => {
     return [
         'bnb',
         'avax',
-        'ftm',
+        's',
         'eth',
         'matic',
         'op'
@@ -65,7 +65,7 @@ const getCoinLogo = (coin) => {
         avax: `${baseApi}/avalanche-avax-logo.png`,
         eth: `${baseApi}/ethereum-eth-logo.png`,
         matic: `${baseApi}/polygon-matic-logo.png`,
-        ftm: `${baseApi}/fantom-ftm-logo.png`,
+        s: `${baseApi}/fantom-ftm-logo.png`,
         op: `${baseApi}/optimism-ethereum-op-logo.png`,
         usdt: `${baseApi}/tether-usdt-logo.png`
 
@@ -100,11 +100,11 @@ const getNetWorkList = (coin) => {
             explorerBase: 'https://sepolia.etherscan.io/tx/'
         },
         {
-            id: 4002,
-            name: 'Fantom',
-            abbr: 'fantom',
-            coin: 'ftm',
-            explorerBase: 'https://testnet.ftmscan.com/tx/'
+            id: 14601,
+            name: 'Sonic Testnet',
+            abbr: 'sonic',
+            coin: 's',
+            explorerBase: 'https://testnet.sonicscan.org/tx/'
         },
         {
             id: 80002,
@@ -137,7 +137,7 @@ const getDefaultNetworkId = (coin) => {
         bnb: 97,
         avax: 43113,
         eth: 11155111,
-        ftm: 4002,
+        s: 14601,
         matic: 80002,
         op: 11155420
     }[coin.toLowerCase()]
@@ -154,7 +154,7 @@ const getCoinFee = (coin) => {
         case 'AVAX': return 0.001;
         case 'ETH': return 0.005;
         case 'MATIC': return 0.1;
-        case 'FTM': return 0.5;
+        case 'S': return 0.5;
         case 'OP': return 0.005;
         default: return 0;
     }
@@ -166,7 +166,7 @@ const getCoinDecimalsPlace = (coin) => {
         case 'AVAX': return 4;
         case 'ETH': return 8;
         case 'MATIC': return 2;
-        case 'FTM': return 2;
+        case 'S': return 18;
         case 'OP': return 18;
         default: return 8;
     }
@@ -178,7 +178,7 @@ const getCoinMinWithdraw = (coin) => {
         case 'AVAX': return 1;
         case 'ETH': return 0.01;
         case 'MATIC': return 13;
-        case 'FTM': return 1;
+        case 'S': return 1;
         case 'OP': return 0.01;
         default: return 0;
     }

@@ -14,7 +14,7 @@ module.exports = {
         min_withdraw: 0.01,
         fee: 0.005
     },
-    FTM: {
+    S: {
         decimals: 18,
         min_withdraw: 1,
         fee: 0.5

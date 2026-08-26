@@ -35,8 +35,8 @@ function getChainKey(chainId) {
         43114: 'AVALANCHE',
         10: 'OPTIMISM',
         11155420: 'OPTIMISM',
-        250: 'FANTOM',
-        4002: 'FANTOM'
+        250: 'SONIC',
+        14601: 'SONIC'
     }
     return map[chainId] || 'ETHEREUM'
 }

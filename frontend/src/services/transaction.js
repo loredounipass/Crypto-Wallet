@@ -2,7 +2,7 @@ import { get, transactionsApi, transactionApi } from '../api/http'
 
 export default class Transaction {
     static async getAllTransactions() {
-        const supportedCoins = ['bnb', 'avax', 'ftm', 'eth', 'matic', 'op']
+        const supportedCoins = ['bnb', 'avax', 's', 'eth', 'matic', 'op']
         const results = await Promise.allSettled(
             supportedCoins.map((coin) => this.getCoinTransactions(coin))
         )
