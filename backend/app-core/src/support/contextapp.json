@@ -235,7 +235,7 @@
       "keywords": ["monedas", "coins", "redes", "chains", "criptomonedas soportadas", "que monedas"],
       "questions": ["Que monedas soportan?", "Cuales son las redes disponibles?", "Que criptomonedas puedo usar?"],
       "steps": [
-        "1. BrivoTrust soporta multiple monedas incluyendo: BTC, ETH, BNB, AVAX, FTM, MATIC, OP y mas.",
+        "1. BrivoTrust soporta multiple monedas incluyendo: BTC, ETH, BNB, AVAX, S, MATIC, OP y mas.",
         "2. Cada moneda corresponde a una red blockchain especifica.",
         "3. Los tokens ERC-20 como USDT estan disponibles en redes compatibles con Ethereum.",
         "4. Los precios se actualizan en tiempo real via CoinGecko.",

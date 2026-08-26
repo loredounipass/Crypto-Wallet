@@ -12,7 +12,7 @@ export class PriceController {
   private readonly coinIds: Record<string, string> = {
     bnb: 'binancecoin',
     avax: 'avalanche-2',
-    ftm: 'fantom',
+    s: 'sonic-3',
     eth: 'ethereum',
     matic: 'matic-network',
     op: 'optimism',
