@@ -15,7 +15,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "../ui/material";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowDropDown as ArrowDropDownIcon,
   SupportAgent as SupportAgentIcon,
@@ -52,7 +52,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   const [anchorElUser, setAnchorElUser] = useState(null);
   const isLoggingOut = React.useRef(false);
   const { logoutUser } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   
@@ -70,9 +70,9 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
       await logoutUser().catch(() => {});
       isLoggingOut.current = false;
     } else if (action === "Mis billeteras") {
-      history.push("/wallets");
+      navigate("/wallets");
     } else if (action === "Settings") {
-      history.push("/settings");
+      navigate("/settings");
     }
 
     setAnchorElUser(null);

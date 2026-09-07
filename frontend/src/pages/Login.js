@@ -10,7 +10,7 @@ import {
   CircularProgress,
 } from '../ui/material';
 import { Visibility, VisibilityOff } from '../ui/icons';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
 import AuthLayout, { inputSx, buttonStyle } from '../components/AuthLayout';
@@ -18,7 +18,7 @@ import TransactionToast from '../components/TransactionToast';
 
 export default function Login() {
   const { loginUser, error } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,9 +33,9 @@ export default function Login() {
       const responseMessage = await loginUser(data);
       if (!isMounted.current) return;
       if (responseMessage?.requires2FA) {
-        history.push({ pathname: '/verifytoken', state: { email: data.email } });
+        navigate('/verifytoken', { state: { email: data.email } });
       } else if (responseMessage?.msg === 'Logged in!' || responseMessage?.message === 'Logged in!') {
-        history.push('/');
+        navigate('/');
       } else {
         setOpenSnackbar(true);
       }

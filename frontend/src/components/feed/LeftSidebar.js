@@ -1,5 +1,5 @@
 import React, { use, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../hooks/AuthContext';
 import UserAvatar from '../common/UserAvatar';
 import donationsService from '../../services/donations';
@@ -125,7 +125,7 @@ export default function LeftSidebar() {
   const { auth } = use(AuthContext);
   const [copied, setCopied] = useState({ btc: false, usdt: false });
   const [wallets, setWallets] = useState({ btc: '', usdt: '' });
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     donationsService.getWallets()
@@ -153,7 +153,7 @@ export default function LeftSidebar() {
   const name = `${first} ${last}`.trim() || auth?.username || 'Usuario';
 
   const nav = (path) => {
-    try { history.push(path); } catch (_) {}
+    try { navigate(path); } catch (_) {}
   };
 
   const navItems = [

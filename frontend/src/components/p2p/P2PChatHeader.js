@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function P2PChatHeader({
   borderColor,
@@ -9,14 +9,14 @@ export default function P2PChatHeader({
   isSeller
 }) {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const initial = counterpartName?.charAt(0)?.toUpperCase() || '?';
 
   const handleBack = () => {
     if (isProvider) {
-      history.push('/provider-dashboard');
+      navigate('/provider-dashboard');
     } else {
-      history.push('/p2p');
+      navigate('/p2p');
     }
   };
 

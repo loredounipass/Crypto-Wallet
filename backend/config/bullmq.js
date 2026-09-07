@@ -1,6 +1,6 @@
 const { Worker, Queue } = require('bullmq')
 
-const isLocalRun = !process.env.CI
+const isLocalRun = !process.env.CI && process.env.DOCKER !== 'true'
 const redisHost = isLocalRun && process.env.REDIS_HOST === 'redis'
     ? '127.0.0.1'
     : process.env.REDIS_HOST

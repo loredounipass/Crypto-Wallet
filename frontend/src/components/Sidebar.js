@@ -13,7 +13,7 @@ import {
   Typography,
 } from "../ui/material";
 
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 
 import { use } from "react";
@@ -139,7 +139,7 @@ const LogoutIcon = (props) => (
 
 export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
@@ -179,7 +179,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           if (isMountedRef.current) setIsLoggingOut(false);
         });
     } else {
-      history.push(item.path);
+      navigate(item.path);
     }
     if (isMobile) {
       onMobileClose();

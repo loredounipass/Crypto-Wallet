@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Switch, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AuthContext } from './hooks/AuthContext'
 import { SocketProvider } from './hooks/SocketContext'
 import useFindUser from './hooks/useFindUser'
@@ -134,30 +134,114 @@ function AppContent() {
                         style={mainContentStyle}
                     >
                         <Container maxWidth="xl" sx={{ p: 0 }}>
-                            <Switch>
-                                <PrivateRoute exact path='/' component={Dashboard} />
-                                <PrivateRoute exact path="/wallets" component={Wallets} />
-                                <PrivateRoute exact path="/wallet/:walletId" component={Wallet} />
-                                <PrivateRoute exact path="/providers" component={ProviderCard} />
-                                <PrivateRoute exact path="/create" component={CreateProvider} />
-                                <PrivateRoute exact path='/supportChat' component={SupportChat} />
-                                <PrivateRoute exact path='/settings' component={Settings} />
-                                <PrivateRoute exact path='/verifyemail' component={EmailVerificationComponent} />
-                                <PrivateRoute exact path='/chat' component={Chatcomponent} />
-                                <PrivateRoute exact path='/provider-dashboard' component={ProviderDashboard} />
-                                <PrivateRoute exact path='/p2p' component={P2P} />
-                                <PrivateRoute exact path='/p2p/order/:orderId' component={P2POrderChat} />
-                                <PrivateRoute exact path='/swap' component={Swap} />
-                                <PrivateRoute exact path='/feed' component={Feed} />
-                                {/* <PrivateRoute exact path='/noticias' component={Noticias} /> */}
-                                <PublicRoute exact path='/login' component={Login} />
-                                <PublicRoute exact path='/register' component={Register} />
-                                <PublicRoute exact path='/forgot-password' component={ForgotPassword} />
-                                <PublicRoute exact path='/reset-password' component={ResetPassword} />
-                                <PublicRoute exact path='/landing' component={Landing} />
-                                <PublicRoute exact path='/verifytoken' component={VerifyToken} />
-                                <PublicRoute exact path='/resendtoken' component={ResendTokenForm} />
-                            </Switch>
+                            <Routes>
+                                <Route path='/' element={
+                                    <PrivateRoute>
+                                        <Dashboard />
+                                    </PrivateRoute>
+                                } />
+                                <Route path="/wallets" element={
+                                    <PrivateRoute>
+                                        <Wallets />
+                                    </PrivateRoute>
+                                } />
+                                <Route path="/wallet/:walletId" element={
+                                    <PrivateRoute>
+                                        <Wallet />
+                                    </PrivateRoute>
+                                } />
+                                <Route path="/providers" element={
+                                    <PrivateRoute>
+                                        <ProviderCard />
+                                    </PrivateRoute>
+                                } />
+                                <Route path="/create" element={
+                                    <PrivateRoute>
+                                        <CreateProvider />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/supportChat' element={
+                                    <PrivateRoute>
+                                        <SupportChat />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/settings' element={
+                                    <PrivateRoute>
+                                        <Settings />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/verifyemail' element={
+                                    <PrivateRoute>
+                                        <EmailVerificationComponent />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/chat' element={
+                                    <PrivateRoute>
+                                        <Chatcomponent />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/provider-dashboard' element={
+                                    <PrivateRoute>
+                                        <ProviderDashboard />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/p2p' element={
+                                    <PrivateRoute>
+                                        <P2P />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/p2p/order/:orderId' element={
+                                    <PrivateRoute>
+                                        <P2POrderChat />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/swap' element={
+                                    <PrivateRoute>
+                                        <Swap />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/feed' element={
+                                    <PrivateRoute>
+                                        <Feed />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/login' element={
+                                    <PublicRoute>
+                                        <Login />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/register' element={
+                                    <PublicRoute>
+                                        <Register />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/forgot-password' element={
+                                    <PublicRoute>
+                                        <ForgotPassword />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/reset-password' element={
+                                    <PublicRoute>
+                                        <ResetPassword />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/landing' element={
+                                    <PublicRoute>
+                                        <Landing />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/verifytoken' element={
+                                    <PublicRoute>
+                                        <VerifyToken />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/resendtoken' element={
+                                    <PublicRoute>
+                                        <ResendTokenForm />
+                                    </PublicRoute>
+                                } />
+                                <Route path="*" element={<Navigate to="/" replace />} />
+                            </Routes>
                         </Container>
                     </Box>
                 </Box>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const STATUS_COLORS = {
   funded: '#F59E0B', buyer_paid: '#3B82F6', released: '#8B5CF6',
@@ -11,6 +11,7 @@ const STATUS_COLORS = {
 export default function P2PMyOrders({ orders, userRole = 'seller' }) {
   const { t } = useTranslation();
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 640);
+  const navigate = useNavigate();
 
   const STATUS_LABELS = {
     pending: t('p2p_status_pending'), funded: t('p2p_status_funded'), buyer_paid: t('p2p_status_buyer_paid'),
@@ -23,8 +24,6 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
-  const history = useHistory();
 
   const formatName = (nameStr) => {
     if (!nameStr || nameStr.includes('@')) return nameStr;
@@ -116,7 +115,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
               </div>
 
               <button
-                onClick={() => history.push(`/p2p/order/${order.orderId}`)}
+                onClick={() => navigate(`/p2p/order/${order.orderId}`)}
                 style={{
                   width: '100%',
                   marginTop: 8,
@@ -234,19 +233,19 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
 
             {/* Action */}
             <div style={{ textAlign: 'right' }}>
-              <button
-                onClick={() => history.push(`/p2p/order/${order.orderId}`)}
-                style={{
-                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                  border: `1px solid ${'#2D2D44'}`,
-                  backgroundColor: 'transparent',
-                  color: '#94A3B8',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
-              >
-                {t('p2p_view')}
+<button
+              onClick={() => navigate(`/p2p/order/${order.orderId}`)}
+              style={{
+                padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${'#2D2D44'}`,
+                backgroundColor: 'transparent',
+                color: '#94A3B8',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
+              onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
+            >
+              {t('p2p_view')}
               </button>
             </div>
           </div>

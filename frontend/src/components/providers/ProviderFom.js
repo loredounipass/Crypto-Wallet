@@ -1,5 +1,5 @@
 import React, { useState, use, useEffect } from 'react';
-import { useHistory } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom'; 
 import { useTranslation } from 'react-i18next';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
@@ -12,7 +12,7 @@ export default function ProviderForm() {
   const { createNewProvider, findByEMail, checkTerms, acceptTerms } = useProvider();
   const AVAILABLE_PAYMENT_METHODS = [t('p2p_bank_transfer'), t('p2p_in_person')];
   const { auth } = use(AuthContext);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [toast, setToast] = useState(null);
 
   const [step, setStep] = useState(1);
@@ -99,7 +99,7 @@ export default function ProviderForm() {
       });
       setToast({ kind: 'deposit', message: t('p2p_provider_created') });
       setTimeout(() => {
-        history.push('/provider-dashboard');
+        navigate('/provider-dashboard');
       }, 1500);
     } catch (err) {
       setToast({ 
@@ -132,7 +132,7 @@ export default function ProviderForm() {
         try {
           const response = await findByEMail(auth.email);
           if (response) {
-            history.push('/provider-dashboard');
+            navigate('/provider-dashboard');
           } else {
             const hasAcceptedTerms = await checkTerms();
             if (!hasAcceptedTerms) {
@@ -148,7 +148,7 @@ export default function ProviderForm() {
       }
     };
     fetchProvider();
-  }, [auth?.email, findByEMail, checkTerms, history]);
+  }, [auth?.email, findByEMail, checkTerms, navigate]);
 
   const handleAcceptTerms = async () => {
     try {
@@ -269,7 +269,7 @@ export default function ProviderForm() {
                   {!allWalletInfo || allWalletInfo.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-[#1F1F33] p-6 text-center">
                       <p className="text-slate-400 mb-4 text-sm">{t('p2p_no_wallets')}</p>
-                      <button type="button" onClick={() => history.push('/wallets')} className={btnSecondary}>
+                      <button type="button" onClick={() => navigate('/wallets')} className={btnSecondary}>
                         {t('p2p_create_wallet')}
                       </button>
                     </div>

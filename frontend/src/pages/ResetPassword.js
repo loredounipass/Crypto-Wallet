@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { post, resetPasswordApi } from '../api/http'
-import { useLocation, useHistory } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Link as RouterLink } from 'react-router-dom'
 import {
   Typography,
@@ -18,7 +18,7 @@ import TransactionToast from '../components/TransactionToast';
 
 export default function ResetPassword() {
   const location = useLocation()
-  const history = useHistory()
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     email: '',
     token: '',
@@ -45,10 +45,7 @@ export default function ResetPassword() {
     const resolvedToken = stateToken || qToken
     setForm(prev => ({ ...prev, email: resolvedEmail, token: resolvedToken }))
     if ((qEmail || qToken) && (!stateEmail || !stateToken)) {
-      history.replace({
-        pathname: '/reset-password',
-        state: { email: resolvedEmail, token: resolvedToken },
-      })
+      navigate('/reset-password', { replace: true, state: { email: resolvedEmail, token: resolvedToken } })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -70,7 +67,7 @@ export default function ResetPassword() {
       const res = await post(resetPasswordApi, body)
       if (isMounted.current) {
         setToast({ kind: 'success', message: res?.data?.message || res?.data?.msg })
-        setTimeout(() => history.push('/login'), 1500)
+        setTimeout(() => navigate('/login'), 1500)
       }
     } catch (err) {
       if (isMounted.current) {

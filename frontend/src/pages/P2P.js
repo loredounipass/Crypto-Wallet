@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useEscrow from '../hooks/useEscrow';
 import useProviders from '../hooks/useProviders';
@@ -40,7 +40,7 @@ const TAB_CONFIG = [
 
 export default function P2P() {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [activeTab, setActiveTab] = useState('marketplace');
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -79,7 +79,7 @@ export default function P2P() {
       const result = await createOrder(body);
       setShowCreateModal(false);
       if (result?.orderId) {
-        history.push(`/p2p/order/${result.orderId}`);
+        navigate(`/p2p/order/${result.orderId}`);
       }
     } catch (e) { /* handled by hook */ }
   };

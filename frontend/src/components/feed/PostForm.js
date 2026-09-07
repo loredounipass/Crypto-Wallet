@@ -1,12 +1,12 @@
 import React, { useState, use, useEffect, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useFeed from '../../hooks/useFeed';
 import { AuthContext } from '../../hooks/AuthContext';
 import Toast from '../toasts/Toast';
 import UserAvatar from '../common/UserAvatar';
 
 export default function PostForm() {
-  const history = useHistory();
+  const navigate = useNavigate();
   const { createPostWithFile, createPost, loading } = useFeed();
   const { auth }  = use(AuthContext);
   const [description, setDescription] = useState('');
@@ -86,16 +86,11 @@ export default function PostForm() {
       };
     } else {
       setFile(f);
-<<<<<<< HEAD
-      const preview = safeBlobUrl(f);
-      setPreviewUrl(preview);
-=======
       if (f.type?.startsWith('image') || f.type?.startsWith('video')) {
         try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
       } else {
         setPreviewUrl(null);
       }
->>>>>>> 8b4f6ccbd297059b7cd5a5492d59db31e68e6a64
     }
     setExpanded(true);
   };
@@ -120,7 +115,7 @@ export default function PostForm() {
         <UserAvatar
           user={auth}
           size={36}
-          onClick={() => history.push('/profile')}
+          onClick={() => navigate('/profile')}
           title="Ir a mi perfil"
         />
 
@@ -163,9 +158,9 @@ export default function PostForm() {
         </div>
       </div>
 
-  const safePreviewUrl = getSafePreviewUrl(previewUrl);
-
-      {(expanded && (safePreviewUrl || file)) && (
+      {(() => {
+        const safePreviewUrl = getSafePreviewUrl(previewUrl);
+        return (expanded && (safePreviewUrl || file)) && (
         <div className="fb-post-expanded">
           {file && <span className="fb-file-name" title={file.name}>{file.name}</span>}
           {safePreviewUrl && (
@@ -184,6 +179,7 @@ export default function PostForm() {
           </button>
         </div>
       )}
+    )}
       <Toast message={toast} onDismiss={() => setToast('')} />
     </form>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import P2POrderStatus from './P2POrderStatus';
 
 export default function P2POrderDetailsPanel({
@@ -15,7 +15,7 @@ export default function P2POrderDetailsPanel({
   counterpartName
 }) {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const borderColor = '#1F1F33';
 
   // Shared button styles
@@ -316,7 +316,7 @@ export default function P2POrderDetailsPanel({
 
       {/* Exit Button */}
       <button
-        onClick={() => history.push(isProvider ? '/provider-dashboard' : '/p2p')}
+        onClick={() => navigate(isProvider ? '/provider-dashboard' : '/p2p')}
         style={{
           width: '100%', padding: '13px', borderRadius: 12,
           border: '1px solid #1F1F33',

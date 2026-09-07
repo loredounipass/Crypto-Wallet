@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Button, Box, Dialog, DialogActions, DialogContent, DialogTitle, Slide } from '../ui/material';
 import { styled } from '../ui/styles';
 
@@ -60,7 +60,7 @@ const SupportChat = () => {
   const [openSurvey, setOpenSurvey] = useState(true);  
   const [openMainDialog, setOpenMainDialog] = useState(false); 
   const [openCancelMessage, setOpenCancelMessage] = useState(false); 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleSurveyClose = () => {
     setOpenSurvey(false);
@@ -69,7 +69,7 @@ const SupportChat = () => {
 
   const handleClose = () => {
     setOpenMainDialog(false);
-    history.push('/provider-dashboard');
+    navigate('/provider-dashboard');
   };
 
   const handleCancel = () => {
@@ -79,7 +79,7 @@ const SupportChat = () => {
 
   const handleCancelMessageClose = () => {
     setOpenCancelMessage(false);
-    history.push('/'); 
+    navigate('/'); 
   };
 
   const handleGoBack = () => {

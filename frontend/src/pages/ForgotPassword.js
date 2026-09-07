@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { post, forgotPasswordApi } from '../api/http'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Link as RouterLink } from 'react-router-dom'
 import {
   Typography,
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
-  const history = useHistory()
+  const navigate = useNavigate()
   const isMounted = useRef(true)
 
   const submit = async (e) => {
@@ -27,7 +27,7 @@ export default function ForgotPassword() {
       await post(forgotPasswordApi, { email })
       if (isMounted.current) {
         setToast({ kind: 'success', message: 'Si el correo existe, se ha enviado un mensaje con instrucciones.' })
-        setTimeout(() => history.push('/login'), 1500)
+        setTimeout(() => navigate('/login'), 1500)
       }
     } catch (err) {
       if (isMounted.current) {

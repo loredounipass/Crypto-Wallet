@@ -13,7 +13,7 @@ import {
     getCoinFallbackLogo,
 } from '../components/utils/Chains';
 import { getDisplayableAddress } from '../components/utils/Display';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -85,7 +85,7 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t }) => (
 
 const Wallets = () => {
     const { t } = useTranslation();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
 
@@ -190,9 +190,9 @@ const Wallets = () => {
         };
     }, [chartData, chartOptions]);
 
-    const handleCreateWallet = () => history.push(`/wallet/${selectedCoin}`);
-    const handleBack = () => history.push('/');
-    const handleWalletClick = (coin) => history.push(`/wallet/${coin.toLowerCase()}`);
+    const handleCreateWallet = () => navigate(`/wallet/${selectedCoin}`);
+    const handleBack = () => navigate('/');
+    const handleWalletClick = (coin) => navigate(`/wallet/${coin.toLowerCase()}`);
     const selectedWalletExists = allWalletInfo.some(
         (wallet) => String(wallet.coin || '').toLowerCase() === String(selectedCoin || '').toLowerCase()
     );

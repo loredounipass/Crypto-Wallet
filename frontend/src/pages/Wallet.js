@@ -4,7 +4,7 @@ import QRCode from 'react-qr-code';
 import useWalletInfo from '../hooks/useWalletInfo';
 import useCoinPrice from '../hooks/useCoinPrice';
 import useTokenBalances from '../hooks/useTokenBalances';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     getCoinDecimalsPlace,
     getCoinFee,
@@ -71,7 +71,7 @@ const CheckIcon = ({ size = 20, color = "currentColor" }) => (
 
 export default function Wallet() {
     const { t } = useTranslation();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
     const [copied, setCopied] = useState(false);
@@ -514,7 +514,7 @@ export default function Wallet() {
             {/* Back */}
             <div 
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: "#A5B4FC", fontSize: "13px", fontWeight: 500, padding: "6px 14px", borderRadius: "8px", background: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.2)", transition: "all 0.2s ease" }}
-                onClick={() => history.push('/wallets')}
+                onClick={() => navigate('/wallets')}
             >
                 <BackIcon size={16} color="#A5B4FC" />
                 <span>{t('wallet_back')}</span>

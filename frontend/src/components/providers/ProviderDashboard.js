@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useEscrow from '../../hooks/useEscrow';
 import ProviderSettings from './ProviderSettings';
@@ -13,7 +13,7 @@ const formatName = (nameStr) => {
 
 const ProviderDashboard = () => {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { providerOrders, getProviderOrders, isLoading, error } = useEscrow();
 
   const STATUS_CONFIG = {
@@ -244,7 +244,7 @@ const ProviderDashboard = () => {
             return (
               <div
                 key={order.orderId}
-                onClick={() => history.push(`/p2p/order/${order.orderId}`)}
+                onClick={() => navigate(`/p2p/order/${order.orderId}`)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '14px 18px',

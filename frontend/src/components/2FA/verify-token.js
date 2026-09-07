@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import {
   Typography,
@@ -17,7 +17,7 @@ const VerifyToken = () => {
   const { verifyToken, error: authError } = useAuth();
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
   const isMounted = React.useRef(true);
@@ -70,7 +70,7 @@ const VerifyToken = () => {
   };
 
   const handleResend = () => {
-    history.push({ pathname: '/resendtoken', state: { email } });
+    navigate('/resendtoken', { state: { email } });
   };
 
   return (

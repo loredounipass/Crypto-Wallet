@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../languages/i18n';
 import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
 import useAllWallets from "../hooks/useAllWallets";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useTransitions from "../hooks/useTransactions";
 import CoinTransactions from "../components/CoinTransactions";
 import TransactionToast from "../components/TransactionToast";
@@ -17,7 +17,7 @@ const Dashboard = () => {
   const { allWalletInfo, walletBalance } = useAllWallets();
   const [loading, setLoading] = useState(true);
   const { transactions, toast, dismissToast } = useTransitions(null);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
   const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
   useEffect(() => {
@@ -195,7 +195,7 @@ const Dashboard = () => {
               <TrendingIcon style={{ color: "#4CAF50", fontSize: 24 }} />
             </div>
             <button
-              onClick={() => history.push("/wallets")}
+              onClick={() => navigate("/wallets")}
               style={{
                 background: "none",
                 border: "none",

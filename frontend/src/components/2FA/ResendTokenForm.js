@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import useAuth from '../../hooks/useAuth';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -12,7 +12,7 @@ import AuthLayout, { inputSx, buttonStyle } from '../AuthLayout';
 
 const ResendTokenForm = () => {
   const { resendToken, error, successMessage } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState(() => location.state?.email || '');
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ const ResendTokenForm = () => {
     try {
       const res = await resendToken({ email: email.trim() });
       if (res?.success && res.message.includes('código de verificación')) {
-        history.push({ pathname: '/verifytoken', state: { email } });
+        navigate('/verifytoken', { state: { email } });
       }
     } catch (err) {
       console.error(err);

@@ -1,5 +1,5 @@
 import React, { use, useEffect, useMemo, useState } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../hooks/AuthContext'
 import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia'
 import User from '../../services/user'
@@ -163,7 +163,7 @@ const styles = {
 export default function RightSidebar() {
   const { auth } = use(AuthContext)
   const { messages, fetchMyMessages, joinChat } = useMessagesAndMultimedia()
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const currentUserId = auth?._id
   const [userCache, setUserCache] = useState({})
@@ -241,7 +241,7 @@ export default function RightSidebar() {
 
   const handleOpenChat = (uid) => {
     try { joinChat(uid) } catch (_) {}
-    history.push(`/chat/${uid}`)
+    navigate(`/chat/${uid}`)
   }
 
   const sponsored = [

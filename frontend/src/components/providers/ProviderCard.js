@@ -2,13 +2,13 @@ import React, { useEffect, useState, use, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import useProvider from '../../hooks/useProviders';
 import { AuthContext } from '../../hooks/AuthContext';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProviderCard() {
   const { t } = useTranslation();
   const { getAllProviders } = useProvider();
   const { auth } = use(AuthContext);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState(null);
   const [isCreatingChat] = useState(false);
@@ -34,7 +34,7 @@ export default function ProviderCard() {
     
     // Ahora simplemente redirigimos al chat usando el correo del proveedor
     // El componente Chat se encargará de buscar el ID y unirse al room del nuevo sistema
-    history.push('/chat', {
+    navigate('/chat', {
       providerEmail,
     });
   };
