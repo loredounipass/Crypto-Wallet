@@ -7,6 +7,9 @@ WORKDIR /usr/src/app
 
 COPY package.json pnpm-lock.yaml ./
 
+# Variable necesaria para compilar dependencias en la etapa de desarrollo/construcción
+ENV PNPM_ONLY_BUILT_DEPENDENCIES_FROM_ROOT=1
+
 RUN --mount=type=cache,id=pnpm-core,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -23,6 +26,9 @@ RUN apk add --no-cache wget su-exec && \
 WORKDIR /usr/src/app
 
 COPY package.json pnpm-lock.yaml ./
+
+# Variable necesaria para compilar dependencias en la etapa de producción
+ENV PNPM_ONLY_BUILT_DEPENDENCIES_FROM_ROOT=1
 
 RUN --mount=type=cache,id=pnpm-core-prod,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod
