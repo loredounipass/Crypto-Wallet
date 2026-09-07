@@ -34,7 +34,7 @@ export class WalletService {
   // RESERVA UNA BILLETERA DEL POOL DE CONTRATOS PREGENERADOS Y LA VINCULA EXCLUSIVAMENTE AL USUARIO
   async create(createWalletDto: CreateWalletDto) {
     let data = await this.userModel.aggregate([
-      { $match: { email: createWalletDto.email } },
+      { $match: { email: String(createWalletDto.email) } },
       { $unwind: '$wallets' },
       { $project: { _id: 0 } },
       {
@@ -76,7 +76,7 @@ export class WalletService {
         throw new BadRequestException('No available wallet contracts for this chain.');
       }
       const reCheck = await this.userModel.aggregate([
-        { $match: { email: createWalletDto.email } },
+        { $match: { email: String(createWalletDto.email) } },
         { $unwind: '$wallets' },
         { $project: { _id: 0 } },
         {
@@ -113,7 +113,7 @@ export class WalletService {
         });
         const saved = await wallet.save();
         const result = await this.userModel.updateOne(
-          { email: createWalletDto.email },
+          { email: String(createWalletDto.email) },
           { $push: { wallets: wallet._id } }
         );
         if (result.modifiedCount > 0) {
@@ -134,7 +134,7 @@ export class WalletService {
           const existingByAddress = await this.walletModel.findOne({ address: contract.address });
           if (existingByAddress) {
             await this.userModel.updateOne(
-              { email: createWalletDto.email, wallets: { $ne: existingByAddress._id } },
+              { email: String(createWalletDto.email), wallets: { $ne: existingByAddress._id } },
               { $push: { wallets: existingByAddress._id } }
             );
             return {
@@ -155,7 +155,7 @@ export class WalletService {
   // EXTRAE LA INFORMACION DE UNA UNICA BILLETERA BUSCANDOLA POR EL TIPO DE MONEDA REQUERIDO
   async getWallet(email: string, queryDto: QueryDto) {
     const data = await this.userModel.aggregate([
-      { $match: { email } },
+      { $match: { email: String(email) } },
       { $unwind: '$wallets' },
       { $project: { _id: 0 } },
       {
@@ -192,7 +192,7 @@ export class WalletService {
   // RECOPILA Y DEVUELVE UN ARREGLO CON TODAS LAS BILLETERAS CREADAS ACTUALMENTE POR EL USUARIO
   async getWallets(email: string) {
     const data = await this.userModel.aggregate([
-      { $match: { email } },
+      { $match: { email: String(email) } },
       { $unwind: '$wallets' },
       { $project: { _id: 0, wallets: 1 } },
       {
@@ -257,7 +257,7 @@ export class WalletService {
   // CREA UNA TRANSACCION DESCUENTA EL SALDO NATIVO Y ENCOLA EL TRABAJO PARA PROCESAR EL RETIRO EN LA BLOCKCHAIN
   async withdraw(withdrawDto: WithdrawDto) {
     const data = await this.userModel.aggregate([
-      { $match: { email: withdrawDto.email } },
+      { $match: { email: String(withdrawDto.email) } },
       { $unwind: '$wallets' },
       { $project: { _id: 0 } },
       {
