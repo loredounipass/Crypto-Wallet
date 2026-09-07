@@ -39,8 +39,8 @@ export class WalletService {
     if (typeof createWalletDto.chainId !== 'string' && typeof createWalletDto.chainId !== 'number') {
       throw new BadRequestException('Invalid chainId format');
     }
-    const coin = createWalletDto.coin;
-    const chainId = createWalletDto.chainId;
+    const coin = String(createWalletDto.coin);
+    const chainId = Number(createWalletDto.chainId);
     const email = String(createWalletDto.email);
 
     let data = await this.userModel.aggregate([
@@ -78,7 +78,7 @@ export class WalletService {
       }
     } else {
       const contract = await this.walletContractModel.findOneAndUpdate(
-        { chainId: chainId, reserved: false },
+        { chainId: Number(chainId), reserved: false },
         { reserved: true },
         { returnDocument: 'after' }
       );
