@@ -335,7 +335,7 @@ export class EscrowService {
 
   // BUSCA UNA ORDEN POR SU IDENTIFICADOR UNICO Y VERIFICA QUE EL USUARIO TENGA PERMISOS PARA VERLA
   async getOrder(orderId: string, email: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId }).lean().exec();
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) }).lean().exec();
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -349,7 +349,7 @@ export class EscrowService {
 
   // ACTUALIZA EL ESTADO DE LA ORDEN INDICANDO QUE EL PROVEEDOR YA RECIBIO EL PAGO FIAT EN SU CUENTA
   async confirmPayment(orderId: string, email: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -392,7 +392,7 @@ export class EscrowService {
 
   // INICIA EL PROCESO DE LIBERACION DE FONDOS ENVIANDO LA TAREA A LA COLA DE TRABAJO PARA SU EJECUCION ON CHAIN
   async releaseFunds(orderId: string, email: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -439,7 +439,7 @@ export class EscrowService {
 
   // MARCA LA ORDEN COMO DISPUTADA Y ENVIA UNA ALERTA PARA QUE LOS ADMINISTRADORES INTERVENGAN EN EL CONFLICTO
   async openDispute(orderId: string, email: string, reason: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -479,7 +479,7 @@ export class EscrowService {
 
   // CANCELA LA ORDEN EN EL SISTEMA Y PONE EN COLA LA DEVOLUCION DE LOS FONDOS AL WALLET ORIGINAL DEL CREADOR
   async cancelOrder(orderId: string, email: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -528,7 +528,7 @@ export class EscrowService {
     if (!adminEmails.includes(email.toLowerCase())) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) {
       throw new BadRequestException('Order not found.');
     }
@@ -562,7 +562,7 @@ export class EscrowService {
 
   // ACTUALIZA LAS ESTADISTICAS DEL PROVEEDOR Y MARCA LA ORDEN COMO COMPLETADA TRAS UNA LIBERACION EXITOSA
   async markCompleted(orderId: string, releaseTxHash?: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId });
+    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
     if (!order) return;
     order.status = 'completed';
     if (releaseTxHash) {
