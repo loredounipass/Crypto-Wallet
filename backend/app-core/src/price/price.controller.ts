@@ -38,7 +38,7 @@ export class PriceController {
     const cacheKey = `price:${id}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
-    const res = await fetch(priceApi.replace('%ID%', id));
+    const res = await fetch(priceApi.replace('%ID%', encodeURIComponent(id)));
     if (!res.ok) return { USD: 0 };
     const data: any = await res.json();
     const usd = data?.[id]?.usd ?? 0;
@@ -57,7 +57,7 @@ export class PriceController {
     const cacheKey = `chart:${id}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
-    const res = await fetch(chartApi.replace('%ID%', id));
+    const res = await fetch(chartApi.replace('%ID%', encodeURIComponent(id)));
     if (!res.ok) return { prices: [] };
     const data: any = await res.json();
     const prices = (data?.prices ?? []).map((p: number[]) => p[1]);
