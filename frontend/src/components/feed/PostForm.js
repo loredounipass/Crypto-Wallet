@@ -70,7 +70,11 @@ export default function PostForm() {
       };
     } else {
       setFile(f);
-      try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
+      if (f.type?.startsWith('image') || f.type?.startsWith('video')) {
+        try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
+      } else {
+        setPreviewUrl(null);
+      }
     }
     setExpanded(true);
   };
@@ -138,17 +142,19 @@ export default function PostForm() {
         </div>
       </div>
 
-      {(expanded && (previewUrl || file)) && (
+  const safePreviewUrl = getSafePreviewUrl(previewUrl);
+
+      {(expanded && (safePreviewUrl || file)) && (
         <div className="fb-post-expanded">
           {file && <span className="fb-file-name" title={file.name}>{file.name}</span>}
-          {previewUrl && (
+          {safePreviewUrl && (
             <div className="fb-media">
               {file?.type?.startsWith('video') ? (
-                <video controls src={previewUrl} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }}>
+                <video controls src={safePreviewUrl} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }}>
                   <track kind="captions" />
                 </video>
               ) : (
-                <img src={previewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
+                <img src={safePreviewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
               )}
             </div>
           )}
@@ -160,6 +166,11 @@ export default function PostForm() {
       <Toast message={toast} onDismiss={() => setToast('')} />
     </form>
   );
+}
+
+function getSafePreviewUrl(url) {
+  if (typeof url !== 'string') return null;
+  return url.startsWith('blob:') ? url : null;
 }
 
 function useCleanupPreview(url) {
