@@ -33,8 +33,18 @@ export class WalletService {
 
   // RESERVA UNA BILLETERA DEL POOL DE CONTRATOS PREGENERADOS Y LA VINCULA EXCLUSIVAMENTE AL USUARIO
   async create(createWalletDto: CreateWalletDto) {
+    if (typeof createWalletDto.coin !== 'string') {
+      throw new BadRequestException('Invalid coin format');
+    }
+    if (typeof createWalletDto.chainId !== 'string' && typeof createWalletDto.chainId !== 'number') {
+      throw new BadRequestException('Invalid chainId format');
+    }
+    const coin = createWalletDto.coin;
+    const chainId = createWalletDto.chainId;
+    const email = String(createWalletDto.email);
+
     let data = await this.userModel.aggregate([
-      { $match: { email: String(createWalletDto.email) } },
+      { $match: { email: email } },
       { $unwind: '$wallets' },
       { $project: { _id: 0 } },
       {
@@ -46,8 +56,8 @@ export class WalletService {
           pipeline: [
             {
               $match: {
-                coin: createWalletDto.coin,
-                chainId: createWalletDto.chainId
+                coin: coin,
+                chainId: chainId
               }
             }
           ]
@@ -68,7 +78,7 @@ export class WalletService {
       }
     } else {
       const contract = await this.walletContractModel.findOneAndUpdate(
-        { chainId: createWalletDto.chainId, reserved: false },
+        { chainId: chainId, reserved: false },
         { reserved: true },
         { returnDocument: 'after' }
       );
@@ -76,7 +86,7 @@ export class WalletService {
         throw new BadRequestException('No available wallet contracts for this chain.');
       }
       const reCheck = await this.userModel.aggregate([
-        { $match: { email: String(createWalletDto.email) } },
+        { $match: { email: email } },
         { $unwind: '$wallets' },
         { $project: { _id: 0 } },
         {
@@ -86,7 +96,7 @@ export class WalletService {
             foreignField: '_id',
             as: 'walletsData',
             pipeline: [
-              { $match: { coin: createWalletDto.coin, chainId: createWalletDto.chainId } }
+              { $match: { coin: coin, chainId: chainId } }
             ]
           }
         },
@@ -108,12 +118,12 @@ export class WalletService {
       try {
         const wallet = new this.walletModel({
           address: contract.address,
-          chainId: createWalletDto.chainId,
-          coin: createWalletDto.coin
+          chainId: chainId,
+          coin: coin
         });
         const saved = await wallet.save();
         const result = await this.userModel.updateOne(
-          { email: String(createWalletDto.email) },
+          { email: email },
           { $push: { wallets: wallet._id } }
         );
         if (result.modifiedCount > 0) {
@@ -134,7 +144,7 @@ export class WalletService {
           const existingByAddress = await this.walletModel.findOne({ address: contract.address });
           if (existingByAddress) {
             await this.userModel.updateOne(
-              { email: String(createWalletDto.email), wallets: { $ne: existingByAddress._id } },
+              { email: email, wallets: { $ne: existingByAddress._id } },
               { $push: { wallets: existingByAddress._id } }
             );
             return {
