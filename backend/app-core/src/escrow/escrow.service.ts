@@ -122,7 +122,7 @@ export class EscrowService {
   // VALIDA LOS FONDOS DEL USUARIO COBRA LAS TARIFAS CORRESPONDIENTES Y CREA EL REGISTRO DE UNA NUEVA ORDEN P2P EN ESPERA
   async createOrder(dto: CreateEscrowOrderDto, email: string) {
     const sellerEmail = email;
-    const provider = await this.providerModel.findOne({ email: dto.providerEmail, isValid: true });
+    const provider = await this.providerModel.findOne({ email: String(dto.providerEmail), isValid: true });
     if (!provider) {
       throw new BadRequestException('Provider not found or not verified.');
     }
