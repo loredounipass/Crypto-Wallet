@@ -73,11 +73,20 @@ export class LanguagesService implements OnModuleInit {
       throw new NotFoundException(`Invalid language code: '${lang}'`);
     }
     try {
-      const filePath = path.join(this.languagesPath, `${lang}.json`);
-      if (!fs.existsSync(filePath)) {
+      const safeLang = path.basename(lang);
+      const filePath = path.join(this.languagesPath, `${safeLang}.json`);
+      
+      // Ensure the resolved path remains inside the languages directory
+      const resolvedPath = path.resolve(filePath);
+      const expectedBasePath = path.resolve(this.languagesPath);
+      if (!resolvedPath.startsWith(expectedBasePath)) {
+        throw new NotFoundException(`Invalid language file path`);
+      }
+
+      if (!fs.existsSync(resolvedPath)) {
         throw new NotFoundException(`Language file for '${lang}' not found`);
       }
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const fileContent = fs.readFileSync(resolvedPath, 'utf-8');
       const data = JSON.parse(fileContent);
       return { data, lang, active: true };
     } catch (error) {
