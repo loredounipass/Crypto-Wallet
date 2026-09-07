@@ -83,7 +83,7 @@ export class ProfileService {
   async upsert(userId: string, dto: UpdateProfileDto) {
     if (!userId || !Types.ObjectId.isValid(userId)) throw new BadRequestException('Invalid user id');
     const data: any = { ...dto };
-    const res = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, data, { upsert: true, returnDocument: 'after' });
+    const res = await this.profileRepository.findOneAndUpdate({ owner: new Types.ObjectId(userId) }, { $set: data }, { upsert: true, returnDocument: 'after' });
     return res;
   }
 
