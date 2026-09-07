@@ -42,6 +42,16 @@ export default function PostForm() {
     }
   };
 
+  /** Creates a blob URL and validates it starts with "blob:" (defense-in-depth). */
+  const safeBlobUrl = (file) => {
+    const url = URL.createObjectURL(file);
+    if (typeof url !== 'string' || !url.startsWith('blob:')) {
+      try { URL.revokeObjectURL(url); } catch (_) {}
+      return null;
+    }
+    return url;
+  };
+
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     if (toast) setToast('');
@@ -49,7 +59,12 @@ export default function PostForm() {
     if (!f) { setFile(null); setPreviewUrl(null); return; }
 
     if (f.type?.startsWith('video')) {
-      const metaUrl = URL.createObjectURL(f);
+      const metaUrl = safeBlobUrl(f);
+      if (!metaUrl) {
+        setToast('No se pudo leer el archivo de video.');
+        setFile(null); setPreviewUrl(null); e.target.value = '';
+        return;
+      }
       const vid = document.createElement('video');
       vid.preload = 'metadata';
       vid.src = metaUrl;
@@ -60,7 +75,8 @@ export default function PostForm() {
           setFile(null); setPreviewUrl(null); e.target.value = '';
         } else {
           setFile(f);
-          try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
+          const preview = safeBlobUrl(f);
+          setPreviewUrl(preview);
         }
       };
       vid.onerror = () => {
@@ -70,7 +86,8 @@ export default function PostForm() {
       };
     } else {
       setFile(f);
-      try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
+      const preview = safeBlobUrl(f);
+      setPreviewUrl(preview);
     }
     setExpanded(true);
   };
