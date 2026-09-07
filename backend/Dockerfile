@@ -5,10 +5,7 @@ RUN apk add --no-cache wget && \
 
 WORKDIR /usr/src/app
 
-COPY package.json pnpm-lock.yaml ./
-
-# Variable necesaria para que pnpm v10+ permita la compilación de esbuild y msgpackr-extract
-ENV PNPM_ONLY_BUILT_DEPENDENCIES_FROM_ROOT=1
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod
