@@ -148,7 +148,7 @@ export default function PostForm() {
                   <track kind="captions" />
                 </video>
               ) : (
-                <img src={previewUrl} alt={file?.name || 'preview'} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
+                <img src={previewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
               )}
             </div>
           )}
