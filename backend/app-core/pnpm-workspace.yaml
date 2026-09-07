@@ -1,6 +1,0 @@
-allowBuilds:
-  '@nestjs/core': set this to true or false
-  ffmpeg-static: true
-  msgpackr-extract: true
-  sharp: true
-  unrs-resolver: true
