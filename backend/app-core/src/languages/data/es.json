@@ -299,6 +299,7 @@
   "p2p_image_load_error": "⚠️ No se pudo cargar la imagen",
   "p2p_in_person": "En persona",
   "p2p_insufficient_balance": "⚠ Balance insuficiente",
+  "p2p_minimum_balance_required": "⚠ No cuentas con el mínimo para crear una orden P2P. Se requiere un equivalente mínimo de $10 USD.",
   "p2p_kyc_terms": "Al registrarte como proveedor P2P en nuestra plataforma, aceptas someterte a un proceso de verificación de identidad (KYC). Nos tomamos muy en serio la seguridad de nuestra red. Tus datos serán tratados con estricta confidencialidad y utilizados únicamente con fines de autenticación y cumplimiento normativo.",
   "p2p_kyc_title": "Verificación de Identidad",
   "p2p_last_name": "Apellido",

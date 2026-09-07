@@ -1,0 +1,5 @@
+allowBuilds:
+  ffmpeg-static: true
+  msgpackr-extract: true
+  sharp: true
+  unrs-resolver: true

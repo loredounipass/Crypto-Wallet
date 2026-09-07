@@ -22,19 +22,5 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "hardhat": "^3.10.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "ws": ">=8.20.1",
-      "adm-zip": ">=0.6.0"
-    },
-    "onlyBuiltDependencies": [
-      "bufferutil",
-      "esbuild",
-      "keccak",
-      "msgpackr-extract",
-      "secp256k1",
-      "utf-8-validate"
-    ]
   }
 }

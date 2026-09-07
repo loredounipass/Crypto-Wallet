@@ -6,6 +6,8 @@ import Price from '../../services/price';
 import Escrow from '../../services/escrow';
 
 
+const MIN_ORDER_USD = 10;
+
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
   const { t } = useTranslation();
   const isMounted = React.useRef(true);
@@ -47,6 +49,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const availableBalance = useMemo(() => {
     return balance || 0;
   }, [balance]);
+
+  const belowMinimum = coinPriceUsd > 0 && (balance * coinPriceUsd) < MIN_ORDER_USD;
 
   const truncateToDecimals = (value, decimals = 8) => {
     const numeric = Number(value);
@@ -117,7 +121,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
   const isValid = coin && amountNum > 0 && parseFloat(fiatAmount) > 0
     && paymentMethod
     && netAmount > 0
-    && amountNum <= balance;
+    && amountNum <= balance
+    && !belowMinimum;
 
   const insufficientBalance = amountNum > 0 && amountNum > balance;
 
@@ -301,7 +306,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
 
         {insufficientBalance && (
           <p style={{ color: '#EF4444', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
-            {t('p2p_insufficient_balance')}
+          {t('p2p_insufficient_balance')}
+          </p>
+        )}
+
+        {belowMinimum && (
+          <p style={{ color: '#EF4444', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
+            {t('p2p_minimum_balance_required')}
           </p>
         )}
 

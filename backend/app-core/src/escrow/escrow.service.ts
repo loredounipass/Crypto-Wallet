@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, QueueEvents } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
+import { REDIS_CLIENT } from '../redis/redis.module';
 import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
 import { CreateEscrowOrderDto } from './dto/create-escrow-order.dto';
 import { User, UserDocument } from '../user/schemas/user.schema';
@@ -31,7 +32,54 @@ export class EscrowService {
     @InjectQueue(EscrowQueueType.ESCROW_DISPUTE_MARK) private readonly escrowDisputeMarkQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_REFUND) private readonly escrowRefundQueue: Queue,
     private readonly configService: ConfigService,
+    @Inject(REDIS_CLIENT) private readonly redis: any,
   ) { }
+
+
+
+  // CONSTANTE QUE DEFINE EL MONTO MINIMO EN DOLARES QUE DEBE POSEER UN VENDEDOR PARA CREAR UNA ORDEN P2P
+  private static readonly MIN_ORDER_USD = 10;
+
+
+
+  // MAPEO DE SIMBOLOS DE MONEDA A IDENTIFICADORES DE COINGECKO PARA OBTENER SU PRECIO ACTUALIZADO
+  private readonly coinIds: Record<string, string> = {
+    bnb: 'binancecoin',
+    avax: 'avalanche-2',
+    s: 'sonic-3',
+    eth: 'ethereum',
+    matic: 'matic-network',
+    op: 'optimism',
+  };
+
+
+
+  // OBTIENE EL PRECIO ACTUAL EN USD DE UNA MONEDA CONSULTANDO PRIMERO EL CACHE REDIS Y LUEGO COINGECKO SI NO HAY CACHE
+  private async getCoinPriceUsd(coin: string): Promise<number> {
+    const key = coin.toLowerCase().trim();
+    const id = this.coinIds[key] || key;
+    const cacheKey = `price:${id}`;
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return Number(parsed?.USD || 0);
+      }
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd`,
+      );
+      if (!res.ok) return 0;
+      const data: any = await res.json();
+      const usd = Number(data?.[id]?.usd ?? 0);
+      if (usd > 0) {
+        await this.redis.setEx(cacheKey, 60, JSON.stringify({ USD: usd }));
+      }
+      return usd;
+    } catch (err) {
+      console.error('[ESCROW] Failed to fetch coin price for minimum balance check:', (err as Error).message);
+      return 0; // fail-open: allow order if price unavailable
+    }
+  }
 
 
 
@@ -160,6 +208,15 @@ export class EscrowService {
       throw new BadRequestException('No wallet found for the specified coin.');
     }
     const wallet = walletEntry.walletsData[0];
+    const coinPriceUsd = await this.getCoinPriceUsd(dto.coin);
+    if (coinPriceUsd > 0) {
+      const balanceUsd = wallet.balance * coinPriceUsd;
+      if (balanceUsd < EscrowService.MIN_ORDER_USD) {
+        throw new BadRequestException(
+          'You do not have the minimum balance to create a P2P order.',
+        );
+      }
+    }
     const orderId = uuidv4();
     const gasEstimate = await this.getGasEstimate(dto.coin, wallet.chainId);
     const gasFee = gasEstimate.gasFee;
