@@ -1,14 +1,9 @@
-import "@nomicfoundation/hardhat-toolbox";
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-import appRoot from 'app-root-path';
+require("@nomicfoundation/hardhat-toolbox");
+const fs = require('fs');
+const path = require('path');
+const appRoot = require('app-root-path');
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-
-import('dotenv').then(dotenv => dotenv.config({ path: `${appRoot}/config/.env` }));
+require('dotenv').config({ path: `${appRoot}/config/.env` });
 
 const buildNetworks = () => {
     const networks = {};
@@ -34,7 +29,7 @@ const buildNetworks = () => {
     return networks;
 };
 
-export default {
+module.exports = {
   solidity: "0.8.20",
   networks: buildNetworks(),
   paths: {
