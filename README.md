@@ -76,6 +76,16 @@ $ node generate.js (--number of wallets--) + (--network ID--)
 $ docker exec crypto-wallet-backend-daemons-workers-1 node /usr/src/app/tasks/wallet-generator/evm/generate.js 5 80002
 ```
 
+Generate two Ethereum Sepolia wallets:
+```bash
+$ docker exec crypto-wallet-backend-daemons-workers-1 node /usr/src/app/tasks/wallet-generator/evm/generate.js 2 11155111
+```
+
+Generate two Sonic wallets:
+```bash
+$ docker exec crypto-wallet-backend-daemons-workers-1 node /usr/src/app/tasks/wallet-generator/evm/generate.js 2 14601
+```
+
 # pnpm setup
 ```
 $ pnpm setup
