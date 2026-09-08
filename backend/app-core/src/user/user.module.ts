@@ -12,8 +12,11 @@ import { UserRepository } from '../repositories/user.repository';
 import { SharedProfileModule } from '../profile/shared-profile.module';
 import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 
+import { PassportModule } from '@nestjs/passport';
+
 @Module({
   imports: [
+    PassportModule,
     EmailModule,
     TwoFactorAuthModule,
     MongooseModule.forFeature([{
