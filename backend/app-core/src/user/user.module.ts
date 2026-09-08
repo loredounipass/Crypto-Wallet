@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { HashService } from './hash.service';
@@ -11,12 +11,14 @@ import { ForgotPasswordService } from './forgot.password.service';
 import { UserRepository } from '../repositories/user.repository';
 import { SharedProfileModule } from '../profile/shared-profile.module';
 import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
+import { AuthModule } from '../auth/auth.module';
 
 import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     PassportModule,
+    forwardRef(() => AuthModule),
     EmailModule,
     TwoFactorAuthModule,
     MongooseModule.forFeature([{

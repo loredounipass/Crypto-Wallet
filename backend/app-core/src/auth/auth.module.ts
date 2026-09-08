@@ -24,5 +24,6 @@ import { EmailModule } from '../user/email.module';
       useClass: SessionSerializer,
     },
   ],
+  exports: [LocalStrategy, PassportModule],
 })
 export class AuthModule {}
