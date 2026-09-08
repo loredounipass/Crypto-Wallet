@@ -79,8 +79,13 @@ const processWithdraw = async ({
     web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
     var result = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (result) {
+        const hashToTrack = transactionHash || result.linkedTxHash || result.txHash
+        if (!hashToTrack || !/^0x[a-fA-F0-9]{64}$/.test(hashToTrack)) {
+            throw new Error(`[WITHDRAW] No valid hash to track: ${hashToTrack}`)
+        }
+
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
-            result = await web3.eth.getTransaction(transactionHash)
+            result = await web3.eth.getTransaction(hashToTrack)
             if (result && 'value' in result) {
                 const { value, blockNumber } = result
                 if (blockNumber !== null && blockNumber !== undefined) {

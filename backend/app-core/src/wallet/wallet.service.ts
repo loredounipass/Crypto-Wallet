@@ -292,8 +292,7 @@ export class WalletService {
           nature: 2,
           amount: -1 * withdrawDto.amount,
           created_at: Date.now(),
-          status: 1,
-          txHash: uuidv4(),
+          status: 0,
           to: withdrawDto.to
         });
         const saved = await transaction.save();
@@ -378,8 +377,7 @@ export class WalletService {
       nature: 2,
       amount: -1 * tokenWithdrawDto.amount,
       created_at: Date.now(),
-      status: 1,
-      txHash: uuidv4(),
+      status: 0,
       to: tokenWithdrawDto.to
     });
     const saved = await transaction.save();

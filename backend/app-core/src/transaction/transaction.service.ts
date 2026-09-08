@@ -23,13 +23,19 @@ export class TransactionService {
       populate: { path: 'transactions', match: { _id: new Types.ObjectId(queryDto.transactionId) } }
     }).lean().exec();
     if (!user) return null;
-    const tx = (user.wallets as any[])
-      .flatMap((w: any) => w.transactions || [])
-      .find((t: any) => t._id.toString() === queryDto.transactionId);
+    let tx = null;
+    for (const w of (user.wallets as any[])) {
+      const found = (w.transactions || []).find((t: any) => t._id.toString() === queryDto.transactionId);
+      if (found) {
+        tx = found;
+        break;
+      }
+    }
     if (tx) {
       return {
         nature: tx.nature,
         txHash: tx.txHash,
+        linkedTxHash: tx.linkedTxHash || null,
         transactionId: tx._id,
         created_at: tx.created_at,
         confirmations: tx.confirmations,
@@ -87,6 +93,7 @@ export class TransactionService {
             return {
               nature: tx.nature,
               txHash: tx.txHash,
+              linkedTxHash: tx.linkedTxHash || null,
               transactionId: tx._id,
               created_at: tx.created_at,
               confirmations: tx.confirmations,

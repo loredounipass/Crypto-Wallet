@@ -1,4 +1,5 @@
 const getDisplayableTxHash = (txHash) => {
+    if (!txHash) return '-';
     return `${txHash.slice(0, 15)}...`
 }
 
@@ -13,6 +14,7 @@ const getStatusName = (code) => {
         2: 'tx_status_processing',
         3: 'tx_status_completed',
         4: 'tx_status_cancelled',
+        5: 'tx_status_failed',
     }[code] || 'tx_status_no_info'
 }
 

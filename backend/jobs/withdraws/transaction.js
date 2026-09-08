@@ -25,9 +25,12 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
         status
     }
 
-    if (txHash)
+    if (txHash) {
+        // Find existing to avoid overwriting linkedTxHash if it exists, or just use $set
+        // We handle the duplicate key error in the caller
         upsert.txHash = txHash
-    
+    }
+
     if (fee !== undefined)
         upsert.fee = fee
 
@@ -38,6 +41,27 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
     await publishTransactionStatusUpdate({
         transactionId: transactionId.toString(),
         status
+    })
+}
+
+const _rollbackOnFailure = async (transactionId, walletId, amount, errorMsg) => {
+    console.error(`[WITHDRAW-TX] Rolling back failed withdrawal ${transactionId}:`, errorMsg)
+    // Status 5: Broadcast Failed
+    await Transaction.updateOne(
+        { _id: new ObjectId(transactionId) },
+        { $set: { status: 5 } }
+    )
+    
+    // Restore balance
+    await Wallet.updateOne(
+        { _id: new ObjectId(walletId) },
+        { $inc: { balance: amount } }
+    )
+
+    await publishTransactionStatusUpdate({
+        transactionId: transactionId.toString(),
+        status: 5,
+        source: 'withdraw-rollback'
     })
 }
 
@@ -111,8 +135,9 @@ const sendWithdraw = async ({
         { transactions: 0 })
 
     if (wallet && 'coin' in wallet) {
-        const { coin, chainId } = wallet
-        const coinKey = String(coin).toUpperCase()
+        try {
+            const { coin, chainId } = wallet
+            const coinKey = String(coin).toUpperCase()
         const coinConfig = coins[coinKey]
 
         if (!coinConfig) {
@@ -132,7 +157,29 @@ const sendWithdraw = async ({
         const receipt = await sendTransaction(valueWei, withdrawAddress)
         if (receipt) {
             const { transactionHash, status } = receipt
-            await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, coinConfig.fee)
+            
+            try {
+                await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, coinConfig.fee)
+            } catch (err) {
+                if (err.code === 11000 || (err.message && err.message.includes('E11000'))) {
+                    console.warn('[WITHDRAW-TX] txHash collision with deposit, linking transactions', {
+                        transactionId,
+                        transactionHash
+                    })
+                    // Deposit subscription already created a Transaction with this txHash.
+                    // Update our withdraw Transaction without txHash, link via reference field
+                    await Transaction.updateOne(
+                        { _id: new ObjectId(transactionId) },
+                        { $set: { 
+                            status: status ? 2 : 4, 
+                            fee: coinConfig.fee,
+                            linkedTxHash: transactionHash
+                        }}
+                    )
+                } else {
+                    throw err
+                }
+            }
 
             const withdrawFrom = new Queue('WithdrawedFromMetaDapp')
             withdrawFrom.add('withdraw', {
@@ -150,7 +197,14 @@ const sendWithdraw = async ({
 
             return 'success'
         }
+    } catch (err) {
+        // Rollback the balance if something went wrong before or during the transaction
+        if (err.message && !err.message.includes('Unsupported coin')) {
+             await _rollbackOnFailure(transactionId, walletId, amount, err.message)
+        }
+        throw err;
     }
+    } // Closes if (wallet && 'coin' in wallet)
 
     throw 'error: not processed'
 }

@@ -10,6 +10,17 @@ const transactionScheme = mongoose.Schema({
         type: String,
         unique: true,
         sparse: true,
+        validate: {
+            validator: function(v) {
+                return v === null || v === undefined || /^0x[a-fA-F0-9]{64}$/.test(v);
+            },
+            message: 'txHash must be a valid Ethereum tx hash (0x + 64 hex chars)'
+        }
+    },
+    linkedTxHash: {
+        type: String,
+        required: false,
+        index: true
     },
     amount: Number,
     fee: {
@@ -35,7 +46,7 @@ const transactionScheme = mongoose.Schema({
         required: false,
         default: 1,
         index: true
-    } //1. Aprobando, 2. Procesando, 3. Procesado, 4. Cancelado
+    } //0. Pending Broadcast, 1. Broadcasting, 2. Procesando, 3. Procesado, 4. Cancelado, 5. Broadcast Failed
 })
 
 module.exports = mongoose.model('Transaction', transactionScheme)

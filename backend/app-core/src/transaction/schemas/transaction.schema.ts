@@ -17,6 +17,12 @@ export class Transaction {
     })
     txHash: string;
 
+    @Prop({
+        required: false,
+        index: true
+    })
+    linkedTxHash: string;
+
     @Prop()
     amount: number;
 
@@ -39,11 +45,12 @@ export class Transaction {
         index: true,
         default: 1
     })
-    status: number; //1. Aprobando, 2. Procesando, 3. Procesado, 4. Cancelado
+    status: number; //0. Pending Broadcast, 1. Broadcasting, 2. Procesando, 3. Procesado, 4. Cancelado, 5. Broadcast Failed
 
     created_at?: Date;
 
     updated_at?: Date;
 }
 
-export const TransactionSchema = SchemaFactory.createForClass(Transaction); 
+export const TransactionSchema = SchemaFactory.createForClass(Transaction);
+ 

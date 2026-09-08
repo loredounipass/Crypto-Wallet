@@ -19,6 +19,7 @@ type TransactionStatusEvent = {
   status?: number;
   confirmations?: number;
   txHash?: string;
+  linkedTxHash?: string;
 };
 
 @WebSocketGateway({
@@ -140,6 +141,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
           .findById(transactionObjectId, {
             _id: 1,
             txHash: 1,
+            linkedTxHash: 1,
             status: 1,
             confirmations: 1,
             created_at: 1,
@@ -162,6 +164,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
       const payload = {
         transactionId: transaction._id.toString(),
         txHash: transaction.txHash,
+        linkedTxHash: (transaction as any).linkedTxHash,
         status: event.status ?? transaction.status,
         confirmations: event.confirmations ?? transaction.confirmations ?? 0,
         created_at: (transaction as any).created_at,

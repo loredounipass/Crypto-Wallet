@@ -146,6 +146,7 @@ export default function CoinTransactions({
                 2: { bg: "#DBEAFE", text: "#1E40AF" },
                 3: { bg: "#D1FAE5", text: "#065F46" },
                 4: { bg: "#FEE2E2", text: "#991B1B" },
+                5: { bg: "#FEE2E2", text: "#991B1B" }, // Broadcast failed
             };
             return colors[status] || { bg: "#F3F4F6", text: "#6B7280" };
         },
@@ -215,7 +216,7 @@ export default function CoinTransactions({
     };
 
     const getTransactionExplorerUrl = (transaction) => {
-        const txHash = transaction?.txHash;
+        const txHash = transaction?.txHash || transaction?.linkedTxHash;
         const txChainId = getTransactionChainId(transaction);
         if (!txHash || !txChainId) return '';
 
@@ -284,7 +285,7 @@ export default function CoinTransactions({
                         <tbody>
                             {transactions.map((transaction, index) => (
                                 <tr 
-                                    key={`${transaction.txHash}-${index}`}
+                                    key={`${transaction.transactionId || transaction.txHash || index}-${index}`}
                                     style={{ cursor: "pointer" }}
                                     onClick={() => handleOpen(transaction)}
                                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}
@@ -305,7 +306,7 @@ export default function CoinTransactions({
                                     )}
                                     <td style={styles.td}>
                                         <span style={{ color: "#2186EB", fontFamily: "monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
-                                            {getDisplayableTxHash(transaction.txHash)}
+                                            {getDisplayableTxHash(transaction.txHash || transaction.linkedTxHash)}
                                         </span>
                                     </td>
                                     <td style={styles.td}>
@@ -461,15 +462,15 @@ export default function CoinTransactions({
                             </div>
                         )}
 
-                        {selectedTransaction.status > 1 && (
+                        {(selectedTransaction.txHash || selectedTransaction.linkedTxHash) && (
                             <div style={{ marginTop: "16px" }}>
                                 <div style={styles.label}>{t('txid')}</div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                     <span style={{ ...styles.value, fontFamily: "monospace", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        {`${selectedTransaction.txHash.slice(0, 20)}...`}
+                                        {`${(selectedTransaction.txHash || selectedTransaction.linkedTxHash).slice(0, 20)}...`}
                                     </span>
                                     <CopyToClipboard
-                                        text={selectedTransaction.txHash}
+                                        text={selectedTransaction.txHash || selectedTransaction.linkedTxHash}
                                         onCopy={() => { setTxCopied(true); setTimeout(() => setTxCopied(false), 2000); }}
                                     >
                                         <button style={{
@@ -492,7 +493,7 @@ export default function CoinTransactions({
                             </div>
                         )}
 
-                        {selectedTransaction.status > 1 && getTransactionExplorerUrl(selectedTransaction) && (
+                        {(selectedTransaction.txHash || selectedTransaction.linkedTxHash) && getTransactionExplorerUrl(selectedTransaction) && (
                             <div style={{ marginTop: "16px" }}>
                                 <div style={styles.label}>{t('explorer')}</div>
                                 <a
