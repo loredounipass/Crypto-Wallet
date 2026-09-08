@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
 import { UserModule } from '../user/user.module';
@@ -8,7 +8,7 @@ import { SharedProfileModule } from './shared-profile.module';
 @Module({
   imports: [
     SharedProfileModule,
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   controllers: [ProfileController],
   providers: [ProfileService, LocalStorageProvider],
