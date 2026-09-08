@@ -4,7 +4,6 @@ import { UserController } from './user.controller';
 import { HashService } from './hash.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
-import { AuthService } from '../auth/auth.service';
 import { TwoFactorAuthModule } from '../two-factor/verification.module';
 import { EmailModule } from './email.module';
 import { ForgotPasswordService } from './forgot.password.service';
@@ -13,11 +12,8 @@ import { SharedProfileModule } from '../profile/shared-profile.module';
 import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 import { AuthModule } from '../auth/auth.module';
 
-import { PassportModule } from '@nestjs/passport';
-
 @Module({
   imports: [
-    PassportModule,
     forwardRef(() => AuthModule),
     EmailModule,
     TwoFactorAuthModule,
@@ -32,7 +28,6 @@ import { PassportModule } from '@nestjs/passport';
     UserRepository,
     UserService,
     HashService,
-    AuthService,
     ForgotPasswordService,
     EmailThrottlerGuard
   ],
