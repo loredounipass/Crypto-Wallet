@@ -31,33 +31,9 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
     if (fee !== undefined)
         upsert.fee = fee
 
-    try {
-        await Transaction.updateOne({ _id: new ObjectId(transactionId) }, {
-            $set: upsert
-        })
-    } catch (error) {
-        if (error?.code !== 11000 || !txHash) throw error
-
-        const existing = await Transaction.findOne({
-            txHash: String(txHash).toLowerCase()
-        }, { _id: 1, nature: 1, status: 1 })
-
-        if (!existing || existing.nature !== 1) throw error
-
-        console.warn('[WITHDRAW-TX] Hash already tracked, preserving the existing hash record and updating the withdrawal:', {
-            txHash,
-            existingTransactionId: existing._id.toString(),
-            withdrawalTransactionId: transactionId.toString()
-        })
-
-        const withdrawalUpdate = { status }
-        if (fee !== undefined) withdrawalUpdate.fee = fee
-
-        await Transaction.updateOne(
-            { _id: new ObjectId(transactionId) },
-            { $set: withdrawalUpdate }
-        )
-    }
+    await Transaction.updateOne({ _id: new ObjectId(transactionId) }, {
+        $set: upsert
+    })
 
     await publishTransactionStatusUpdate({
         transactionId: transactionId.toString(),
