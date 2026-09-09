@@ -28,7 +28,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1g
+          memory: 2g
           cpus: "1.0"
 
   redis:
@@ -53,8 +53,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 550m
-          cpus: "0.5"
+          memory: 750m
+          cpus: "0.25"
 
   backend-daemons-workers:
     build:
@@ -79,8 +79,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1g
-          cpus: "1.6"
+          memory: 3g
+          cpus: "1.5"
 
   app-core:
     build:
@@ -113,8 +113,8 @@ services:
       replicas: 2
       resources:
         limits:
-          memory: 768m
-          cpus: "0.5"
+          memory: 1g
+          cpus: "0.40"
 
   nginx:
     build:
@@ -142,7 +142,7 @@ services:
       resources:
         limits:
           memory: 500m
-          cpus: "0.25"
+          cpus: "0.15"
 
   backup:
     build:
@@ -170,8 +170,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256m
-          cpus: "0.25"
+          memory: 512m
+          cpus: "0.20"
 
 networks:
   backend:
