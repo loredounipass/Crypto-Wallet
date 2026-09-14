@@ -27,7 +27,7 @@ const startNext = () => {
 
   setTimeout(() => {
     console.log(`[${name}] Starting...`);
-    const child = spawn('node', [script], {
+    let child = spawn('node', [script], {
       stdio: 'inherit',
       cwd: __dirname
     });
