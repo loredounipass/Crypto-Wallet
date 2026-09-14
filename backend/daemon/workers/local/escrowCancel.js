@@ -175,5 +175,5 @@ connectDB.then(() => {
             console.error(`[ESCROW-CANCEL-WORKER] Job ${job.id} failed:`, error.message || error)
             throw error
         }
-    })
+    }, { concurrency: 15 })
 })

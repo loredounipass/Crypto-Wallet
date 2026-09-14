@@ -36,6 +36,6 @@ const processDisputeMark = async (jobData) => {
 connectDB.then(() => {
     new Worker('escrow-dispute-mark', async (job) => {
         return await processDisputeMark(job.data)
-    })
+    }, { concurrency: 15 })
     console.log('[ESCROW-DISPUTE-MARK] Worker started and ready')
 })

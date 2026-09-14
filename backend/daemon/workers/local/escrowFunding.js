@@ -151,6 +151,6 @@ const processEscrowFunding = async (jobData) => {
 connectDB.then(() => {
     new Worker('escrow-funding', async (job) => {
         return await processEscrowFunding(job.data)
-    })
+    }, { concurrency: 15 })
     console.log('[ESCROW-FUNDING] Worker started and ready')
 })

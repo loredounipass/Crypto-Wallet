@@ -79,7 +79,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3g
+          memory: 4g
           cpus: "1.5"
 
   app-core:

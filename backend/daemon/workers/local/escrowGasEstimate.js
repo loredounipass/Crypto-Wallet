@@ -35,6 +35,6 @@ const processGasEstimate = async (jobData) => {
 connectDB.then(() => {
     new Worker('escrow-gas-estimate', async (job) => {
         return await processGasEstimate(job.data)
-    })
+    }, { concurrency: 15 })
     console.log('[ESCROW-GAS-ESTIMATE] Worker started and ready')
 })

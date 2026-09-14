@@ -32,5 +32,5 @@ connectDB.then(() => {
         })
 
         return 'success'
-    })
+    }, { concurrency: 15 })
 })

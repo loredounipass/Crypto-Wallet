@@ -160,5 +160,5 @@ connectDB.then(() => {
             source: 'erc20-withdraw'
         })
         return receipt.transactionHash
-    })
+    }, { concurrency: 15 })
 })

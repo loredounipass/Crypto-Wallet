@@ -74,6 +74,6 @@ const processRefund = async (jobData) => {
 connectDB.then(() => {
     new Worker('escrow-refund', async (job) => {
         return await processRefund(job.data)
-    })
+    }, { concurrency: 15 })
     console.log('[ESCROW-REFUND] Worker started and ready')
 })
