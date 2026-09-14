@@ -1,5 +1,6 @@
+const appRoot = require('app-root-path')
+const { Worker } = require(`${appRoot}/config/bullmq`)
 const {
-    Worker,
     connectDB,
     createTransaction,
     processDeposit,
