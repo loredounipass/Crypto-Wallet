@@ -36,7 +36,11 @@ const processRefund = async (jobData) => {
     if (!refunded) {
         try {
             await interactor.ensureEscrowWalletBalanceForTransfer(orderId, sellerWalletAddress, amountWei)
-            const receipt = await interactor.refundFundsFromEscrowWallet(orderId, sellerWalletAddress, amountWei)
+            const onTxHash = async (hash) => {
+                console.log(`[ESCROW-REFUND] Pre-saving refundTxHash ${hash} to prevent duplicate retries`)
+                refundTxHash = hash
+            }
+            const receipt = await interactor.refundFundsFromEscrowWallet(orderId, sellerWalletAddress, amountWei, onTxHash)
             if (receipt && receipt.status) {
                 refunded = true
                 refundTxHash = receipt.transactionHash

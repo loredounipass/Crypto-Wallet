@@ -101,29 +101,51 @@ const processEscrowFunding = async (jobData) => {
     if (!order) {
         throw new Error(`[ESCROW-FUNDING] Order not found: ${orderId}`)
     }
-    if (order.escrowTxHash && order.fundingMethod) {
-        console.log(`[ESCROW-FUNDING] Order ${orderId} already funded (method=${order.fundingMethod}, tx=${order.escrowTxHash}), skipping`)
-        return 'success'
-    }
     if (order.status !== 'pending') {
         console.log(`[ESCROW-FUNDING] Order ${orderId} status is '${order.status}', expected 'pending', skipping funding`)
         return 'skipped'
     }
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = toWeiAmount(amount, decimals)
-    let escrowTxHash = null
-    try {
-        const interactor = new EscrowContractInteractor(chainId)
+    const interactor = new EscrowContractInteractor(chainId)
+    let escrowTxHash = order.escrowTxHash
+
+    if (escrowTxHash && !order.fundingMethod) {
+        // Tenemos un hash pendiente del intento anterior — verificar en cadena
+        console.log(`[ESCROW-FUNDING] Found pending escrowTxHash ${escrowTxHash}. Checking status...`)
+        try {
+            const chainReceipt = await interactor.web3.eth.getTransactionReceipt(escrowTxHash)
+            if (chainReceipt) {
+                if (!chainReceipt.status) {
+                    throw new Error(`[ESCROW-FUNDING] Previous tx ${escrowTxHash} failed on chain`)
+                }
+                console.log(`[ESCROW-FUNDING] Pending tx ${escrowTxHash} confirmed on chain!`)
+            } else {
+                console.log(`[ESCROW-FUNDING] Tx ${escrowTxHash} still pending on chain, waiting...`)
+                throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
+            }
+        } catch (e) {
+            if (e.message.includes('WAITING_FOR_FUNDING_CONFIRMATION') || e.message.includes('failed on chain')) throw e
+            throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
+        }
+    } else if (escrowTxHash && order.fundingMethod) {
+        console.log(`[ESCROW-FUNDING] Order ${orderId} already funded (method=${order.fundingMethod}, tx=${escrowTxHash}), skipping`)
+        return 'success'
+    } else {
+        // Primera ejecucion: enviar fondos y pre-guardar hash
         console.log('[ESCROW-FUNDING] Funding escrow wallet...')
-        const receipt = await interactor.fundEscrowWallet(orderId, amountWei)
+        const onTxHash = async (hash) => {
+            escrowTxHash = hash
+            console.log(`[ESCROW-FUNDING] Pre-saving escrowTxHash ${hash} to prevent duplicate retries`)
+            await EscrowOrder.updateOne({ orderId }, { $set: { escrowTxHash: hash } })
+        }
+        const receipt = await interactor.fundEscrowWallet(orderId, amountWei, onTxHash)
         if (!receipt || !receipt.status) {
             throw new Error('[ESCROW-FUNDING] Escrow wallet funding failed')
         }
         escrowTxHash = receipt.transactionHash
-    } catch (error) {
-        console.error('[ESCROW-FUNDING] On-chain funding failed:', error.message)
-        throw error
     }
+
     const fundingMethod = 'wallet'
     await EscrowOrder.updateOne(
         { orderId },

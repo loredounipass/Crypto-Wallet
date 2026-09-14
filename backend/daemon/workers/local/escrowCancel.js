@@ -129,7 +129,11 @@ const processEscrowCancel = async (jobData) => {
             await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
             refundAmountEth = order.amount
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refunding full amount ${refundAmountEth} (gas prepaid at creation)...`)
-            const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
+            const onTxHash = async (hash) => {
+                console.log(`[ESCROW-CANCEL-WORKER] Pre-saving refundTxHash ${hash} to prevent duplicate retries`)
+                await EscrowOrder.updateOne({ orderId }, { $set: { refundTxHash: hash } })
+            }
+            const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei, onTxHash)
             if (receipt && receipt.status) {
                 refundTxHash = receipt.transactionHash
                 console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Escrow Wallet refund successful! TxHash: ${refundTxHash}`)

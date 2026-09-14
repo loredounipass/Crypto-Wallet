@@ -105,7 +105,11 @@ const refundSellerWallet = async (order) => {
                     orderId: order.orderId,
                     refundAmount: refundAmountEth,
                 })
-                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
+                const onTxHash = async (hash) => {
+                    console.log(`[ESCROW-EXPIRY] Pre-saving refundTxHash ${hash} to prevent duplicate retries`)
+                    await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { refundTxHash: hash } })
+                }
+                const receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei, onTxHash)
                 if (receipt && receipt.status) {
                     refundTxHash = receipt.transactionHash
                     console.log('[ESCROW-EXPIRY] Escrow wallet refund successful:', {

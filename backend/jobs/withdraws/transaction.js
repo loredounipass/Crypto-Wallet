@@ -70,7 +70,7 @@ const _isRevertError = (error) => {
     return msg.includes('revert') || msg.includes('execution reverted') || msg.includes('always failing transaction')
 }
 
-const sendTransaction = async (valueWei, toAddress) => {
+const sendTransaction = async (valueWei, toAddress, onTxHash = null) => {
     const fromAddress = web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET)
     const toChecksum = web3.utils.toChecksumAddress(toAddress)
     const valueStr = valueWei.toString()
@@ -116,6 +116,14 @@ const sendTransaction = async (valueWei, toAddress) => {
         process.env.WITHDRAW_FROM_PRIVATE_KEY
     )
 
+    if (onTxHash) {
+        try {
+            await onTxHash(signedTx.transactionHash)
+        } catch (err) {
+            console.error('[WITHDRAW-TX] Error in onTxHash callback:', err.message)
+        }
+    }
+
     try {
         return await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
     } catch (error) {
@@ -153,8 +161,44 @@ const sendWithdraw = async ({
             await _updateTransactionState(null, 4, transactionId)
             throw new Error(`Invalid withdraw amount. amount must be greater than fee (${coinConfig.fee} ${coin})`)
         }
+        const txRecord = await Transaction.findOne({ _id: new ObjectId(transactionId) })
+        if (!txRecord) throw new Error('Transaction record not found')
+
         web3 = new Web3(require(`${appRoot}/config/chains/` + chainId).rpc)
-        const receipt = await sendTransaction(valueWei, withdrawAddress)
+        
+        let receipt;
+        if (txRecord.txHash && txRecord.status === 1) { // 1 = pending
+            console.log(`[WITHDRAW-TX] Found pending txHash ${txRecord.txHash}. Checking status...`)
+            try {
+                const chainReceipt = await web3.eth.getTransactionReceipt(txRecord.txHash)
+                if (chainReceipt) {
+                    if (chainReceipt.status) {
+                         receipt = { transactionHash: txRecord.txHash, status: true }
+                    } else {
+                         throw new Error(`Previous tx ${txRecord.txHash} failed on chain`)
+                    }
+                } else {
+                    console.log(`[WITHDRAW-TX] Existing tx ${txRecord.txHash} is still pending on chain`)
+                    throw new Error('WAITING_FOR_CONFIRMATION')
+                }
+            } catch (e) {
+                if (e.message.includes('WAITING_FOR_CONFIRMATION') || e.message.includes('failed on chain')) {
+                    throw e
+                }
+                console.warn(`[WITHDRAW-TX] Error checking receipt for ${txRecord.txHash}:`, e.message)
+                throw new Error('WAITING_FOR_CONFIRMATION')
+            }
+        } else if (txRecord.status === 2) {
+            console.log(`[WITHDRAW-TX] Transaction ${transactionId} already completed, skipping`)
+            return 'success'
+        } else {
+            const onTxHash = async (hash) => {
+                console.log(`[WITHDRAW-TX] Pre-saving txHash ${hash} to prevent duplicate retries`)
+                await _updateTransactionState(hash, 1, transactionId) // Status 1 = pending
+            }
+            receipt = await sendTransaction(valueWei, withdrawAddress, onTxHash)
+        }
+
         if (receipt) {
             const { transactionHash, status } = receipt
             
@@ -200,7 +244,11 @@ const sendWithdraw = async ({
     } catch (err) {
         // Rollback the balance if something went wrong before or during the transaction
         if (err.message && !err.message.includes('Unsupported coin')) {
-             await _rollbackOnFailure(transactionId, walletId, amount, err.message)
+             if (err.message.includes('was not mined within 50 blocks') || err.message.includes('might still be mined') || err.message.includes('WAITING_FOR_CONFIRMATION')) {
+                 console.warn(`[WITHDRAW-TX] Timeout or pending detected for ${transactionId}. Leaving transaction as pending. DO NOT ROLLBACK.`)
+             } else {
+                 await _rollbackOnFailure(transactionId, walletId, amount, err.message)
+             }
         }
         throw err;
     }

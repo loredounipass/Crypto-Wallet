@@ -12,7 +12,7 @@ class EscrowContractInteractor {
         this.chainId = chainId
         this.relayerAddress = this.web3.utils.toChecksumAddress(process.env.ESCROW_RELAYER_WALLET)
         this.relayerPrivateKey = process.env.ESCROW_RELAYER_PRIVATE_KEY
-        
+
         this.hotWalletAddress = process.env.WITHDRAW_FROM_WALLET ? this.web3.utils.toChecksumAddress(process.env.WITHDRAW_FROM_WALLET) : null;
         this.hotWalletPrivateKey = process.env.WITHDRAW_FROM_PRIVATE_KEY;
         this.escrowWalletAddress = process.env.ESCROW_WALLET_ADDRESS ? this.web3.utils.toChecksumAddress(process.env.ESCROW_WALLET_ADDRESS) : null
@@ -30,12 +30,12 @@ class EscrowContractInteractor {
             }
         } else {
             this.abi = [
-                { "inputs": [{"name":"orderId","type":"bytes32"},{"name":"seller","type":"address"},{"name":"providerWallet","type":"address"}], "name": "createOrder", "outputs": [], "stateMutability": "payable", "type": "function" },
-                { "inputs": [{"name":"orderId","type":"bytes32"}], "name": "releaseFunds", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-                { "inputs": [{"name":"orderId","type":"bytes32"}], "name": "refundFunds", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-                { "inputs": [{"name":"orderId","type":"bytes32"}], "name": "markDisputed", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-                { "inputs": [{"name":"orderId","type":"bytes32"}], "name": "getOrder", "outputs": [{"name":"seller","type":"address"},{"name":"providerWallet","type":"address"},{"name":"amount","type":"uint256"},{"name":"status","type":"uint8"},{"name":"createdAt","type":"uint256"}], "stateMutability": "view", "type": "function" },
-                { "inputs": [], "name": "getBalance", "outputs": [{"name":"","type":"uint256"}], "stateMutability": "view", "type": "function" }
+                { "inputs": [{ "name": "orderId", "type": "bytes32" }, { "name": "seller", "type": "address" }, { "name": "providerWallet", "type": "address" }], "name": "createOrder", "outputs": [], "stateMutability": "payable", "type": "function" },
+                { "inputs": [{ "name": "orderId", "type": "bytes32" }], "name": "releaseFunds", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+                { "inputs": [{ "name": "orderId", "type": "bytes32" }], "name": "refundFunds", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+                { "inputs": [{ "name": "orderId", "type": "bytes32" }], "name": "markDisputed", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+                { "inputs": [{ "name": "orderId", "type": "bytes32" }], "name": "getOrder", "outputs": [{ "name": "seller", "type": "address" }, { "name": "providerWallet", "type": "address" }, { "name": "amount", "type": "uint256" }, { "name": "status", "type": "uint8" }, { "name": "createdAt", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+                { "inputs": [], "name": "getBalance", "outputs": [{ "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
             ]
         }
 
@@ -128,7 +128,7 @@ class EscrowContractInteractor {
 
 
     // TRANSFIERE FONDOS NATIVOS ENTRE DOS DIRECCIONES DESCONTANDO EL COSTO DEL GAS DEL MONTO TOTAL SI ES NECESARIO
-    async _sendNativeTransfer(fromAddress, privateKey, toAddress, valueWei) {
+    async _sendNativeTransfer(fromAddress, privateKey, toAddress, valueWei, onTxHash = null) {
         const from = this.web3.utils.toChecksumAddress(fromAddress)
         const to = this.web3.utils.toChecksumAddress(toAddress)
         const nonce = await TxManager.getNonce(this.web3, from, this.chainId)
@@ -176,6 +176,13 @@ class EscrowContractInteractor {
             transaction,
             this._normalizePrivateKey(privateKey)
         )
+        if (onTxHash) {
+            try {
+                await onTxHash(signedTx.transactionHash)
+            } catch (err) {
+                console.error('[ESCROW-CONTRACT] Error en onTxHash callback:', err.message)
+            }
+        }
         try {
             return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
         } catch (error) {
@@ -336,7 +343,7 @@ class EscrowContractInteractor {
 
 
     // MUEVE LOS FONDOS DESDE LA BILLETERA CALIENTE HACIA LA BILLETERA DE CUSTODIA AISLADA
-    async fundEscrowWallet(orderId, amountWei) {
+    async fundEscrowWallet(orderId, amountWei, onTxHash = null) {
         if (!this.hotWalletAddress || !this.hotWalletPrivateKey) {
             throw new Error('Hot wallet credentials are not configured')
         }
@@ -353,7 +360,8 @@ class EscrowContractInteractor {
             this.hotWalletAddress,
             this.hotWalletPrivateKey,
             this.escrowWalletAddress,
-            amountWei
+            amountWei,
+            onTxHash
         )
     }
 
@@ -374,7 +382,7 @@ class EscrowContractInteractor {
 
 
     // TRANSFIERE DIRECTAMENTE LOS FONDOS DESDE LA BILLETERA DE CUSTODIA HACIA LA BILLETERA DEL PROVEEDOR
-    async releaseFundsFromEscrowWallet(orderId, providerAddress, amountWei) {
+    async releaseFundsFromEscrowWallet(orderId, providerAddress, amountWei, onTxHash = null) {
         if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
             throw new Error('Escrow wallet credentials are not configured')
         }
@@ -388,14 +396,15 @@ class EscrowContractInteractor {
             this.escrowWalletAddress,
             this.escrowWalletPrivateKey,
             providerAddress,
-            amountWei
+            amountWei,
+            onTxHash
         )
     }
 
 
 
     // ADJUDICA Y ENVIA LOS FONDOS AL PROVEEDOR DESPUES DE RESOLVER UNA DISPUTA A SU FAVOR
-    async awardFundsFromEscrowWallet(orderId, providerAddress, amountWei) {
+    async awardFundsFromEscrowWallet(orderId, providerAddress, amountWei, onTxHash = null) {
         if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
             throw new Error('Escrow wallet credentials are not configured')
         }
@@ -409,7 +418,8 @@ class EscrowContractInteractor {
             this.escrowWalletAddress,
             this.escrowWalletPrivateKey,
             providerAddress,
-            amountWei
+            amountWei,
+            onTxHash
         )
     }
 
@@ -430,7 +440,7 @@ class EscrowContractInteractor {
 
 
     // DEVUELVE DIRECTAMENTE EL DINERO AL COMPRADOR DESDE LA BILLETERA DE CUSTODIA OFF-CHAIN
-    async refundFundsFromEscrowWallet(orderId, sellerAddress, amountWei) {
+    async refundFundsFromEscrowWallet(orderId, sellerAddress, amountWei, onTxHash = null) {
         if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
             throw new Error('Escrow wallet credentials are not configured')
         }
@@ -444,7 +454,8 @@ class EscrowContractInteractor {
             this.escrowWalletAddress,
             this.escrowWalletPrivateKey,
             sellerAddress,
-            amountWei
+            amountWei,
+            onTxHash
         )
     }
 

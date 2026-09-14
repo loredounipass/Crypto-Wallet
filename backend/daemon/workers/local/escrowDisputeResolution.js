@@ -163,10 +163,14 @@ const processDisputeResolution = async (order) => {
                 resolvedType === 'revert' ? order.sellerWalletAddress : order.providerWalletAddress,
                 amountWei
             )
+            const onTxHash = async (hash) => {
+                console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
+                await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { releaseTxHash: hash } })
+            }
             if (resolvedType === 'revert') {
-                receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei)
+                receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei, onTxHash)
             } else {
-                receipt = await interactor.awardFundsFromEscrowWallet(order.orderId, order.providerWalletAddress, amountWei)
+                receipt = await interactor.awardFundsFromEscrowWallet(order.orderId, order.providerWalletAddress, amountWei, onTxHash)
             }
         } catch (walletError) {
             console.error('[DISP-RESOLVE] Escrow wallet transfer failed:', walletError.message)

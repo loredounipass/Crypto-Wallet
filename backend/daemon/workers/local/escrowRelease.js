@@ -97,31 +97,66 @@ const processEscrowRelease = async (jobData) => {
         console.error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
         throw new Error(`[ESCROW-RELEASE] Invalid order state: ${order?.status || 'not found'}`)
     }
-    if (order.releaseTxHash || order.status === 'completed') {
-        console.log(`[ESCROW-RELEASE] Order ${orderId} already released (tx=${order.releaseTxHash}), skipping`)
-        return 'success'
-    }
-    if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
-        const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
-        if (!fundingTx || fundingTx.status !== 3) {
-            console.log(`[ESCROW-RELEASE] Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx?.status || 'not found'}). Retrying later...`)
-            throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
-        }
-        console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
-    }
-    const decimals = coins[coin.toUpperCase()]?.decimals || 18
-    const amountWei = toWeiAmount(amount, decimals)
-    let releaseTxHash = null
+    let releaseTxHash = order.releaseTxHash
     const interactor = new EscrowContractInteractor(chainId)
-    console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
-    await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
-    const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei)
-    if (!receipt || !receipt.status) {
-        console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
-        throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+
+    if (releaseTxHash && order.status !== 'completed') {
+        console.log(`[ESCROW-RELEASE] Found pending releaseTxHash ${releaseTxHash}. Checking status...`)
+        try {
+            const receipt = await interactor.web3.eth.getTransactionReceipt(releaseTxHash)
+            if (receipt) {
+                if (receipt.status) {
+                    console.log(`[ESCROW-RELEASE] Previously pending tx ${releaseTxHash} succeeded!`)
+                } else {
+                    console.error(`[ESCROW-RELEASE] Previous tx ${releaseTxHash} failed on chain`)
+                    throw new Error(`[ESCROW-RELEASE] Previous tx ${releaseTxHash} failed on chain`)
+                }
+            } else {
+                console.log(`[ESCROW-RELEASE] Existing tx ${releaseTxHash} is still pending on chain`)
+                throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
+            }
+        } catch (e) {
+            if (e.message.includes('WAITING_FOR_RELEASE_CONFIRMATION') || e.message.includes('failed on chain')) {
+                throw e
+            }
+            console.warn(`[ESCROW-RELEASE] Error checking receipt for ${releaseTxHash}:`, e.message)
+            throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
+        }
+    } else if (order.status === 'completed') {
+        console.log(`[ESCROW-RELEASE] Order ${orderId} already released, skipping`)
+        return 'success'
+    } else {
+        if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+            const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
+            if (!fundingTx || fundingTx.status !== 3) {
+                console.log(`[ESCROW-RELEASE] Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx?.status || 'not found'}). Retrying later...`)
+                throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
+            }
+            console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
+        }
+        const decimals = coins[coin.toUpperCase()]?.decimals || 18
+        const amountWei = toWeiAmount(amount, decimals)
+        
+        console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
+        await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
+        
+        const onTxHash = async (txHash) => {
+            releaseTxHash = txHash
+            console.log(`[ESCROW-RELEASE] Pre-saving txHash ${txHash} to prevent duplicate retries`)
+            await EscrowOrder.updateOne(
+                { orderId },
+                { $set: { releaseTxHash: txHash } }
+            )
+        }
+        
+        const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei, onTxHash)
+        if (!receipt || !receipt.status) {
+            console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+            throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+        }
+        releaseTxHash = receipt.transactionHash
+        console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
     }
-    releaseTxHash = receipt.transactionHash
-    console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
     await EscrowOrder.updateOne(
         { orderId },
         {
