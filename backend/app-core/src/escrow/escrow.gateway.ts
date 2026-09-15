@@ -11,6 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
+import { User, UserDocument } from '../user/schemas/user.schema';
 
 type EscrowStatusEvent = {
   orderId: string;
@@ -34,7 +35,8 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: any,
-    @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>
+    @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>
   ) {}
 
 
@@ -85,13 +87,21 @@ export class EscrowGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       const sess = await this.getSession(sid);
       const passportUser = sess?.passport?.user;
-      if (!passportUser?.email) {
+      if (!passportUser?._id) {
         void client.emit('error', { message: 'Unauthorized' });
         client.disconnect();
         return;
       }
-      client.data.user = passportUser;
-      const userEmail = passportUser.email;
+      
+      const user = await this.userModel.findById(passportUser._id).select('email').lean().exec();
+      if (!user || !user.email) {
+        void client.emit('error', { message: 'Unauthorized' });
+        client.disconnect();
+        return;
+      }
+      
+      client.data.user = user;
+      const userEmail = user.email;
       client.join(`escrow:user:${userEmail}`);
       this.logger.log(`Socket ${client.id} joined escrow:user:${userEmail}`);
     } catch (error) {

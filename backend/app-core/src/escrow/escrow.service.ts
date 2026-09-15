@@ -568,21 +568,27 @@ export class EscrowService {
 
 
 
-  // FILTRA Y DEVUELVE UNICAMENTE LAS ORDENES QUE ESTAN EN ESTADO DE DISPUTA PARA EL PANEL DE ADMINISTRACION
   async getDisputedOrders(email: string) {
     const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
-    if (!adminEmails.includes(email.toLowerCase())) {
+    const user = await this.userModel.findOne({ email });
+    const isDbAdmin = user?.isAdmin === true;
+    const isEnvAdmin = adminEmails.includes(email.toLowerCase());
+    
+    if (!isDbAdmin && !isEnvAdmin) {
       throw new ForbiddenException('Only administrators can view disputed orders.');
     }
-    return await this.escrowOrderModel.find({ status: 'disputed' }).sort({ createdAt: -1 }).lean().exec();
+    return await this.escrowOrderModel.find({ status: { $in: ['disputed', 'resolved'] } }).sort({ createdAt: -1 }).lean().exec();
   }
 
 
 
-  // APLICA LA DECISION DEL ADMINISTRADOR SOBRE UNA DISPUTA MARCANDO QUIEN SE QUEDA CON LOS FONDOS RETENIDOS
   async resolveDispute(orderId: string, type: 'revert' | 'award', email: string) {
     const adminEmails = (this.configService.get<string>('ADMIN_EMAILS') || '').split(',').map(e => e.trim().toLowerCase());
-    if (!adminEmails.includes(email.toLowerCase())) {
+    const user = await this.userModel.findOne({ email });
+    const isDbAdmin = user?.isAdmin === true;
+    const isEnvAdmin = adminEmails.includes(email.toLowerCase());
+    
+    if (!isDbAdmin && !isEnvAdmin) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }
     const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
