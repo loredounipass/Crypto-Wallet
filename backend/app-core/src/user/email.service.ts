@@ -192,7 +192,7 @@ export class EmailService {
         </p>
         <p class="muted">If the button does not work, copy and paste this link into your browser:</p>
         <p class="muted" style="word-break:break-all"><a href="${resetUrl}" style="color:#6366F1">${resetUrl}</a></p>
-        <p class="muted">This link will expire in 60 minutes. If you did not request this reset, ignore this email.</p>
+        <p class="muted">This link will expire in 30 minutes. If you did not request this reset, ignore this email.</p>
         <div class="divider"></div>
         <p style="color:#9CA3AF;font-size:13px">Tips to protect your account: use 2FA and do not share your credentials.</p>
       `),

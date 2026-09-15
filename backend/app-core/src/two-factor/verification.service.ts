@@ -9,6 +9,7 @@ export class TwoFactorAuthService {
   private readonly TOKEN_EXPIRY_MS = 5 * 60 * 1000;
   private readonly COOLDOWN_MS = 60 * 1000;
   private readonly MAX_ATTEMPTS = 5;
+  private readonly LOCKOUT_MS = 15 * 60 * 1000; // VULN-04 FIX: 15 min lockout after max attempts
 
   constructor(
     private readonly tokenRepository: TokenRepository,
@@ -24,6 +25,7 @@ export class TwoFactorAuthService {
 
 
 
+  // VULN-04 FIX: Added temporal lockout after MAX_ATTEMPTS.
   // VALIDA EL TOKEN RECIBIDO CONTRA EL ALMACENADO PREVINIENDO ATAQUES DE TIEMPO Y LIMITANDO LOS INTENTOS FALLIDOS
   async verifyToken(toEmail: string, token: string): Promise<{ isValid: boolean; message: string }> {
     try {
@@ -36,14 +38,25 @@ export class TwoFactorAuthService {
       if (tokenEntry.isValid) {
         return { isValid: false, message: 'Token already validated' };
       }
+      // VULN-04 FIX: Enforce temporal lockout after exceeding max attempts
       if ((tokenEntry.attempts || 0) >= this.MAX_ATTEMPTS) {
-        return { isValid: false, message: 'Too many attempts. Try again later.' };
+        const lockoutEnd = (tokenEntry.lastAttemptAt || 0) + this.LOCKOUT_MS;
+        if (Date.now() < lockoutEnd) {
+          const remainingMin = Math.ceil((lockoutEnd - Date.now()) / 60000);
+          return { isValid: false, message: `Account locked. Try again in ${remainingMin} minute(s).` };
+        }
+        // Lockout period has passed — reset attempts
+        await this.tokenRepository.findOneAndUpdate(
+          { _id: tokenEntry._id },
+          { $set: { attempts: 0, lastAttemptAt: null } }
+        );
+        tokenEntry.attempts = 0;
       }
       const isMatch = await bcrypt.compare(token, tokenEntry.tokenHash);
       if (!isMatch) {
         await this.tokenRepository.findOneAndUpdate(
-          { _id: tokenEntry._id, isValid: false, attempts: { $lt: this.MAX_ATTEMPTS } },
-          { $inc: { attempts: 1 } }
+          { _id: tokenEntry._id, isValid: false },
+          { $inc: { attempts: 1 }, $set: { lastAttemptAt: Date.now() } }
         );
         return { isValid: false, message: 'Invalid or expired token' };
       }

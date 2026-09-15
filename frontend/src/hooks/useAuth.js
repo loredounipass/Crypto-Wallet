@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import User from '../services/user';
 import i18n from '../languages/i18n';
+import { fetchCsrfToken } from '../api/http'; // VULN-09/10 FIX: Import fetchCsrfToken
 
 export default function useAuth() {
     const navigate = useNavigate();
@@ -26,6 +27,7 @@ export default function useAuth() {
     const logoutUser = async () => {
         try {
             await User.logout();
+            await fetchCsrfToken(); // VULN-09/10 FIX: Renew CSRF token after logout
             setAuth(null);
             window.location.reload();
         } catch (err) {
@@ -51,6 +53,7 @@ export default function useAuth() {
             const { data } = await User.login(body);
             if (data && ('msg' in data || 'message' in data)) {
                 if (data.msg === 'Logged in!' || data.message === 'Logged in!') {
+                    await fetchCsrfToken(); // VULN-09/10 FIX: Renew CSRF token after login
                     await setUserContext();
                     window.location.reload();
                 }
@@ -69,6 +72,7 @@ export default function useAuth() {
         try {
             const { data } = await User.verifyToken(body);
             if (data && (data.msg === 'Logged in!' || data.message === 'Logged in!')) {
+                await fetchCsrfToken(); // VULN-09/10 FIX: Renew CSRF token after 2FA login
                 await setUserContext();
                 return true;
             } else if (data && (data.msg || data.message)) {

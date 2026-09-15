@@ -40,13 +40,25 @@ export class UserService {
     }
     const user = await this.getUserByEmail(createUserDto.email);
     if (user) {
-      throw new BadRequestException("This email is already registered");
+      // VULN-14 FIX: Anti-enumeration. Don't tell the user the email exists.
+      // Instead, optionally notify the existing user about a registration attempt.
+      this.emailService.sendLoginNotificationEmail(createUserDto.email).catch(console.error);
+      return { message: 'If this email is available, your account has been created.' };
     }
     const createUser = {
       ...createUserDto,
       password: await this.hashService.hashPassword(createUserDto.password),
     };
-    return this.userRepository.create(createUser);
+    const newUser = await this.userRepository.create(createUser);
+
+    // VULN-15 FIX: Automatically send verification email on register
+    try {
+      await this.sendVerificationEmail(createUserDto.email);
+    } catch (err) {
+      console.error('Failed to send verification email on register:', err);
+    }
+
+    return { message: 'If this email is available, your account has been created.', data: newUser };
   }
 
 

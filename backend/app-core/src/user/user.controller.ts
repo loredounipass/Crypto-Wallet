@@ -140,11 +140,19 @@ export class UserController {
   // TERMINA DEFINITIVAMENTE LA SESION ACTUAL DEL USUARIO DESTRUYENDO SUS DATOS EN EL SERVIDOR POR SEGURIDAD
   @UseGuards(AuthenticatedGuard)
   @Post('logout')
-  logout(@Request() req) {
-    req.logout((err) => {
-      if (req.session) {
-        req.session.destroy(() => { });
-      }
+  async logout(@Request() req) {
+    return new Promise((resolve, reject) => {
+      req.logout((err) => {
+        if (err) return reject(new UnauthorizedException('Error logging out'));
+        if (req.session) {
+          req.session.destroy((err) => {
+            if (err) return reject(new UnauthorizedException('Error destroying session'));
+            resolve({ msg: 'Logged out successfully' });
+          });
+        } else {
+          resolve({ msg: 'Logged out successfully' });
+        }
+      });
     });
   }
 

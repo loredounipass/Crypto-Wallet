@@ -6,7 +6,8 @@ export const TokenSchema = new Schema({
   createdAt: { type: Date, default: Date.now, expires: 300 }, // TTL: 5 minutes (match service)
   isValid: { type: Boolean, default: false },
   attempts: { type: Number, default: 0 },
-  lastSentAt: { type: Number }
+  lastSentAt: { type: Number },
+  lastAttemptAt: { type: Number } // VULN-04 FIX: Track when the last failed attempt occurred
 });
 
 export interface Token extends Document {
@@ -16,4 +17,5 @@ export interface Token extends Document {
   isValid: boolean;
   attempts: number;
   lastSentAt?: number;
+  lastAttemptAt?: number;
 }
