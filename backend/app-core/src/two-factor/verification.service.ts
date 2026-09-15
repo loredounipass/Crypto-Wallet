@@ -89,10 +89,21 @@ export class TwoFactorAuthService {
     try {
       const now = Date.now();
       const existing = await this.tokenRepository.findOne({ email: toEmail });
-      if (existing && existing.lastSentAt && (now - existing.lastSentAt) < this.COOLDOWN_MS) {
-        const remainingMs = this.COOLDOWN_MS - (now - existing.lastSentAt);
-        const remainingSec = Math.ceil(remainingMs / 1000);
-        throw new BadRequestException(`You must wait ${remainingSec} seconds before requesting another token.`);
+      if (existing) {
+        if (existing.lastSentAt && (now - existing.lastSentAt) < this.COOLDOWN_MS) {
+          const remainingMs = this.COOLDOWN_MS - (now - existing.lastSentAt);
+          const remainingSec = Math.ceil(remainingMs / 1000);
+          throw new BadRequestException(`You must wait ${remainingSec} seconds before requesting another token.`);
+        }
+        
+        // VULN-04 FIX: Prevenir que resendToken se salte el bloqueo (Lockout Bypass)
+        if ((existing.attempts || 0) >= this.MAX_ATTEMPTS) {
+          const lockoutEnd = (existing.lastAttemptAt || 0) + this.LOCKOUT_MS;
+          if (now < lockoutEnd) {
+            const remainingMin = Math.ceil((lockoutEnd - now) / 60000);
+            throw new UnauthorizedException(`Account locked due to too many failed attempts. Try again in ${remainingMin} minute(s).`);
+          }
+        }
       }
       const token = String(randomInt(0, 1000000)).padStart(6, '0');
       const tokenHash = await bcrypt.hash(token, 12);

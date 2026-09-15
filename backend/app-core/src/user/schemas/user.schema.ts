@@ -69,6 +69,9 @@ export class User {
     
     @Prop()
     lastProfileUpdate?: number;
+
+    @Prop()
+    lastLoginNotificationAt?: Date;
     
 }
 

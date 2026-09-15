@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../user/schemas/user.schema';
 import { Provider, ProviderDocument } from '../providers/schemas/provider.schema';
+import { EscrowOrder, EscrowOrderDocument } from './schemas/escrow-order.schema';
 import {
   sendP2POrderCreatedEmail,
   sendP2POrderFundedEmail,
@@ -32,6 +33,7 @@ export class EscrowMailService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Provider.name) private readonly providerModel: Model<ProviderDocument>,
+    @InjectModel(EscrowOrder.name) private readonly escrowOrderModel: Model<EscrowOrderDocument>,
   ) {}
 
   // BUSCA EL NOMBRE PARA MOSTRAR DE UN USUARIO O PROVEEDOR DADO SU EMAIL
@@ -62,14 +64,31 @@ export class EscrowMailService {
 
   // RECUPERA LOS DATOS COMPLETOS DE LA ORDEN DESDE LA BASE DE DATOS PARA ENRIQUECER EL EMAIL
   private async buildOrderData(data: EscrowJobData): Promise<Record<string, any>> {
+    // Consultar la orden completa desde MongoDB para tener todos los campos del email
+    const order = await this.escrowOrderModel
+      .findOne({ orderId: data.orderId })
+      .lean()
+      .exec();
+
+    if (!order) {
+      this.logger.warn(`[EscrowMail] Order not found in DB for orderId=${data.orderId}, using job data only`);
+    }
+
     return {
       orderId: data.orderId,
       status: data.status,
-      sellerEmail: data.sellerEmail,
-      providerEmail: data.providerEmail,
-      disputeReason: data.disputeReason,
-      disputeOpenedBy: data.disputeOpenedBy,
-      escrowTxHash: data.escrowTxHash,
+      coin: order?.coin || '',
+      amount: order?.amount ?? 0,
+      fiatAmount: order?.fiatAmount ?? 0,
+      paymentMethod: order?.paymentMethod || '',
+      sellerWalletAddress: order?.sellerWalletAddress || '',
+      chatroomId: order?.chatroomId || '',
+      expiresAt: order?.expiresAt || '',
+      sellerEmail: data.sellerEmail || order?.sellerEmail,
+      providerEmail: data.providerEmail || order?.providerEmail,
+      disputeReason: data.disputeReason || order?.disputeReason,
+      disputeOpenedBy: data.disputeOpenedBy || order?.disputeOpenedBy,
+      escrowTxHash: data.escrowTxHash || order?.escrowTxHash,
     };
   }
 

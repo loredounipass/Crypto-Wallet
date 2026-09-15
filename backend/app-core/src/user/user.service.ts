@@ -327,4 +327,14 @@ export class UserService {
       return { _id, firstName, lastName, email, language };
     });
   }
+
+
+
+  // ACTUALIZA LA FECHA DEL ULTIMO ENVIO DE NOTIFICACION DE LOGIN PARA CONTROLAR EL THROTTLE DE EMAILS
+  async updateLastLoginNotification(email: string, date: Date): Promise<void> {
+    await this.userRepository.findOneAndUpdate(
+      { email },
+      { $set: { lastLoginNotificationAt: date } }
+    );
+  }
 }

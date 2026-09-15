@@ -96,7 +96,7 @@ export class AuthService {
   }
 
 
-  // This private method performs the login operation by regenerating the session ID (to prevent session fixation) and using Passport's req.login to establish a session for the user. It returns a promise that resolves with a success message if the login is successful, or rejects with an UnauthorizedException if there is an error during the login process. Additionally, it sends a login notification email to the user after a successful login.
+  // This private method performs the login operation by regenerating the session ID (to prevent session fixation) and using Passport's req.login to establish a session for the user. It returns a promise that resolves with a success message if the login is successful, or rejects with an UnauthorizedException if there is an error during the login process. Additionally, it sends a login notification email to the user after a successful login (throttled to once every 3 hours).
   private performLogin(user: any, req: any) {
     return new Promise((resolve, reject) => {
       const session = req.session;
@@ -107,7 +107,7 @@ export class AuthService {
           req.login(user, async (err) => {
             if (err) return reject(new UnauthorizedException('Error logging in.'));
 
-            void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+            void this.sendThrottledLoginNotification((user as any).email).catch(console.error);
 
             resolve({ msg: 'Logged in!' });
           });
@@ -116,11 +116,32 @@ export class AuthService {
         req.login(user, async (err) => {
           if (err) return reject(new UnauthorizedException('Error logging in.'));
 
-          void this.emailService.sendLoginNotificationEmail((user as any).email).catch(console.error);
+          void this.sendThrottledLoginNotification((user as any).email).catch(console.error);
 
           resolve({ msg: 'Logged in!' });
         });
       }
     });
   }
+
+
+  // CONTROLA QUE EL EMAIL DE NOTIFICACION DE LOGIN SOLO SE ENVIE SI HAN PASADO MAS DE 3 HORAS DESDE EL ULTIMO ENVIO
+  private static readonly LOGIN_EMAIL_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 horas
+
+  private async sendThrottledLoginNotification(email: string): Promise<void> {
+    const user = await this.userService.getUserByEmail(email);
+    if (!user) return;
+
+    const lastSent = (user as any).lastLoginNotificationAt;
+    const now = new Date();
+
+    if (lastSent && (now.getTime() - new Date(lastSent).getTime()) < AuthService.LOGIN_EMAIL_COOLDOWN_MS) {
+      return; // Aún dentro del cooldown de 3 horas, no enviar
+    }
+
+    // Actualizar timestamp y enviar el email
+    await this.userService.updateLastLoginNotification(email, now);
+    await this.emailService.sendLoginNotificationEmail(email);
+  }
 }
+
