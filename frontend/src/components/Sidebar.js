@@ -135,7 +135,20 @@ const LogoutIcon = (props) => (
   </SidebarIconBase>
 );
 
+const AdminShieldIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </SidebarIconBase>
+);
 
+const UsersIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </SidebarIconBase>
+);
 
 export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const { t } = useTranslation();
@@ -143,6 +156,17 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   const location = useLocation();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
+
+  const { auth } = use(AuthContext);
+
+  const ADMIN_EMAILS = (process.env.REACT_APP_ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  const isEnvAdmin = auth && ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes((auth.email || '').toLowerCase());
+  const isDbAdmin = auth && auth.isAdmin === true;
+  const isAdmin = isDbAdmin || isEnvAdmin;
 
   const menuItems = [
     { text: t("sidebar_dashboard", "Dashboard"), icon: DashboardIcon, path: "/", matchPaths: ["/"] },
@@ -153,6 +177,10 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     { text: t("sidebar_feed", "Feed"), icon: FeedIcon, path: "/feed", matchPaths: ["/feed"] },
     { text: t("sidebar_chat", "Chat"), icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },
     { text: t("sidebar_support", "Brivo Soporte"), icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
+    ...(isAdmin ? [
+      { text: "Disputas Admin", icon: AdminShieldIcon, path: "/admin/disputes", matchPaths: ["/admin/disputes"], color: "#F59E0B" },
+      { text: "Gestión Admins", icon: UsersIcon, path: "/admin/users", matchPaths: ["/admin/users"], color: "#10B981" }
+    ] : []),
   ];
 
   const bottomItems = [
@@ -160,7 +188,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     { text: t("sidebar_logout", "Salir"), icon: LogoutIcon, path: "logout", color: "#FF6B6B" },
   ];
 
-  const { auth } = use(AuthContext);
   const { logoutUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   // Track mounted state to prevent state updates after unmount

@@ -14,7 +14,8 @@ import {
     updateUserProfileApi,
     sendVerificationEmailApi,
     verifyEmailApi,
-    isEmailVerifiedApi
+    isEmailVerifiedApi,
+    toggleAdminApi
     
 } from '../api/http';
 
@@ -71,4 +72,7 @@ export default class User {
         return await get(isEmailVerifiedApi, body);
     }
     
+    static async toggleAdmin(body) {
+        return await post(toggleAdminApi, body);
+    }
 }

@@ -35,6 +35,9 @@ export class User {
     @Prop({ default: false })
     isTokenEnabled: boolean;
 
+    @Prop({ default: false })
+    isAdmin: boolean;
+
     @Prop({ default: 'es' })
     language: string;
     

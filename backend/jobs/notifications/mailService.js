@@ -151,7 +151,263 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
+
+
+// ─────────────────────────────────────────────────────────────
+// P2P / ESCROW EMAIL FUNCTIONS
+// ─────────────────────────────────────────────────────────────
+
+// CONSTRUYE UNA TABLA HTML REUTILIZABLE CON LOS DATOS CLAVE DE UNA ORDEN P2P
+const buildP2POrderDetailsTable = (o) => {
+    const truncAddr = (addr) => addr ? `${addr.slice(0, 8)}...${addr.slice(-6)}` : '—'
+    const formatDate = (d) => d ? new Date(d).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+    return `
+        <div style="background:#0F0F1A;border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:16px;margin:16px 0;font-size:14px">
+            <table style="width:100%;border-collapse:collapse;color:#D1D5DB">
+                <tr><td style="padding:5px 0;color:#9CA3AF;width:45%">ID de Orden</td>
+                    <td style="padding:5px 0;font-family:monospace;font-size:12px;color:#A5B4FC">${o.orderId || '—'}</td></tr>
+                <tr><td style="padding:5px 0;color:#9CA3AF">Moneda</td>
+                    <td style="padding:5px 0;font-weight:700;color:#F9FAFB">${(o.coin || '').toUpperCase()}</td></tr>
+                <tr><td style="padding:5px 0;color:#9CA3AF">Monto Cripto</td>
+                    <td style="padding:5px 0;font-weight:700;color:#F9FAFB">${o.amount} ${(o.coin || '').toUpperCase()}</td></tr>
+                <tr><td style="padding:5px 0;color:#9CA3AF">Monto Fiat</td>
+                    <td style="padding:5px 0;font-weight:700;color:#4ADE80">${o.fiatAmount ? `$${o.fiatAmount}` : '—'}</td></tr>
+                <tr><td style="padding:5px 0;color:#9CA3AF">Método de Pago</td>
+                    <td style="padding:5px 0">${o.paymentMethod || '—'}</td></tr>
+                <tr><td style="padding:5px 0;color:#9CA3AF">Dirección Vendedor</td>
+                    <td style="padding:5px 0;font-family:monospace;font-size:12px">${truncAddr(o.sellerWalletAddress)}</td></tr>
+                ${o.expiresAt ? `<tr><td style="padding:5px 0;color:#9CA3AF">Expira</td>
+                    <td style="padding:5px 0;color:#FBBF24">${formatDate(o.expiresAt)}</td></tr>` : ''}
+            </table>
+        </div>
+    `
+}
+
+// GENERA EL BOTON CTA PARA IR AL CHATROOM DE LA ORDEN
+const buildChatroomCTA = (chatroomId, label = 'Ir al Chat de la Orden') => {
+    if (!chatroomId) return ''
+    return `
+        <p style="text-align:center;margin:24px 0">
+            <a href="${frontendUrl}/p2p/chat/${chatroomId}"
+               target="_blank" rel="noopener"
+               style="display:inline-block;background:${GRADIENT};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+               ${label}
+            </a>
+        </p>
+    `
+}
+
+// NOTIFICA AL VENDEDOR Y AL PROVEEDOR QUE SE CREO UNA NUEVA ORDEN P2P EN ESTADO PENDIENTE
+const sendP2POrderCreatedEmail = async (orderData, toEmail, recipientType = 'seller') => {
+    const isSeller = recipientType === 'seller'
+    const roleLabel = isSeller ? 'has creado' : 'ha recibido'
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Nueva Orden P2P creada · ${(orderData.coin || '').toUpperCase()} ${orderData.amount}`,
+        html: wrapHtml(`
+            <p class="success">📋 Orden P2P ${isSeller ? 'Creada' : 'Recibida'}</p>
+            <p>${isSeller
+                ? `<strong>Has creado</strong> una nueva orden P2P. Los fondos están siendo enviados al escrow.`
+                : `<strong>Has recibido</strong> una nueva solicitud de orden P2P. Un usuario quiere intercambiar cripto contigo.`}
+            </p>
+            ${buildP2POrderDetailsTable(orderData)}
+            ${buildChatroomCTA(orderData.chatroomId)}
+            ${TIPS}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA QUE LOS FONDOS QUEDARON BLOQUEADOS EN EL CONTRATO ESCROW Y LA ORDEN ESTA ACTIVA
+const sendP2POrderFundedEmail = async (orderData, toEmail) => {
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Fondos en Escrow · Orden ${orderData.orderId?.slice(0, 8)}`,
+        html: wrapHtml(`
+            <p class="success">🔒 Fondos Bloqueados en Escrow</p>
+            <p>Los fondos de la orden P2P están <strong>bloqueados de forma segura</strong> en el contrato escrow.
+            El intercambio puede proceder.</p>
+            ${buildP2POrderDetailsTable(orderData)}
+            ${buildChatroomCTA(orderData.chatroomId, 'Coordinar en el Chat')}
+            ${TIPS}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA AL VENDEDOR QUE EL PROVEEDOR CONFIRMO HABER RECIBIDO EL PAGO FIAT
+const sendP2PPaymentConfirmedEmail = async (orderData, toEmail) => {
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Pago Fiat Confirmado · Orden ${orderData.orderId?.slice(0, 8)}`,
+        html: wrapHtml(`
+            <p class="success">✅ Pago Fiat Confirmado</p>
+            <p>El proveedor ha confirmado que <strong>recibió el pago</strong> en su cuenta.
+            Ahora puedes liberar los fondos del escrow para completar el intercambio.</p>
+            ${buildP2POrderDetailsTable(orderData)}
+            <div class="tip-box">
+                <h4>⚡ Siguiente paso</h4>
+                <ul>
+                    <li>Verifica que recibiste el pago fiat en tu cuenta.</li>
+                    <li>Una vez confirmado, libera los fondos desde el chat de la orden.</li>
+                    <li>Si hay algún problema, puedes abrir una disputa.</li>
+                </ul>
+            </div>
+            ${buildChatroomCTA(orderData.chatroomId, 'Liberar Fondos')}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA AL PROVEEDOR QUE EL VENDEDOR LIBERO LOS FONDOS DEL ESCROW
+const sendP2PFundsReleasedEmail = async (orderData, toEmail) => {
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Fondos Liberados · ${(orderData.coin || '').toUpperCase()} ${orderData.amount}`,
+        html: wrapHtml(`
+            <p class="success">🚀 Fondos en Camino</p>
+            <p>El vendedor ha <strong>liberado los fondos</strong> del escrow.
+            Los <strong>${orderData.amount} ${(orderData.coin || '').toUpperCase()}</strong> están siendo transferidos a tu wallet.</p>
+            ${buildP2POrderDetailsTable(orderData)}
+            <p class="info">La transacción puede tardar unos minutos en confirmarse en la blockchain.</p>
+            ${buildChatroomCTA(orderData.chatroomId, 'Ver Detalles')}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA A AMBAS PARTES QUE LA ORDEN P2P FUE COMPLETADA EXITOSAMENTE
+const sendP2POrderCompletedEmail = async (orderData, toEmail, recipientType = 'seller') => {
+    const isSeller = recipientType === 'seller'
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] ¡Orden P2P Completada! · ${(orderData.coin || '').toUpperCase()} ${orderData.amount}`,
+        html: wrapHtml(`
+            <p class="success">🎉 ¡Intercambio Completado!</p>
+            <p>${isSeller
+                ? `Tu orden P2P fue completada exitosamente. Los fondos han sido transferidos al proveedor.`
+                : `La orden P2P fue completada. Los fondos han llegado a tu wallet.`}
+            </p>
+            ${buildP2POrderDetailsTable(orderData)}
+            <p style="text-align:center;margin:24px 0">
+                <a href="${frontendUrl}/p2p"
+                   target="_blank" rel="noopener"
+                   style="display:inline-block;background:${GRADIENT};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                   Crear Nueva Orden
+                </a>
+            </p>
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA A AMBAS PARTES QUE LA ORDEN FUE CANCELADA Y LOS FONDOS SERAN DEVUELTOS
+const sendP2POrderCancelledEmail = async (orderData, toEmail, recipientType = 'seller') => {
+    const isSeller = recipientType === 'seller'
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Orden P2P Cancelada · ${orderData.orderId?.slice(0, 8)}`,
+        html: wrapHtml(`
+            <p style="color:#F87171;font-weight:700;font-size:18px;margin:0 0 8px">❌ Orden Cancelada</p>
+            <p>${isSeller
+                ? `Has cancelado la orden P2P. Los fondos serán <strong>devueltos a tu wallet</strong> en breve.`
+                : `El vendedor ha cancelado la orden P2P. El intercambio no se realizará.`}
+            </p>
+            ${buildP2POrderDetailsTable(orderData)}
+            ${TIPS}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA AL VENDEDOR QUE LA ORDEN EXPIRO POR TIEMPO Y LOS FONDOS SERAN REEMBOLSADOS
+const sendP2POrderExpiredEmail = async (orderData, toEmail) => {
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] Orden P2P Expirada · ${orderData.orderId?.slice(0, 8)}`,
+        html: wrapHtml(`
+            <p style="color:#FBBF24;font-weight:700;font-size:18px;margin:0 0 8px">⏰ Orden Expirada</p>
+            <p>Tu orden P2P ha <strong>expirado</strong> por inactividad. Los fondos están siendo
+            <strong>reembolsados automáticamente</strong> a tu wallet.</p>
+            ${buildP2POrderDetailsTable(orderData)}
+            <div class="tip-box">
+                <h4>¿Qué pasó?</h4>
+                <ul>
+                    <li>Las órdenes P2P tienen un tiempo límite de actividad.</li>
+                    <li>Si el proveedor no respondió a tiempo, puedes crear una nueva orden.</li>
+                    <li>Tu reembolso aparecerá en tu balance en breve.</li>
+                </ul>
+            </div>
+            <p style="text-align:center;margin:24px 0">
+                <a href="${frontendUrl}/p2p"
+                   target="_blank" rel="noopener"
+                   style="display:inline-block;background:${GRADIENT};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                   Crear Nueva Orden
+                </a>
+            </p>
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
+// NOTIFICA A TODAS LAS PARTES INVOLUCRADAS QUE SE ABRIO UNA DISPUTA EN LA ORDEN
+const sendP2PDisputeOpenedEmail = async (orderData, toEmail, recipientType = 'seller') => {
+    const isAdmin = recipientType === 'admin'
+    const isSeller = recipientType === 'seller'
+    let intro = ''
+    if (isAdmin) {
+        intro = `Se ha abierto una <strong>disputa</strong> en una orden P2P que requiere tu atención como administrador.`
+    } else if (isSeller) {
+        intro = `Has abierto una disputa en tu orden P2P. El equipo de BrivoTrust la revisará y tomará una decisión.`
+    } else {
+        intro = `El vendedor ha abierto una <strong>disputa</strong> en esta orden P2P. El equipo de BrivoTrust la revisará.`
+    }
+    const mailDetails = {
+        from: mailFrom,
+        to: toEmail,
+        subject: `[BrivoTrust] ${isAdmin ? '[ADMIN] ' : ''}Disputa Abierta · Orden ${orderData.orderId?.slice(0, 8)}`,
+        html: wrapHtml(`
+            <p style="color:#F59E0B;font-weight:700;font-size:18px;margin:0 0 8px">⚠️ Disputa Abierta</p>
+            <p>${intro}</p>
+            ${orderData.disputeReason ? `
+            <div style="background:#0F0F1A;border-left:3px solid #F59E0B;border-radius:4px;padding:12px 16px;margin:16px 0">
+                <p style="margin:0;color:#9CA3AF;font-size:13px"><strong style="color:#FCD34D">Motivo de la disputa:</strong></p>
+                <p style="margin:8px 0 0;color:#D1D5DB">${orderData.disputeReason}</p>
+            </div>` : ''}
+            ${buildP2POrderDetailsTable(orderData)}
+            ${isAdmin
+                ? `<p style="text-align:center;margin:24px 0">
+                    <a href="${frontendUrl}/admin/disputes"
+                       target="_blank" rel="noopener"
+                       style="display:inline-block;background:${GRADIENT};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                       Resolver Disputa
+                    </a>
+                   </p>`
+                : buildChatroomCTA(orderData.chatroomId, 'Ver Chat de la Orden')
+            }
+            ${TIPS}
+        `)
+    }
+    return await sendMailSafe(mailDetails)
+}
+
 module.exports = {
     sendDepositEmail,
-    sendWithdrawEmail
+    sendWithdrawEmail,
+    // P2P / Escrow
+    sendP2POrderCreatedEmail,
+    sendP2POrderFundedEmail,
+    sendP2PPaymentConfirmedEmail,
+    sendP2PFundsReleasedEmail,
+    sendP2POrderCompletedEmail,
+    sendP2POrderCancelledEmail,
+    sendP2POrderExpiredEmail,
+    sendP2PDisputeOpenedEmail,
 }

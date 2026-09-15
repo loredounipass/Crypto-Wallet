@@ -6,6 +6,7 @@ import { EscrowService } from './escrow.service';
 import { EscrowController } from './escrow.controller';
 import { EscrowGateway } from './escrow.gateway';
 import { EscrowStatusProcessor } from './escrow-status.processor';
+import { EscrowMailService } from './escrow-mail.service';
 import { EscrowOrder, EscrowOrderSchema } from './schemas/escrow-order.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Wallet, WalletSchema } from '../wallet/schemas/wallet.schema';
@@ -48,6 +49,6 @@ import { default as EscrowQueueType } from './queue/types.queue';
     }),
   ],
   controllers: [EscrowController],
-  providers: [EscrowService, EscrowGateway, EscrowStatusProcessor],
+  providers: [EscrowService, EscrowGateway, EscrowStatusProcessor, EscrowMailService],
 })
 export class EscrowModule {}

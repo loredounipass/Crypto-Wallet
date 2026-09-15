@@ -12,8 +12,11 @@ import { SharedProfileModule } from '../profile/shared-profile.module';
 import { EmailThrottlerGuard } from '../guard/auth/email-throttler.guard';
 import { AuthModule } from '../auth/auth.module';
 
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   imports: [
+    ConfigModule,
     forwardRef(() => AuthModule),
     EmailModule,
     TwoFactorAuthModule,

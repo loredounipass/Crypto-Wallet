@@ -8,6 +8,7 @@ import { fetchCsrfToken } from './api/http'
 import Login from "./pages/Login"
 import { Box, Container, CssBaseline, IconButton, useMediaQuery, useTheme } from './ui/material'
 import { ThemeProvider } from './ui/styles';
+import AdminRoute from './components/route-control/AdminRoute'
 import PublicRoute from './components/route-control/PublicRoute'
 import PrivateRoute from './components/route-control/PrivateRoute'
 import Register from './pages/Register'
@@ -36,6 +37,8 @@ import Feed from './pages/Feed'
 //import Noticias from './pages/Noticias'
 import BrivoAgent from './components/BrivoAgent'
 import { Menu as MenuIcon } from './ui/icons';
+import AdminDisputes from './pages/AdminDisputes';
+import AdminUsers from './pages/AdminUsers';
 
 const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
 
@@ -133,7 +136,7 @@ function AppContent() {
                         component="main"
                         style={mainContentStyle}
                     >
-                        <Container maxWidth={isPublicRoute ? false : "xl"} disableGutters={isPublicRoute} sx={{ p: 0, m: 0 }}>
+                        <Container maxWidth={isPublicRoute ? false : "xl"} disableGutters={isPublicRoute} sx={isPublicRoute ? { p: 0, m: 0 } : {}}>
                             <Routes>
                                 <Route path='/' element={
                                     <PrivateRoute>
@@ -194,6 +197,16 @@ function AppContent() {
                                     <PrivateRoute>
                                         <P2POrderChat />
                                     </PrivateRoute>
+                                } />
+                                <Route path='/admin/disputes' element={
+                                    <AdminRoute>
+                                        <AdminDisputes />
+                                    </AdminRoute>
+                                } />
+                                <Route path='/admin/users' element={
+                                    <AdminRoute>
+                                        <AdminUsers />
+                                    </AdminRoute>
                                 } />
                                 <Route path='/swap' element={
                                     <PrivateRoute>

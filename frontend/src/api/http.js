@@ -73,6 +73,7 @@ const sendVerificationEmailApi = `${baseApi}/user/send-verification-email`;
 const isEmailVerifiedApi = `${baseApi}/user/is-email-verified`;
 const forgotPasswordApi = `${baseApi}/user/forgot-password`;
 const resetPasswordApi = `${baseApi}/user/reset-password`;
+const toggleAdminApi = `${baseApi}/user/toggle-admin`;
 
 // Endpoints wallet
 const walletInfoApi = `${baseApi}/wallet/info`
@@ -222,6 +223,7 @@ export {
     isEmailVerifiedApi,
     forgotPasswordApi,
     resetPasswordApi,
+    toggleAdminApi,
     createProvider,
     findByEMail,
     getAllProviders,

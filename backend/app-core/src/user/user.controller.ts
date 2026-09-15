@@ -26,6 +26,7 @@ import { UpdateTokenStatusDto } from './dto/update-token-status.dto';
 import { UpdateLanguageDto } from './dto/update-language.dto';
 import { ForgotPasswordService } from './forgot.password.service';
 import { ResendTokenDto } from './dto/resend-token.dto';
+import { AdminGuard } from '../guard/auth/admin.guard';
 
 @Controller('user')
 export class UserController {
@@ -244,6 +245,18 @@ export class UserController {
     } catch {
     }
     return { message: 'Reset email sent if the user exists.' };
+  }
+
+
+
+  // ASCIENDE O DEGRADA A UN USUARIO EN EL SISTEMA (SOLO ADMINISTRADORES)
+  @UseGuards(AuthenticatedGuard, AdminGuard)
+  @Post('toggle-admin')
+  async toggleAdmin(@Body() body: { targetEmail: string; isAdmin: boolean }) {
+    if (!body || typeof body.isAdmin !== 'boolean' || !body.targetEmail) {
+      throw new BadRequestException('targetEmail and isAdmin (boolean) are required.');
+    }
+    return this.userService.toggleAdmin(body.targetEmail, body.isAdmin);
   }
 
 

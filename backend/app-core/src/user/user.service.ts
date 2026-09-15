@@ -179,6 +179,19 @@ export class UserService {
 
 
 
+  // CAMBIA EL ESTADO DE ADMINISTRADOR DE UN USUARIO (ASCENDER O DEGRADAR)
+  async toggleAdmin(targetEmail: string, isAdmin: boolean) {
+    const user = await this.userRepository.findOne({ email: targetEmail });
+    if (!user) {
+      throw new NotFoundException(`User with email ${targetEmail} not found`);
+    }
+    user.isAdmin = isAdmin;
+    await user.save();
+    return { message: `User ${targetEmail} is now ${isAdmin ? 'Admin' : 'Regular User'}`, isAdmin: user.isAdmin };
+  }
+
+
+
   // VALIDA LA CONTRASENA ACTUAL APLICA RESTRICCIONES DE TIEMPO Y GUARDA LA NUEVA CLAVE DE FORMA SEGURA
   async changePassword(email: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.getUserByEmail(email);

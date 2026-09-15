@@ -55,7 +55,7 @@ export const Box = ({ component, sx, style, className, children, ...props }) => 
   );
 };
 
-export const Container = ({ maxWidth = "lg", sx, style, className, children, ...props }) => {
+export const Container = ({ maxWidth = "lg", disableGutters, sx, style, className, children, ...props }) => {
   const maxWidthMap = { sm: "640px", md: "768px", lg: "1024px", xl: "1280px" };
   return (
     <div

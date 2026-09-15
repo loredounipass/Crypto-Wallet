@@ -2,13 +2,17 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { EscrowGateway } from './escrow.gateway';
+import { EscrowMailService } from './escrow-mail.service';
 
 @Processor('escrow-status-events')
 @Injectable()
 export class EscrowStatusProcessor extends WorkerHost {
   private readonly logger = new Logger('EscrowStatusProcessor');
 
-  constructor(private readonly escrowGateway: EscrowGateway) {
+  constructor(
+    private readonly escrowGateway: EscrowGateway,
+    private readonly escrowMailService: EscrowMailService,
+  ) {
     super();
   }
 
@@ -27,6 +31,10 @@ export class EscrowStatusProcessor extends WorkerHost {
       disputeOpenedBy,
       resolutionType,
     });
+    // DISPARA EL EMAIL DE NOTIFICACION SIN BLOQUEAR EL PROCESADOR DE LA COLA
+    this.escrowMailService.notifyEscrowEvent(job.data).catch((err: Error) =>
+      this.logger.warn(`[EscrowMail] Failed to send notification for orderId=${orderId}: ${err?.message}`)
+    );
   }
 
 
