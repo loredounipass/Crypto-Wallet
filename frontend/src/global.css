@@ -14,6 +14,25 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    scrollbar-width: thin;
+    scrollbar-color: #8B5CF6 #0F0F1A;
+  }
+
+  /* Global Scrollbar Customization (Liquid Glass / Logo theme) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #05050A;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366F1, #8B5CF6, #2186EB);
+    border-radius: 8px;
+    border: 2px solid #05050A; /* Creates a padding effect around the thumb */
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #8B5CF6, #2186EB, #6366F1);
   }
 
   code {

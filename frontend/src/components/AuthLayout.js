@@ -86,20 +86,17 @@ const AuthLayout = ({ children, subtitle }) => {
   const { t } = useTranslation();
   return (
     <Box sx={{
-      position: 'fixed',
+      position: 'absolute',
       top: 0,
       left: 0,
-      right: 0,
-      bottom: 0,
       width: '100vw',
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: '#05050A',
-      overflow: 'hidden',
-      zIndex: 9999, // Ensure it sits above any App.js shell elements
+      overflow: 'hidden', // Clips the blobs to the container
+      zIndex: 9999, // Ensure it sits above App.js shell
     }}>
       {/* Animated Liquid Background Blobs */}
       <Box sx={{
