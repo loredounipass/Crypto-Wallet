@@ -37,7 +37,7 @@ const ResendTokenForm = () => {
   return (
     <AuthLayout subtitle="Reenviar código de verificación">
       <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Typography className="text-[#9CA3AF] text-xs mb-6 text-center">
+        <Typography className="text-[#9CA3AF] text-xs mb-6 text-center" style={{ opacity: 0.8 }}>
           Ingresa tu correo para reenviar el código
         </Typography>
         <TextField

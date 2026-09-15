@@ -76,7 +76,7 @@ const VerifyToken = () => {
   return (
     <AuthLayout subtitle="Verificación">
       <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Typography className="text-[#9CA3AF] text-xs mb-6 text-center">
+        <Typography className="text-[#9CA3AF] text-xs mb-6 text-center" style={{ opacity: 0.8 }}>
           Ingresa el token que recibiste en tu correo electrónico
         </Typography>
         <TextField
@@ -111,7 +111,7 @@ const VerifyToken = () => {
           )}
         </Button>
         <Box className="text-center mt-6">
-          <Link onClick={handleResend} className="text-sm font-bold no-underline cursor-pointer" sx={{ color: '#6366F1' }}>
+          <Link onClick={handleResend} className="text-sm font-bold no-underline cursor-pointer" sx={{ color: '#A78BFA', transition: 'all 0.3s', '&:hover': { color: '#C4B5FD', textShadow: '0 0 10px rgba(196, 181, 253, 0.6)' } }}>
             Reenviar Token
           </Link>
         </Box>

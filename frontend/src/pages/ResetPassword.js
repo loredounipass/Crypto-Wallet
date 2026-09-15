@@ -164,8 +164,8 @@ export default function ResetPassword() {
           )}
         </Button>
         <Box className="text-center mt-6">
-          <span className="text-[#9CA3AF] text-sm">¿Ya tienes una cuenta? </span>
-          <Link component={RouterLink} to="/login" className="text-sm font-bold no-underline" sx={{ color: '#6366F1' }}>
+          <span className="text-[#9CA3AF] text-sm" style={{ opacity: 0.8 }}>¿Ya tienes una cuenta? </span>
+          <Link component={RouterLink} to="/login" className="text-sm font-bold no-underline" sx={{ color: '#A78BFA', transition: 'all 0.3s', '&:hover': { color: '#C4B5FD', textShadow: '0 0 10px rgba(196, 181, 253, 0.6)' } }}>
             Inicia sesión
           </Link>
         </Box>

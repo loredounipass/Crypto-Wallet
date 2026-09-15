@@ -122,17 +122,17 @@ export default function Login() {
         </Button>
         <Box className="mt-8 space-y-3 text-center">
           <Box className="text-sm">
-            <span className="text-[#9CA3AF]">¿Aún no tienes cuenta? </span>
-            <Link component={RouterLink} to="/register" className="font-bold no-underline" sx={{ color: '#6366F1' }}>
+            <span className="text-[#9CA3AF]" style={{ opacity: 0.8 }}>¿Aún no tienes cuenta? </span>
+            <Link component={RouterLink} to="/register" className="font-bold no-underline" sx={{ color: '#A78BFA', transition: 'all 0.3s', '&:hover': { color: '#C4B5FD', textShadow: '0 0 10px rgba(196, 181, 253, 0.6)' } }}>
               Regístrate
             </Link>
           </Box>
           <Box className="text-sm">
-            <span className="text-[#9CA3AF]">¿Olvidaste tu </span>
-            <Link component={RouterLink} to="/forgot-password" className="font-bold no-underline" sx={{ color: '#8B5CF6' }}>
+            <span className="text-[#9CA3AF]" style={{ opacity: 0.8 }}>¿Olvidaste tu </span>
+            <Link component={RouterLink} to="/forgot-password" className="font-bold no-underline" sx={{ color: '#818CF8', transition: 'all 0.3s', '&:hover': { color: '#A5B4FC', textShadow: '0 0 10px rgba(165, 180, 252, 0.6)' } }}>
               contraseña
             </Link>
-            <span className="text-[#9CA3AF]">?</span>
+            <span className="text-[#9CA3AF]" style={{ opacity: 0.8 }}>?</span>
           </Box>
         </Box>
       </Box>

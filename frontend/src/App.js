@@ -133,7 +133,7 @@ function AppContent() {
                         component="main"
                         style={mainContentStyle}
                     >
-                        <Container maxWidth="xl" sx={{ p: 0 }}>
+                        <Container maxWidth={isPublicRoute ? false : "xl"} disableGutters={isPublicRoute} sx={{ p: 0, m: 0 }}>
                             <Routes>
                                 <Route path='/' element={
                                     <PrivateRoute>

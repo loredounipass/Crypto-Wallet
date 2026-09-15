@@ -107,6 +107,24 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
 
+  @keyframes blobAnimation {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+
+}
+
+/* Fix for Chrome autofill overriding transparent inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: white;
 }
 
 .MuiOutlinedInput-input {
