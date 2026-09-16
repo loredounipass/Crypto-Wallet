@@ -1,3 +1,5 @@
+import sonicLogo from '../../assets/sonic.svg'
+
 const normalizeCoin = (coin) => {
     if (coin === undefined || coin === null) return ''
 
@@ -65,7 +67,7 @@ const getCoinLogo = (coin) => {
         avax: `${baseApi}/avalanche-avax-logo.png`,
         eth: `${baseApi}/ethereum-eth-logo.png`,
         matic: `${baseApi}/polygon-matic-logo.png`,
-        s: `${baseApi}/fantom-ftm-logo.png`,
+        s: sonicLogo,
         op: `${baseApi}/optimism-ethereum-op-logo.png`,
         usdt: `${baseApi}/tether-usdt-logo.png`
 
