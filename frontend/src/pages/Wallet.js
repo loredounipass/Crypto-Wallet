@@ -562,16 +562,37 @@ export default function Wallet() {
                             .map(token => (
                                 <div key={token.tokenAddress} style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1F1F33" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <div>
-                                            <div style={{ color: "#9CA3AF", fontSize: "14px" }}>{token.tokenSymbol} {t('balance')}</div>
-                                            <div style={{ color: "#34D399", fontSize: isMobile ? "20px" : "24px", fontWeight: 700 }}>
-                                                {token.availableBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                            <div
+                                                style={{
+                                                    width: isMobile ? 32 : 38,
+                                                    height: isMobile ? 32 : 38,
+                                                    borderRadius: "999px",
+                                                    overflow: "hidden",
+                                                    backgroundColor: "#2D2D44",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                <img
+                                                    src={getCoinLogo(token.tokenSymbol)}
+                                                    alt={token.tokenSymbol}
+                                                    onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(token.tokenSymbol); }}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                />
                                             </div>
-                                            {token.lockedForForward > 0 && (
-                                                <div style={{ color: "#F59E0B", fontSize: "12px", marginTop: "2px" }}>
-                                                    {token.lockedForForward.toFixed(4)} en consolidación — disponible para retiro
+                                            <div>
+                                                <div style={{ color: "#9CA3AF", fontSize: "14px" }}>{token.tokenSymbol} {t('balance')}</div>
+                                                <div style={{ color: "#34D399", fontSize: isMobile ? "20px" : "24px", fontWeight: 700 }}>
+                                                    {token.availableBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
                                                 </div>
-                                            )}
+                                                {token.lockedForForward > 0 && (
+                                                    <div style={{ color: "#F59E0B", fontSize: "12px", marginTop: "2px" }}>
+                                                        {token.lockedForForward.toFixed(4)} en consolidación — disponible para retiro
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <button
                                             onClick={() => setActiveTokenWithdraw(activeTokenWithdraw === token.tokenAddress ? null : token.tokenAddress)}
