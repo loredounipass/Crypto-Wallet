@@ -28,7 +28,7 @@ function getChainKey(chainId) {
     const map = {
         11155111: 'ETHEREUM',
         137: 'POLYGON',
-        80001: 'POLYGON',
+        80002: 'POLYGON',
         56: 'BSC',
         97: 'BSC',
         43113: 'AVALANCHE',
