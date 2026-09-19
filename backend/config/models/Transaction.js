@@ -8,7 +8,7 @@ const transactionScheme = mongoose.Schema({
     },
     txHash: {
         type: String,
-        unique: true,
+        index: true,
         sparse: true,
         validate: {
             validator: function(v) {

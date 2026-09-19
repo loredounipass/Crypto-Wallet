@@ -384,6 +384,10 @@ export class WalletService {
     if (!saved) {
       return { error: true, msg: 'Failed to create transaction' };
     }
+    await this.walletModel.updateOne(
+      { _id: new Types.ObjectId(wallet.walletId) },
+      { $push: { transactions: transaction._id } }
+    );
     await this.transactionStatusQueue.add('status-update', {
       transactionId: transaction._id.toString(),
       status: transaction.status,
