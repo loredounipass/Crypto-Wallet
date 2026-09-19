@@ -32,7 +32,7 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
     const tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress)
     console.log(`[RESIDUAL-SWEEP] Running for ${chainId}:${tokenAddress}`)
 
-    const tokenInfo = getTokenInfo(tokenAddress)
+    const tokenInfo = getTokenInfo(chainId, tokenAddress)
     let decimals
     if (tokenInfo?.decimals != null) {
         decimals = tokenInfo.decimals

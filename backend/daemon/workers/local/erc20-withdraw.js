@@ -97,7 +97,7 @@ connectDB.then(() => {
         if (!hotWalletAddress || !hotWalletPk) {
             throw new Error('WITHDRAW_FROM_WALLET or WITHDRAW_FROM_PRIVATE_KEY not configured')
         }
-        const tokenInfo = getTokenInfo(tokenAddress)
+        const tokenInfo = getTokenInfo(chainId, tokenAddress)
         const decimals = tokenInfo?.decimals ?? 18
         const rawAmount = toRawAmount(amount, decimals)
         const tokenContract = new web3.eth.Contract(ERC20_ABI_BALANCE, tokenAddress)

@@ -52,7 +52,7 @@ const processERC20Event = async (job) => {
             throw new Error(`Insufficient confirmations: ${confirmations}`)
         }
 
-        let tokenInfo = getTokenInfo(tokenAddress)
+        let tokenInfo = getTokenInfo(chainId, tokenAddress)
         let decimals
         if (tokenInfo?.decimals != null) {
             decimals = tokenInfo.decimals

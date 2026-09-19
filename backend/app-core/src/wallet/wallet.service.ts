@@ -242,7 +242,7 @@ export class WalletService {
       walletAddress: { $in: addresses }
     }).exec();
     return ledgerEntries.map(entry => {
-      const info = getTokenInfo(entry.tokenAddress);
+      const info = getTokenInfo(entry.chainId, entry.tokenAddress);
       const available = entry.available_balance || 0;
       const locked = entry.locked_for_forward || 0;
       const forwarded = entry.forwarded_total || 0;
@@ -372,7 +372,7 @@ export class WalletService {
     if (!wallet) {
       return { error: true, msg: 'Wallet not found' };
     }
-    const tokenInfo = getTokenInfo(tokenWithdrawDto.tokenAddress);
+    const tokenInfo = getTokenInfo(entry.chainId, tokenWithdrawDto.tokenAddress);
     const transaction = new this.transactionModel({
       nature: 2,
       amount: -1 * tokenWithdrawDto.amount,

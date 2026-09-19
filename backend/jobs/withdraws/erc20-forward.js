@@ -105,7 +105,7 @@ const processForwardExecution = async (job) => {
 
         const tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress)
         const onChainBalanceStr = await tokenContract.methods.balanceOf(walletAddress).call()
-        const tokenInfo = getTokenInfo(tokenAddress)
+        const tokenInfo = getTokenInfo(chainId, tokenAddress)
         let decimals
         if (tokenInfo?.decimals != null) {
             decimals = tokenInfo.decimals

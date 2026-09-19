@@ -87,6 +87,18 @@
         {
             "name": "ME: Stale Order Sweeper NODE",
             "script": "./daemon/workers/local/staleOrderSweeper.js"
+        },
+        {
+            "name": "ME: ERC20 Subscriptions NODE",
+            "script": "./daemon/subscriptions/chain/evm/erc20-tokens/erc20-runner.js"
+        },
+        {
+            "name": "ME: ERC20 Background Workers",
+            "script": "./daemon/workers/chain/erc20.js"
+        },
+        {
+            "name": "ME: ERC20 Withdrawals NODE",
+            "script": "./daemon/workers/local/erc20-withdraw.js"
         }
     ]
 }

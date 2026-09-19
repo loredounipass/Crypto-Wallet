@@ -63,6 +63,8 @@ $ docker-compose down
 $ docker-compose up  
 $ docker-compose down
 $ docker-compose up --build -d
+$ docker system prune -a --volumes -f
+
 $ docker-compose logs -f backend-daemons-workers
 ```
 All services (Redis, MongoDB, Backend, Frontend) will be running in Docker containers.
