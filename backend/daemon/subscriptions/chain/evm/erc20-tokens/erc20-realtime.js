@@ -52,7 +52,7 @@ const connectAndSubscribeRealtime = async ({ chainId, tokenAddress, wssUrl }) =>
                 // Filter: check if `toAddress` exists in our Wallet collection
                 const wallet = await Wallet.findOne({
                     chainId,
-                    address: toAddress.toLowerCase()
+                    address: new RegExp(`^${toAddress}$`, 'i')
                 })
 
                 if (!wallet) {

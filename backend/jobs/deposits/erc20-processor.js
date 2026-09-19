@@ -1,6 +1,7 @@
 const appRoot = require('app-root-path')
 const { Web3 } = require('web3')
 const { Queue } = require(`${appRoot}/config/bullmq`)
+const { DelayedError } = require('bullmq')
 const Erc20Transaction = require(`${appRoot}/config/models/Erc20Transaction`)
 const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
@@ -49,7 +50,8 @@ const processERC20Event = async (job) => {
 
         if (confirmations < minConf) {
             console.log(`[ERC20-PROCESSOR] Event ${eventId} pending confirmations: ${confirmations}/${minConf}. Requeuing.`)
-            throw new Error(`Insufficient confirmations: ${confirmations}`)
+            await job.moveToDelayed(Date.now() + 15000, job.token)
+            throw new DelayedError()
         }
 
         let tokenInfo = getTokenInfo(chainId, tokenAddress)

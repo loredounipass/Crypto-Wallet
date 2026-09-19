@@ -11,7 +11,9 @@ const normalizeCoin = (coin) => {
         sonic: 's',
         optimism: 'op',
         'binance smart chain': 'bnb',
-        binance: 'bnb'
+        binance: 'bnb',
+        tether: 'usdt',
+        'usd coin': 'usdc'
     }
 
     return aliases[normalized] || normalized
@@ -25,7 +27,9 @@ const getCoinFallbackLogo = (coin) => {
         eth: 'ETH',
         matic: 'MATIC',
         s: 'S',
-        op: 'OP'
+        op: 'OP',
+        usdt: 'USDT',
+        usdc: 'USDC'
     }
     const colors = {
         bnb: '#F3BA2F',
@@ -33,7 +37,9 @@ const getCoinFallbackLogo = (coin) => {
         eth: '#627EEA',
         matic: '#8247E5',
         s: '#1969FF',
-        op: '#FF0420'
+        op: '#FF0420',
+        usdt: '#26A17B',
+        usdc: '#2775CA'
     }
     const label = labels[normalizedCoin] || (String(coin || 'COIN').trim().toUpperCase().slice(0, 6) || 'COIN')
     const color = colors[normalizedCoin] || '#1976D2'
@@ -69,7 +75,8 @@ const getCoinLogo = (coin) => {
         matic: `${baseApi}/polygon-matic-logo.png`,
         s: sonicLogo,
         op: `${baseApi}/optimism-ethereum-op-logo.png`,
-        usdt: `${baseApi}/tether-usdt-logo.png`
+        usdt: `${baseApi}/tether-usdt-logo.png`,
+        usdc: `${baseApi}/usd-coin-usdc-logo.png`
 
     }[normalizedCoin] || getCoinFallbackLogo(coin)
 }
@@ -115,18 +122,56 @@ const getNetWorkList = (coin) => {
             coin: 'matic',
             explorerBase: 'https://amoy.polygonscan.com/tx/'
         },
-
-
         {
             id: 11155420,
             name: 'Optimism',
             abbr: 'optimism',
             coin: 'op',
             explorerBase: 'https://sepolia-optimism.etherscan.io/tx/'
+        },
+        // --- ERC-20 Stablecoins (multi-network) ---
+        {
+            id: 11155111,
+            name: 'Ethereum (Sepolia)',
+            abbr: 'ethereum',
+            coin: 'usdt',
+            explorerBase: 'https://sepolia.etherscan.io/tx/'
+        },
+        {
+            id: 97,
+            name: 'BSC Testnet',
+            abbr: 'bsc',
+            coin: 'usdt',
+            explorerBase: 'https://testnet.bscscan.com/tx/'
+        },
+        {
+            id: 80002,
+            name: 'Polygon (Amoy)',
+            abbr: 'polygon',
+            coin: 'usdt',
+            explorerBase: 'https://amoy.polygonscan.com/tx/'
+        },
+        {
+            id: 11155111,
+            name: 'Ethereum (Sepolia)',
+            abbr: 'ethereum',
+            coin: 'usdc',
+            explorerBase: 'https://sepolia.etherscan.io/tx/'
+        },
+        {
+            id: 97,
+            name: 'BSC Testnet',
+            abbr: 'bsc',
+            coin: 'usdc',
+            explorerBase: 'https://testnet.bscscan.com/tx/'
+        },
+        {
+            id: 80002,
+            name: 'Polygon (Amoy)',
+            abbr: 'polygon',
+            coin: 'usdc',
+            explorerBase: 'https://amoy.polygonscan.com/tx/'
         }
-        
-
-            
     ]
 
     return coin ?
@@ -141,7 +186,9 @@ const getDefaultNetworkId = (coin) => {
         eth: 11155111,
         s: 14601,
         matic: 80002,
-        op: 11155420
+        op: 11155420,
+        usdt: 11155111,
+        usdc: 11155111
     }[coin.toLowerCase()]
 }
 
@@ -158,6 +205,8 @@ const getCoinFee = (coin) => {
         case 'MATIC': return 0.1;
         case 'S': return 0.5;
         case 'OP': return 0.005;
+        case 'USDT': return 1.0;
+        case 'USDC': return 1.0;
         default: return 0;
     }
 }
@@ -170,6 +219,8 @@ const getCoinDecimalsPlace = (coin) => {
         case 'MATIC': return 2;
         case 'S': return 18;
         case 'OP': return 18;
+        case 'USDT': return 6;
+        case 'USDC': return 6;
         default: return 8;
     }
 }
@@ -182,6 +233,8 @@ const getCoinMinWithdraw = (coin) => {
         case 'MATIC': return 13;
         case 'S': return 1;
         case 'OP': return 0.01;
+        case 'USDT': return 2;
+        case 'USDC': return 2;
         default: return 0;
     }
 }

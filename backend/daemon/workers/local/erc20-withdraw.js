@@ -6,6 +6,8 @@ const { Web3 } = require('web3')
 const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 
+const ensureHexPrefix = (hexStr) => hexStr.startsWith('0x') ? hexStr : `0x${hexStr}`
+
 const ERC20_ABI_TRANSFER = [
     {
         "constant": false,
@@ -66,9 +68,9 @@ async function forwardToHotWallet(web3, walletContractAddress, tokenAddress, rel
             data: txData
         })
     } catch {
-        gasEstimate = 150000
+        gasEstimate = 150000n
     }
-    const gasLimit = Math.ceil(gasEstimate * 1.2)
+    const gasLimit = (BigInt(gasEstimate) * 120n) / 100n
     const nonce = await web3.eth.getTransactionCount(account.address)
     const txObject = {
         from: account.address,
@@ -93,10 +95,11 @@ connectDB.then(() => {
         const rpcUrl = chainConfig.rpc
         const web3 = new Web3(rpcUrl)
         const hotWalletAddress = process.env.WITHDRAW_FROM_WALLET
-        const hotWalletPk = process.env.WITHDRAW_FROM_PRIVATE_KEY
-        if (!hotWalletAddress || !hotWalletPk) {
+        const hotWalletPkRaw = process.env.WITHDRAW_FROM_PRIVATE_KEY
+        if (!hotWalletAddress || !hotWalletPkRaw) {
             throw new Error('WITHDRAW_FROM_WALLET or WITHDRAW_FROM_PRIVATE_KEY not configured')
         }
+        const hotWalletPk = ensureHexPrefix(hotWalletPkRaw)
         const tokenInfo = getTokenInfo(chainId, tokenAddress)
         const decimals = tokenInfo?.decimals ?? 18
         const rawAmount = toRawAmount(amount, decimals)
@@ -104,10 +107,11 @@ connectDB.then(() => {
         const hotWalletBalance = await tokenContract.methods.balanceOf(hotWalletAddress).call()
         if (BigInt(hotWalletBalance) < BigInt(rawAmount)) {
             console.log(`[ERC20-WITHDRAW] Hot wallet has insufficient balance. Forwarding from wallet contract ${walletAddress}...`)
-            const relayerPk = process.env.RELAYER_PRIVATE_KEY
-            if (!relayerPk) {
+            const relayerPkRaw = process.env.RELAYER_PRIVATE_KEY
+            if (!relayerPkRaw) {
                 throw new Error('RELAYER_PRIVATE_KEY not configured. Needed to forward tokens from wallet contract.')
             }
+            const relayerPk = ensureHexPrefix(relayerPkRaw)
             await forwardToHotWallet(web3, walletAddress, tokenAddress, relayerPk, chainId)
         }
         const transferContract = new web3.eth.Contract(ERC20_ABI_TRANSFER, tokenAddress)
@@ -121,9 +125,9 @@ connectDB.then(() => {
                 data: txData
             })
         } catch {
-            gasEstimate = 100000
+            gasEstimate = 100000n
         }
-        const gasLimit = Math.ceil(gasEstimate * 1.2)
+        const gasLimit = (BigInt(gasEstimate) * 120n) / 100n
         const txObject = {
             from: hotWalletAddress,
             to: tokenAddress,

@@ -11,6 +11,8 @@ const { publishTransactionStatusUpdate } = require('../notifications/transaction
 
 let web3
 
+const ensureHexPrefix = (hexStr) => hexStr.startsWith('0x') ? hexStr : `0x${hexStr}`
+
 const toSerializable = (value) => {
     if (typeof value === 'bigint') return Number(value)
     return value
@@ -113,7 +115,7 @@ const sendTransaction = async (valueWei, toAddress, onTxHash = null) => {
 
     const signedTx = await web3.eth.accounts.signTransaction(
         transaction,
-        process.env.WITHDRAW_FROM_PRIVATE_KEY
+        ensureHexPrefix(process.env.WITHDRAW_FROM_PRIVATE_KEY)
     )
 
     if (onTxHash) {

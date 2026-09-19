@@ -25,7 +25,8 @@ const erc20ABI = [
     }
 ]
 
-const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY
+const ensureHexPrefix = (hexStr) => hexStr.startsWith('0x') ? hexStr : `0x${hexStr}`
+const RELAYER_PRIVATE_KEY = ensureHexPrefix(process.env.RELAYER_PRIVATE_KEY)
 const GAS_LIMIT_BUFFER = 1.2
 
 const ERC20_ABI_DECIMALS = [
@@ -87,11 +88,11 @@ const processForwardExecution = async (job) => {
             })
         } catch (estimateErr) {
             console.warn(`[FORWARDER] Gas estimation failed, using fallback:`, estimateErr.message)
-            gasEstimate = 150000
+            gasEstimate = 150000n
         }
 
-        const gasLimit = Math.ceil(gasEstimate * GAS_LIMIT_BUFFER)
-        const requiredWei = BigInt(gasLimit) * BigInt(gasPrice)
+        const gasLimit = (BigInt(gasEstimate) * 120n) / 100n
+        const requiredWei = gasLimit * BigInt(gasPrice)
 
         if (BigInt(relayerBalanceWei) < requiredWei) {
             console.error(`[FORWARDER] Relayer ${account.address} has insufficient gas balance. ` +
