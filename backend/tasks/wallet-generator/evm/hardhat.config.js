@@ -1,41 +1,51 @@
-require("@nomicfoundation/hardhat-toolbox");
-const fs = require('fs');
-const path = require('path');
-const appRoot = require('app-root-path');
+import { defineConfig } from "hardhat/config";
+import hardhatToolbox from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import fs from 'fs';
+import path from 'path';
+import { createRequire } from 'module';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 
-require('dotenv').config({ path: `${appRoot}/config/.env` });
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const buildNetworks = () => {
-    const networks = {};
-    const __dir = `${appRoot}/config/chains`;
-    
-    if (fs.existsSync(__dir)) {
-        const files = fs.readdirSync(__dir);
+// Navigate up to backend root to find config
+const backendRoot = path.resolve(__dirname, '..', '..', '..');
+dotenv.config({ path: path.join(backendRoot, 'config', '.env') });
 
-        files.forEach(file => {
-            const info = require(`${__dir}/${file}`);
-            const network_id = path.parse(file).name;
+const chainsDir = path.join(backendRoot, 'config', 'chains');
+const networks = {};
 
-            networks[info.name] = {
-                url: info.rpc || "http://127.0.0.1:8545",
-                accounts: info.g_address_pk ? [info.g_address_pk] : [],
-                chainId: parseInt(network_id)
-            };
-        });
+if (fs.existsSync(chainsDir)) {
+    const files = fs.readdirSync(chainsDir);
+    for (const file of files) {
+        if (!file.endsWith('.js')) continue;
+        const filePath = path.join(chainsDir, file);
+        const info = require(filePath);
+        const network_id = path.parse(file).name;
+
+        networks[info.name] = {
+            type: 'http',
+            url: info.rpc || "http://127.0.0.1:8545",
+            accounts: info.g_address_pk ? [info.g_address_pk] : [],
+            chainId: parseInt(network_id)
+        };
     }
+}
 
-    networks.hardhat = {};
-
-    return networks;
+networks.hardhat = {
+    type: 'edr-simulated'
 };
 
-module.exports = {
+export default defineConfig({
   solidity: "0.8.20",
-  networks: buildNetworks(),
+  networks,
+  plugins: [hardhatToolbox],
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts"
   }
-};
+});

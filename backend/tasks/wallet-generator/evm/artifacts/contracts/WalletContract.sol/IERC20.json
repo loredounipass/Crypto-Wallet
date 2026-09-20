@@ -1,5 +1,5 @@
 {
-  "_format": "hh-sol-artifact-1",
+  "_format": "hh3-artifact-1",
   "contractName": "IERC20",
   "sourceName": "contracts/WalletContract.sol",
   "abi": [
@@ -50,5 +50,8 @@
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "linkReferences": {},
-  "deployedLinkReferences": {}
+  "deployedLinkReferences": {},
+  "immutableReferences": {},
+  "inputSourceName": "project/contracts/WalletContract.sol",
+  "buildInfoId": "solc-0_8_20-a01990e053e816b46b9b0a55c17189227b4f8796"
 }

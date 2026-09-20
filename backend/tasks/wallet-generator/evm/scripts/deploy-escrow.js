@@ -1,33 +1,43 @@
-const hre = require("hardhat");
-const fs = require('fs');
-const path = require('path');
+import hre from "hardhat";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
-    console.log("Compiling Escrow contract...");
-    await hre.run("compile");
+    console.log("Building Escrow contract...");
 
-    const networkName = hre.network.name;
-    const chainId = hre.network.config.chainId;
+    // Hardhat 3: ethers is accessed via network connection
+    const connection = await hre.network.connect();
+    const networkName = connection.networkName;
+    const chainId = Number((await connection.ethers.provider.getNetwork()).chainId);
     console.log(`Deploying EscrowContract to network: ${networkName} (Chain ID: ${chainId})`);
 
-    const EscrowContract = await hre.ethers.getContractFactory("EscrowContract");
+    const EscrowContract = await connection.ethers.getContractFactory("EscrowContract");
+    
     const escrow = await EscrowContract.deploy();
 
     await escrow.waitForDeployment();
     const deployedAddress = await escrow.getAddress();
 
     console.log(`EscrowContract deployed to: ${deployedAddress}`);
-    console.log(`Relayer (deployer) address: ${(await hre.ethers.provider.getSigner()).address}`);
+    console.log(`Relayer (deployer) address: ${(await connection.ethers.provider.getSigner()).address}`);
 
-    // Save deployed address into EscrowContract.json ABI file
-    const artifactPath = path.join(__dirname, '../contracts/abis/EscrowContract.json');
+    const abiDir = path.join(__dirname, '../contracts/abis');
+    if (!fs.existsSync(abiDir)) {
+        fs.mkdirSync(abiDir, { recursive: true });
+    }
+
+    const artifactPath = path.join(abiDir, 'EscrowContract.json');
 
     let artifact = {};
     if (fs.existsSync(artifactPath)) {
         artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
     } else {
-        // Create base structure from compiled artifact
-        const compiledArtifact = require('../artifacts/contracts/EscrowContract.sol/EscrowContract.json');
+        const compiledArtifactPath = path.join(__dirname, '../artifacts/contracts/EscrowContract.sol/EscrowContract.json');
+        const compiledArtifact = JSON.parse(fs.readFileSync(compiledArtifactPath, 'utf8'));
         artifact = {
             contractName: "EscrowContract",
             abi: compiledArtifact.abi,

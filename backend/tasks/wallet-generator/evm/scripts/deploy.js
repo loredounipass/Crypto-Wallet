@@ -1,33 +1,42 @@
-const hre = require("hardhat");
-const fs = require('fs');
-const path = require('path');
+import hre from "hardhat";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
-    console.log("Compiling contracts...");
-    await hre.run("compile");
+    console.log("Building contracts...");
 
-    const networkName = hre.network.name;
-    const chainId = hre.network.config.chainId;
+    // Hardhat 3: ethers is accessed via network connection
+    const connection = await hre.network.connect();
+    const networkName = connection.networkName;
+    const chainId = Number((await connection.ethers.provider.getNetwork()).chainId);
     console.log(`Deploying to network: ${networkName} (Chain ID: ${chainId})`);
 
-    const GeneratorFactoryContract = await hre.ethers.getContractFactory("GeneratorFactoryContract");
-    const factory = await GeneratorFactoryContract.deploy({ gasLimit: 3000000 });
-
+    const GeneratorFactoryContract = await connection.ethers.getContractFactory("GeneratorFactoryContract");
+    
+    const factory = await GeneratorFactoryContract.deploy();
 
     await factory.waitForDeployment();
     const deployedAddress = await factory.getAddress();
 
     console.log(`GeneratorFactoryContract deployed to: ${deployedAddress}`);
 
-    // Save deployed address into GeneratorFactoryContract.json to mimic Truffle behavior
-    const artifactPath = path.join(__dirname, '../contracts/abis/GeneratorFactoryContract.json');
+    const abiDir = path.join(__dirname, '../contracts/abis');
+    if (!fs.existsSync(abiDir)) {
+        fs.mkdirSync(abiDir, { recursive: true });
+    }
+
+    const artifactPath = path.join(abiDir, 'GeneratorFactoryContract.json');
 
     let artifact = {};
     if (fs.existsSync(artifactPath)) {
         artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
     } else {
-        // Create base structure if not exists
-        const compiledArtifact = require('../artifacts/contracts/GeneratorFactoryContract.sol/GeneratorFactoryContract.json');
+        const compiledArtifactPath = path.join(__dirname, '../artifacts/contracts/GeneratorFactoryContract.sol/GeneratorFactoryContract.json');
+        const compiledArtifact = JSON.parse(fs.readFileSync(compiledArtifactPath, 'utf8'));
         artifact = {
             contractName: "GeneratorFactoryContract",
             abi: compiledArtifact.abi,
