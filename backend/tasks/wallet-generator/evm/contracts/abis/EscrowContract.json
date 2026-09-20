@@ -272,9 +272,17 @@
     }
   ],
   "networks": {
+    "14601": {
+      "address": "0xB45bC3dF44754Ce6a555831a79253343363a630d",
+      "transactionHash": "0xdbf3bdba3b79c27e591f6913290ae646f36b7175b44fec867d24306be3ca269b"
+    },
+    "80002": {
+      "address": "0x71AF578Df3F36A1ABE3080CB2b7Ba054b2c90181",
+      "transactionHash": "0xab198d66a9ae460ff2ae13cddc3016213dc00ed22df2a57796e3583af5dd50a1"
+    },
     "11155111": {
-      "address": "0x7966D24BBF2307c8CFf38de60B5267830E1C5780",
-      "transactionHash": "0x3ae7e2caea649cb8314f3a9a1422f51244a4bfc92e35f287e7d25f7d3e72d8d1"
+      "address": "0x9B6Dbc037513E948f8b6590D096ce4ca11220ef8",
+      "transactionHash": "0x937fa811f81909c58fa15689176d5545c2aa3bc071630de507e9ee9ec3e98868"
     }
   }
 }

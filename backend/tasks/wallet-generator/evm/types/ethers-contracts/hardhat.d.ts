@@ -10,23 +10,23 @@ import * as Contracts from "./index.js";
 
 declare module "@nomicfoundation/hardhat-ethers/types" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
-  getContractFactory(name: 'EscrowContract', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.EscrowContract__factory>
-getContractFactory(name: 'GeneratorFactoryContract', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.GeneratorFactoryContract__factory>
+  getContractFactory(name: 'GeneratorFactoryContract', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.GeneratorFactoryContract__factory>
+getContractFactory(name: 'EscrowContract', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.EscrowContract__factory>
 getContractFactory(name: 'IERC20', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.IERC20__factory>
 getContractFactory(name: 'WalletContract', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.WalletContract__factory>
 
-  getContractAt(name: 'EscrowContract', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.EscrowContract>
-getContractAt(name: 'GeneratorFactoryContract', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.GeneratorFactoryContract>
+  getContractAt(name: 'GeneratorFactoryContract', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.GeneratorFactoryContract>
+getContractAt(name: 'EscrowContract', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.EscrowContract>
 getContractAt(name: 'IERC20', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.IERC20>
 getContractAt(name: 'WalletContract', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.WalletContract>
 
-  deployContract(name: 'EscrowContract', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.EscrowContract>
-deployContract(name: 'GeneratorFactoryContract', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.GeneratorFactoryContract>
+  deployContract(name: 'GeneratorFactoryContract', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.GeneratorFactoryContract>
+deployContract(name: 'EscrowContract', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.EscrowContract>
 deployContract(name: 'IERC20', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IERC20>
 deployContract(name: 'WalletContract', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.WalletContract>
 
-  deployContract(name: 'EscrowContract', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.EscrowContract>
-deployContract(name: 'GeneratorFactoryContract', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.GeneratorFactoryContract>
+  deployContract(name: 'GeneratorFactoryContract', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.GeneratorFactoryContract>
+deployContract(name: 'EscrowContract', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.EscrowContract>
 deployContract(name: 'IERC20', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IERC20>
 deployContract(name: 'WalletContract', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.WalletContract>
 
