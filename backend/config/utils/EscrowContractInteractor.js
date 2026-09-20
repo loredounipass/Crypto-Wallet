@@ -18,7 +18,7 @@ class EscrowContractInteractor {
         this.escrowWalletAddress = process.env.ESCROW_WALLET_ADDRESS ? this.web3.utils.toChecksumAddress(process.env.ESCROW_WALLET_ADDRESS) : null
         this.escrowWalletPrivateKey = process.env.ESCROW_WALLET_PRIVATE_KEY
 
-        this.contractAddress = process.env.ESCROW_CONTRACT_ADDRESS
+        this.contractAddress = null
 
         const abiPath = path.join(appRoot.toString(), 'tasks/wallet-generator/evm/contracts/abis/EscrowContract.json')
         if (fs.existsSync(abiPath)) {

@@ -57,8 +57,7 @@ async function main() {
     fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
     console.log(`Saved deployment info to ${artifactPath}`);
     console.log(`\n===================================`);
-    console.log(`IMPORTANT: Update your .env files with:`);
-    console.log(`ESCROW_CONTRACT_ADDRESS=${deployedAddress}`);
+    console.log(`Backend will automatically load this address from the ABI for Chain ID ${chainId}`);
     console.log(`===================================\n`);
 }
 
