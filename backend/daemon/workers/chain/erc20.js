@@ -11,11 +11,11 @@ connectDB.then(() => {
 
     new Worker('erc20-processing', async (job) => {
         return await processERC20Event(job)
-    })
+    }, { concurrency: 15 })
 
     new Worker('erc20-aggregation', async (job) => {
         return await processAggregation(job)
-    })
+    }, { concurrency: 15 })
 
     new Worker('erc20-forwarding', async (job) => {
         return await processForwardExecution(job)

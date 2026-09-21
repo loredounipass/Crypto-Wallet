@@ -100,6 +100,16 @@ connectDB.then(() => {
             throw new Error('WITHDRAW_FROM_WALLET or WITHDRAW_FROM_PRIVATE_KEY not configured')
         }
         const hotWalletPk = ensureHexPrefix(hotWalletPkRaw)
+        
+        const expectedAddress = web3.eth.accounts.privateKeyToAccount(hotWalletPk).address
+        if (expectedAddress.toLowerCase() !== hotWalletAddress.toLowerCase()) {
+            throw new Error(`CRITICAL MISMATCH: WITHDRAW_FROM_PRIVATE_KEY resolves to ${expectedAddress}, but WITHDRAW_FROM_WALLET is configured as ${hotWalletAddress}`)
+        }
+
+        const nativeBalance = await web3.eth.getBalance(hotWalletAddress)
+        if (BigInt(nativeBalance) === 0n) {
+            throw new Error(`Insufficient native balance. Hot wallet ${hotWalletAddress} has 0 native tokens to pay for gas.`)
+        }
         const tokenInfo = getTokenInfo(chainId, tokenAddress)
         const decimals = tokenInfo?.decimals ?? 18
         const rawAmount = toRawAmount(amount, decimals)
@@ -124,8 +134,9 @@ connectDB.then(() => {
                 to: tokenAddress,
                 data: txData
             })
-        } catch {
-            gasEstimate = 100000n
+        } catch (simErr) {
+            console.error(`[ERC20-WITHDRAW] EVM Simulation Failed for ${withdrawAddress}:`, simErr.message)
+            throw new Error(`Transaction simulation reverted: ${simErr.message}`)
         }
         const gasLimit = (BigInt(gasEstimate) * 120n) / 100n
         const txObject = {

@@ -318,6 +318,9 @@ export class WalletService {
               walletId: wallet._id.toString(),
               amount: withdrawDto.amount,
               withdrawAddress: withdrawDto.to,
+            }, {
+              attempts: 10,
+              backoff: { type: 'exponential', delay: 5000 }
             });
             return {
               error: null,
@@ -403,6 +406,9 @@ export class WalletService {
       withdrawAddress: tokenWithdrawDto.to,
       symbol: tokenInfo?.symbol || 'UNKNOWN',
       deductLocked: Math.min(tokenWithdrawDto.amount, locked)
+    }, {
+      attempts: 10,
+      backoff: { type: 'exponential', delay: 5000 }
     });
     return { error: null, data: 'success', transactionId: transaction._id.toString() };
   }

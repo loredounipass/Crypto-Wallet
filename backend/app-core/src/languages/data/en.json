@@ -572,6 +572,7 @@
   "tx_status_no_info": "No info",
   "tx_status_pending": "Pending",
   "tx_status_processing": "Processing",
+  "tx_status_failed": "Failed",
   "tx_table_address": "Address",
   "tx_table_amount": "Amount",
   "tx_table_date": "Date",

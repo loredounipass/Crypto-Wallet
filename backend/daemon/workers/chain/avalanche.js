@@ -14,7 +14,7 @@ connectDB.then(() => {
 
     new Worker('avax-deposits', async (job) => {
         return await processDeposit(job.data)
-    })
+    }, { concurrency: 15 })
 
     new Worker('avax-withdraws', async (job) => {
         return await processWithdraw(job.data)

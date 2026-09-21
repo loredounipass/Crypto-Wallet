@@ -48,12 +48,6 @@ const processERC20Event = async (job) => {
         const confirmations = latestBlockNumber - blockNumber
         const minConf = CHAIN_CONFIRMATIONS[chainId] || DEFAULT_CONFIRMATIONS
 
-        if (confirmations < minConf) {
-            console.log(`[ERC20-PROCESSOR] Event ${eventId} pending confirmations: ${confirmations}/${minConf}. Requeuing.`)
-            await job.moveToDelayed(Date.now() + 15000, job.token)
-            throw new DelayedError()
-        }
-
         let tokenInfo = getTokenInfo(chainId, tokenAddress)
         let decimals
         if (tokenInfo?.decimals != null) {
@@ -70,6 +64,52 @@ const processERC20Event = async (job) => {
 
         const amountBig = BigInt(amount)
         const displayAmount = toDisplayNumber(amountBig, decimals)
+
+        let txRecord = await Transaction.findOne({
+            nature: 1,
+            txHash,
+            to: walletAddress,
+            tokenSymbol: symbol,
+            amount: displayAmount
+        })
+
+        if (!txRecord) {
+            txRecord = new Transaction({
+                nature: 1,
+                txHash,
+                amount: displayAmount,
+                status: 2,
+                to: walletAddress,
+                tokenSymbol: symbol,
+                confirmations: confirmations,
+                created_at: new Date()
+            })
+            await txRecord.save()
+            await Wallet.updateOne(
+                { address: new RegExp(`^${walletAddress.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`, 'i') },
+                { $push: { transactions: txRecord._id } }
+            )
+        } else if (txRecord.status !== 3) {
+            txRecord.confirmations = confirmations
+            await txRecord.save()
+        }
+
+        try {
+            const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
+            await publishTransactionStatusUpdate({
+                transactionId: txRecord._id.toString(),
+                status: txRecord.status,
+                confirmations: confirmations
+            })
+        } catch (pubErr) {
+            console.error(`[ERC20-PROCESSOR] Failed to publish status update:`, pubErr.message)
+        }
+
+        if (confirmations < minConf) {
+            console.log(`[ERC20-PROCESSOR] Event ${eventId} pending confirmations: ${confirmations}/${minConf}. Requeuing.`)
+            await job.moveToDelayed(Date.now() + 15000, job.token)
+            throw new DelayedError()
+        }
 
         const existing = await Erc20Transaction.findOne({ eventId })
 
@@ -133,23 +173,18 @@ const processERC20Event = async (job) => {
 
         console.log(`[ERC20-PROCESSOR] Event ${eventId} Ledger Updated for wallet ${walletAddress}. Amount: ${displayAmount} ${symbol}`)
 
-        try {
-            const txRecord = new Transaction({
-                nature: 1,
-                txHash,
-                amount: displayAmount,
-                status: 3,
-                to: walletAddress,
-                tokenSymbol: symbol,
-                created_at: new Date()
-            })
+        if (txRecord && txRecord.status !== 3) {
+            txRecord.status = 3
+            txRecord.confirmations = confirmations
             await txRecord.save()
-            await Wallet.updateOne(
-                { address: new RegExp(`^${walletAddress.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
-                { $push: { transactions: txRecord._id } }
-            )
-        } catch (txErr) {
-            console.error(`[ERC20-PROCESSOR] Failed to create Transaction record for ${eventId}:`, txErr.message)
+            try {
+                const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
+                await publishTransactionStatusUpdate({
+                    transactionId: txRecord._id.toString(),
+                    status: 3,
+                    confirmations: confirmations
+                })
+            } catch (pubErr) {}
         }
 
         const aggregationQueue = new Queue('erc20-aggregation')
@@ -163,6 +198,9 @@ const processERC20Event = async (job) => {
         return 'processed'
 
     } catch (e) {
+        if (e.name === 'DelayedError' || e.message === 'bullmq:movedToDelayed') {
+            throw e
+        }
         console.error(`[ERC20-PROCESSOR] Error processing event ${eventId}:`, e.message)
         throw e
     }

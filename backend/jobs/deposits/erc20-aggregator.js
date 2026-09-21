@@ -81,7 +81,10 @@ const processAggregation = async (job) => {
                         await forwardExecution.save()
 
                         const forwardingQueue = new Queue('erc20-forwarding')
-                        await forwardingQueue.add('forward', { executionId })
+                        await forwardingQueue.add('forward', { executionId }, {
+                            attempts: 10,
+                            backoff: { type: 'exponential', delay: 5000 }
+                        })
 
                         console.log(`[AGGREGATOR] Dispatched execution ${executionId} for ${walletAddress} (Events: ${eventIds.length}, Amount: ${lockedAmount})`)
 
