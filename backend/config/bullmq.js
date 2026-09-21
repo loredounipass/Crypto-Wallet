@@ -26,6 +26,12 @@ class CustomWorker extends Worker {
         this.on('failed', (job, err) => {
             const jobId = job ? job.id : 'unknown'
             const jobName = job ? job.name : 'unknown'
+            // DelayedError es flujo normal de BullMQ (moveToDelayed para esperar confirmaciones)
+            // No es un error real, no debe contaminar los logs de error
+            if (err && (err.name === 'DelayedError' || (err.message && err.message.includes('bullmq:movedToDelayed')))) {
+                console.log(`[WORKER][${name}] delayed jobId=${jobId} name=${jobName} (waiting for confirmations)`)
+                return
+            }
             console.error(`[WORKER][${name}] failed jobId=${jobId} name=${jobName} error=${err.message || err}`)
         })
     }

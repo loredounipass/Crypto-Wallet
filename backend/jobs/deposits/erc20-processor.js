@@ -193,15 +193,21 @@ const processERC20Event = async (job) => {
             tokenAddress,
             chainId,
             trigger_event: eventId
+        }, {
+            attempts: 5,
+            backoff: { type: 'exponential', delay: 3000 },
+            removeOnComplete: { age: 86400, count: 500 },
+            removeOnFail: 50
         })
 
         return 'processed'
 
     } catch (e) {
-        if (e.name === 'DelayedError' || e.message === 'bullmq:movedToDelayed') {
+        if (e instanceof DelayedError || e.name === 'DelayedError' || (e.message && e.message.includes('bullmq:movedToDelayed'))) {
+            // Flujo normal: el job fue movido a delayed para esperar confirmaciones
             throw e
         }
-        console.error(`[ERC20-PROCESSOR] Error processing event ${eventId}:`, e.message)
+        console.error(`[ERC20-PROCESSOR] REAL error processing event ${eventId}:`, e.message)
         throw e
     }
 }

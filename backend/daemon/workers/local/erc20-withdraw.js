@@ -123,6 +123,26 @@ connectDB.then(() => {
             }
             const relayerPk = ensureHexPrefix(relayerPkRaw)
             await forwardToHotWallet(web3, walletAddress, tokenAddress, relayerPk, chainId)
+
+            // Esperar a que el balance del forward sea visible en el nodo RPC
+            // Esto evita el race condition donde transfer() revierte porque el nodo
+            // aún no refleja el nuevo balance del hot wallet tras el forward
+            const MAX_BALANCE_POLLS = 10
+            const BALANCE_POLL_INTERVAL = 3000
+            let balanceReady = false
+            for (let i = 0; i < MAX_BALANCE_POLLS; i++) {
+                const updatedBalance = await tokenContract.methods.balanceOf(hotWalletAddress).call()
+                if (BigInt(updatedBalance) >= BigInt(rawAmount)) {
+                    balanceReady = true
+                    console.log(`[ERC20-WITHDRAW] Hot wallet balance confirmed after ${i + 1} polls`)
+                    break
+                }
+                console.log(`[ERC20-WITHDRAW] Waiting for forward to reflect... poll ${i + 1}/${MAX_BALANCE_POLLS}`)
+                await new Promise(r => setTimeout(r, BALANCE_POLL_INTERVAL))
+            }
+            if (!balanceReady) {
+                throw new Error('Forward completed but hot wallet balance not yet visible. Will retry via backoff.')
+            }
         }
         const transferContract = new web3.eth.Contract(ERC20_ABI_TRANSFER, tokenAddress)
         const txData = transferContract.methods.transfer(withdrawAddress, rawAmount).encodeABI()
@@ -176,4 +196,33 @@ connectDB.then(() => {
         })
         return receipt.transactionHash
     }, { concurrency: 15 })
+
+    // Handler de fallo final: cuando el job agota TODOS sus reintentos,
+    // marcar la transacción como fallida y notificar al usuario via WebSocket
+    .on('failed', async (job, err) => {
+        // Solo ejecutar rollback cuando es el ÚLTIMO intento (sin más reintentos posibles)
+        if (!job) return
+        const maxAttempts = job.opts?.attempts || 0
+        if (maxAttempts > 0 && job.attemptsMade < maxAttempts) return
+
+        try {
+            const { transactionId } = job.data
+            if (!transactionId) return
+            const Transaction = require(`${appRoot}/config/models/Transaction`)
+            await Transaction.updateOne(
+                { _id: transactionId },
+                { $set: { status: 5 } }  // 5 = Broadcast Failed
+            )
+            const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
+            await publishTransactionStatusUpdate({
+                transactionId,
+                status: 5,
+                confirmations: 0,
+                source: 'erc20-withdraw-final-failure'
+            })
+            console.error(`[ERC20-WITHDRAW] FINAL FAILURE for tx ${transactionId}: ${err.message}. Transaction marked as failed (status:5).`)
+        } catch (rollbackErr) {
+            console.error(`[ERC20-WITHDRAW] Rollback failed:`, rollbackErr.message)
+        }
+    })
 })
