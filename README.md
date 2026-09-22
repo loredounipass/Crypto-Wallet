@@ -71,10 +71,20 @@ All services (Redis, MongoDB, Backend, Frontend) will be running in Docker conta
 
 # Deploy smart contract and generate wallets 
 ```
-$ cd backend/tasks/+
+$ cd backend/tasks/wallet-generator/evm
 $ pnpm install -g hardhat  
 $ npx hardhat run scripts/deploy.js --network (--network name--)  
-$ node generate.js (--number of wallets--) + (--network ID--)
+$ node generate.js (--number of wallets--) (--network ID--)
+```
+
+> ⚠️ Nota: `backend/tasks/wallet-generator/evm/package.json` trae `"type": "module"`, pero los scripts usan `require()` (CommonJS).
+> Para ejecutar `generate.js` dentro del contenedor hay que corregirlo primero (una sola vez por contenedor):
+> ```bash
+> $ docker exec crypto-wallet-backend-daemons-workers-1 sed -i 's/"type": "module"/"type": "commonjs"/' /usr/src/app/tasks/wallet-generator/evm/package.json
+> ```
+
+Render five Polygon Amoy wallets:
+```bash
 $ docker exec crypto-wallet-backend-daemons-workers-1 node /usr/src/app/tasks/wallet-generator/evm/generate.js 5 80002
 ```
 
