@@ -25,6 +25,7 @@ type TransactionStatusEvent = {
   fee?: number;
   to?: string;
   coin?: string;
+  tokenSymbol?: string;
   chainId?: number;
   created_at?: any;
   source?: string;
@@ -183,6 +184,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
             amount: 1,
             fee: 1,
             to: 1,
+            tokenSymbol: 1,
           })
           .lean();
       }
@@ -199,6 +201,7 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
         fee: event.fee ?? transaction?.fee ?? 0,
         to: event.to ?? transaction?.to,
         coin: event.coin ?? walletCoin,
+        tokenSymbol: event.tokenSymbol ?? transaction?.tokenSymbol,
         chainId: event.chainId ?? walletChainId,
       };
 
