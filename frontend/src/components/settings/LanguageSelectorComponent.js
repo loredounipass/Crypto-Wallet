@@ -19,11 +19,6 @@ const Switch = ({ checked, onChange, disabled }) => (
   </button>
 );
 
-const defaultLanguages = [
-    { code: 'en', name: 'English', nativeName: 'English' },
-    { code: 'es', name: 'Spanish', nativeName: 'Español' },
-    { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-];
 
 function LanguageSelectorComponent() {
     const {
