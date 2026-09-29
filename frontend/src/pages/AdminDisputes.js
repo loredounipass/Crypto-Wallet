@@ -3,7 +3,7 @@ import useEscrow from '../hooks/useEscrow';
 import DisputeStatsBar from '../components/p2p/admin/DisputeStatsBar';
 import DisputeCard from '../components/p2p/admin/DisputeCard';
 import DisputeDetailModal from '../components/p2p/admin/DisputeDetailModal';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 
 export default function AdminDisputes() {
     const { getDisputedOrders, resolveDispute, isLoading, toast, dismissToast } = useEscrow();

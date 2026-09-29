@@ -8,7 +8,7 @@ import {
   Link,
 } from '../../ui/material';
 import AuthLayout, { inputSx, buttonStyle } from '../AuthLayout';
-import TransactionToast from '../TransactionToast';
+import { TransactionToast } from '../toasts/Toast';
 import useVerifyTokenLogic from './useVerifyTokenLogic';
 
 const VerifyToken = () => {

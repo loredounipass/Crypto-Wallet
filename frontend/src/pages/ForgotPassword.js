@@ -11,7 +11,7 @@ import {
   Link,
 } from '../ui/material';
 import AuthLayout, { inputSx, buttonStyle } from '../components/AuthLayout';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')

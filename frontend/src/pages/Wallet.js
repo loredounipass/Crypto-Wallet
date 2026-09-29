@@ -17,9 +17,9 @@ import {
 } from '../components/utils/Chains';
 import useWithdraw from '../hooks/useWithdraw';
 import createWallet from '../hooks/createWallet';
-import CoinTransactions from '../components/CoinTransactions';
+import CoinTransactions from '../components/coin-transactions/CoinTransactions';
 import useTransitions from '../hooks/useTransactions';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 import QRScannerModal from '../components/QRScannerModal';
 import { useTranslation } from 'react-i18next';
 import { invalidateTokensCache } from '../hooks/useTokenBalances';

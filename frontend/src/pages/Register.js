@@ -12,7 +12,7 @@ import { Visibility, VisibilityOff } from '../ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
 import useAuth from './../hooks/useAuth';
 import AuthLayout, { inputSx, buttonStyle } from '../components/AuthLayout';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 
 export default function Register() {
   const { registerUser, error } = useAuth();

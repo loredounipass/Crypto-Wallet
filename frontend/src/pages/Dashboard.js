@@ -5,8 +5,8 @@ import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
 import useAllWallets from "../hooks/useAllWallets";
 import { useNavigate } from "react-router-dom";
 import useTransitions from "../hooks/useTransactions";
-import CoinTransactions from "../components/CoinTransactions";
-import TransactionToast from "../components/TransactionToast";
+import CoinTransactions from "../components/coin-transactions/CoinTransactions";
+import { TransactionToast } from "../components/toasts/Toast";
 
 const WalletIcon = Wallet;
 const SwapIcon = SwapHoriz;

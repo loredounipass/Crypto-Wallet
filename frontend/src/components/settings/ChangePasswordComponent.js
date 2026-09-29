@@ -1,13 +1,11 @@
-import React, { useState, use } from 'react';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import {
     Visibility,
     VisibilityOff,
     Lock as LockIcon,
 } from '../../ui/icons';
-import useAuth from '../../hooks/useAuth';
-import { AuthContext } from '../../hooks/AuthContext';
-import TransactionToast from '../TransactionToast';
+import { TransactionToast } from '../toasts/Toast';
+import useChangePasswordLogic from './useChangePasswordLogic';
 
 import './Settings.css';
 
@@ -44,70 +42,18 @@ const PasswordInput = ({ name, label, value, showPassword, onToggle, handleChang
 );
 
 function ChangePasswordComponent() {
-    const { t } = useTranslation();
-    const { changePassword } = useAuth();
-    const { auth } = use(AuthContext);
-    
-    const [toast, setToast] = useState(null);
-
-
-    
-    
-
-    const [passwords, setPasswords] = useState({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-    });
-    
-    const [showPasswords, setShowPasswords] = useState({
-        currentPassword: false,
-        newPassword: false,
-        confirmNewPassword: false
-    });
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setPasswords(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleTogglePasswordVisibility = (field) => {
-        setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
-    };
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const TEN_MINUTES_MS = 10 * 60 * 1000;
-    let remainingMinutes = 0;
-    if (auth && auth.lastPasswordChange) {
-        const elapsed = Date.now() - auth.lastPasswordChange;
-        if (elapsed < TEN_MINUTES_MS) {
-            remainingMinutes = Math.ceil((TEN_MINUTES_MS - elapsed) / (60 * 1000));
-        }
-    }
-
-    const handleChangePassword = async () => {
-        if (passwords.newPassword !== passwords.confirmNewPassword) {
-            setToast({ kind: 'error', message: t('passwords_dont_match') });
-            return;
-        }
-
-        if (passwords.currentPassword === passwords.newPassword) {
-            setToast({ kind: 'error', message: t('password_same_as_current') });
-            return;
-        }
-
-        try {
-            setIsSubmitting(true);
-            const res = await changePassword(passwords);
-            if (res?.success) {
-                setToast({ kind: 'success', message: res.message });
-            } else if (res?.error) {
-                setToast({ kind: 'error', message: res.error });
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const {
+        t,
+        toast,
+        setToast,
+        passwords,
+        showPasswords,
+        isSubmitting,
+        remainingMinutes,
+        handleChange,
+        handleTogglePasswordVisibility,
+        handleChangePassword
+    } = useChangePasswordLogic();
 
 
     return (

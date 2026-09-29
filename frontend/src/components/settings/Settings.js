@@ -1,30 +1,17 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import ChangePasswordComponent from './ChangePasswordComponent';
 import TwoFactorAuthComponent from './TwoFactorAuthComponent';
 import LanguageSelectorComponent from './LanguageSelectorComponent';
 import UserProfileComponent from './UserProfileComponent'; 
 import VerifyEmailComponent from './VerifyEmailComponent'; 
 import {
-    Lock as LockIcon,
-    Security as SecurityIcon,
-    Language as LanguageIcon,
-    Person as PersonIcon,
     ArrowBack as ArrowBackIcon,
     Settings as SettingsIcon,
 } from '../../ui/icons';
 import { Link } from 'react-router-dom';
-import { useTheme, useMediaQuery } from '../../ui/material';
+import useSettingsLogic from './useSettingsLogic';
 
 import './Settings.css';
-
-const sections = [
-    { id: 'userProfile', label: 'user_profile', icon: <PersonIcon /> },
-    { id: 'changePassword', label: 'change_password', icon: <LockIcon /> },
-    { id: 'twoFactorAuth', label: 'two_factor_auth', icon: <SecurityIcon /> },
-    { id: 'languageSelector', label: 'language_selector', icon: <LanguageIcon /> },
-    { id: 'verifyEmail', label: 'verify_email', icon: <SecurityIcon /> },
-];
 
 const renderSection = (selectedSection) => {
     switch (selectedSection) {
@@ -38,12 +25,14 @@ const renderSection = (selectedSection) => {
 };
 
 function Settings() {
-    const { t } = useTranslation(); 
-    const [selectedSection, setSelectedSection] = useState('userProfile');
-
-    const muiTheme = useTheme();
-    const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
-    const isTablet = useMediaQuery(muiTheme.breakpoints.down("md"));
+    const {
+        t,
+        selectedSection,
+        setSelectedSection,
+        isMobile,
+        isTablet,
+        sections
+    } = useSettingsLogic();
 
     return (
         <div

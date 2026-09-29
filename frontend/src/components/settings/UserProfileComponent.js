@@ -1,14 +1,9 @@
-import React, { useEffect, useState, use } from 'react';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import { Person as PersonIcon } from '../../ui/icons';
-import useAuth from '../../hooks/useAuth';
-import { AuthContext } from '../../hooks/AuthContext';
-import * as profileService from '../../services/profile';
-import TransactionToast from '../TransactionToast';
+import { TransactionToast } from '../toasts/Toast';
+import useUserProfileLogic from './useUserProfileLogic';
 
 import './Settings.css';
-
-
 /* ── reusable sub-components ── */
 function InputField({ id, label, value, onChange, type = 'text', required = false, placeholder = '' }) {
     
@@ -38,84 +33,20 @@ function InputField({ id, label, value, onChange, type = 'text', required = fals
 
 /* ── main ── */
 function UserProfileComponent() {
-    const { t } = useTranslation();
-    const { updateUserProfile } = useAuth();
-    const { auth } = use(AuthContext);
-    
-    
-
-    // Account
-    const [firstName, setFirstName]   = useState('');
-    const [lastName, setLastName]     = useState('');
-    const [email, setEmail]           = useState('');
-
-    // UI state
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const initialized = React.useRef(false);
-    const [toast, setToast]               = useState(null);
-
-    // Cooldown guard
-    const TEN_MINUTES_MS = 10 * 60 * 1000;
-    let remainingMinutes = 0;
-    if (auth?.lastProfileUpdate) {
-        const elapsed = Date.now() - auth.lastProfileUpdate;
-        if (elapsed < TEN_MINUTES_MS) {
-            remainingMinutes = Math.ceil((TEN_MINUTES_MS - elapsed) / 60_000);
-        }
-    }
-
-    // Init everything from auth + API once
-    useEffect(() => {
-        if (initialized.current) return;
-        setFirstName(auth?.firstName || '');
-        setLastName(auth?.lastName || '');
-        setEmail(auth?.email || '');
-
-        profileService.getMyProfile()
-            .catch(() => {})
-            .finally(() => { initialized.current = true; });
-    }, [auth]);
-
-
-
-    /* ── single save handler ── */
-    const handleSave = async () => {
-
-        if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-            setToast({ kind: 'error', message: t('fields_required') });
-            return;
-        }
-
-        try {
-            setIsSubmitting(true);
-
-            // 1) Account update (only if something changed)
-            const accountChanged =
-                firstName !== (auth?.firstName || '') ||
-                lastName  !== (auth?.lastName  || '') ||
-                email     !== (auth?.email     || '');
-
-            if (accountChanged) {
-                const res = await updateUserProfile({ firstName, lastName, email });
-                if (res?.error) {
-                    setToast({ kind: 'error', message: res.error });
-                    return;
-                }
-            }
-
-            // 2) Profile upsert (always — cheap PATCH)
-            await profileService.upsertProfile({
-                firstName: firstName.trim(),
-                lastName:  lastName.trim(),
-            });
-
-            setToast({ kind: 'success', message: t('profile_updated') });
-        } catch (e) {
-            setToast({ kind: 'error', message: e.message });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const {
+        t,
+        firstName,
+        setFirstName,
+        lastName,
+        setLastName,
+        email,
+        setEmail,
+        isSubmitting,
+        toast,
+        setToast,
+        remainingMinutes,
+        handleSave
+    } = useUserProfileLogic();
 
     /* ── render ── */
     return (

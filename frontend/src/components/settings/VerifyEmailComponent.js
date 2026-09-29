@@ -1,8 +1,6 @@
-import React, { use, useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../hooks/AuthContext'; 
-import useAuth from '../../hooks/useAuth'; 
-import TransactionToast from '../TransactionToast';
+import React from 'react';
+import { TransactionToast } from '../toasts/Toast';
+import useVerifyEmailLogic from './useVerifyEmailLogic';
 import {
     EmailOutlined as EmailOutlinedIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
@@ -13,57 +11,14 @@ import './Settings.css';
 
 
 const VerifyEmailComponent = () => {
-    const { t } = useTranslation();
-    const { auth } = use(AuthContext); 
-    const { sendVerificationEmail, isEmailVerified } = useAuth();
-    
-    
-
-    const [ui, setUi] = useState({
-        verificationStatus: null,
-        loading: true,
-        emailVerified: false,
-        sending: false
-    });
-    const hasCheckedVerification = React.useRef(false);
-    const [toast, setToast] = useState(null);
-
-    useEffect(() => {
-        const checkEmailVerification = async () => {
-            const isVerified = await isEmailVerified(); 
-            setUi(prev => ({
-                ...prev,
-                verificationStatus: {
-                    verified: isVerified,
-                    message: isVerified ? t('email_verified_message') : t('email_not_verified_message')
-                },
-                emailVerified: isVerified,
-                loading: false
-            }));
-            hasCheckedVerification.current = true;
-        };
-
-        if (auth && auth.email && !hasCheckedVerification.current) {
-            checkEmailVerification(); 
-        } else if (!auth || !auth.email) {
-            setToast({ kind: 'error', message: t('no_authenticated_email') });
-            setUi(prev => ({ ...prev, loading: false }));
-        }
-    }, [auth, isEmailVerified, t]); 
-
-    const handleSendVerificationEmail = async () => {
-        if (auth && auth.email) {
-            setUi(prev => ({ ...prev, sending: true }));
-            const res = await sendVerificationEmail();
-            setUi(prev => ({ ...prev, sending: false }));
-            
-            if (res?.success) {
-                setToast({ kind: 'success', message: res.message });
-            } else if (res?.error) {
-                setToast({ kind: 'error', message: res.error });
-            }
-        }
-    };
+    const {
+        t,
+        auth,
+        ui,
+        toast,
+        setToast,
+        handleSendVerificationEmail
+    } = useVerifyEmailLogic();
 
 
     return (

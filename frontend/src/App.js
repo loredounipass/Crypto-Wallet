@@ -35,7 +35,7 @@ import P2POrderChat from './components/p2p/P2POrderChat'
 import Swap from './pages/Swap'
 import Feed from './pages/Feed'
 //import Noticias from './pages/Noticias'
-import BrivoAgent from './components/BrivoAgent'
+import BrivoAgent from './components/brivo-agent/BrivoAgent'
 import { Menu as MenuIcon } from './ui/icons';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminUsers from './pages/AdminUsers';

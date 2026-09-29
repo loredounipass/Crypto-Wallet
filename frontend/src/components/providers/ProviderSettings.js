@@ -1,8 +1,5 @@
-import React, { useEffect, useState, use, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import useProviderSettings from '../../hooks/useProviderSettings';
-import useAllWallets from '../../hooks/useAllWallets';
-import { AuthContext } from '../../hooks/AuthContext';
+import React from 'react';
+import useProviderSettingsLogic from './useProviderSettingsLogic';
 
 const inputStyle = {
   width: '100%',
@@ -70,76 +67,18 @@ const toggleThumb = (enabled) => ({
 });
 
 export default function ProviderSettings({ open, onClose }) {
-  const { t } = useTranslation();
-  const { auth } = use(AuthContext);
-  const { settings, isLoading, getSettings, addPaymentMethod, deletePaymentMethod, toggleDestinationWallet } = useProviderSettings();
-  const { allWalletInfo: wallets, refreshWallets } = useAllWallets();
-
-  const [newMethod, setNewMethod] = useState('');
-
-  const authRef = useRef(auth);
-  useEffect(() => {
-    authRef.current = auth;
-  });
-
-  useEffect(() => {
-    if (!open || !auth?._id) return;
-
-    const controller = new AbortController();
-
-    const doFetch = async () => {
-      if (!authRef.current?._id) return;
-      await getSettings(controller.signal);
-      if (authRef.current?._id) {
-        refreshWallets();
-      }
-    };
-    doFetch();
-
-    return () => {
-      controller.abort();
-    };
-  }, [open, auth, getSettings, refreshWallets]);
-
-  useEffect(() => {
-    if (open && !auth?._id) {
-      onClose();
-    }
-  }, [open, auth, onClose]);
-
-  if (!open) return null;
-
-  const handleAddMethod = async () => {
-    if (!newMethod.trim()) return;
-    try {
-      await addPaymentMethod({ paymentMethod: newMethod.trim() });
-      setNewMethod('');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDeleteMethod = async (method) => {
-    try {
-      await deletePaymentMethod(method);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleToggle = async (address) => {
-    try {
-      await toggleDestinationWallet({ address });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const isWalletEnabled = (walletAddr) => {
-    if (!settings?.destinationWallets) return false;
-    const found = settings.destinationWallets.find(w => w.address === walletAddr);
-    return found ? found.enabled : false;
-  };
+  const {
+    t,
+    settings,
+    isLoading,
+    wallets,
+    newMethod,
+    setNewMethod,
+    handleAddMethod,
+    handleDeleteMethod,
+    handleToggle,
+    isWalletEnabled
+  } = useProviderSettingsLogic({ open, onClose });
 
   return (
     <div style={{

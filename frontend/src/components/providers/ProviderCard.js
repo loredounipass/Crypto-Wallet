@@ -1,47 +1,14 @@
-import React, { useEffect, useState, use, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import useProvider from '../../hooks/useProviders';
-import { AuthContext } from '../../hooks/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import useProviderCardLogic from './useProviderCardLogic';
 
 export default function ProviderCard() {
-  const { t } = useTranslation();
-  const { getAllProviders } = useProvider();
-  const { auth } = use(AuthContext);
-  const navigate = useNavigate();
-  const [providers, setProviders] = useState([]);
-  const [error, setError] = useState(null);
-  const [isCreatingChat] = useState(false);
-
-  const fetchProviders = useCallback(async () => {
-    try {
-      const res = await getAllProviders();
-      if (res && res.length > 0) {
-        setProviders(res);
-        setError(null);
-      } else {
-        setError({ message: t('p2p_no_providers_found') });
-        setProviders([]);
-      }
-    } catch (err) {
-      setError(err);
-      setProviders([]);
-    }
-  }, [getAllProviders, t]);
-
-  const handleCreateChat = async (providerEmail) => {
-    if (!auth?.email) return;
-    
-    // Ahora simplemente redirigimos al chat usando el correo del proveedor
-    // El componente Chat se encargará de buscar el ID y unirse al room del nuevo sistema
-    navigate('/chat', {
-      providerEmail,
-    });
-  };
-
-  useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
+  const {
+    t,
+    providers,
+    error,
+    isCreatingChat,
+    handleCreateChat
+  } = useProviderCardLogic();
 
   return (
     <div className="p-3">

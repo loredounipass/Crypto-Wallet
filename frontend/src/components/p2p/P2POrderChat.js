@@ -8,7 +8,7 @@ import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia';
 import { useSocket } from '../../hooks/SocketContext';
 import P2PDisputeModal from './P2PDisputeModal';
 import { ChatBubbleIcon, FileTextIcon } from './ChatIcons';
-import TransactionToast from '../TransactionToast';
+import { TransactionToast } from '../toasts/Toast';
 
 import P2POrderDetailsPanel from './P2POrderDetailsPanel';
 import P2PChatMessagesList from './P2PChatMessagesList';

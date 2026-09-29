@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Language as LanguageIcon } from '../../ui/icons';
-import { useLanguage } from '../../hooks/LanguageContext';
-import { useTranslation } from 'react-i18next';
-import TransactionToast from '../TransactionToast';
-import LanguagesService from '../../services/languages';
+import { TransactionToast } from '../toasts/Toast';
+import useLanguageSelectorLogic from './useLanguageSelectorLogic';
 
 import './Settings.css';
 
@@ -28,42 +26,14 @@ const defaultLanguages = [
 ];
 
 function LanguageSelectorComponent() {
-    const { language, handleLanguageChange } = useLanguage();
-    const { t } = useTranslation();
-    const [toast, setToast] = useState(null);
-    const [languageOptions, setLanguageOptions] = useState([]);
-
-    useEffect(() => {
-        const fetchLanguages = async () => {
-            try {
-                const res = await LanguagesService.getAllLanguages();
-                const apiLangs = (res?.data && Array.isArray(res.data)) ? res.data : [];
-                const langMap = new Map();
-                for (const lang of apiLangs) {
-                    langMap.set(lang.code, lang);
-                }
-                for (const lang of defaultLanguages) {
-                    if (!langMap.has(lang.code)) {
-                        langMap.set(lang.code, { ...lang, active: language === lang.code });
-                    }
-                }
-                setLanguageOptions(Array.from(langMap.values()));
-            } catch {
-                setLanguageOptions(
-                    defaultLanguages.map(lang => ({ ...lang, active: language === lang.code }))
-                );
-            }
-        };
-        fetchLanguages();
-    }, [language]);
-
-    const handleToggle = (langKey) => {
-        const newLang = langKey === language
-            ? languageOptions.find(l => l.code !== langKey)?.code || 'es'
-            : langKey;
-        handleLanguageChange(newLang);
-        setToast({ kind: 'success', message: t('language_changed', 'Idioma cambiado exitosamente') });
-    };
+    const {
+        t,
+        toast,
+        setToast,
+        language,
+        languageOptions,
+        handleToggle
+    } = useLanguageSelectorLogic();
 
     return (
         <div className="w-full">

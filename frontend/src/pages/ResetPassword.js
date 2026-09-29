@@ -14,7 +14,7 @@ import {
 } from '../ui/material';
 import { Visibility, VisibilityOff } from '../ui/icons';
 import AuthLayout, { inputSx, buttonStyle } from '../components/AuthLayout';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 
 export default function ResetPassword() {
   const location = useLocation()

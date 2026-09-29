@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import User from '../services/user';
-import TransactionToast from '../components/TransactionToast';
+import { TransactionToast } from '../components/toasts/Toast';
 
 export default function AdminUsers() {
     const [email, setEmail] = useState('');

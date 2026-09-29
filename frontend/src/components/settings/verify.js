@@ -1,53 +1,14 @@
-import React, { use, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AuthContext } from '../../hooks/AuthContext';
-import useAuth from '../../hooks/useAuth';
+import React from 'react';
+import useEmailVerificationLogic from './useEmailVerificationLogic';
 
 const EmailVerificationComponent = () => {
-    const { auth } = use(AuthContext);
-    const { verifyEmail } = useAuth();
-    const location = useLocation();
-    const [openDialog, setOpenDialog] = useState(false);
-    const [dialogMessage, setDialogMessage] = useState('');
-    const [showCloseMessage, setShowCloseMessage] = useState(false);
-
-    const handleVerifyClick = async () => {
-        if (auth && auth.email) {
-            try {
-                const searchParams = new URLSearchParams(location.search);
-                const token = searchParams.get('token');
-                
-                if (!token) {
-                    throw new Error('Falta el token de verificación en la URL. Asegúrate de hacer clic en el enlace completo del correo.');
-                }
-                
-                await verifyEmail(token);
-                handleVerificationResult({ verified: true, message: 'Correo electrónico verificado con éxito.' });
-            } catch (err) {
-                handleVerificationResult({ verified: false, message: err.message || 'Error al verificar el correo electrónico.' });
-            }
-        } else {
-            handleVerificationResult({ verified: false, message: 'No se encontró el correo electrónico autenticado.' });
-        }
-    };
-
-    const handleVerificationResult = (result) => {
-        setDialogMessage(result.message);
-        setOpenDialog(true);
-        setShowCloseMessage(false); 
-
-        if (result.verified) {
-            setTimeout(() => {
-                setOpenDialog(false);
-                setShowCloseMessage(true); 
-            }, 5000); 
-        }
-    };
-
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
-        setShowCloseMessage(true);
-    };
+    const {
+        openDialog,
+        dialogMessage,
+        showCloseMessage,
+        handleVerifyClick,
+        handleCloseDialog
+    } = useEmailVerificationLogic();
 
     return (
         <div className="settings-full-page">
