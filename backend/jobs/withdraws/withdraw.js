@@ -29,7 +29,7 @@ const reject = (message = 'error: not withdrawed') => {
     throw new Error(message)
 }
 
-const _updateTransactionState = async (tId, status, confirmations) => {
+const _updateTransactionState = async (tId, status, confirmations, enrichment = {}) => {
     const upsert = {
         status
     }
@@ -44,14 +44,21 @@ const _updateTransactionState = async (tId, status, confirmations) => {
     await publishTransactionStatusUpdate({
         transactionId: tId.toString(),
         status,
-        confirmations: upsert.confirmations ?? 0
+        confirmations: upsert.confirmations ?? 0,
+        nature: 2,
+        coin: enrichment.coin,
+        chainId: enrichment.chainId,
+        txHash: enrichment.txHash,
+        to: enrichment.to,
+        amount: enrichment.amount,
+        fee: enrichment.fee ?? 0
     })
 }
 
 const _checkConfirmation = async (address, txHash, value, coin, chainId, transactionId) => {
     var result = await web3.eth.getTransactionReceipt(txHash)
     if (result && 'status' in result && result.status) {
-        await _updateTransactionState(transactionId, 3)
+        await _updateTransactionState(transactionId, 3, undefined, { coin, chainId, txHash, to: address, amount: toCoinAmount(value, coin) })
         const wallet = await Wallet.findOne({ transactions: new ObjectId(transactionId) })
         if (wallet) {
             const user = await User.findOne({ wallets: new ObjectId(wallet._id) })
@@ -91,7 +98,7 @@ const processWithdraw = async ({
                 if (blockNumber !== null && blockNumber !== undefined) {
                     const latestBlockNumber = await web3.eth.getBlockNumber()
                     const confirmations = Number(latestBlockNumber - blockNumber)
-                    await _updateTransactionState(transactionId, 2, confirmations)
+                    await _updateTransactionState(transactionId, 2, confirmations, { coin, chainId, txHash: hashToTrack, to: walletAddress, amount: toCoinAmount(value, coin) })
                     if (confirmations >= MIN_CONFIRMATIONS) {
                         return await _checkConfirmation(
                             walletAddress, transactionHash, value, coin, chainId, transactionId

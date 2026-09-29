@@ -20,6 +20,14 @@ type TransactionStatusEvent = {
   confirmations?: number;
   txHash?: string;
   linkedTxHash?: string;
+  nature?: number;
+  amount?: number;
+  fee?: number;
+  to?: string;
+  coin?: string;
+  chainId?: number;
+  created_at?: any;
+  source?: string;
 };
 
 @WebSocketGateway({
@@ -136,8 +144,34 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
     try {
       if (!event?.transactionId) return;
       const transactionObjectId = new Types.ObjectId(event.transactionId);
-      const [transaction, wallet] = await Promise.all([
-        this.transactionModel
+
+      // Try to find the user room to emit to
+      const wallet = await this.walletModel.findOne(
+        { transactions: transactionObjectId } as any,
+        { _id: 1, coin: 1, chainId: 1 },
+      ).lean();
+
+      let userId: string | null = null;
+      let walletCoin: string | undefined;
+      let walletChainId: number | undefined;
+
+      if (wallet?._id) {
+        walletCoin = wallet.coin;
+        walletChainId = wallet.chainId;
+        const user = await this.userModel
+          .findOne({ wallets: wallet._id }, { _id: 1 })
+          .lean();
+        if (user?._id) {
+          userId = user._id.toString();
+        }
+      }
+
+      // Build payload using event data first (enriched from origin), falling back to DB
+      // Only query the transaction if we're missing critical display fields from the event
+      let transaction: any = null;
+      const needsDbFallback = event.amount === undefined || event.nature === undefined;
+      if (needsDbFallback) {
+        transaction = await this.transactionModel
           .findById(transactionObjectId, {
             _id: 1,
             txHash: 1,
@@ -150,33 +184,30 @@ export class TransactionGateway implements OnGatewayConnection, OnGatewayDisconn
             fee: 1,
             to: 1,
           })
-          .lean(),
-        this.walletModel.findOne(
-          { transactions: transactionObjectId } as any,
-          { _id: 1, coin: 1, chainId: 1 },
-        ).lean(),
-      ]);
-      if (!transaction || !wallet?._id) return;
-      const user = await this.userModel
-        .findOne({ wallets: wallet._id }, { _id: 1 })
-        .lean();
-      if (!user?._id) return;
+          .lean();
+      }
+
       const payload = {
-        transactionId: transaction._id.toString(),
-        txHash: transaction.txHash,
-        linkedTxHash: (transaction as any).linkedTxHash,
-        status: event.status ?? transaction.status,
-        confirmations: event.confirmations ?? transaction.confirmations ?? 0,
-        created_at: (transaction as any).created_at,
-        nature: transaction.nature,
-        amount: transaction.amount,
-        fee: (transaction as any).fee || 0,
-        to: transaction.to,
-        coin: wallet.coin,
-        chainId: wallet.chainId,
+        transactionId: event.transactionId,
+        txHash: event.txHash ?? transaction?.txHash,
+        linkedTxHash: event.linkedTxHash ?? transaction?.linkedTxHash,
+        status: event.status ?? transaction?.status,
+        confirmations: event.confirmations ?? transaction?.confirmations ?? 0,
+        created_at: event.created_at ?? transaction?.created_at,
+        nature: event.nature ?? transaction?.nature,
+        amount: event.amount ?? transaction?.amount,
+        fee: event.fee ?? transaction?.fee ?? 0,
+        to: event.to ?? transaction?.to,
+        coin: event.coin ?? walletCoin,
+        chainId: event.chainId ?? walletChainId,
       };
-      const userRoom = `user:${user._id.toString()}`;
-      void this.server.to(userRoom).emit('transactionStatusUpdated', payload);
+
+      // Emit to user room if we found the user
+      if (userId) {
+        const userRoom = `user:${userId}`;
+        void this.server.to(userRoom).emit('transactionStatusUpdated', payload);
+      }
+      // Always emit to the transaction-specific room
       void this.server.to(`tx:${payload.transactionId}`).emit('transactionStatusUpdated', payload);
     } catch (error) {
       this.logger.warn(`Failed to emit transaction status update: ${error}`);

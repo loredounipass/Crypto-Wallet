@@ -297,15 +297,6 @@ export class WalletService {
         });
         const saved = await transaction.save();
         if (saved) {
-          await this.transactionStatusQueue.add('status-update', {
-            transactionId: transaction._id.toString(),
-            status: transaction.status,
-            confirmations: transaction.confirmations ?? 0,
-            source: 'app-core-withdraw'
-          }, {
-            removeOnComplete: true,
-            removeOnFail: 50
-          });
           const result = await this.walletModel.findOneAndUpdate(
             { _id: new Types.ObjectId(wallet._id), balance: { $gte: withdrawDto.amount } },
             {
@@ -313,6 +304,21 @@ export class WalletService {
               $inc: { balance: transaction.amount }
             });
           if (result) {
+            await this.transactionStatusQueue.add('status-update', {
+              transactionId: transaction._id.toString(),
+              status: transaction.status,
+              confirmations: transaction.confirmations ?? 0,
+              nature: 2,
+              amount: transaction.amount,
+              coin: wallet.coin,
+              chainId: wallet.chainId,
+              to: withdrawDto.to,
+              fee: 0,
+              source: 'app-core-withdraw'
+            }, {
+              removeOnComplete: true,
+              removeOnFail: 50
+            });
             await this.withdrawQueue.add('request', {
               transactionId: transaction._id.toString(),
               walletId: wallet._id.toString(),
@@ -332,6 +338,12 @@ export class WalletService {
             transactionId: transaction._id.toString(),
             status: 4,
             confirmations: 0,
+            nature: 2,
+            amount: transaction.amount,
+            coin: wallet.coin,
+            chainId: wallet.chainId,
+            to: withdrawDto.to,
+            fee: 0,
             source: 'app-core-withdraw-cancelled'
           }, { removeOnComplete: true, removeOnFail: 50 });
         }
@@ -395,6 +407,12 @@ export class WalletService {
       transactionId: transaction._id.toString(),
       status: transaction.status,
       confirmations: transaction.confirmations ?? 0,
+      nature: 2,
+      amount: transaction.amount,
+      coin: wallet.coin,
+      chainId: entry.chainId,
+      to: tokenWithdrawDto.to,
+      fee: 0,
       source: 'app-core-withdraw-token'
     }, { removeOnComplete: true, removeOnFail: 50 });
     await this.withdrawTokenQueue.add('request', {

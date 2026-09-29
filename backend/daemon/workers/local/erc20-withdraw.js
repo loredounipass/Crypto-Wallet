@@ -192,6 +192,13 @@ connectDB.then(() => {
             transactionId,
             status: 3,
             confirmations: 0,
+            nature: 2,
+            amount: -1 * amount,
+            coin: symbol,
+            chainId,
+            txHash: receipt.transactionHash,
+            to: withdrawAddress,
+            fee: 0,
             source: 'erc20-withdraw'
         })
         return receipt.transactionHash
@@ -206,7 +213,7 @@ connectDB.then(() => {
         if (maxAttempts > 0 && job.attemptsMade < maxAttempts) return
 
         try {
-            const { transactionId } = job.data
+            const { transactionId, amount, symbol, chainId, withdrawAddress } = job.data
             if (!transactionId) return
             const Transaction = require(`${appRoot}/config/models/Transaction`)
             await Transaction.updateOne(
@@ -218,6 +225,12 @@ connectDB.then(() => {
                 transactionId,
                 status: 5,
                 confirmations: 0,
+                nature: 2,
+                amount: -1 * amount,
+                coin: symbol,
+                chainId,
+                to: withdrawAddress,
+                fee: 0,
                 source: 'erc20-withdraw-final-failure'
             })
             console.error(`[ERC20-WITHDRAW] FINAL FAILURE for tx ${transactionId}: ${err.message}. Transaction marked as failed (status:5).`)

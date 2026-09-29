@@ -22,7 +22,7 @@ const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
-const _updateTransactionState = async (txHash, status, transactionId, fee) => {
+const _updateTransactionState = async (txHash, status, transactionId, fee, enrichment = {}) => {
     const upsert = {
         status
     }
@@ -42,11 +42,18 @@ const _updateTransactionState = async (txHash, status, transactionId, fee) => {
 
     await publishTransactionStatusUpdate({
         transactionId: transactionId.toString(),
-        status
+        status,
+        nature: 2,
+        txHash: txHash || enrichment.txHash,
+        coin: enrichment.coin,
+        chainId: enrichment.chainId,
+        to: enrichment.to,
+        amount: enrichment.amount,
+        fee: fee ?? enrichment.fee ?? 0
     })
 }
 
-const _rollbackOnFailure = async (transactionId, walletId, amount, errorMsg) => {
+const _rollbackOnFailure = async (transactionId, walletId, amount, errorMsg, enrichment = {}) => {
     console.error(`[WITHDRAW-TX] Rolling back failed withdrawal ${transactionId}:`, errorMsg)
     // Status 5: Broadcast Failed
     await Transaction.updateOne(
@@ -63,7 +70,13 @@ const _rollbackOnFailure = async (transactionId, walletId, amount, errorMsg) => 
     await publishTransactionStatusUpdate({
         transactionId: transactionId.toString(),
         status: 5,
-        source: 'withdraw-rollback'
+        source: 'withdraw-rollback',
+        nature: 2,
+        amount: -1 * amount,
+        coin: enrichment.coin,
+        chainId: enrichment.chainId,
+        to: enrichment.to,
+        fee: 0
     })
 }
 
@@ -151,7 +164,7 @@ const sendWithdraw = async ({
         const coinConfig = coins[coinKey]
 
         if (!coinConfig) {
-            await _updateTransactionState(null, 4, transactionId)
+            await _updateTransactionState(null, 4, transactionId, undefined, { coin, chainId, to: withdrawAddress, amount: -1 * amount })
             throw new Error(`Unsupported coin: ${coin} (normalized: ${coinKey})`)
         }
 
@@ -160,7 +173,7 @@ const sendWithdraw = async ({
         const feeWei = toWeiAmount(coinConfig.fee, decimals)
         const valueWei = amountWei - feeWei
         if (valueWei <= 0n) {
-            await _updateTransactionState(null, 4, transactionId)
+            await _updateTransactionState(null, 4, transactionId, undefined, { coin, chainId, to: withdrawAddress, amount: -1 * amount })
             throw new Error(`Invalid withdraw amount. amount must be greater than fee (${coinConfig.fee} ${coin})`)
         }
         const txRecord = await Transaction.findOne({ _id: new ObjectId(transactionId) })
@@ -196,7 +209,7 @@ const sendWithdraw = async ({
         } else {
             const onTxHash = async (hash) => {
                 console.log(`[WITHDRAW-TX] Pre-saving txHash ${hash} to prevent duplicate retries`)
-                await _updateTransactionState(hash, 1, transactionId) // Status 1 = pending
+                await _updateTransactionState(hash, 1, transactionId, undefined, { coin, chainId, to: withdrawAddress, amount: -1 * amount }) // Status 1 = pending
             }
             receipt = await sendTransaction(valueWei, withdrawAddress, onTxHash)
         }
@@ -205,7 +218,7 @@ const sendWithdraw = async ({
             const { transactionHash, status } = receipt
             
             try {
-                await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, coinConfig.fee)
+                await _updateTransactionState(transactionHash, status ? 2 : 4, transactionId, coinConfig.fee, { coin, chainId, to: withdrawAddress, amount: -1 * amount })
             } catch (err) {
                 if (err.code === 11000 || (err.message && err.message.includes('E11000'))) {
                     console.warn('[WITHDRAW-TX] txHash collision with deposit, linking transactions', {
@@ -249,7 +262,7 @@ const sendWithdraw = async ({
              if (err.message.includes('was not mined within 50 blocks') || err.message.includes('might still be mined') || err.message.includes('WAITING_FOR_CONFIRMATION')) {
                  console.warn(`[WITHDRAW-TX] Timeout or pending detected for ${transactionId}. Leaving transaction as pending. DO NOT ROLLBACK.`)
              } else {
-                 await _rollbackOnFailure(transactionId, walletId, amount, err.message)
+                 await _rollbackOnFailure(transactionId, walletId, amount, err.message, { coin, chainId, to: withdrawAddress })
              }
         }
         throw err;

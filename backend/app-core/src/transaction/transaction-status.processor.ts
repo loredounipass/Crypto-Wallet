@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 import { TransactionGateway } from './transaction.gateway';
 import QueueType from '../wallet/queue/types.queue';
 
-@Processor(QueueType.TRANSACTION_STATUS_EVENTS)
+@Processor(QueueType.TRANSACTION_STATUS_EVENTS, { concurrency: 15 })
 @Injectable()
 export class TransactionStatusProcessor extends WorkerHost {
   private readonly logger = new Logger('TransactionStatusProcessor');

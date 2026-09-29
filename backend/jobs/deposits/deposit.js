@@ -34,7 +34,7 @@ const reject = (message = 'err: not deposited') => {
     throw new Error(message)
 }
 
-const _updateTransactionState = async (tId, status, value, confirmations) => {
+const _updateTransactionState = async (tId, status, value, confirmations, enrichment = {}) => {
     const upsert = {
         status
     }
@@ -54,11 +54,18 @@ const _updateTransactionState = async (tId, status, value, confirmations) => {
     await publishTransactionStatusUpdate({
         transactionId: tId.toString(),
         status,
-        confirmations: upsert.confirmations ?? 0
+        confirmations: upsert.confirmations ?? 0,
+        amount: upsert.amount ?? enrichment.amount,
+        nature: 1,
+        coin: enrichment.coin,
+        chainId: enrichment.chainId,
+        txHash: enrichment.txHash,
+        to: enrichment.to,
+        fee: 0
     })
 }
 
-const _deposit = async (transactionId, chainId, coin, address, value) => {
+const _deposit = async (transactionId, chainId, coin, address, value, txHash) => {
     console.log('[DEPOSIT] applying balance increment', {
         transactionId,
         chainId,
@@ -89,7 +96,14 @@ const _deposit = async (transactionId, chainId, coin, address, value) => {
     await publishTransactionStatusUpdate({
         transactionId,
         status: 3,
-        confirmations: MIN_CONFIRMATIONS
+        confirmations: MIN_CONFIRMATIONS,
+        amount: value,
+        nature: 1,
+        coin,
+        chainId,
+        txHash,
+        to: address,
+        fee: 0
     })
 
     const result = await Wallet.updateOne({
@@ -145,7 +159,7 @@ const _checkConfirmation = async (
             chainId,
             coin
         })
-        return _deposit(transactionId, chainId, coin, address, amount)
+        return _deposit(transactionId, chainId, coin, address, amount, txHash)
     }
 
     reject()
@@ -206,7 +220,8 @@ const processDeposit = async (
                         transactionId,
                         2,
                         amount,
-                        confirmations
+                        confirmations,
+                        { coin, chainId, txHash: transactionHash, to: walletAddress }
                     )
                     if (confirmations >= MIN_CONFIRMATIONS) {
                         console.log('[DEPOSIT] minimum confirmations reached', {

@@ -70,7 +70,14 @@ const createTransaction
         await publishTransactionStatusUpdate({
             transactionId: transaction._id.toString(),
             status: transaction.status || 1,
-            confirmations: transaction.confirmations || 0
+            confirmations: transaction.confirmations || 0,
+            nature: 1,
+            coin,
+            chainId,
+            amount: typeof amount === 'number' ? amount : undefined,
+            txHash: String(transactionHash).toLowerCase(),
+            to: walletAddress,
+            fee: 0
         })
 
         const result = await Wallet.updateOne({

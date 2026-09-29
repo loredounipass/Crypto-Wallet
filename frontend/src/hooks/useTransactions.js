@@ -60,6 +60,8 @@ export default function useTransitions(coin) {
             const index = prev.findIndex(
                 (tx) => tx.transactionId === nextTx.transactionId
             );
+            nextTx.created_at = incoming.created_at || (index >= 0 ? prev[index].created_at : new Date().toISOString());
+            
             const previousStatus = index >= 0 ? Number(prev[index]?.status) : null;
 
             let updated;
@@ -103,10 +105,18 @@ export default function useTransitions(coin) {
 
     upsertTransactionRef.current = upsertTransaction;
 
+    const getTransactionsRef = useRef(getTransactions);
+    getTransactionsRef.current = getTransactions;
+
     useEffect(() => {
         const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/transactions`, {
             withCredentials: true,
             transports: ['websocket', 'polling']
+        });
+
+        // Re-fetch when socket connects to close the window of missed events
+        socket.on('connect', () => {
+            getTransactionsRef.current();
         });
 
         const handler = (data) => upsertTransactionRef.current(data);

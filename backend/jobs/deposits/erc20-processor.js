@@ -99,7 +99,14 @@ const processERC20Event = async (job) => {
             await publishTransactionStatusUpdate({
                 transactionId: txRecord._id.toString(),
                 status: txRecord.status,
-                confirmations: confirmations
+                confirmations: confirmations,
+                nature: 1,
+                amount: displayAmount,
+                coin: symbol,
+                txHash,
+                chainId,
+                to: walletAddress,
+                fee: 0
             })
         } catch (pubErr) {
             console.error(`[ERC20-PROCESSOR] Failed to publish status update:`, pubErr.message)
@@ -182,7 +189,14 @@ const processERC20Event = async (job) => {
                 await publishTransactionStatusUpdate({
                     transactionId: txRecord._id.toString(),
                     status: 3,
-                    confirmations: confirmations
+                    confirmations: confirmations,
+                    nature: 1,
+                    amount: displayAmount,
+                    coin: symbol,
+                    txHash,
+                    chainId,
+                    to: walletAddress,
+                    fee: 0
                 })
             } catch (pubErr) {}
         }
