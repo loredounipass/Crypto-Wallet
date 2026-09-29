@@ -1,7 +1,6 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import P2POrderStatus from './P2POrderStatus';
+import useP2POrderDetailsPanelLogic from './useP2POrderDetailsPanelLogic';
 
 export default function P2POrderDetailsPanel({
   activeMobileTab,
@@ -14,9 +13,11 @@ export default function P2POrderDetailsPanel({
   authEmail,
   counterpartName
 }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const borderColor = '#1F1F33';
+  const {
+    t,
+    navigate,
+    borderColor
+  } = useP2POrderDetailsPanelLogic();
 
   // Shared button styles
   const primaryBtnBase = {

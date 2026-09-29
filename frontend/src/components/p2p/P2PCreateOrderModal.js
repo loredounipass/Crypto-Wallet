@@ -1,153 +1,33 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import useAllWallets from '../../hooks/useAllWallets';
-import Price from '../../services/price';
-import Escrow from '../../services/escrow';
-
-
-const MIN_ORDER_USD = 10;
+import React from 'react';
+import useP2PCreateOrderModalLogic from './useP2PCreateOrderModalLogic';
 
 export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit, isLoading }) {
-  const { t } = useTranslation();
-  const isMounted = React.useRef(true);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  const { allWalletInfo: wallets } = useAllWallets();
-  const shouldRender = Boolean(open && provider);
-
-  const compatibleWallets = useMemo(() => {
-    if (!wallets || !provider?.destinationWallets) return [];
-    return wallets.filter(w => provider.destinationWallets.some(dw => dw.coin?.toUpperCase() === w.coin?.toUpperCase() && dw.enabled));
-  }, [wallets, provider]);
-
-  const [coin, setCoin] = useState('');
-  const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [coinPriceUsd, setCoinPriceUsd] = useState(0);
-  const [gasFee, setGasFee] = useState(0);
-  const [gasLoading, setGasLoading] = useState(false);
-
-  const availablePaymentMethods = provider?.paymentMethods?.length > 0
-    ? provider.paymentMethods.map(pm =>
-      (pm === 'Transferencia Bancaria' && provider.preferredBank)
-        ? provider.preferredBank
-        : pm
-    )
-    : ['Transferencia Bancaria'];
-
-  const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
-  const balance = Number(selectedWallet?.balance || 0);
-  const chainId = selectedWallet?.chainId || 0;
-  // Available balance (user enters a gross amount that already includes gas)
-  const availableBalance = useMemo(() => {
-    return balance || 0;
-  }, [balance]);
-
-  const belowMinimum = coinPriceUsd > 0 && (balance * coinPriceUsd) < MIN_ORDER_USD;
-
-  const truncateToDecimals = (value, decimals = 8) => {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
-    const factor = 10 ** decimals;
-    return Math.floor(numeric * factor) / factor;
-  };
-
-  const formatTrimmed = (value, decimals = 8) => {
-    const truncated = truncateToDecimals(value, decimals);
-    if (!truncated) return '';
-    return truncated.toFixed(decimals).replace(/\.?0+$/, '');
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-    async function loadPrice() {
-      if (!coin) {
-        if (isMounted) setCoinPriceUsd(0);
-        return;
-      }
-      try {
-        const { data } = await Price.getPrice(coin);
-        if (isMounted) setCoinPriceUsd(Number(data?.USD || 0));
-      } catch (_) {
-        if (isMounted) setCoinPriceUsd(0);
-      }
-    }
-    loadPrice();
-    return () => { isMounted = false; };
-  }, [coin]);
-
-  // Fetch gas estimate when coin/wallet changes
-  useEffect(() => {
-    let isMounted = true;
-    async function loadGasEstimate() {
-      if (!coin || !chainId) {
-        if (isMounted) setGasFee(0);
-        return;
-      }
-      setGasLoading(true);
-      console.log('[P2P Gas] Fetching estimate:', { coin, chainId, selectedWallet: selectedWallet ? { address: selectedWallet.address, balance: selectedWallet.balance, chainId: selectedWallet.chainId } : 'none' });
-      try {
-        const data = await Escrow.getGasEstimate(coin, chainId);
-        console.log('[P2P Gas] Response:', data);
-        if (isMounted) setGasFee(Number(data.gasFee || 0));
-      } catch (err) {
-        console.error('[P2P Gas] Error:', err?.response?.data || err?.message || err);
-        if (isMounted) setGasFee(0);
-      } finally {
-        if (isMounted) setGasLoading(false);
-      }
-    }
-    loadGasEstimate();
-    return () => { isMounted = false; };
-  }, [coin, chainId, selectedWallet]);
-
-  const amountNum = parseFloat(amount) || 0;
-  const netAmount = Math.max(0, amountNum - gasFee);
-
-  const fiatAmount = useMemo(() => {
-    const qty = netAmount;
-    if (!qty || !coinPriceUsd) return '';
-    const totalUsd = truncateToDecimals(qty * coinPriceUsd, 2);
-    return totalUsd ? totalUsd.toFixed(2) : '';
-  }, [netAmount, coinPriceUsd]);
-
-  const isValid = coin && amountNum > 0 && parseFloat(fiatAmount) > 0
-    && paymentMethod
-    && netAmount > 0
-    && amountNum <= balance
-    && !belowMinimum;
-
-  const insufficientBalance = amountNum > 0 && amountNum > balance;
-
-  const resolvePaymentMethod = (displayValue) => {
-    if (provider?.paymentMethods?.includes(displayValue)) return displayValue;
-    if (displayValue === provider?.preferredBank) return 'Transferencia Bancaria';
-    return displayValue;
-  };
-
-  const handleSubmit = () => {
-    if (!isValid) return;
-    const safeNetAmount = truncateToDecimals(netAmount, 8);
-    onSubmit({
-      coin: coin.toUpperCase(),
-      amount: safeNetAmount,
-      fiatAmount: parseFloat(fiatAmount),
-      providerEmail: provider.email,
-      paymentMethod: resolvePaymentMethod(paymentMethod),
-    });
-  };
-
-  const handleSetMax = () => {
-    if (!coin || availableBalance <= 0) return;
-    setAmount(formatTrimmed(availableBalance, 8));
-  };
+  const {
+    t,
+    shouldRender,
+    compatibleWallets,
+    coin,
+    setCoin,
+    amount,
+    setAmount,
+    paymentMethod,
+    setPaymentMethod,
+    coinPriceUsd,
+    gasFee,
+    gasLoading,
+    availablePaymentMethods,
+    selectedWallet,
+    availableBalance,
+    belowMinimum,
+    amountNum,
+    netAmount,
+    fiatAmount,
+    isValid,
+    insufficientBalance,
+    truncateToDecimals,
+    handleSubmit,
+    handleSetMax
+  } = useP2PCreateOrderModalLogic({ open, provider, onSubmit });
 
   const inputStyle = {
     width: '100%',

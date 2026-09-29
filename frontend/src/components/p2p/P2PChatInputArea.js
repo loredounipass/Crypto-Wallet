@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import EmojiPicker from 'emoji-picker-react';
 import { Send as SendIcon } from '../../ui/icons';
 import { TrashIcon, PaperclipIcon, MicIcon } from './ChatIcons';
+import useP2PChatInputAreaLogic from './useP2PChatInputAreaLogic';
 
 export default function P2PChatInputArea({
   isRecording,
@@ -21,32 +22,13 @@ export default function P2PChatInputArea({
   borderColor,
   chatError
 }) {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useRef(null);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
-        setShowEmojiPicker(false);
-      }
-    };
-    if (showEmojiPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showEmojiPicker]);
-
-  const onEmojiClick = (emojiObject) => {
-    setMessageContent((prev) => prev + emojiObject.emoji);
-  };
+  const {
+    showEmojiPicker,
+    setShowEmojiPicker,
+    emojiPickerRef,
+    formatTime,
+    onEmojiClick
+  } = useP2PChatInputAreaLogic({ setMessageContent });
 
   return (
     <div style={{ padding: 12, borderTop: `1px solid ${borderColor}`, position: 'relative' }}>

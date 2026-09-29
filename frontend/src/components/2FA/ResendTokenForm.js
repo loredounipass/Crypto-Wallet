@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import useAuth from '../../hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
 import {
   Typography,
   Box,
@@ -9,30 +7,17 @@ import {
   CircularProgress,
 } from '../../ui/material';
 import AuthLayout, { inputSx, buttonStyle } from '../AuthLayout';
+import useResendTokenLogic from './useResendTokenLogic';
 
 const ResendTokenForm = () => {
-  const { resendToken, error, successMessage } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState(() => location.state?.email || '');
-  const [loading, setLoading] = useState(false);
-
-
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    try {
-      const res = await resendToken({ email: email.trim() });
-      if (res?.success && res.message.includes('código de verificación')) {
-        navigate('/verifytoken', { state: { email } });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    loading,
+    error,
+    successMessage,
+    handleSubmit
+  } = useResendTokenLogic();
 
   return (
     <AuthLayout subtitle="Reenviar código de verificación">

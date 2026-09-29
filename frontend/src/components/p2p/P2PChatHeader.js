@@ -1,6 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import useP2PChatHeaderLogic from './useP2PChatHeaderLogic';
 
 export default function P2PChatHeader({
   borderColor,
@@ -8,17 +7,11 @@ export default function P2PChatHeader({
   isProvider,
   isSeller
 }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const initial = counterpartName?.charAt(0)?.toUpperCase() || '?';
-
-  const handleBack = () => {
-    if (isProvider) {
-      navigate('/provider-dashboard');
-    } else {
-      navigate('/p2p');
-    }
-  };
+  const {
+    t,
+    initial,
+    handleBack
+  } = useP2PChatHeaderLogic({ counterpartName, isProvider });
 
   return (
     <div style={{

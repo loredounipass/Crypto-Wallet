@@ -1,19 +1,15 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
+import React from 'react';
+import useP2PDisputeModalLogic from './useP2PDisputeModalLogic';
 
 export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) {
-  const { t } = useTranslation();
-  const [reason, setReason] = useState('');
-  
-  
+  const {
+    t,
+    reason,
+    setReason,
+    handleSubmit
+  } = useP2PDisputeModalLogic(onSubmit);
 
   if (!open) return null;
-
-  const handleSubmit = () => {
-    if (!reason.trim()) return;
-    onSubmit(reason);
-  };
 
   return (
     <div style={{
