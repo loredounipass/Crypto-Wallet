@@ -158,8 +158,8 @@ const sendWithdraw = async ({
         { transactions: 0 })
 
     if (wallet && 'coin' in wallet) {
+        const { coin, chainId } = wallet
         try {
-            const { coin, chainId } = wallet
             const coinKey = String(coin).toUpperCase()
         const coinConfig = coins[coinKey]
 
@@ -193,14 +193,39 @@ const sendWithdraw = async ({
                          throw new Error(`Previous tx ${txRecord.txHash} failed on chain`)
                     }
                 } else {
-                    console.log(`[WITHDRAW-TX] Existing tx ${txRecord.txHash} is still pending on chain`)
-                    throw new Error('WAITING_FOR_CONFIRMATION')
+                    // Receipt null: verificar si la TX aún existe en el mempool
+                    const txInMempool = await web3.eth.getTransaction(txRecord.txHash).catch(() => null)
+                    if (txInMempool) {
+                        console.log(`[WITHDRAW-TX] TX ${txRecord.txHash} still in mempool. Waiting...`)
+                        throw new Error('WAITING_FOR_CONFIRMATION')
+                    }
+                    // TX desapareció: no está en mempool ni en ningún bloque
+                    console.error(`[WITHDRAW-TX] TX ${txRecord.txHash} VANISHED. Not in mempool, no receipt. Resetting for re-broadcast.`)
+                    await Transaction.updateOne(
+                        { _id: new ObjectId(transactionId) },
+                        { $set: { status: 0 }, $unset: { txHash: '' } }
+                    )
+                    throw new Error('TX_VANISHED_WILL_RETRY')
                 }
             } catch (e) {
-                if (e.message.includes('WAITING_FOR_CONFIRMATION') || e.message.includes('failed on chain')) {
+                if (e.message.includes('WAITING_FOR_CONFIRMATION') || e.message.includes('failed on chain') || e.message.includes('TX_VANISHED_WILL_RETRY')) {
                     throw e
                 }
+                // Error inesperado del RPC al consultar el receipt
                 console.warn(`[WITHDRAW-TX] Error checking receipt for ${txRecord.txHash}:`, e.message)
+                const isNotFound = e.message.toLowerCase().includes('not found') || e.message.toLowerCase().includes('unknown transaction')
+                if (isNotFound) {
+                    // Doble verificación: ¿existe en mempool?
+                    const txInMempool = await web3.eth.getTransaction(txRecord.txHash).catch(() => null)
+                    if (!txInMempool) {
+                        console.error(`[WITHDRAW-TX] TX ${txRecord.txHash} confirmed vanished (RPC error + not in mempool). Resetting for re-broadcast.`)
+                        await Transaction.updateOne(
+                            { _id: new ObjectId(transactionId) },
+                            { $set: { status: 0 }, $unset: { txHash: '' } }
+                        )
+                        throw new Error('TX_VANISHED_WILL_RETRY')
+                    }
+                }
                 throw new Error('WAITING_FOR_CONFIRMATION')
             }
         } else if (txRecord.status === 2) {
@@ -259,7 +284,7 @@ const sendWithdraw = async ({
     } catch (err) {
         // Rollback the balance if something went wrong before or during the transaction
         if (err.message && !err.message.includes('Unsupported coin')) {
-             if (err.message.includes('was not mined within 50 blocks') || err.message.includes('might still be mined') || err.message.includes('WAITING_FOR_CONFIRMATION')) {
+             if (err.message.includes('was not mined within 50 blocks') || err.message.includes('might still be mined') || err.message.includes('WAITING_FOR_CONFIRMATION') || err.message.includes('TX_VANISHED_WILL_RETRY')) {
                  console.warn(`[WITHDRAW-TX] Timeout or pending detected for ${transactionId}. Leaving transaction as pending. DO NOT ROLLBACK.`)
              } else {
                  await _rollbackOnFailure(transactionId, walletId, amount, err.message, { coin, chainId, to: withdrawAddress })

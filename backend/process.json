@@ -99,6 +99,10 @@
         {
             "name": "ME: ERC20 Withdrawals NODE",
             "script": "./daemon/workers/local/erc20-withdraw.js"
+        },
+        {
+            "name": "ME: Stale Withdraw Sweeper NODE",
+            "script": "./daemon/workers/local/staleWithdrawSweeper.js"
         }
     ]
 }
