@@ -42,7 +42,15 @@ import AdminUsers from './pages/AdminUsers';
 
 const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
 
+
+
+
+// MAIN COMPONENT THAT MANAGES THE ROUTING, AUTHENTICATION STATE, AND APP LAYOUT
 function AppContent() {
+
+
+
+    // FETCHES THE CSRF TOKEN ON INITIAL MOUNT TO SECURE FUTURE API REQUESTS
     useEffect(() => {
         fetchCsrfToken();
     }, []);
@@ -58,20 +66,36 @@ function AppContent() {
     const isPublicRoute = publicRoutes.includes(location.pathname);
     const isAuthenticated = !!auth;
 
+
+
+
+    // TOGGLES THE SIDEBAR EXPANSION STATE FOR DESKTOP VIEWS
     const handleSidebarToggle = () => {
         setSidebarOpen(!sidebarOpen);
     };
 
+
+
+
+    // CLOSES THE SIDEBAR MENU IN MOBILE VIEW
     const handleMobileClose = () => {
         setMobileOpen(false);
     };
 
+
+
+
+    // OPENS THE SIDEBAR MENU IN MOBILE VIEW
     const handleMobileOpen = () => {
         setMobileOpen(true);
     };
 
 
 
+
+
+
+    // DEFINES THE DYNAMIC CSS STYLES FOR THE MAIN CONTENT AREA BASED ON LAYOUT STATE
     const mainContentStyle = {
         flex: 1,
         marginLeft: (isAuthenticated && !isPublicRoute && !isMobile) ? (sidebarOpen ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED) : 0,
@@ -263,6 +287,10 @@ function AppContent() {
     );
 }
 
+
+
+
+// ROOT COMPONENT THAT WRAPS THE APP CONTENT WITH ROUTER AND CONTEXT PROVIDERS
 export default function App() {
     return (
         <Router>

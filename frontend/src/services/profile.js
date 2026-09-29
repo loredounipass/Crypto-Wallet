@@ -8,31 +8,34 @@ import {
     profileUploadProfilePhotoApi,
 } from '../api/http';
 
-/**
- * Obtiene el perfil del usuario autenticado.
- */
+
+
+
+// FETCHES THE PROFILE INFORMATION FOR THE AUTHENTICATED USER
 export async function getMyProfile() {
     return await get(profileMeApi, {});
 }
 
-/**
- * Obtiene un perfil público por ID de usuario (owner).
- */
+
+
+
+// FETCHES A PUBLIC PROFILE USING THE SPECIFIED USER ID
 export async function getProfileById(userId) {
     return await get(profileByIdApi(userId), {});
 }
 
-/**
- * Crea o actualiza el perfil del usuario autenticado.
- * @param {Object} body - { firstName?, lastName?, links?, gender?, relationshipStatus?, interests?, bio?, likes? }
- */
+
+
+
+// CREATES OR UPDATES THE AUTHENTICATED USER PROFILE
 export async function upsertProfile(body) {
     return await post(profileApi, body);
 }
 
-/**
- * Sube la foto de perfil (multipart/form-data con campo 'file').
- */
+
+
+
+// UPLOADS A NEW PROFILE PHOTO FOR THE AUTHENTICATED USER
 export async function uploadProfilePhoto(formData) {
     return await postMultipart(profileUploadProfilePhotoApi, formData);
 }

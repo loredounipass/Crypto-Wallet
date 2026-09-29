@@ -3,6 +3,10 @@ import { io } from 'socket.io-client';
 import i18n from '../languages/i18n';
 import Escrow from '../services/escrow';
 
+
+
+
+// CUSTOM HOOK TO MANAGE P2P ESCROW ORDERS, REAL-TIME UPDATES, AND DISPUTES
 export default function useEscrow() {
   const [orders, setOrders] = useState([]);
   const [providerOrders, setProviderOrders] = useState([]);
@@ -11,9 +15,16 @@ export default function useEscrow() {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
+
+
+
+  // CLEARS THE CURRENT NOTIFICATION TOAST
   const dismissToast = useCallback(() => setToast(null), []);
 
-  // WebSocket Connection for Real-time Escrow Updates
+
+
+
+  // EFFECT THAT ESTABLISHES A WEBSOCKET CONNECTION FOR REAL-TIME ESCROW STATUS UPDATES
   useEffect(() => {
     const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/escrow`, {
       withCredentials: true,
@@ -57,6 +68,10 @@ export default function useEscrow() {
     };
   }, []);
 
+
+
+
+  // CREATES A NEW ESCROW ORDER WITH THE PROVIDED TRANSACTION DETAILS
   const createOrder = async (body) => {
     setIsLoading(true);
     try {
@@ -73,6 +88,10 @@ export default function useEscrow() {
     }
   };
 
+
+
+
+  // FETCHES THE LIST OF ESCROW ORDERS WHERE THE CURRENT USER IS THE INITIATOR
   const getMyOrders = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -89,6 +108,10 @@ export default function useEscrow() {
     }
   }, []);
 
+
+
+
+  // FETCHES THE LIST OF ESCROW ORDERS WHERE THE CURRENT USER IS THE PROVIDER
   const getProviderOrders = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -105,6 +128,10 @@ export default function useEscrow() {
     }
   }, []);
 
+
+
+
+  // RETRIEVES THE DETAILED INFORMATION OF A SPECIFIC ESCROW ORDER BY ID
   const getOrder = useCallback(async (orderId) => {
     setIsLoading(true);
     try {
@@ -121,6 +148,10 @@ export default function useEscrow() {
     }
   }, []);
 
+
+
+
+  // CONFIRMS THAT THE FIAT PAYMENT HAS BEEN SENT BY THE BUYER
   const confirmPayment = async (orderId) => {
     setIsLoading(true);
     try {
@@ -137,6 +168,10 @@ export default function useEscrow() {
     }
   };
 
+
+
+
+  // RELEASES THE ESCROWED CRYPTO FUNDS TO THE BUYER AFTER VERIFYING PAYMENT
   const releaseFunds = async (orderId) => {
     setIsLoading(true);
     try {
@@ -153,6 +188,10 @@ export default function useEscrow() {
     }
   };
 
+
+
+
+  // OPENS A DISPUTE FOR AN ESCROW ORDER PROVIDING A REASON FOR THE CONFLICT
   const openDispute = async (orderId, reason) => {
     setIsLoading(true);
     try {
@@ -169,6 +208,10 @@ export default function useEscrow() {
     }
   };
 
+
+
+
+  // CANCELS AN ESCROW ORDER AND RETURNS THE FUNDS TO THE SELLER
   const cancelOrder = async (orderId) => {
     setIsLoading(true);
     try {
@@ -185,6 +228,10 @@ export default function useEscrow() {
     }
   };
 
+
+
+
+  // FETCHES ALL ORDERS CURRENTLY IN A DISPUTED STATE
   const getDisputedOrders = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -200,6 +247,10 @@ export default function useEscrow() {
     }
   }, []);
 
+
+
+
+  // RESOLVES AN ACTIVE DISPUTE BY SPECIFYING WHETHER TO RELEASE OR REVERT THE FUNDS
   const resolveDispute = async (orderId, type) => {
     setIsLoading(true);
     try {

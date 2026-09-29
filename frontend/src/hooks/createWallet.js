@@ -1,6 +1,10 @@
 import Wallet from '../services/wallet';
 import { invalidateWalletsCache } from './useAllWallets';
 
+
+
+
+// FUNCTION TO CREATE A NEW WALLET AND INVALIDATE THE CACHE UPON SUCCESSFUL CREATION
 export default async function createWallet(coinAndChain) {
     try {
         const created = await Wallet.createWallet(coinAndChain)

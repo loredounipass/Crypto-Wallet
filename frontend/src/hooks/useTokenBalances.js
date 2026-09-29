@@ -10,6 +10,10 @@ let cache = {
 };
 let inflightRequest = null;
 
+
+
+
+// CLEARS THE IN-MEMORY TOKEN BALANCES CACHE
 export function invalidateTokensCache() {
     cache = {
         timestamp: 0,
@@ -18,6 +22,10 @@ export function invalidateTokensCache() {
     };
 }
 
+
+
+
+// ASYNCHRONOUSLY FETCHES ALL ERC20 TOKENS AND CALCULATES THEIR TOTAL USD VALUE
 async function fetchTokenBalances(force = false) {
     const now = Date.now();
     const isCacheValid = (now - cache.timestamp) < CACHE_TTL_MS;
@@ -71,11 +79,19 @@ async function fetchTokenBalances(force = false) {
     return inflightRequest;
 }
 
+
+
+
+// CUSTOM HOOK THAT PROVIDES REACTIVE ACCESS TO ALL TOKEN BALANCES AND THEIR TOTAL FIAT VALUE
 export default function useTokenBalances() {
     const [tokenBalances, setTokenBalances] = useState([]);
     const [tokenUsdValue, setTokenUsdValue] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
+
+
+
+    // EFFECT THAT LOADS THE TOKEN BALANCES ON MOUNT AND UPDATES THE STATE
     useEffect(() => {
         let isMounted = true;
         async function load() {
@@ -100,6 +116,10 @@ export default function useTokenBalances() {
         return () => { isMounted = false; };
     }, [])
 
+
+
+
+    // FORCES A REFRESH OF TOKEN BALANCES BYPASSING THE LOCAL CACHE
     async function refreshTokens() {
         setIsLoading(true);
         try {

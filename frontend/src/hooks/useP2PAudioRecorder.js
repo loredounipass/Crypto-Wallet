@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import i18n from '../languages/i18n';
-// Force Webpack recompile
 
+
+
+// CUSTOM HOOK THAT MANAGES BROWSER MICROPHONE RECORDING FOR P2P AUDIO MESSAGES
 export default function useP2PAudioRecorder(onSendAudio, onError) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -10,6 +12,10 @@ export default function useP2PAudioRecorder(onSendAudio, onError) {
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
 
+
+
+
+  // REQUESTS MICROPHONE PERMISSIONS AND STARTS RECORDING THE AUDIO STREAM
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -48,6 +54,10 @@ export default function useP2PAudioRecorder(onSendAudio, onError) {
     }
   };
 
+
+
+
+  // STOPS THE ACTIVE RECORDING AND OPTIONALLY CANCELS SENDING THE AUDIO FILE
   const stopRecording = (cancel = false) => {
     if (mediaRecorderRef.current && isRecording) {
       if (cancel) {

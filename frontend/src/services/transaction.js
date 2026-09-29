@@ -1,6 +1,10 @@
 import { get, transactionsApi, transactionApi } from '../api/http'
 
 export default class Transaction {
+
+
+
+    // FETCHES ALL TRANSACTIONS ACROSS ALL SUPPORTED COINS CONCURRENTLY
     static async getAllTransactions() {
         const supportedCoins = ['bnb', 'avax', 's', 'eth', 'matic', 'op']
         const results = await Promise.allSettled(
@@ -43,6 +47,10 @@ export default class Transaction {
         }
     }
 
+
+
+
+    // FETCHES THE TRANSACTION HISTORY FOR A SPECIFIC CRYPTOCURRENCY COIN
     static async getCoinTransactions(coin) {
         return await get(transactionsApi,
             {
@@ -50,6 +58,10 @@ export default class Transaction {
             })
     }
 
+
+
+
+    // FETCHES THE DETAILED INFORMATION OF A SPECIFIC TRANSACTION BY ITS ID
     static async getTransaction(transactionId) {
         return await get(transactionApi,
             {

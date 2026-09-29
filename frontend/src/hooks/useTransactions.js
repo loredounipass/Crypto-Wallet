@@ -3,6 +3,10 @@ import { io } from 'socket.io-client';
 import i18n from '../languages/i18n';
 import Transaction from '../services/transaction';
 
+
+
+
+// CUSTOM HOOK TO MANAGE TRANSACTION HISTORY AND REAL-TIME STATUS UPDATES VIA WEBSOCKETS
 export default function useTransitions(coin) {
     const [transactions, setTransactions] = useState([]);
     const [toast, setToast] = useState(null);
@@ -12,7 +16,10 @@ export default function useTransitions(coin) {
     }
     const upsertTransactionRef = useRef(null);
 
-    // Define getTransactions using useCallback to memoize it
+
+
+
+    // FETCHES THE INITIAL LIST OF TRANSACTIONS FOR A SPECIFIC COIN OR ALL COINS
     const getTransactions = useCallback(async () => {
         try {
             let { data } = coin ? await Transaction.getCoinTransactions(coin)
@@ -26,14 +33,26 @@ export default function useTransitions(coin) {
         }
     }, [coin]); 
 
+
+
+
+    // EFFECT THAT TRIGGERS THE INITIAL TRANSACTION LOAD
     useEffect(() => {
         getTransactions();
     }, [getTransactions]); 
 
+
+
+
+    // CLEARS THE CURRENT TRANSACTION NOTIFICATION TOAST
     const dismissToast = useCallback(() => {
         setToast(null);
     }, []);
 
+
+
+
+    // EFFECT THAT AUTOMATICALLY DISMISSES THE NOTIFICATION TOAST AFTER A DELAY
     useEffect(() => {
         if (!toast) return;
 
@@ -44,6 +63,10 @@ export default function useTransitions(coin) {
         return () => clearTimeout(timer);
     }, [toast]);
 
+
+
+
+    // PROCESSES INCOMING SOCKET EVENTS TO UPDATE OR PREPEND A TRANSACTION AND TRIGGERS NOTIFICATIONS
     const upsertTransaction = useCallback((incoming) => {
         if (!incoming || !incoming.transactionId) return;
 
@@ -108,6 +131,10 @@ export default function useTransitions(coin) {
     const getTransactionsRef = useRef(getTransactions);
     getTransactionsRef.current = getTransactions;
 
+
+
+
+    // EFFECT THAT ESTABLISHES THE WEBSOCKET CONNECTION FOR LIVE TRANSACTION STATUS UPDATES
     useEffect(() => {
         const socket = io(`${new URL(process.env.REACT_APP_API_BASE_URL).origin}/transactions`, {
             withCredentials: true,

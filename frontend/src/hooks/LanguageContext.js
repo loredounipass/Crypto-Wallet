@@ -4,6 +4,9 @@ import LanguagesService from '../services/languages';
 
 const LanguageContext = createContext();
 
+
+
+// CONTEXT PROVIDER FOR MANAGING THE APPLICATION GLOBAL LANGUAGE STATE
 export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState(() => {
         return localStorage.getItem('language') || 'es';
@@ -11,6 +14,9 @@ export const LanguageProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const initialLoadDone = useRef(false);
 
+
+
+    // FETCHES THE AUTHENTICATED USER LANGUAGE FROM THE SERVER AND SYNCS WITH LOCAL STATE
     useEffect(() => {
         const fetchUserLang = async () => {
             try {
@@ -21,12 +27,14 @@ export const LanguageProvider = ({ children }) => {
                     setLanguage(serverLang);
                 }
             } catch {
-                // User not authenticated or endpoint unavailable, keep localStorage value
             }
         };
         fetchUserLang();
     }, []);
 
+
+
+    // ASYNCHRONOUSLY LOADS TRANSLATION RESOURCES AND UPDATES THE I18N INSTANCE
     useEffect(() => {
         const loadLanguage = async (lng) => {
             if (!initialLoadDone.current) {
@@ -48,12 +56,14 @@ export const LanguageProvider = ({ children }) => {
         loadLanguage(language);
     }, [language]);
 
+
+
+    // CHANGES THE ACTIVE LANGUAGE IN MEMORY AND LOCAL STORAGE THEN NOTIFIES THE BACKEND
     const handleLanguageChange = useCallback((lng) => {
         setLanguage(lng);
         i18n.changeLanguage(lng);
         localStorage.setItem('language', lng);
         LanguagesService.updateUserLanguage(lng).catch(() => {
-            // silently fail if user is not authenticated
         });
     }, []);
 
@@ -64,4 +74,7 @@ export const LanguageProvider = ({ children }) => {
     );
 };
 
+
+
+// CUSTOM HOOK TO ACCESS THE LANGUAGE CONTEXT FROM OTHER COMPONENTS
 export const useLanguage = () => use(LanguageContext);

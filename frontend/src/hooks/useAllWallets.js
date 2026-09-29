@@ -11,6 +11,10 @@ let cache = {
 };
 let inflightRequest = null;
 
+
+
+
+// CLEARS THE IN-MEMORY WALLETS CACHE
 export function invalidateWalletsCache() {
     cache = {
         timestamp: 0,
@@ -19,6 +23,10 @@ export function invalidateWalletsCache() {
     };
 }
 
+
+
+
+// ASYNCHRONOUSLY FETCHES ALL WALLETS AND CALCULATES TOTAL BALANCE IN USD USING CACHING
 async function fetchAllWalletsAndBalance(force = false) {
     const now = Date.now();
     const isCacheValid = (now - cache.timestamp) < CACHE_TTL_MS;
@@ -72,6 +80,10 @@ async function fetchAllWalletsAndBalance(force = false) {
     return inflightRequest;
 }
 
+
+
+
+// CUSTOM HOOK THAT PROVIDES REACTIVE ACCESS TO ALL WALLET INFO AND TOTAL BALANCE
 export default function useAllWallets() {
     const [allWalletInfo, setAllWalletInfo] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
@@ -79,6 +91,10 @@ export default function useAllWallets() {
 
     useEffect(() => {
         let isMounted = true;
+
+
+
+        // INNER FUNCTION THAT FETCHES WALLET DATA AND UPDATES STATE IF COMPONENT IS MOUNTED
         async function getAllWalletInfo() {
             setIsLoading(true);
             try {
@@ -103,6 +119,10 @@ export default function useAllWallets() {
         };
     }, [])
 
+
+
+
+    // FORCES A REFRESH OF WALLET DATA BYPASSING THE LOCAL CACHE
     async function refreshWallets() {
         setIsLoading(true);
         try {

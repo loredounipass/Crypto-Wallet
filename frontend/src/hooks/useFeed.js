@@ -3,12 +3,20 @@ import FeedService from '../services/feed';
 import { io } from 'socket.io-client';
 import i18n from '../languages/i18n';
 
+
+
+
+// CUSTOM HOOK TO MANAGE THE SOCIAL FEED POSTS AND REAL-TIME SOCKET EVENTS
 export default function useFeed(isVideoOnly = false) {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const socketRef = useRef(null);
 
+
+
+
+    // FETCHES THE FEED POSTS OR EXCLUSIVELY VIDEO POSTS DEPENDING ON THE HOOK CONFIGURATION
     const fetchFeed = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -25,11 +33,18 @@ export default function useFeed(isVideoOnly = false) {
         }
     }, [isVideoOnly]);
 
+
+
+
+    // EFFECT THAT INITIATES THE INITIAL FETCH OF THE FEED POSTS
     useEffect(() => {
         fetchFeed();
     }, [fetchFeed]);
 
-    // WebSocket Integration
+
+
+
+    // EFFECT THAT ESTABLISHES THE WEBSOCKET CONNECTION FOR LIVE FEED UPDATES
     useEffect(() => {
         try {
             const socketOrigin = new URL(process.env.REACT_APP_API_BASE_URL).origin;
@@ -75,15 +90,26 @@ export default function useFeed(isVideoOnly = false) {
         }
     }, []);
 
+
+
+
+    // OPTIMISTICALLY UPDATES A POST IN THE LOCAL STATE WITHOUT WAITING FOR THE SERVER RESPONSE
     const updatePostOptimistic = (postId, updater) => {
         setPosts((prev) => prev.map(p => p._id === postId ? updater(p) : p));
     };
 
+
+
+
+    // OPTIMISTICALLY REMOVES A POST FROM THE LOCAL STATE
     const deletePostOptimistic = (postId) => {
         setPosts((prev) => prev.filter(p => p._id !== postId));
     };
 
-    // ── Post Actions ──
+
+
+
+    // CREATES A NEW TEXT-BASED POST AND PREPENDS IT TO THE FEED
     const createPost = async (data) => {
         const res = await FeedService.createPost(data);
         const created = res?.data || res;
@@ -96,6 +122,10 @@ export default function useFeed(isVideoOnly = false) {
         return created;
     };
 
+
+
+
+    // UPLOADS MULTIMEDIA CONTENT AND CREATES A NEW POST WITH THE ATTACHED FILE
     const createPostWithFile = async (formData) => {
         const res = await FeedService.createPostWithFile(formData);
         const created = res?.data || res;
@@ -108,6 +138,10 @@ export default function useFeed(isVideoOnly = false) {
         return created;
     };
 
+
+
+
+    // LIKES A SPECIFIC POST AND APPLIES THE CHANGE OPTIMISTICALLY
     const likePost = async (postId) => {
         try {
             const { data } = await FeedService.likePost(postId);
@@ -119,6 +153,10 @@ export default function useFeed(isVideoOnly = false) {
         }
     };
 
+
+
+
+    // REMOVES A LIKE FROM A SPECIFIC POST AND APPLIES THE CHANGE OPTIMISTICALLY
     const unlikePost = async (postId) => {
         try {
             const { data } = await FeedService.unlikePost(postId);
@@ -130,6 +168,10 @@ export default function useFeed(isVideoOnly = false) {
         }
     };
 
+
+
+
+    // DELETES A POST BELONGING TO THE CURRENT USER
     const deletePost = async (postId) => {
         deletePostOptimistic(postId);
         try {
@@ -140,7 +182,10 @@ export default function useFeed(isVideoOnly = false) {
         }
     };
 
-    // ── Comment Actions ──
+
+
+
+    // ADDS A NEW COMMENT OR REPLY TO A SPECIFIC POST
     const addComment = async (postId, content, parentId = null) => {
         const res = await FeedService.addComment(postId, content, parentId);
         const comment = res?.data || res;
@@ -149,22 +194,37 @@ export default function useFeed(isVideoOnly = false) {
         return comment;
     };
 
+
+
+
+    // FETCHES ALL THE COMMENTS ASSOCIATED WITH A SPECIFIC POST
     const getComments = async (postId) => {
         const res = await FeedService.getComments(postId);
         return res?.data || res || [];
     };
 
+
+
+
+    // LIKES A SPECIFIC COMMENT
     const likeComment = async (commentId) => {
         const res = await FeedService.likeComment(commentId);
         return res?.data || res;
     };
 
+
+
+
+    // REMOVES A LIKE FROM A SPECIFIC COMMENT
     const unlikeComment = async (commentId) => {
         const res = await FeedService.unlikeComment(commentId);
         return res?.data || res;
     };
 
-    // ── View / Share ──
+
+
+
+    // REGISTERS A VIEW EVENT FOR A POST TO TRACK ENGAGEMENT
     const viewPost = async (postId) => {
         try {
             const res = await FeedService.addView(postId);
@@ -172,6 +232,10 @@ export default function useFeed(isVideoOnly = false) {
         } catch (_) {}
     };
 
+
+
+
+    // SHARES A POST AND INCREMENTS ITS SHARE COUNTER OPTIMISTICALLY
     const sharePost = async (postId) => {
         try {
             const res = await FeedService.addShare(postId);
@@ -181,7 +245,10 @@ export default function useFeed(isVideoOnly = false) {
         } catch (_) {}
     };
 
-    // ── Socket helpers ──
+
+
+
+    // EMITS A SOCKET EVENT TO JOIN A POST ROOM FOR REAL-TIME COMMENT UPDATES
     const joinPost = (postId) => {
         try {
             if (socketRef.current && socketRef.current.connected) {

@@ -4,16 +4,28 @@ import { AuthContext } from './AuthContext';
 
 const SocketContext = createContext();
 
+
+
+
+// CUSTOM HOOK TO ACCESS THE WEBSOCKET CONTEXT FROM OTHER COMPONENTS
 export const useSocket = () => {
     return use(SocketContext);
 };
 
+
+
+
+// CONTEXT PROVIDER THAT MANAGES THE SOCKET.IO CONNECTION AND REAL-TIME MESSAGES
 export const SocketProvider = ({ children }) => {
     const { auth } = use(AuthContext);
     const [socket, setSocket] = useState(null);
     const [connected, setConnected] = useState(false);
     const [messages, setMessages] = useState([]);
 
+
+
+
+    // INITIALIZES AND MANAGES THE WEBSOCKET CONNECTION LIFECYCLE WHEN THE USER AUTHENTICATES
     useEffect(() => {
         if (!auth?._id) {
             if (socket) {
@@ -77,6 +89,10 @@ export const SocketProvider = ({ children }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auth?._id]);
 
+
+
+
+    // EMITS AN EVENT TO JOIN A SPECIFIC CHAT ROOM WITH ANOTHER USER
     const joinChat = useCallback((otherUserId) => {
         if (socket && otherUserId) {
             socket.emit('joinChat', { otherUserId });

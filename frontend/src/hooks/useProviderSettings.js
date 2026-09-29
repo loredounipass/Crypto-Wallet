@@ -1,11 +1,19 @@
 import { useState, useCallback } from 'react';
 import Provider from '../services/providerService';
 
+
+
+
+// CUSTOM HOOK TO MANAGE THE FIAT PROVIDER CONFIGURATION AND PAYMENT METHODS
 export default function useProviderSettings() {
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+
+
+
+  // FETCHES THE CURRENT PROVIDER SETTINGS INCLUDING ACTIVE PAYMENT METHODS
   const getSettings = useCallback(async (signal) => {
     setIsLoading(true);
     try {
@@ -20,6 +28,10 @@ export default function useProviderSettings() {
     }
   }, []);
 
+
+
+
+  // ADDS A NEW PAYMENT METHOD TO THE PROVIDER SETTINGS
   const addPaymentMethod = async (body) => {
     setIsLoading(true);
     try {
@@ -35,6 +47,10 @@ export default function useProviderSettings() {
     }
   };
 
+
+
+
+  // DELETES AN EXISTING PAYMENT METHOD FROM THE PROVIDER SETTINGS
   const deletePaymentMethod = async (method) => {
     setIsLoading(true);
     try {
@@ -50,6 +66,10 @@ export default function useProviderSettings() {
     }
   };
 
+
+
+
+  // UPDATES THE DESTINATION WALLET CONFIGURATION FOR RECEIVING PAYMENTS
   const updateDestinationWallet = async (body) => {
     setIsLoading(true);
     try {
@@ -65,6 +85,10 @@ export default function useProviderSettings() {
     }
   };
 
+
+
+
+  // TOGGLES THE ENABLED STATUS OF THE DESTINATION WALLET FEATURE
   const toggleDestinationWallet = async (body) => {
     setIsLoading(true);
     try {

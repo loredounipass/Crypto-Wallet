@@ -3,11 +3,9 @@ import * as profileService from '../services/profile';
 import { AuthContext } from './AuthContext';
 import i18n from '../languages/i18n';
 
-/**
- * Hook para cargar y gestionar el perfil del usuario autenticado.
- * Opcionalmente puede cargar un perfil por ID (vista pública de otro usuario).
- * @param {{ userId?: string }} options - Si se pasa userId, se carga ese perfil (público); si no, el propio (me).
- */
+
+
+// CUSTOM HOOK TO FETCH, MANAGE, AND UPDATE THE AUTHENTICATED USER OR A PUBLIC PROFILE
 export default function useProfile(options = {}) {
     const { userId: viewUserId } = options;
     const { auth, setAuth } = use(AuthContext);
@@ -20,6 +18,10 @@ export default function useProfile(options = {}) {
     // True when there's no userId in the URL, OR the userId matches the logged-in user
     const isOwnProfile = !viewUserId || (!!auth?._id && viewUserId === String(auth._id));
 
+
+
+
+    // ASYNCHRONOUSLY FETCHES THE RELEVANT PROFILE DATA AND THEIR LATEST POSTS
     const loadProfile = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -94,11 +96,18 @@ export default function useProfile(options = {}) {
     }, [viewUserId, isOwnProfile, auth?._id]);
 
 
+
+
+
+    // EFFECT THAT TRIGGERS THE PROFILE DATA LOAD ON COMPONENT MOUNT OR ID CHANGE
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
 
-    /** Actualiza el perfil (upsert) y refresca el estado local. */
+
+
+
+    // SENDS UPDATED PROFILE FIELDS TO THE SERVER AND REFRESHES LOCAL STATE
     const upsertProfile = useCallback(async (body) => {
         if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const res = await profileService.upsertProfile(body);
@@ -107,7 +116,10 @@ export default function useProfile(options = {}) {
         return data;
     }, [isOwnProfile]);
 
-    /** Sube foto de perfil y actualiza profilePhotoUrl en el estado y en el AuthContext global. */
+
+
+
+    // UPLOADS A NEW AVATAR IMAGE AND SYNCHRONIZES THE GLOBAL AUTHENTICATION STATE
     const uploadProfilePhoto = useCallback(async (file) => {
         if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const formData = new FormData();
@@ -122,7 +134,10 @@ export default function useProfile(options = {}) {
         return res;
     }, [isOwnProfile, setAuth]);
 
-    /** Sube foto de portada y actualiza coverPhotoUrl en el estado. */
+
+
+
+    // UPLOADS A NEW COVER IMAGE AND UPDATES THE LOCAL PROFILE STATE
     const uploadCoverPhoto = useCallback(async (file) => {
         if (!isOwnProfile) return Promise.reject(new Error(i18n.t('profile_cannot_edit')));
         const formData = new FormData();
@@ -133,7 +148,10 @@ export default function useProfile(options = {}) {
         return res;
     }, [isOwnProfile]);
 
-    /** Marca al usuario visto como seguido y actualiza contador. Solo cuando se visita el perfil de otro usuario. */
+
+
+
+    // ADDS THE VIEWED PROFILE TO THE AUTHENTICATED USER'S FOLLOWING LIST
     const follow = useCallback(async () => {
         if (isOwnProfile || !viewUserId) return Promise.reject(new Error(i18n.t('profile_no_user_follow')));
         const res = await profileService.followUser(viewUserId);
@@ -142,7 +160,10 @@ export default function useProfile(options = {}) {
         return payload;
     }, [viewUserId, isOwnProfile]);
 
-    /** Marca al usuario visto como no seguido y actualiza contador. Solo cuando se visita el perfil de otro usuario. */
+
+
+
+    // REMOVES THE VIEWED PROFILE FROM THE AUTHENTICATED USER'S FOLLOWING LIST
     const unfollow = useCallback(async () => {
         if (isOwnProfile || !viewUserId) return Promise.reject(new Error(i18n.t('profile_no_user_unfollow')));
         const res = await profileService.unfollowUser(viewUserId);

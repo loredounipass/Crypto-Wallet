@@ -3,6 +3,10 @@ import Support from '../services/support';
 import { typewriter } from '../utils/typewriter';
 import i18n from '../languages/i18n';
 
+
+
+
+// CUSTOM HOOK THAT MANAGES THE INTERACTIVE CHAT STATE WITH THE SUPPORT AI AGENT
 export default function useSupport() {
     const [messages, setMessages] = useState([
         { text: i18n.t('agent_initial_message'), sender: 'agent' }
@@ -12,6 +16,10 @@ export default function useSupport() {
     const [error, setError] = useState(null);
     const cancelRef = useRef(null);
 
+
+
+
+    // CANCELS THE ONGOING TYPEWRITER ANIMATION FOR THE CURRENT AGENT RESPONSE
     const cancelResponse = useCallback(() => {
         if (cancelRef.current) {
             cancelRef.current();
@@ -21,6 +29,10 @@ export default function useSupport() {
         }
     }, []);
 
+
+
+
+    // SENDS A USER MESSAGE TO THE SUPPORT SYSTEM AND ANIMATES THE AGENT'S RESPONSE
     const sendMessage = useCallback(async (text) => {
         setMessages(prev => [...prev, { text, sender: 'user' }]);
         setIsLoading(true);

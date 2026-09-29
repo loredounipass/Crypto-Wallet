@@ -1,5 +1,8 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 
+
+
+// CUSTOM HOOK THAT MANAGES THE STATE AND TYPING INDICATORS FOR A P2P CHAT SESSION
 export default function useP2PChatState({
   socket,
   authId,
@@ -21,11 +24,18 @@ export default function useP2PChatState({
   const typingTimeoutRef = useRef(null);
   const isCurrentlyTypingRef = useRef(false);
 
+
+
+
+  // SCROLLS THE CHAT WINDOW DOWN TO SHOW THE MOST RECENT MESSAGES
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Filter messages for this conversation and sort chronologically
+
+
+
+  // COMPUTES THE FILTERED AND CHRONOLOGICALLY SORTED MESSAGES FOR THE CURRENT CONVERSATION
   const messages = useMemo(() => {
     if (!allMessages || !counterpartId || !authId) return [];
     return allMessages
@@ -36,7 +46,10 @@ export default function useP2PChatState({
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [allMessages, counterpartId, authId]);
 
-  // Listen for typing events
+
+
+
+  // EFFECT THAT REGISTERS A SOCKET LISTENER TO DETECT WHEN THE COUNTERPART IS TYPING
   useEffect(() => {
     if (!socket) return;
     const handleTyping = (data) => {
@@ -48,7 +61,10 @@ export default function useP2PChatState({
     return () => socket.off('typing', handleTyping);
   }, [socket, counterpartId]);
 
-  // Auto-scroll to bottom only when a new message is added (length increases)
+
+
+
+  // EFFECT THAT AUTOMATICALLY SCROLLS TO THE BOTTOM WHEN NEW MESSAGES ARRIVE
   useEffect(() => {
     if (messages.length > prevMessagesLength.current) {
       scrollToBottom();
@@ -56,6 +72,10 @@ export default function useP2PChatState({
     prevMessagesLength.current = messages.length;
   }, [messages]);
 
+
+
+
+  // PROCESSES AND SENDS THE CURRENT TEXT MESSAGE OR ATTACHED FILE
   const handleSendMessage = async () => {
     if (!counterpartId || (!messageContent.trim() && !selectedFile) || isSending) return;
     
@@ -100,6 +120,10 @@ export default function useP2PChatState({
     }
   };
 
+
+
+
+  // UPLOADS AND SENDS A RECORDED AUDIO BLOB TO THE COUNTERPART
   const handleSendAudio = async (audioFile) => {
     if (!counterpartId || isSending) return;
     setIsSending(true);

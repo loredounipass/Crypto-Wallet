@@ -5,11 +5,19 @@ import User from '../services/user';
 import i18n from '../languages/i18n';
 import { fetchCsrfToken } from '../api/http'; // VULN-09/10 FIX: Import fetchCsrfToken
 
+
+
+
+// CUSTOM HOOK THAT ENCAPSULATES AUTHENTICATION LOGIC AND USER SESSION MANAGEMENT
 export default function useAuth() {
     const navigate = useNavigate();
     const { setAuth } = use(AuthContext);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+
+
+
+    // RETRIEVES THE AUTHENTICATED USER INFO FROM THE SERVER AND SETS THE CONTEXT
     const setUserContext = async () => {
         try {
             const { data } = await User.getInfo();
@@ -24,6 +32,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // LOGS OUT THE USER, RENEWS THE CSRF TOKEN, AND CLEARS THE AUTHENTICATION CONTEXT
     const logoutUser = async () => {
         try {
             await User.logout();
@@ -35,6 +47,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // REGISTERS A NEW USER ACCOUNT AND REDIRECTS TO THE LOGIN PAGE ON SUCCESS
     const registerUser = async (body) => {
         try {
             const { data } = await User.register(body);
@@ -48,6 +64,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // AUTHENTICATES THE USER, RENEWS THE CSRF TOKEN, AND REFRESHES THE SESSION STATE
     const loginUser = async (body) => {
         try {
             const { data } = await User.login(body);
@@ -68,6 +88,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // VERIFIES A 2FA TOKEN DURING LOGIN OR SECURITY ACTIONS
     const verifyToken = async (body) => {
         try {
             const { data } = await User.verifyToken(body);
@@ -89,6 +113,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // REQUESTS A NEW 2FA TOKEN TO BE SENT TO THE USER'S CONFIGURED DEVICE OR EMAIL
     const resendToken = async (body) => {
         try {
             const { data } = await User.resendToken(body);
@@ -105,6 +133,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // UPDATES THE USER'S PASSWORD AND REFRESHES THE USER CONTEXT IF SUCCESSFUL
     const changePassword = async (body) => {
         try {
             const { data } = await User.changePassword(body);
@@ -128,6 +160,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // ENABLES OR DISABLES 2FA SETTINGS FOR THE CURRENT USER
     const updateTokenStatus = async (body) => {
         try {
             const response = await User.updateTokenStatus(body);
@@ -144,6 +180,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // SUBMITS PROFILE CHANGES TO THE SERVER AND REFRESHES THE LOCAL AUTH STATE
     const updateUserProfile = async (body) => {
         try {
             const { data } = await User.updateProfile(body);
@@ -167,6 +207,10 @@ export default function useAuth() {
         }
     };
 
+
+
+
+    // VERIFIES THE USER'S EMAIL ADDRESS USING A TOKEN SENT VIA EMAIL
     const verifyEmail = async (token) => {
         try {
             const { data } = await User.verifyEmail({ token });
@@ -183,6 +227,10 @@ export default function useAuth() {
         }
     };
     
+    
+    
+
+    // REQUESTS A NEW EMAIL VERIFICATION LINK TO BE SENT TO THE USER'S EMAIL
     const sendVerificationEmail = async () => {
         try {
             const { data } = await User.sendVerificationEmail({});
@@ -199,6 +247,10 @@ export default function useAuth() {
         }
     };
     
+    
+    
+
+    // CHECKS IF THE CURRENT USER'S EMAIL ADDRESS HAS BEEN SUCCESSFULLY VERIFIED
     const isEmailVerified = async () => {
         try {
             const { data } = await User.isEmailVerified(); 

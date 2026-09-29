@@ -2,11 +2,19 @@ import { useState, useEffect } from 'react';
 import { get } from '../api/http';
 import i18n from '../languages/i18n';
 
+
+
+
+// CUSTOM HOOK THAT SEARCHES FOR A COUNTERPART USER BY THEIR EMAIL ADDRESS
 export default function useCounterpart(counterpartEmail) {
   const [counterpartId, setCounterpartId] = useState(null);
   const [counterpartUser, setCounterpartUser] = useState(null);
   const [counterpartError, setCounterpartError] = useState('');
 
+
+
+
+  // EFFECT THAT DEBOUNCES OR IMMEDIATELY FETCHES THE COUNTERPART INFO WHEN THE EMAIL CHANGES
   useEffect(() => {
     const fetchCounterpart = async () => {
       if (!counterpartEmail) return;

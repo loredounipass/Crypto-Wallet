@@ -1,23 +1,17 @@
 import { post, get, messagesApi, messagesUploadApi, myMessagesApi, apiOrigin } from '../api/http';
 
-/**
- * Messages and Multimedia service.
- * All functions wrap existing HTTP client calls and match backend endpoints.
- */
 export default class MessagesAndMultimedia {
-	/**
-	 * Create a text/message DTO
-	 * @param {Object} body - CreateMessageDto { content, type, receiverId, senderId }
-	 */
+
+
+	// CREATES A NEW TEXT OR METADATA MESSAGE
 	static async createMessage(body) {
 		return await post(messagesApi, body);
 	}
 
-	/**
-	 * Upload a file and create a message referencing the uploaded multimedia.
-	 * @param {File} file - file object from input
-	 * @param {Object} body - additional fields: content, type, receiverId, senderId
-	 */
+
+
+
+	// UPLOADS A FILE AND CREATES A DIRECT MESSAGE CONTAINING THE MULTIMEDIA
 	static async uploadMessage(file, body = {}) {
 		const form = new FormData();
 		form.append('file', file);
@@ -28,24 +22,26 @@ export default class MessagesAndMultimedia {
 		return await post(messagesUploadApi, form);
 	}
 
-	/**
-	 * Get messages for the current authenticated user
-	 */
+
+
+
+	// FETCHES ALL THE DIRECT MESSAGES FOR THE AUTHENTICATED USER
 	static async getMyMessages() {
 		return await get(myMessagesApi, {});
 	}
 
-	/**
-	 * Get the base API origin for media resolution
-	 */
+
+
+
+	// RETURNS THE BASE API ORIGIN USED FOR RESOLVING SECURE MEDIA
 	static getApiOrigin() {
 		return apiOrigin;
 	}
 
-	/**
-	 * Fetch secure media as a blob
-	 * @param {string} url - The URL to fetch the media from
-	 */
+
+
+
+	// FETCHES A SECURE MULTIMEDIA FILE AS A BLOB OBJECT
 	static async getSecureMedia(url) {
 		return await get(url, null, { responseType: 'blob' });
 	}

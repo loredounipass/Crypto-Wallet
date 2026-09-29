@@ -13,7 +13,10 @@ const apiOrigin = new URL(baseApi).origin;
 const mediaBase = `${apiOrigin}/uploads`;
 const csrfTokenApi = `${apiOrigin}/csrf-token`;
 
-// Interceptor global para unificar errores del backend
+
+
+
+// GLOBAL AXIOS INTERCEPTOR TO UNIFY AND TRANSLATE BACKEND ERRORS
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -39,13 +42,15 @@ api.interceptors.response.use(
     }
 );
 
-// Fetch and set CSRF token globally with retries for startup timing issues
+
+
+
+// FETCHES AND SETS THE CSRF TOKEN GLOBALLY WITH RETRIES FOR STARTUP TIMING ISSUES
 async function fetchCsrfToken(retries = 5, delayMs = 2000) {
     try {
         const response = await axios.get(csrfTokenApi, { withCredentials: true });
         const { csrfToken } = response.data;
         if (csrfToken) {
-            // Attach token to all future requests from this 'api' instance
             api.defaults.headers.common['x-csrf-token'] = csrfToken;
             console.log('CSRF token fetched successfully');
         }
@@ -57,7 +62,10 @@ async function fetchCsrfToken(retries = 5, delayMs = 2000) {
     }
 }
 
-// Endpoints usuario
+
+
+
+// USER API ENDPOINTS
 const loginApi = `${baseApi}/user/login`
 const logoutApi = `${baseApi}/user/logout`
 const registerApi = `${baseApi}/user/register`
@@ -75,7 +83,10 @@ const forgotPasswordApi = `${baseApi}/user/forgot-password`;
 const resetPasswordApi = `${baseApi}/user/reset-password`;
 const toggleAdminApi = `${baseApi}/user/toggle-admin`;
 
-// Endpoints wallet
+
+
+
+// WALLET API ENDPOINTS
 const walletInfoApi = `${baseApi}/wallet/info`
 const allWalletInfoApi = `${baseApi}/wallet/all`
 const walletCreateApi = `${baseApi}/wallet/create`
@@ -83,23 +94,35 @@ const withdrawApi = `${baseApi}/wallet/withdraw`
 const withdrawTokenApi = `${baseApi}/wallet/withdraw-token`
 const tokenBalancesApi = `${baseApi}/wallet/tokens`
 
-// Endpoints transacción
+
+
+
+// TRANSACTION API ENDPOINTS
 const transactionsApi = `${baseApi}/transaction/all`
 const transactionApi = `${baseApi}/transaction/info`
 
-//endpoints de mensajes y multimedia
+
+
+
+// MESSAGING AND MULTIMEDIA API ENDPOINTS
 const messagesApi = `${baseApi}/messages`
 const messagesUploadApi = `${baseApi}/messages/upload`
 const myMessagesApi = `${baseApi}/messages/me`
 
 
-// profile endpoints
+
+
+
+// PROFILE API ENDPOINTS
 const profileApi = `${baseApi}/profile`
 const profileMeApi = `${profileApi}/me`
 const profileByIdApi = (id) => `${profileApi}/${id}`
 const profileUploadProfilePhotoApi = `${profileApi}/upload/profile-photo`
 
-// Endpoints provider
+
+
+
+// PROVIDER API ENDPOINTS
 const createProvider = `${baseApi}/providers/create`
 const findByEMail = `${baseApi}/providers/findByEMail/:email`
 const getAllProviders = `${baseApi}/providers/allProviders`
@@ -112,21 +135,36 @@ const providerDeletePaymentMethodApi = (method) => `${baseApi}/providers/setting
 const providerUpdateDestinationWalletApi = `${baseApi}/providers/settings/destination-wallet`
 const providerToggleDestinationWalletApi = `${baseApi}/providers/settings/destination-wallets/toggle`
 
-// Endpoints support
+
+
+
+// SUPPORT API ENDPOINTS
 const supportChatApi = `${baseApi}/support/chat`
 
-// Endpoints donations
+
+
+
+// DONATIONS API ENDPOINTS
 const donationsWalletsApi = `${baseApi}/donations/wallets`
 
-// Endpoints languages
+
+
+
+// LANGUAGES API ENDPOINTS
 const languagesApi = `${baseApi}/languages`
 const userLanguageApi = `${baseApi}/user/language`
 
-// Endpoints news
+
+
+
+// NEWS API ENDPOINTS
 // const newsApi = `${baseApi}/news`
 // const newsCategoriesApi = `${baseApi}/news/categories`
 
-// Endpoints feed
+
+
+
+// FEED API ENDPOINTS
 const feedApi = `${baseApi}/feed`
 const feedVideosApi = `${baseApi}/feed/videos`
 const feedUploadApi = `${baseApi}/feed/upload`
@@ -138,7 +176,10 @@ const feedPostViewsApi = (id) => `${baseApi}/feed/${id}/views`
 const feedPostSharesApi = (id) => `${baseApi}/feed/${id}/shares`
 const feedCommentDeleteApi = (commentId) => `${baseApi}/feed/comments/${commentId}`
 
-// Endpoints escrow P2P
+
+
+
+// P2P ESCROW API ENDPOINTS
 const escrowGasEstimateApi = `${baseApi}/escrow/gas-estimate`
 const escrowCreateOrderApi = `${baseApi}/escrow/create-order`
 const escrowMyOrdersApi = `${baseApi}/escrow/orders`
@@ -155,6 +196,10 @@ const escrowResolveDisputeApi = `${baseApi}/escrow/resolve-dispute`
 
 
 
+
+
+
+// SENDS AN HTTP GET REQUEST USING THE CONFIGURED API INSTANCE
 async function get(url, body, config = {}) {
     return await api.get(url, {
         params: body || {},
@@ -162,7 +207,10 @@ async function get(url, body, config = {}) {
     })
 }
 
-// External/public APIs must not send app CSRF headers or cookies.
+
+
+
+// SENDS AN EXTERNAL HTTP GET REQUEST WITHOUT ATTACHING APP CREDENTIALS OR CSRF TOKENS
 async function getExternal(url, config = {}) {
     const safeHeaders = { ...(config.headers || {}) };
 
@@ -173,18 +221,34 @@ async function getExternal(url, config = {}) {
     });
 }
 
+
+
+
+// SENDS AN HTTP POST REQUEST WITH A JSON BODY
 async function post(url, body) {
     return await api.post(url, body)
 }
 
+
+
+
+// SENDS AN HTTP POST REQUEST FOR MULTIPART FORM DATA WITH EXTENDED TIMEOUT
 async function postMultipart(url, formData) {
     return await api.post(url, formData, { timeout: 120000 })
 }
 
+
+
+
+// SENDS AN HTTP PATCH REQUEST WITH A JSON BODY
 async function patch(url, body) {
     return await api.patch(url, body)
 }
 
+
+
+
+// SENDS AN HTTP DELETE REQUEST
 async function del(url) {
     return await api.delete(url)
 }
