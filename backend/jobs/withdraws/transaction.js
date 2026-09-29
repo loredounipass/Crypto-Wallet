@@ -287,7 +287,7 @@ const sendWithdraw = async ({
              if (err.message.includes('was not mined within 50 blocks') || err.message.includes('might still be mined') || err.message.includes('WAITING_FOR_CONFIRMATION') || err.message.includes('TX_VANISHED_WILL_RETRY')) {
                  console.warn(`[WITHDRAW-TX] Timeout or pending detected for ${transactionId}. Leaving transaction as pending. DO NOT ROLLBACK.`)
              } else {
-                 await _rollbackOnFailure(transactionId, walletId, amount, err.message, { coin, chainId, to: withdrawAddress })
+                 console.error(`[WITHDRAW-TX] Transaction failed, will retry: ${err.message}`)
              }
         }
         throw err;
