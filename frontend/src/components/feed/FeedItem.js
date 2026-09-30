@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { mediaBase, apiOrigin } from '../../api/http'
 import CommentsPanel from './CommentsPanel'
 import NewChatDialog from '../chat/NewChatDialog'
 import { ConfirmToast } from '../toasts/Toast'
@@ -11,19 +10,9 @@ import useFeedItemLogic from './useFeedItemLogic'
 
 const EMPTY_ACTIONS = {};
 
-const resolveUrl = (u) => {
-  if (!u) return null
-  try {
-    if (/^https?:\/\//i.test(u)) return u
-    if (u.startsWith('/')) return `${apiOrigin}${u}`
-    return `${mediaBase}/${u}`
-  } catch (_) { return u }
-}
-
 export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
   const { auth } = use(AuthContext)
-  const { likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost } = actions
-  const { auth } = use(AuthContext)
+  const { deletePost, addComment, joinPost, getComments, likeComment, unlikeComment } = actions
   const {
     isMyPost, following, followLoading, handleFollow, handleUnfollow,
     liked, localLikes, showComments, setShowComments, localShares, shareBusy,
@@ -34,9 +23,8 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
 
   if (!post) return null
   const {
-    description, multimedia,
-    authorFirstName, authorLastName,
-    createdAt, thumbnailUrl, multimediaUrl,
+    description,
+    multimediaUrl,
     commentsCount, views,
   } = post
 

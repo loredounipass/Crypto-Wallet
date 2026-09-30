@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, use } from 'react'
+import React, { use } from 'react'
 import { AuthContext } from '../../hooks/AuthContext'
 import UserAvatar from '../common/UserAvatar'
 import { ConfirmToast } from '../toasts/Toast'
+import useCommentsPanelLogic from './useCommentsPanelLogic'
 
 /* ── helpers ── */
 function relativeTime(dateStr) {
@@ -98,9 +99,6 @@ const S = {
     fontSize: 14, cursor: 'pointer', padding: '6px 2px', flexShrink: 0,
   },
 }
-
-import useCommentsPanelLogic from './useCommentsPanelLogic'
-
 /* ── component ── */
 export default function CommentsPanel({ post, open, onClose, addComment, getComments, deleteComment, joinPost, likeComment, unlikeComment }) {
   const { auth } = use(AuthContext)

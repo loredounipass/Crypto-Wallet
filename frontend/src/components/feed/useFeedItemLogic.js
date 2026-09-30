@@ -17,7 +17,7 @@ const resolveUrl = (u) => {
 
 // CUSTOM HOOK THAT MANAGES THE STATE AND LOGIC FOR A FEED ITEM
 export default function useFeedItemLogic({ post, actions, auth }) {
-  const { likePost, unlikePost, deletePost, viewPost, sharePost } = actions;
+  const { likePost, unlikePost, viewPost, sharePost } = actions;
   const isMyPost = post && auth?._id && String(post.author) === String(auth._id);
   const [following, setFollowing] = useState(false);
   const followLoading = useRef(false);
@@ -51,12 +51,12 @@ export default function useFeedItemLogic({ post, actions, auth }) {
 
 
   // CHECKS IF THE CURRENT USER HAS LIKED THE POST
-  const isLikedByMe = (p) => {
+  const isLikedByMe = useCallback((p) => {
     if (!p || !auth?._id) return false;
     return Array.isArray(p.likes) && p.likes.some(
       (id) => String(id) === String(auth._id)
     );
-  };
+  }, [auth?._id]);
 
 
 
@@ -77,7 +77,7 @@ export default function useFeedItemLogic({ post, actions, auth }) {
   useEffect(() => {
     setLiked(isLikedByMe(post));
     setLocalLikes(post?.likesCount || 0);
-  }, [post?._id, post?.likesCount, post?.likes, auth?._id]);
+  }, [post, post?._id, post?.likesCount, post?.likes, auth?._id, isLikedByMe]);
 
 
 
