@@ -5,7 +5,7 @@ export type FeedPostDocument = FeedPost & Document;
 
 @Schema({ timestamps: true })
 export class FeedPost {
-  @Prop({ required: true })
+  @Prop({ required: false, default: '' })
   description: string;
 
   @Prop({ enum: ['text', 'image'], default: 'text' })

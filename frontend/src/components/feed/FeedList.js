@@ -11,7 +11,7 @@ export default function FeedList() {
   const {
     posts, loading, error,
     loadMore, hasMore, loadingMore,
-    likePost, unlikePost,
+    likePost, unlikePost, deletePost,
     addComment, joinPost, viewPost,
     getComments, likeComment, unlikeComment,
     sharePost
@@ -73,7 +73,7 @@ export default function FeedList() {
             <div key={p._id} ref={index === posts.length - 1 ? lastPostRef : null}>
               <FeedItem
                 post={p}
-                actions={{ likePost, unlikePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost }}
+                actions={{ likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost }}
               />
             </div>
           ))}

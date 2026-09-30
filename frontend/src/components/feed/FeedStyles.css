@@ -21,14 +21,39 @@
   padding: 20px 10px;
 }
 
-.fb-left-sidebar-fixed, .fb-right-sidebar-fixed {
+.fb-left-sidebar-fixed,
+.fb-right-sidebar-fixed {
   width: 250px;
+  min-width: 250px;
+  flex-shrink: 0;
   display: none;
+  position: sticky;
+  top: 90px;
+  height: calc(100vh - 90px);
+  overflow-y: auto;
+  align-self: flex-start;
+}
+
+/* Ocultar barra de desplazamiento visualmente pero permitir scroll si el contenido es largo */
+.fb-left-sidebar-fixed::-webkit-scrollbar,
+.fb-right-sidebar-fixed::-webkit-scrollbar {
+  width: 4px;
+}
+
+.fb-left-sidebar-fixed::-webkit-scrollbar-thumb,
+.fb-right-sidebar-fixed::-webkit-scrollbar-thumb {
+  background: var(--fn-border);
+  border-radius: 4px;
 }
 
 @media (min-width: 1024px) {
-  .fb-left-sidebar-fixed { display: block; }
-  .fb-right-sidebar-fixed { display: block; }
+  .fb-left-sidebar-fixed {
+    display: block;
+  }
+
+  .fb-right-sidebar-fixed {
+    display: block;
+  }
 }
 
 /* Forms and Cards */
@@ -48,7 +73,7 @@
 
 .fb-post-input {
   flex: 1;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   border-radius: 20px;
   padding: 10px 16px;
@@ -114,7 +139,7 @@
 }
 
 .btn-secondary {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border: none;
   padding: 6px 12px;
@@ -179,7 +204,7 @@
 }
 
 .fb-actions button:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .fb-actions button.liked {
@@ -217,6 +242,7 @@
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -227,27 +253,34 @@
   .fb-list-wrapper {
     padding: 12px 8px;
   }
+
   .fb-card {
     border-radius: 8px;
   }
+
   .fb-desc {
     font-size: 14px;
   }
+
   .fb-actions button {
     padding: 6px 10px;
     font-size: 13px;
   }
+
   .fb-post-form {
     padding: 12px;
   }
+
   .fb-post-bar {
     flex-wrap: wrap;
     gap: 8px;
   }
+
   .fb-post-input {
     order: 2;
     flex: 0 0 100%;
   }
+
   .fb-post-actions {
     order: 3;
     width: 100%;

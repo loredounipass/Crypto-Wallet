@@ -20,7 +20,27 @@ export class FeedPostsService {
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('multimedia') private readonly multimediaQueue: Queue,
     private readonly storage: LocalStorageProvider,
-  ) {}
+  ) { }
+
+  // ESCUCHA CUANDO EL PROCESADOR MULTIMEDIA TERMINA DE OPTIMIZAR UNA IMAGEN Y ACTUALIZA EL POST DEL FEED CON LA URL FINAL
+  onModuleInit() {
+    this.eventEmitter.on('multimedia.ready', async (payload: any) => {
+      try {
+        if (!payload?.messageId) return;
+        const postId = payload.messageId;
+        const update: any = { multimediaStatus: 'ready' };
+        if (payload.url) update.multimediaUrl = payload.url;
+        if (payload.thumbnailUrl) update.thumbnailUrl = payload.thumbnailUrl;
+        const updated = await this.feedModel.findByIdAndUpdate(postId, { $set: update }, { new: true }).lean().exec();
+        if (updated) {
+          const out = await this.getPostById(postId);
+          void this.eventEmitter.emit('post.updated', out);
+        }
+      } catch (err) {
+        console.error('[FeedPostsService] Error handling multimedia.ready for feed post:', err);
+      }
+    });
+  }
 
   private get feedModel() {
     return this.feedRepository.feed;
@@ -68,9 +88,12 @@ export class FeedPostsService {
     if (!authorId || !Types.ObjectId.isValid(authorId)) throw new BadRequestException('Invalid authorId');
     const actor = await this.userService.getUserById(authorId);
     if (!actor) throw new NotFoundException('Author not found');
+    const description = typeof dto.description === 'string' ? dto.description.trim() : '';
+    const type = (dto as any).type || 'text';
+    if (type === 'text' && !description) throw new BadRequestException('Description is required for text posts');
     const postPayload: any = {
-      description: dto.description,
-      type: dto.type,
+      description,
+      type,
       author: new Types.ObjectId(authorId),
       authorFirstName: actor.firstName || undefined,
       authorLastName: actor.lastName || undefined,
@@ -111,7 +134,7 @@ export class FeedPostsService {
     }
 
     const dto: CreatePostDto = {
-      description: body.description || '',
+      description: typeof body?.description === 'string' ? body.description.trim() : '',
       type: 'image' as any,
       authorId: authorId,
     } as CreatePostDto;
@@ -240,17 +263,20 @@ export class FeedPostsService {
     }
     if (!createdPostId) throw new Error('Failed to create post');
     try {
-      await this.multimediaQueue.add('process', {
+      const enqueue = this.multimediaQueue.add('process', {
         stagingKey: uploadResult.key,
         multimediaId: multimediaIdCreated?.toString(),
         messageId: createdPostId,
         ownerId: authorId,
         mimeType: file.mimetype,
       });
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('queue timeout')), 5000));
+      await Promise.race([enqueue, timeout]);
       try {
         await this.multimediaModel.updateOne({ _id: multimediaIdCreated }, { $set: { 'processingJob.enqueued': true } }).exec();
       } catch (_) { }
     } catch (err) {
+      console.warn('[FeedPostsService] multimedia queue enqueue failed (post creado igual):', (err as Error)?.message || err);
     }
     const out = await this.getPostById(createdPostId);
     void this.eventEmitter.emit('post.created', out);
@@ -281,10 +307,10 @@ export class FeedPostsService {
       .limit(limit + 1)
       .lean()
       .exec();
-    
+
     const hasMore = posts.length > limit;
     const sliced = hasMore ? posts.slice(0, limit) : posts;
-    
+
     return {
       posts: sliced.map((doc: any) => ({
         _id: doc._id,
@@ -337,26 +363,40 @@ export class FeedPostsService {
     const post = await this.feedModel.findById(postId).lean().exec();
     if (!post) throw new NotFoundException('Post not found');
     if (post.author?.toString() !== actorId) throw new ForbiddenException('Not allowed');
-    const session = await this.feedModel.db.startSession();
+
     let multimediaDoc: any = undefined;
-    try {
-      await session.withTransaction(async () => {
-        if (post.multimediaId) {
-          multimediaDoc = await this.multimediaModel.findById(post.multimediaId).session(session).lean().exec();
-          if (multimediaDoc) {
-            await this.multimediaModel.deleteOne({ _id: multimediaDoc._id }).session(session).exec();
-          }
-        }
-        await this.commentModel.deleteMany({ post: new Types.ObjectId(postId) }).session(session).exec();
-        await this.feedModel.findByIdAndDelete(postId).session(session).exec();
-      });
-    } finally {
-      session.endSession();
+    if (post.multimediaId) {
+      multimediaDoc = await this.multimediaModel.findById(post.multimediaId).lean().exec();
     }
+
     try {
-      const key = multimediaDoc?.processingJob?.stagingKey;
-      if (key) await this.storage.delete(key);
+      if (multimediaDoc) {
+        await this.multimediaModel.deleteOne({ _id: multimediaDoc._id }).exec();
+      }
+      await this.commentModel.deleteMany({ post: new Types.ObjectId(postId) }).exec();
+      await this.feedModel.findByIdAndDelete(postId).exec();
+    } catch (err) {
+      throw new Error(`Error deleting from database: ${err}`);
+    }
+
+    // Limpieza de archivos en disco
+    try {
+      const stagingKey = multimediaDoc?.processingJob?.stagingKey;
+      if (stagingKey) await this.storage.delete(stagingKey);
+
+      // Si ya se procesó, eliminar archivos finales extrayendo la key desde la URL
+      const finalUrl = multimediaDoc?.url;
+      if (finalUrl && typeof finalUrl === 'string') {
+        const finalKey = finalUrl.split('/uploads/multimedia/')[1];
+        if (finalKey) await this.storage.delete(finalKey);
+      }
+      const thumbUrl = multimediaDoc?.thumbnailUrl;
+      if (thumbUrl && typeof thumbUrl === 'string') {
+        const thumbKey = thumbUrl.split('/uploads/multimedia/')[1];
+        if (thumbKey) await this.storage.delete(thumbKey);
+      }
     } catch (_) { }
+
     void this.eventEmitter.emit('post.deleted', { _id: postId, author: actorId });
     return { success: true };
   }

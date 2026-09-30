@@ -7,8 +7,8 @@ export enum PostType {
 
 export class CreatePostDto {
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @IsEnum(PostType)
   type: PostType;

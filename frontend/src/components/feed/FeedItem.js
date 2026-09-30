@@ -19,7 +19,7 @@ const resolveUrl = (u) => {
 
 
 export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
-  const { likePost, unlikePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost } = actions
+  const { likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost } = actions
   const { auth } = use(AuthContext)
   const isMyPost = post && auth?._id && String(post.author) === String(auth._id)
 
@@ -56,11 +56,11 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     )
   }
 
-  const [liked, setLiked]               = useState(() => isLikedByMe(post))
-  const [localLikes, setLocalLikes]     = useState(post ? (post.likesCount || 0) : 0)
+  const [liked, setLiked] = useState(() => isLikedByMe(post))
+  const [localLikes, setLocalLikes] = useState(post ? (post.likesCount || 0) : 0)
   const [showComments, setShowComments] = useState(false)
-  const [localShares, setLocalShares]   = useState(post ? (post.shares || 0) : 0)
-  const [shareBusy, setShareBusy]       = useState(false)
+  const [localShares, setLocalShares] = useState(post ? (post.shares || 0) : 0)
+  const [shareBusy, setShareBusy] = useState(false)
   const [shareFeedback, setShareFeedback] = useState('')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const containerRef = useRef(null)
@@ -70,7 +70,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
   useEffect(() => {
     setLiked(isLikedByMe(post))
     setLocalLikes(post?.likesCount || 0)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post?._id, post?.likesCount, post?.likes, auth?._id])
 
 
@@ -85,14 +85,14 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
       obs = new IntersectionObserver((entries) => {
         entries.forEach(e => {
           if (e.isIntersecting && e.intersectionRatio > 0.25 && !viewed.current) {
-            try { if (viewPost) viewPost(post._id).catch(() => {}) } catch (_) {}
+            try { if (viewPost) viewPost(post._id).catch(() => { }) } catch (_) { }
             viewed.current = true
           }
         })
       }, { threshold: [0.25, 0.5, 1] })
       obs.observe(el)
-    } catch (_) {}
-    return () => { try { if (obs && el) obs.unobserve(el) } catch (_) {} }
+    } catch (_) { }
+    return () => { try { if (obs && el) obs.unobserve(el) } catch (_) { } }
   }, [post, viewPost])
 
   if (!post) return null
@@ -107,7 +107,6 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     ? `${authorFirstName || ''} ${authorLastName || ''}`.trim()
     : 'Usuario'
 
-  const meta = post.multimedia || {}
   const shareUrl = (typeof window !== 'undefined' && window.location)
     ? `${window.location.origin}/feed/${post._id}`
     : ''
@@ -121,9 +120,9 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
 
   const timeStr = createdAt
     ? new Date(createdAt).toLocaleString(undefined, {
-        month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-      })
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
     : ''
 
   const handleLike = async () => {
@@ -141,7 +140,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         const u = (res && res.data) ? res.data : res
         if (u && typeof u.likesCount === 'number') setLocalLikes(u.likesCount)
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const handleShare = async () => {
@@ -154,7 +153,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         setLocalShares((s) => (u && typeof u.shares === 'number') ? u.shares : s + 1)
         setShareFeedback('Compartido')
         setTimeout(() => setShareFeedback(''), 1800)
-        try { setShareDialogOpen(true) } catch (_) {}
+        try { setShareDialogOpen(true) } catch (_) { }
         return
       }
       if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
@@ -165,7 +164,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         return
       }
     } catch (_) {
-      try { setShareFeedback('Error al compartir') } catch (_) {}
+      try { setShareFeedback('Error al compartir') } catch (_) { }
       setTimeout(() => setShareFeedback(''), 2200)
     } finally {
       setShareBusy(false)
@@ -220,6 +219,24 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
             </div>
             <div className="fb-time">{timeStr}</div>
           </div>
+          {isMyPost && deletePost && (
+            <button
+              onClick={() => {
+                if (window.confirm('¿Seguro que deseas eliminar esta publicación?')) {
+                  deletePost(post._id);
+                }
+              }}
+              style={{
+                background: 'transparent', border: 'none', color: 'var(--fn-muted)', cursor: 'pointer', padding: '8px', fontSize: '1.2rem',
+                opacity: 0.7, transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+              title="Eliminar publicación"
+            >
+              🗑️
+            </button>
+          )}
         </div>
 
         {/* ── Description ── */}
@@ -260,25 +277,25 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
           <span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
               style={{ color: liked ? '#22c1c3' : undefined }}>
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
             </svg>
             {localLikes} {localLikes === 1 ? 'like' : 'likes'}
           </span>
           <span style={{ cursor: 'pointer' }} onClick={() => setShowComments(true)}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             {commentsCount || 0} comentario{commentsCount !== 1 ? 's' : ''}
           </span>
           <span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/>
+              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13" /><path d="M8 7l4-4 4 4" />
             </svg>
             {localShares || 0} compartido{(localShares || 0) !== 1 ? 's' : ''}
           </span>
           <span style={{ marginLeft: 'auto' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
             </svg>
             {typeof views === 'number' ? views : 0} vista{views !== 1 ? 's' : ''}
           </span>
@@ -288,21 +305,21 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         <div className="fb-actions">
           <button onClick={handleLike} className={liked ? 'liked' : ''} aria-label={liked ? 'Quitar like' : 'Me gusta'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
           </button>
           <button onClick={() => setShowComments(true)} aria-label="Comentar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </button>
           <button onClick={handleShare} className={shareFeedback ? 'shared' : ''} disabled={shareBusy} aria-label="Compartir">
             {shareFeedback ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
             ) : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
             )}
           </button>
@@ -324,7 +341,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
       <NewChatDialog
         open={shareDialogOpen}
         onClose={() => setShareDialogOpen(false)}
-        onSelectUser={() => {}}
+        onSelectUser={() => { }}
         currentUserId={auth?._id}
         shareUrl={shareUrl}
       />

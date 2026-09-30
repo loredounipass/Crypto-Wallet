@@ -7,26 +7,28 @@ import UserAvatar from '../common/UserAvatar';
 
 export default function PostForm() {
   const navigate = useNavigate();
-  const { createPostWithFile, createPost, loading } = useFeed();
-  const { auth }  = use(AuthContext);
+  const { createPostWithFile, createPost } = useFeed();
+  const { auth } = use(AuthContext);
   const [description, setDescription] = useState('');
-  const [file, setFile]               = useState(null);
-  const [previewUrl, setPreviewUrl]   = useState(null);
-  const [toast, setToast]             = useState('');
-  const [expanded, setExpanded]       = useState(false);
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [toast, setToast] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef(null);
   useCleanupPreview(previewUrl);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return; // Prevent double-click
+    setSubmitting(true);
     try {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("description", description);
+        formData.append("description", (description || '').trim());
         formData.append("type", "image");
-        
-        // El hook useFeed actual usa formData
+
         await createPostWithFile(formData);
       } else {
         await createPost({ description, type: 'text', authorId: auth._id });
@@ -34,28 +36,22 @@ export default function PostForm() {
       setDescription('');
       setFile(null);
       setExpanded(false);
-      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {}; setPreviewUrl(null); }
+      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
       if (e.target?.reset) e.target.reset();
     } catch (err) {
       console.error(err);
-      setToast('Error creando el post');
+      setToast(err?.response?.data?.message || err?.message || 'Error creando el post');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  /** Creates a blob URL and validates it starts with "blob:" (defense-in-depth). */
-  const safeBlobUrl = (file) => {
-    const url = URL.createObjectURL(file);
-    if (typeof url !== 'string' || !url.startsWith('blob:')) {
-      try { URL.revokeObjectURL(url); } catch (_) {}
-      return null;
-    }
-    return url;
-  };
+
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     if (toast) setToast('');
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {} }
+    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { } }
     if (!f) { setFile(null); setPreviewUrl(null); return; }
 
     if (!f.type?.startsWith('image/')) {
@@ -81,14 +77,14 @@ export default function PostForm() {
     setDescription('');
     setFile(null);
     setExpanded(false);
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {}; setPreviewUrl(null); }
+    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
     const input = document.getElementById('post-file-input');
     if (input) input.value = '';
   };
 
-  const displayName   = auth ? `${auth.firstName || ''}`.trim() || auth.username || 'Tú' : 'Tú';
-  const firstName     = displayName.split(' ')[0];
-  const hasContent    = file || description.trim().length > 0;
+  const displayName = auth ? `${auth.firstName || ''}`.trim() || auth.username || 'Tú' : 'Tú';
+  const firstName = displayName.split(' ')[0];
+  const hasContent = file || description.trim().length > 0;
 
   return (
     <form onSubmit={onSubmit} className="fb-post-form">
@@ -112,9 +108,9 @@ export default function PostForm() {
         <div className="fb-post-actions">
           <label className="fb-post-icon-btn" htmlFor="post-file-input" title="Subir imagen">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
             </svg>
           </label>
 
@@ -126,8 +122,8 @@ export default function PostForm() {
             onChange={handleFileChange}
           />
 
-          <button className="fb-btn-primary" type="submit" disabled={loading || !hasContent}>
-            {loading ? '…' : 'Publicar'}
+          <button className="fb-btn-primary" type="submit" disabled={submitting || !hasContent}>
+            {submitting ? '…' : 'Publicar'}
           </button>
         </div>
       </div>
@@ -143,7 +139,7 @@ export default function PostForm() {
                 <img src={safePreviewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
               </div>
             )}
-            <button type="button" className="btn-secondary" onClick={handleDiscard} disabled={loading}>
+            <button type="button" className="btn-secondary" onClick={handleDiscard} disabled={submitting}>
               Descartar
             </button>
           </div>
@@ -161,6 +157,6 @@ function getSafePreviewUrl(url) {
 
 function useCleanupPreview(url) {
   useEffect(() => {
-    return () => { if (url) { try { URL.revokeObjectURL(url); } catch (_) {} } };
+    return () => { if (url) { try { URL.revokeObjectURL(url); } catch (_) { } } };
   }, [url]);
 }

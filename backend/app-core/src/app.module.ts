@@ -7,7 +7,8 @@ import { UserModule } from './user/user.module';
 import { WalletModule } from './wallet/wallet.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { AuthModule } from './auth/auth.module';
-import { BullModule } from '@nestjs/bullmq';
+import { BullModule as BullMQModule } from '@nestjs/bullmq';
+import { BullModule as BullClassicModule } from '@nestjs/bull';
 import { ProviderModule } from './providers/provider.module';
 import { TwoFactorAuthModule } from './two-factor/verification.module';
 import { ProfileModule } from './profile/profile.module';
@@ -33,12 +34,19 @@ import { LanguagesModule } from './languages/languages.module';
     }),
 
     MongooseModule.forRoot(process.env.DB_URI),
-    BullModule.forRoot({
+    BullMQModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST,
         port: parseInt(process.env.REDIS_PORT),
         password: process.env.REDIS_PASS || undefined,
       }
+    }),
+    BullClassicModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASS || undefined,
+      },
     }),
     RedisModule,
     CsrfModule,
@@ -60,4 +68,4 @@ import { LanguagesModule } from './languages/languages.module';
   ],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
