@@ -57,10 +57,11 @@ export const Box = ({ component, sx, style, className, children, ...props }) => 
 
 export const Container = ({ maxWidth = "lg", disableGutters, sx, style, className, children, ...props }) => {
   const maxWidthMap = { sm: "640px", md: "768px", lg: "1024px", xl: "1280px" };
+  const resolvedMaxWidth = maxWidth === false ? "none" : (maxWidthMap[maxWidth] || maxWidthMap.lg);
   return (
     <div
       className={cx("mx-auto w-full", className)}
-      style={{ maxWidth: maxWidthMap[maxWidth] || maxWidthMap.lg, ...mergeStyles(sx, style) }}
+      style={{ maxWidth: resolvedMaxWidth, ...mergeStyles(sx, style) }}
       {...props}
     >
       {children}
@@ -118,8 +119,8 @@ export const Button = ({ variant = "contained", color = "primary", fullWidth, sx
     variant === "outlined"
       ? "bg-transparent"
       : variant === "text"
-      ? "bg-transparent border-transparent"
-      : colorMap[color] || colorMap.primary;
+        ? "bg-transparent border-transparent"
+        : colorMap[color] || colorMap.primary;
   return (
     <button className={cx(base, variantClass, fullWidth && "w-full")} style={mergeStyles(sx, style)} {...domProps}>
       {children}
@@ -179,8 +180,8 @@ export const Grid = ({ container, item, spacing = 0, xs, sm, md, lg, direction, 
   const widthPct = (n) => `${(Number(n || 12) / 12) * 100}%`;
   const itemStyle = item
     ? {
-        width: widthPct(xs),
-      }
+      width: widthPct(xs),
+    }
     : {};
   const flexProps = {};
   if (direction) flexProps.flexDirection = direction;
