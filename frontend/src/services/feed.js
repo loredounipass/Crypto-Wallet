@@ -3,7 +3,6 @@ import {
     post, 
     postMultipart, 
     feedApi, 
-    feedVideosApi, 
     feedUploadApi, 
     feedPostByIdApi, 
     feedPostCommentsApi, 
@@ -29,16 +28,10 @@ export default class FeedService {
 
 
     // FETCHES ALL POSTS FOR THE MAIN FEED
-    static async getFeed() {
-        return get(feedApi);
-    }
-
-
-
-
-    // FETCHES ONLY POSTS CONTAINING VIDEO CONTENT
-    static async getVideoFeed() {
-        return get(feedVideosApi);
+    static async getFeed(cursor = null) {
+        const params = {};
+        if (cursor) params.cursor = cursor;
+        return get(feedApi, params);
     }
 
 

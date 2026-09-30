@@ -166,7 +166,6 @@ const userLanguageApi = `${baseApi}/user/language`
 
 // FEED API ENDPOINTS
 const feedApi = `${baseApi}/feed`
-const feedVideosApi = `${baseApi}/feed/videos`
 const feedUploadApi = `${baseApi}/feed/upload`
 const feedPostByIdApi = (id) => `${baseApi}/feed/${id}`
 const feedPostCommentsApi = (id) => `${baseApi}/feed/${id}/comments`
@@ -321,7 +320,6 @@ export {
     // newsApi,
     // newsCategoriesApi,
     feedApi,
-    feedVideosApi,
     feedUploadApi,
     feedPostByIdApi,
     feedPostCommentsApi,

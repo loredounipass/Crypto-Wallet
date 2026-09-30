@@ -57,9 +57,28 @@ export class MultimediaProcessor {
         const optPath = path.join(tmpDir, optName);
         const thumbName = `thumb-${baseName}.jpg`;
         const thumbPath = path.join(tmpDir, thumbName);
-        await sharp(tempIn).toFile(optPath);
-        await sharp(tempIn).resize({ width: 200 }).toFile(thumbPath);
-        const meta = await sharp(tempIn).metadata();
+        
+        // Protección contra decompression bombs: limitar a 100 megapixels
+        const sharpOpts = { limitInputPixels: 100_000_000 };
+        const img = sharp(tempIn, sharpOpts);
+        const meta = await img.metadata();
+
+        // Rechazar imágenes con dimensiones absurdas
+        if ((meta.width || 0) > 10000 || (meta.height || 0) > 10000) {
+          throw new Error(`Image dimensions too large: ${meta.width}x${meta.height}`);
+        }
+
+        // Optimizar: re-encode manteniendo formato, max 2048px de lado largo
+        await sharp(tempIn, sharpOpts)
+          .resize({ width: 2048, height: 2048, fit: 'inside', withoutEnlargement: true })
+          .toFile(optPath);
+
+        // Thumbnail: 200px ancho, siempre JPEG para consistencia
+        await sharp(tempIn, sharpOpts)
+          .resize({ width: 200 })
+          .jpeg({ quality: 80 })
+          .toFile(thumbPath);
+
         metadata = { width: meta.width, height: meta.height, format: meta.format };
         console.log(`[MultimediaProcessor] 🖼️ Sharp processing done | width=${meta.width} height=${meta.height} format=${meta.format}`);
         if (typeof (this.storage as any).uploadStream === 'function') {

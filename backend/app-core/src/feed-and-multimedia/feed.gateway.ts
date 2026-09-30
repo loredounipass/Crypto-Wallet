@@ -97,8 +97,6 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @OnEvent('post.created')
   async handlePostCreated(payload: any) {
     try {
-      const authorId = payload.author;
-      if (!authorId) return;
       const out = {
         _id: payload._id,
         description: payload.description,
@@ -116,8 +114,7 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         createdAt: payload.createdAt,
         updatedAt: payload.updatedAt,
       };
-      const authorSockets = await this.server.in(`user:${authorId}`).allSockets();
-      for (const s of authorSockets) void this.server.to(s).emit('postCreated', out);
+      this.server.emit('postCreated', out);
     } catch (e) {
       this.logger.warn(`Error emitting post.created: ${e}`);
     }

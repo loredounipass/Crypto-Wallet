@@ -104,13 +104,19 @@ export class FeedPostsService {
   async createPostWithFile(file: any, body: any, authorId: string) {
     if (!file) throw new BadRequestException('File is required');
     if (!authorId || !Types.ObjectId.isValid(authorId)) throw new BadRequestException('Invalid authorId');
+
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!file.mimetype || !allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
+      throw new BadRequestException('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)');
+    }
+
     const dto: CreatePostDto = {
       description: body.description || '',
-      type: body.type || (file.mimetype && file.mimetype.startsWith('video') ? 'video' : 'image'),
+      type: 'image' as any,
       authorId: authorId,
     } as CreatePostDto;
     const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.pdf', '.webm', '.ogg'];
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const safeExt = allowedExts.includes(ext) ? ext : '.bin';
     const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
     const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);
@@ -253,15 +259,17 @@ export class FeedPostsService {
 
 
 
-  // RECUPERA UNICAMENTE LAS PUBLICACIONES QUE CONTIENEN UN VIDEO EN SU ESTRUCTURA MULTIMEDIA
-  async getVideoFeed(limit = 100) {
+  // EXTRAE LA LISTA DE PUBLICACIONES GLOBALES ORDENADAS POR FECHA PARA EL MURO PRINCIPAL DE LA PLATAFORMA CON PAGINACION CURSOR-BASED
+  async getFeed(limit = 20, cursor?: string) {
+    const query: any = {};
+    if (cursor && Types.ObjectId.isValid(cursor)) {
+      const cursorPost = await this.feedModel.findById(cursor).select('createdAt').lean().exec();
+      if (cursorPost) {
+        query.createdAt = { $lt: (cursorPost as any).createdAt };
+      }
+    }
     const posts = await this.feedModel
-      .find({
-        $or: [
-          { type: 'video' },
-          { multimediaUrl: { $regex: /\.(mp4|webm|ogg|mov|mkv)/i } },
-        ],
-      })
+      .find(query)
       .select(`
         _id description type author
         authorFirstName authorLastName
@@ -270,18 +278,15 @@ export class FeedPostsService {
         shares views createdAt updatedAt
       `)
       .sort({ createdAt: -1 })
-      .limit(limit)
+      .limit(limit + 1)
       .lean()
       .exec();
-    return posts
-      .filter((doc: any) => {
-        const url = doc.multimediaUrl || '';
-        return (
-          doc.type === 'video' ||
-          /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(url)
-        );
-      })
-      .map((doc: any) => ({
+    
+    const hasMore = posts.length > limit;
+    const sliced = hasMore ? posts.slice(0, limit) : posts;
+    
+    return {
+      posts: sliced.map((doc: any) => ({
         _id: doc._id,
         description: doc.description,
         type: doc.type,
@@ -298,44 +303,10 @@ export class FeedPostsService {
         views: doc.views || 0,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
-      }));
-  }
-
-
-
-  // EXTRAE LA LISTA DE PUBLICACIONES GLOBALES ORDENADAS POR FECHA PARA EL MURO PRINCIPAL DE LA PLATAFORMA
-  async getFeed(limit = 50) {
-    const posts = await this.feedModel
-      .find({})
-      .select(`
-        _id description type author
-        authorFirstName authorLastName
-        multimediaId multimediaUrl thumbnailUrl multimediaStatus
-        likes likesCount commentsCount
-        shares views createdAt updatedAt
-      `)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean()
-      .exec();
-    return posts.map((doc: any) => ({
-      _id: doc._id,
-      description: doc.description,
-      type: doc.type,
-      author: doc.author?.toString(),
-      authorFirstName: doc.authorFirstName || undefined,
-      authorLastName: doc.authorLastName || undefined,
-      multimediaId: doc.multimediaId,
-      multimediaUrl: doc.multimediaUrl || undefined,
-      thumbnailUrl: doc.thumbnailUrl || undefined,
-      likes: Array.isArray(doc.likes) ? doc.likes.map((id: any) => id?.toString()) : [],
-      likesCount: typeof doc.likesCount === 'number' ? doc.likesCount : (Array.isArray(doc.likes) ? doc.likes.length : 0),
-      commentsCount: typeof doc.commentsCount === 'number' ? doc.commentsCount : 0,
-      shares: doc.shares || 0,
-      views: doc.views || 0,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-    }));
+      })),
+      nextCursor: hasMore ? sliced[sliced.length - 1]._id?.toString() : null,
+      hasMore,
+    };
   }
 
 

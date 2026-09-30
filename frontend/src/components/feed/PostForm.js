@@ -24,7 +24,7 @@ export default function PostForm() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("description", description);
-        formData.append("type", file.type?.startsWith('video') ? 'video' : 'image');
+        formData.append("type", "image");
         
         // El hook useFeed actual usa formData
         await createPostWithFile(formData);
@@ -58,40 +58,21 @@ export default function PostForm() {
     if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {} }
     if (!f) { setFile(null); setPreviewUrl(null); return; }
 
-    if (f.type?.startsWith('video')) {
-      const metaUrl = safeBlobUrl(f);
-      if (!metaUrl) {
-        setToast('No se pudo leer el archivo de video.');
-        setFile(null); setPreviewUrl(null); e.target.value = '';
-        return;
-      }
-      const vid = document.createElement('video');
-      vid.preload = 'metadata';
-      vid.src = metaUrl;
-      vid.onloadedmetadata = () => {
-        try { URL.revokeObjectURL(metaUrl); } catch (_) {}
-        if ((vid.duration || 0) > 300) {
-          setToast('Los videos no pueden superar 5 minutos.');
-          setFile(null); setPreviewUrl(null); e.target.value = '';
-        } else {
-          setFile(f);
-          const preview = safeBlobUrl(f);
-          setPreviewUrl(preview);
-        }
-      };
-      vid.onerror = () => {
-        try { URL.revokeObjectURL(metaUrl); } catch (_) {}
-        setToast('No se pudo leer el archivo de video.');
-        setFile(null); setPreviewUrl(null); e.target.value = '';
-      };
-    } else {
-      setFile(f);
-      if (f.type?.startsWith('image') || f.type?.startsWith('video')) {
-        try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
-      } else {
-        setPreviewUrl(null);
-      }
+    if (!f.type?.startsWith('image/')) {
+      setToast('Solo se permiten imágenes (JPG, PNG, GIF, WebP).');
+      setFile(null); setPreviewUrl(null); e.target.value = '';
+      return;
     }
+
+    const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
+    if (f.size > MAX_IMAGE_SIZE) {
+      setToast('La imagen no puede superar 15 MB.');
+      setFile(null); setPreviewUrl(null); e.target.value = '';
+      return;
+    }
+
+    setFile(f);
+    try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
     setExpanded(true);
   };
 
@@ -129,7 +110,7 @@ export default function PostForm() {
         />
 
         <div className="fb-post-actions">
-          <label className="fb-post-icon-btn" htmlFor="post-file-input" title="Foto / Video">
+          <label className="fb-post-icon-btn" htmlFor="post-file-input" title="Subir imagen">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -137,18 +118,11 @@ export default function PostForm() {
             </svg>
           </label>
 
-          <label className="fb-post-icon-btn" htmlFor="post-file-input" title="Video">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-          </label>
-
           <input
             id="post-file-input"
             className="fb-file-input"
             type="file"
-            accept="image/*,video/*"
+            accept="image/jpeg,image/png,image/gif,image/webp"
             onChange={handleFileChange}
           />
 
@@ -160,26 +134,21 @@ export default function PostForm() {
 
       {(() => {
         const safePreviewUrl = getSafePreviewUrl(previewUrl);
-        return (expanded && (safePreviewUrl || file)) && (
-        <div className="fb-post-expanded">
-          {file && <span className="fb-file-name" title={file.name}>{file.name}</span>}
-          {safePreviewUrl && (
-            <div className="fb-media">
-              {file?.type?.startsWith('video') ? (
-                <video controls src={safePreviewUrl} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }}>
-                  <track kind="captions" />
-                </video>
-              ) : (
+        if (!(expanded && (safePreviewUrl || file))) return null;
+        return (
+          <div className="fb-post-expanded">
+            {file && <span className="fb-file-name" title={file.name}>{file.name}</span>}
+            {safePreviewUrl && (
+              <div className="fb-media">
                 <img src={safePreviewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
-              )}
-            </div>
-          )}
-          <button type="button" className="btn-secondary" onClick={handleDiscard} disabled={loading}>
-            Descartar
-          </button>
-        </div>
-      )}
-    )}
+              </div>
+            )}
+            <button type="button" className="btn-secondary" onClick={handleDiscard} disabled={loading}>
+              Descartar
+            </button>
+          </div>
+        );
+      })()}
       <Toast message={toast} onDismiss={() => setToast('')} />
     </form>
   );

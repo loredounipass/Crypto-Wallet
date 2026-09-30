@@ -8,7 +8,7 @@ export class FeedPost {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ enum: ['text', 'image', 'video'], default: 'text' })
+  @Prop({ enum: ['text', 'image'], default: 'text' })
   type: string;
 
 

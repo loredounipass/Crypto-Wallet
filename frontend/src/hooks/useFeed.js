@@ -7,31 +7,46 @@ import i18n from '../languages/i18n';
 
 
 // CUSTOM HOOK TO MANAGE THE SOCIAL FEED POSTS AND REAL-TIME SOCKET EVENTS
-export default function useFeed(isVideoOnly = false) {
+export default function useFeed() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [nextCursor, setNextCursor] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const socketRef = useRef(null);
 
-
-
-
-    // FETCHES THE FEED POSTS OR EXCLUSIVELY VIDEO POSTS DEPENDING ON THE HOOK CONFIGURATION
     const fetchFeed = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const { data } = isVideoOnly 
-                ? await FeedService.getVideoFeed()
-                : await FeedService.getFeed();
-            
-            setPosts(data || []);
+            const { data } = await FeedService.getFeed();
+            const result = data || {};
+            setPosts(result.posts || []);
+            setNextCursor(result.nextCursor || null);
+            setHasMore(!!result.hasMore);
         } catch (err) {
             setError(err.message || i18n.t('feed_load_error'));
         } finally {
             setLoading(false);
         }
-    }, [isVideoOnly]);
+    }, []);
+
+    const loadMore = useCallback(async () => {
+        if (!hasMore || loadingMore || !nextCursor) return;
+        setLoadingMore(true);
+        try {
+            const { data } = await FeedService.getFeed(nextCursor);
+            const result = data || {};
+            setPosts(prev => [...prev, ...(result.posts || [])]);
+            setNextCursor(result.nextCursor || null);
+            setHasMore(!!result.hasMore);
+        } catch (err) {
+            console.error('Error loading more posts', err);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [hasMore, loadingMore, nextCursor]);
 
 
 
@@ -51,6 +66,10 @@ export default function useFeed(isVideoOnly = false) {
             const socket = io(`${socketOrigin}/feed`, {
                 withCredentials: true,
                 transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 10,
+                reconnectionDelay: 2000,
+                reconnectionDelayMax: 30000,
             });
             socketRef.current = socket;
 
@@ -261,6 +280,9 @@ export default function useFeed(isVideoOnly = false) {
         posts, 
         loading, 
         error, 
+        loadMore,
+        hasMore,
+        loadingMore,
         refetch: fetchFeed, 
         createPost,
         createPostWithFile,

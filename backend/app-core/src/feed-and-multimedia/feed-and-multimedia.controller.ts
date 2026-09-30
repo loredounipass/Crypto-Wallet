@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards, Param, Delete, Put, UseInterceptors, UploadedFile, BadRequestException, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Param, Delete, Put, UseInterceptors, UploadedFile, BadRequestException, Request, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FeedPostsService } from './services/feed-posts.service';
 import { FeedCommentsService } from './services/feed-comments.service';
@@ -41,7 +41,7 @@ export class FeedAndMultimediaController {
 
   // PROCESA LA CREACION DE UNA PUBLICACION QUE INCLUYE UN ARCHIVO MULTIMEDIA ADJUNTO COMO IMAGEN O VIDEO
   @UseGuards(AuthenticatedGuard, EmailThrottlerGuard)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 250 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 15 * 1024 * 1024 } }))
   @Post('upload')
   async createWithFile(@UploadedFile() file: MulterFile, @Body() body: any, @Request() req) {
     return this.feedPostsService.createPostWithFile(file, body, req.user._id.toString());
@@ -49,20 +49,12 @@ export class FeedAndMultimediaController {
 
 
 
-  // RECUPERA LA LISTA GLOBAL DE PUBLICACIONES MAS RECIENTES PARA MOSTRARLAS EN EL MURO DE INICIO
+  // RECUPERA LA LISTA GLOBAL DE PUBLICACIONES MAS RECIENTES CON PAGINACION CURSOR-BASED
   @UseGuards(AuthenticatedGuard)
   @Get()
-  async getFeed() {
-    return this.feedPostsService.getFeed();
-  }
-
-
-
-  // FILTRA Y DEVUELVE UNICAMENTE AQUELLAS PUBLICACIONES QUE CONTIENEN CONTENIDO MULTIMEDIA EN FORMATO DE VIDEO
-  @UseGuards(AuthenticatedGuard)
-  @Get('videos')
-  async getVideoFeed() {
-    return this.feedPostsService.getVideoFeed();
+  async getFeed(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    const parsedLimit = Math.min(Math.max(parseInt(limit || '20', 10) || 20, 1), 50);
+    return this.feedPostsService.getFeed(parsedLimit, cursor);
   }
 
 
