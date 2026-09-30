@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, use, useCallback } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { mediaBase, apiOrigin } from '../../api/http'
 import CommentsPanel from './CommentsPanel'
@@ -6,6 +6,8 @@ import NewChatDialog from '../chat/NewChatDialog'
 import { ConfirmToast } from '../toasts/Toast'
 import { AuthContext } from '../../hooks/AuthContext'
 import UserAvatar from '../common/UserAvatar'
+import { use } from 'react'
+import useFeedItemLogic from './useFeedItemLogic'
 
 const EMPTY_ACTIONS = {};
 
@@ -18,84 +20,17 @@ const resolveUrl = (u) => {
   } catch (_) { return u }
 }
 
-
 export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
+  const { auth } = use(AuthContext)
   const { likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost } = actions
   const { auth } = use(AuthContext)
-  const isMyPost = post && auth?._id && String(post.author) === String(auth._id)
-
-  // ── Follow state (placeholder) ──
-  const [following, setFollowing] = useState(false)
-  const followLoading = useRef(false)
-
-  const handleFollow = useCallback(async () => {
-    if (followLoading.current || following) return
-    followLoading.current = true
-    try {
-      // profileService.followUser(String(post.author))
-      setFollowing(true)
-    } catch (err) {
-      console.error('[FeedItem] Error following user:', err)
-    } finally { followLoading.current = false }
-  }, [following])
-
-  const handleUnfollow = useCallback(async () => {
-    if (followLoading.current || !following) return
-    followLoading.current = true
-    try {
-      // profileService.unfollowUser(String(post.author))
-      setFollowing(false)
-    } catch (err) {
-      console.error('[FeedItem] Error unfollowing user:', err)
-    } finally { followLoading.current = false }
-  }, [following])
-
-  const isLikedByMe = (p) => {
-    if (!p || !auth?._id) return false
-    return Array.isArray(p.likes) && p.likes.some(
-      (id) => String(id) === String(auth._id)
-    )
-  }
-
-  const [liked, setLiked] = useState(() => isLikedByMe(post))
-  const [localLikes, setLocalLikes] = useState(post ? (post.likesCount || 0) : 0)
-  const [showComments, setShowComments] = useState(false)
-  const [localShares, setLocalShares] = useState(post ? (post.shares || 0) : 0)
-  const [shareBusy, setShareBusy] = useState(false)
-  const [shareFeedback, setShareFeedback] = useState('')
-  const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const containerRef = useRef(null)
-  const viewed = useRef(false)
-
-  // Sync liked state when post prop changes
-  useEffect(() => {
-    setLiked(isLikedByMe(post))
-    setLocalLikes(post?.likesCount || 0)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post?._id, post?.likesCount, post?.likes, auth?._id])
-
-
-
-  // IntersectionObserver for view tracking
-  useEffect(() => {
-    if (!post || !post._id || typeof window === 'undefined') return
-    const el = containerRef.current
-    if (!el || viewed.current) return
-    let obs
-    try {
-      obs = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          if (e.isIntersecting && e.intersectionRatio > 0.25 && !viewed.current) {
-            try { if (viewPost) viewPost(post._id).catch(() => { }) } catch (_) { }
-            viewed.current = true
-          }
-        })
-      }, { threshold: [0.25, 0.5, 1] })
-      obs.observe(el)
-    } catch (_) { }
-    return () => { try { if (obs && el) obs.unobserve(el) } catch (_) { } }
-  }, [post, viewPost])
+  const {
+    isMyPost, following, followLoading, handleFollow, handleUnfollow,
+    liked, localLikes, showComments, setShowComments, localShares, shareBusy,
+    shareFeedback, shareDialogOpen, setShareDialogOpen, showDeleteConfirm,
+    setShowDeleteConfirm, containerRef, displayName, shareUrl, mediaUrl,
+    timeStr, handleLike, handleShare
+  } = useFeedItemLogic({ post, actions, auth });
 
   if (!post) return null
   const {
@@ -104,74 +39,6 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     createdAt, thumbnailUrl, multimediaUrl,
     commentsCount, views,
   } = post
-
-  const displayName = (authorFirstName || authorLastName)
-    ? `${authorFirstName || ''} ${authorLastName || ''}`.trim()
-    : 'Usuario'
-
-  const shareUrl = (typeof window !== 'undefined' && window.location)
-    ? `${window.location.origin}/feed/${post._id}`
-    : ''
-
-  const mediaUrl =
-    resolveUrl(multimediaUrl) ||
-    resolveUrl(thumbnailUrl) ||
-    (multimedia?.filename ? `${mediaBase}/${multimedia.filename}` : null)
-
-
-
-  const timeStr = createdAt
-    ? new Date(createdAt).toLocaleString(undefined, {
-      month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
-    : ''
-
-  const handleLike = async () => {
-    try {
-      if (!liked) {
-        setLiked(true)
-        setLocalLikes(l => l + 1)
-        const res = await likePost(post._id)
-        const u = (res && res.data) ? res.data : res
-        if (u && typeof u.likesCount === 'number') setLocalLikes(u.likesCount)
-      } else {
-        setLiked(false)
-        setLocalLikes(l => Math.max(0, l - 1))
-        const res = await unlikePost(post._id)
-        const u = (res && res.data) ? res.data : res
-        if (u && typeof u.likesCount === 'number') setLocalLikes(u.likesCount)
-      }
-    } catch (_) { }
-  }
-
-  const handleShare = async () => {
-    if (shareBusy) return
-    setShareBusy(true)
-    try {
-      if (sharePost) {
-        const res = await sharePost(post._id)
-        const u = (res && res.data) ? res.data : res
-        setLocalShares((s) => (u && typeof u.shares === 'number') ? u.shares : s + 1)
-        setShareFeedback('Compartido')
-        setTimeout(() => setShareFeedback(''), 1800)
-        try { setShareDialogOpen(true) } catch (_) { }
-        return
-      }
-      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareUrl)
-        setLocalShares((s) => s + 1)
-        setShareFeedback('Enlace copiado')
-        setTimeout(() => setShareFeedback(''), 1800)
-        return
-      }
-    } catch (_) {
-      try { setShareFeedback('Error al compartir') } catch (_) { }
-      setTimeout(() => setShareFeedback(''), 2200)
-    } finally {
-      setShareBusy(false)
-    }
-  }
 
   return (
     <>

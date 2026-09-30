@@ -1,90 +1,15 @@
-import React, { useState, use, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useFeed from '../../hooks/useFeed';
+import React, { use } from 'react';
 import { AuthContext } from '../../hooks/AuthContext';
 import Toast from '../toasts/Toast';
 import UserAvatar from '../common/UserAvatar';
-
+import usePostFormLogic from './usePostFormLogic';
 export default function PostForm() {
-  const navigate = useNavigate();
-  const { createPostWithFile, createPost } = useFeed();
   const { auth } = use(AuthContext);
-  const [description, setDescription] = useState('');
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [toast, setToast] = useState('');
-  const [expanded, setExpanded] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const textareaRef = useRef(null);
-  useCleanupPreview(previewUrl);
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (submitting) return; // Prevent double-click
-    setSubmitting(true);
-    try {
-      if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("description", (description || '').trim());
-        formData.append("type", "image");
-
-        await createPostWithFile(formData);
-      } else {
-        await createPost({ description, type: 'text', authorId: auth._id });
-      }
-      setDescription('');
-      setFile(null);
-      setExpanded(false);
-      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
-      if (e.target?.reset) e.target.reset();
-    } catch (err) {
-      console.error(err);
-      setToast(err?.response?.data?.message || err?.message || 'Error creando el post');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-
-
-  const handleFileChange = (e) => {
-    const f = e.target.files[0];
-    if (toast) setToast('');
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { } }
-    if (!f) { setFile(null); setPreviewUrl(null); return; }
-
-    if (!f.type?.startsWith('image/')) {
-      setToast('Solo se permiten imágenes (JPG, PNG, GIF, WebP).');
-      setFile(null); setPreviewUrl(null); e.target.value = '';
-      return;
-    }
-
-    const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
-    if (f.size > MAX_IMAGE_SIZE) {
-      setToast('La imagen no puede superar 15 MB.');
-      setFile(null); setPreviewUrl(null); e.target.value = '';
-      return;
-    }
-
-    setFile(f);
-    try { setPreviewUrl(URL.createObjectURL(f)); } catch (_) { setPreviewUrl(null); }
-    setExpanded(true);
-  };
-
-  const handleDiscard = (e) => {
-    e.preventDefault();
-    setDescription('');
-    setFile(null);
-    setExpanded(false);
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
-    const input = document.getElementById('post-file-input');
-    if (input) input.value = '';
-  };
-
-  const displayName = auth ? `${auth.firstName || ''}`.trim() || auth.username || 'Tú' : 'Tú';
-  const firstName = displayName.split(' ')[0];
-  const hasContent = file || description.trim().length > 0;
+  const {
+    navigate, description, setDescription, file, toast, setToast,
+    expanded, setExpanded, submitting, textareaRef, onSubmit, handleFileChange,
+    handleDiscard, firstName, hasContent, safePreviewUrl
+  } = usePostFormLogic(auth);
 
   return (
     <form onSubmit={onSubmit} className="fb-post-form">
@@ -129,7 +54,6 @@ export default function PostForm() {
       </div>
 
       {(() => {
-        const safePreviewUrl = getSafePreviewUrl(previewUrl);
         if (!(expanded && (safePreviewUrl || file))) return null;
         return (
           <div className="fb-post-expanded">
@@ -150,13 +74,3 @@ export default function PostForm() {
   );
 }
 
-function getSafePreviewUrl(url) {
-  if (typeof url !== 'string') return null;
-  return url.startsWith('blob:') ? url : null;
-}
-
-function useCleanupPreview(url) {
-  useEffect(() => {
-    return () => { if (url) { try { URL.revokeObjectURL(url); } catch (_) { } } };
-  }, [url]);
-}

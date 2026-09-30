@@ -1,9 +1,7 @@
-import React, { use, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { use } from 'react';
 import { AuthContext } from '../../hooks/AuthContext';
 import UserAvatar from '../common/UserAvatar';
-import donationsService from '../../services/donations';
-
+import useLeftSidebarLogic from './useLeftSidebarLogic';
 const styles = {
   wrapper: {
     padding: "0.5rem",
@@ -91,38 +89,7 @@ const styles = {
 
 export default function LeftSidebar() {
   const { auth } = use(AuthContext);
-  const [copied, setCopied] = useState({ btc: false, usdt: false });
-  const [wallets, setWallets] = useState({ btc: '', usdt: '' });
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    donationsService.getWallets()
-      .then(resp => {
-        const data = resp?.data;
-        if (data) setWallets({ btc: data.btc || '', usdt: data.usdt || '' });
-      })
-      .catch(() => { });
-  }, []);
-
-  const btcAddress = wallets.btc;
-  const usdtAddress = wallets.usdt;
-
-  const copyToClipboard = async (text, key) => {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied((p) => ({ ...p, [key]: true }));
-      setTimeout(() => setCopied((p) => ({ ...p, [key]: false })), 2000);
-    } catch (err) { }
-  };
-
-  const first = auth?.firstName || '';
-  const last = auth?.lastName || '';
-  const name = `${first} ${last}`.trim() || auth?.username || 'Usuario';
-
-  const nav = (path) => {
-    try { navigate(path); } catch (_) { }
-  };
+  const { copied, btcAddress, usdtAddress, copyToClipboard, name, nav } = useLeftSidebarLogic(auth);
 
   return (
     <div style={styles.wrapper}>

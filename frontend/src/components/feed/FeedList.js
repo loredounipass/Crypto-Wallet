@@ -1,5 +1,5 @@
-import React, { useRef, useCallback } from 'react'
-import useFeed from '../../hooks/useFeed'
+import React from 'react'
+import useFeedListLogic from './useFeedListLogic'
 import FeedItem from './FeedItem'
 import PostForm from './PostForm'
 import RightSidebar from './RightSidebar'
@@ -9,25 +9,8 @@ import './FeedStyles.css'
 
 export default function FeedList() {
   const {
-    posts, loading, error,
-    loadMore, hasMore, loadingMore,
-    likePost, unlikePost, deletePost,
-    addComment, joinPost, viewPost,
-    getComments, likeComment, unlikeComment,
-    sharePost
-  } = useFeed()
-
-  const observer = useRef(null);
-  const lastPostRef = useCallback(node => {
-    if (loading || loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        if (loadMore) loadMore();
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [loading, loadingMore, hasMore, loadMore]);
+    posts, loading, error, hasMore, loadingMore, actions, lastPostRef
+  } = useFeedListLogic()
 
   return (
     <>
@@ -73,7 +56,7 @@ export default function FeedList() {
             <div key={p._id} ref={index === posts.length - 1 ? lastPostRef : null}>
               <FeedItem
                 post={p}
-                actions={{ likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost }}
+                actions={actions}
               />
             </div>
           ))}

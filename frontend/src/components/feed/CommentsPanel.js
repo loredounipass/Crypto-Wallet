@@ -14,15 +14,6 @@ function relativeTime(dateStr) {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-function sortByCreatedAtAsc(list) {
-  const sortFn = (a, b) => {
-    const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return da - db;
-  };
-  return list.toSorted ? list.toSorted(sortFn) : [...list].sort(sortFn);
-}
-
 function snippet(text, max = 80) {
   if (!text) return ''
   const t = String(text).trim()
@@ -108,227 +99,21 @@ const S = {
   },
 }
 
+import useCommentsPanelLogic from './useCommentsPanelLogic'
+
 /* ── component ── */
 export default function CommentsPanel({ post, open, onClose, addComment, getComments, deleteComment, joinPost, likeComment, unlikeComment }) {
   const { auth } = use(AuthContext)
-  const [comments, setComments] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [text, setText] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState(null)
-  const [replyTo, setReplyTo] = useState(null)
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
-  const [deleting, setDeleting] = useState(false)
-  const [expandedThreads, setExpandedThreads] = useState({})
-  const bottomRef = useRef(null)
-  const inputRef = useRef(null)
-  const listRef = useRef(null)
-  const prevCountRef = useRef(0)
-  const isLikeUpdateRef = useRef(false)
-  const nodeRefs = useRef({})
-  const justRepliedRef = useRef(false)
-
-  const toggleLike = async (comment) => {
-    if (!auth || !auth._id) return
-    const meId = String(auth._id)
-    const liked = Array.isArray(comment.likes) && comment.likes.includes(meId)
-
-    const list = listRef.current
-    const savedScrollTop = list ? list.scrollTop : 0
-    isLikeUpdateRef.current = true
-
-    setComments(prev => prev.map(c =>
-      c._id === comment._id
-        ? ({
-          ...c,
-          likesCount: (c.likesCount || 0) + (liked ? -1 : 1),
-          likes: liked
-            ? (Array.isArray(c.likes) ? c.likes.filter(id => id !== meId) : [])
-            : ([...(Array.isArray(c.likes) ? c.likes : []), meId]),
-        })
-        : c
-    ))
-
-    requestAnimationFrame(() => {
-      if (list) list.scrollTop = savedScrollTop
-    })
-
-    try {
-      if (liked) {
-        if (typeof unlikeComment === 'function') await unlikeComment(comment._id, post._id)
-      } else {
-        if (typeof likeComment === 'function') await likeComment(comment._id, post._id)
-      }
-    } catch (err) {
-      try { const fresh = await getComments(post._id); setComments(Array.isArray(fresh) ? fresh : []) } catch (_) { }
-    }
-  }
-
-  /* lock body scroll while open */
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-      inputRef.current?.focus()
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [open])
-
-  /* load comments whenever the panel opens */
-  useEffect(() => {
-    if (!open || !post?._id) return
-    let mounted = true
-    if (typeof joinPost === 'function') {
-      try { joinPost(post._id) } catch (_) { }
-    }
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await getComments(post._id)
-        if (mounted) setComments(Array.isArray(data) ? data : [])
-      } catch (e) {
-        if (mounted) setError('No se pudieron cargar los comentarios.')
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-    load()
-    return () => { mounted = false }
-  }, [open, post, getComments, joinPost])
-
-  /* scroll to bottom when NEW top-level comments arrive (not for replies) */
-  useEffect(() => {
-    if (!open || comments.length === 0) return
-    if (isLikeUpdateRef.current) {
-      isLikeUpdateRef.current = false
-      return
-    }
-    if (justRepliedRef.current) {
-      justRepliedRef.current = false
-      return
-    }
-    const list = listRef.current
-    const nearBottom = list
-      ? (list.scrollHeight - list.scrollTop - list.clientHeight) < 80
-      : true
-    const isFirstLoad = prevCountRef.current === 0
-    if (comments.length > prevCountRef.current && (nearBottom || isFirstLoad)) {
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
-    }
-    prevCountRef.current = comments.length
-  }, [comments, open])
-
-  /* reset reply state when switching posts */
-  useEffect(() => {
-    setReplyTo(null)
-    setText('')
-    prevCountRef.current = 0
-  }, [post?._id])
-
-  /* close on Escape */
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  const startReply = (c) => {
-    const name = (c.authorFirstName || c.authorLastName)
-      ? `${c.authorFirstName || ''} ${c.authorLastName || ''}`.trim()
-      : 'Usuario'
-    setReplyTo({ id: c._id, name, content: c.content, author: c.author })
-    inputRef.current?.focus()
-  }
-
-  const handleDelete = async () => {
-    if (!confirmDeleteId || deleting) return
-    setDeleting(true)
-    try {
-      if (typeof deleteComment === 'function') {
-        await deleteComment(post._id, confirmDeleteId)
-      }
-      const gone = String(confirmDeleteId)
-      setComments(prev => prev.filter(c => String(c._id) !== gone && String(c.parent) !== gone))
-      setConfirmDeleteId(null)
-    } catch (err) {
-      setError('No se pudo eliminar el comentario.')
-      setConfirmDeleteId(null)
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!text.trim()) return
-    setSubmitting(true)
-    setError(null)
-    const targetParentId = replyTo?.id ? String(replyTo.id) : null
-    try {
-      const newComment = await addComment(post._id, text.trim(), replyTo?.id)
-      setText('')
-      if (targetParentId) {
-        justRepliedRef.current = true
-        setExpandedThreads(prev => ({ ...prev, [targetParentId]: true }))
-      }
-      setReplyTo(null)
-
-      const candidate = {
-        _id: newComment?._id || Date.now().toString(),
-        content: text.trim(),
-        authorFirstName: auth?.firstName || '',
-        authorLastName: auth?.lastName || '',
-        author: auth?._id || 'me',
-        parent: newComment?.parent || targetParentId || undefined,
-        createdAt: new Date().toISOString(),
-      }
-      setComments(prev => [...prev, candidate])
-
-      try {
-        const fresh = await getComments(post._id)
-        if (Array.isArray(fresh)) setComments(fresh)
-      } catch (_) { }
-
-      /* lleva la vista a la respuesta, abajito del comentario padre */
-      if (targetParentId) {
-        setTimeout(() => {
-          const el = nodeRefs.current[targetParentId]
-          if (el && typeof el.scrollIntoView === 'function') {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-        }, 150)
-      }
-    } catch (err) {
-      setError('No se pudo enviar el comentario.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const {
+    comments, loading, text, setText, submitting, error, replyTo, setReplyTo,
+    confirmDeleteId, setConfirmDeleteId, deleting, expandedThreads, setExpandedThreads,
+    bottomRef, inputRef, listRef, nodeRefs, toggleLike, startReply, handleDelete, handleSubmit,
+    topLevel, descendantsOf, byId, meId
+  } = useCommentsPanelLogic({
+    post, open, onClose, addComment, getComments, deleteComment, joinPost, likeComment, unlikeComment, auth
+  });
 
   if (!open) return null
-
-  const sorted = sortByCreatedAtAsc(comments)
-  const byId = new Map(sorted.map(c => [String(c._id), c]))
-  /* raíz del hilo: sube por los padres hasta el comentario sin padre (corta ciclos) */
-  const rootOf = (c) => {
-    let cur = c
-    const seen = new Set()
-    while (cur?.parent && byId.has(String(cur.parent)) && !seen.has(String(cur._id))) {
-      seen.add(String(cur._id))
-      cur = byId.get(String(cur.parent))
-    }
-    return cur
-  }
-  /* huerfanos (padre borrado) se muestran como nivel superior para no perderse */
-  const topLevel = sorted.filter(c => !c.parent || !byId.has(String(c.parent)))
-  /* hilo plano: todos los descendientes directos o indirectos de la raíz */
-  const descendantsOf = (rootId) => sorted.filter(c => {
-    if (!c.parent || !byId.has(String(c.parent))) return false
-    return String(rootOf(c)?._id) === String(rootId)
-  })
-  const meId = auth?._id ? String(auth._id) : null
 
   const renderComment = (c, isRoot = true) => {
     const name = (c.authorFirstName || c.authorLastName)

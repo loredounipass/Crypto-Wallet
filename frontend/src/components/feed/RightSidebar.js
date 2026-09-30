@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import React from 'react'
+import useRightSidebarLogic from './useRightSidebarLogic'
 
 const styles = {
   wrapper: {
@@ -119,18 +119,7 @@ const styles = {
 }
 
 export default function RightSidebar() {
-  const { t } = useTranslation()
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // TODO(feed-chat): lista de contactos sin funciones por ahora.
-  // No llamar a fetchMyMessages / User.searchUsers / joinChat aquí:
-  // ese chat lo usa P2P. Cuando se cree el chat del feed, conectar aquí.
-  const contacts = []
-  const sponsored = [
-    { id: 's1', title: 'Promoción local', image: '/assets/sponsored1.jpg', url: 'https://tuempresa.com', link: 'tuempresa.com' },
-    { id: 's2', title: 'Ofertas cerca de ti', image: '/assets/sponsored2.jpg', url: 'https://ofertas.com', link: 'ofertas.com' },
-    { id: 's3', title: 'Promoción local', image: '/assets/sponsored3.jpg', url: 'https://tutienda.com', link: 'tutienda.com' },
-  ]
+  const { t, searchQuery, setSearchQuery, contacts, sponsored } = useRightSidebarLogic();
 
   return (
     <div style={styles.wrapper}>
