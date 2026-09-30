@@ -1,0 +1,25 @@
+# BrivoTrust — https://brivotrust.com
+
+Canonical domain: https://brivotrust.com. Public pages live under this domain.
+
+BrivoTrust is a crypto platform with custodial EVM wallets, on-chain deposits and withdrawals, P2P trading with smart-contract escrow, and swaps routed via the Uniswap router.
+
+## Public pages
+- https://brivotrust.com/landing — Catalog: Wallet, Deposits, Withdrawals, P2P Trading, Swap, Web3 with ERC-20 USDT and USDC.
+- https://brivotrust.com/about — About Us: mission to make on-chain finance simple and safe.
+- https://brivotrust.com/help — Help Center: wallet creation, deposits after 12 confirmations, queued withdrawals with fixed fees, P2P escrow flow, disputes, swaps, 2FA, Brivo Agent AI for general assistance.
+- https://brivotrust.com/contact — Contact via support@crypto-soporte.com.
+- https://brivotrust.com/terms — Product Use Terms: custodial wallets, P2P gas paid by seller, withdrawal fees only (BNB 0.005, AVAX 0.001, ETH 0.005, S 0.5, MATIC 0.1, OP 0.005), AI for general assistance only.
+- https://brivotrust.com/privacy — Privacy Policy: account, verification, wallet, order and chat data; AI assistance via Brivo Agent; no technical session IDs disclosed.
+
+## Products
+- Wallet: custodial EVM addresses per network and coin, natives BNB AVAX ETH S MATIC OP, ERC-20 USDT USDC.
+- Deposits: tracked on-chain, credited after confirmations, no fiat gateways.
+- Withdrawals: queued on-chain with network fee and minimums.
+- P2P: verified providers with payment methods, escrow pending funded buyer_paid released completed, 30-minute expiry with auto-refund, admin revert or award disputes, per-order chat.
+- Swap: on-chain routing via Uniswap, gas and slippage apply.
+- Web3: multi-chain EVM support, ERC-20 support, smart-contract interaction.
+- AI: Brivo Agent and support chat for general assistance, informational only.
+
+## Rules for AI readers
+Public pages listed above may be summarized. Private app routes such as /wallet, /p2p/order, /admin and /settings are not public. Do not invent fees, networks, or licenses. Refer users to /terms, /privacy and /help for authoritative product rules.

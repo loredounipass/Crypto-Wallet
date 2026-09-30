@@ -1,3 +1,63 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Disallow: /wallet
+Disallow: /wallets
+Disallow: /p2p/
+Disallow: /admin/
+Disallow: /settings
+Disallow: /feed
+
+User-agent: GPTBot
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+User-agent: ChatGPT-User
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+User-agent: ClaudeBot
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+User-agent: anthropic-ai
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+User-agent: PerplexityBot
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+User-agent: Google-Extended
+Allow: /landing
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+Sitemap: https://brivotrust.com/sitemap.xml

@@ -19,6 +19,11 @@ import SupportChat from './pages/SupportChat'
 import ProviderCard from './components/providers/ProviderCard'
 import CreateProvider from './pages/Create';
 import Landing from './pages/Landing'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import Help from './pages/Help'
+import About from './pages/About'
+import Contact from './pages/Contact'
 import VerifyToken from './components/2FA/verify-token'
 import Settings from './components/settings/Settings'
 import ResendTokenForm from './components/2FA/ResendTokenForm'
@@ -40,7 +45,7 @@ import { Menu as MenuIcon } from './ui/icons';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminUsers from './pages/AdminUsers';
 
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/landing', '/verifytoken', '/resendtoken', '/terms', '/privacy', '/help', '/about', '/contact'];
 
 
 
@@ -265,6 +270,31 @@ function AppContent() {
                                 <Route path='/landing' element={
                                     <PublicRoute>
                                         <Landing />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/terms' element={
+                                    <PublicRoute>
+                                        <Terms />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/privacy' element={
+                                    <PublicRoute>
+                                        <Privacy />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/help' element={
+                                    <PublicRoute>
+                                        <Help />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/about' element={
+                                    <PublicRoute>
+                                        <About />
+                                    </PublicRoute>
+                                } />
+                                <Route path='/contact' element={
+                                    <PublicRoute>
+                                        <Contact />
                                     </PublicRoute>
                                 } />
                                 <Route path='/verifytoken' element={
