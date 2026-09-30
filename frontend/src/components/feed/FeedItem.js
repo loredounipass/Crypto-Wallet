@@ -273,33 +273,45 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         )}
 
         {/* ── Stats row ── */}
-        <div className="fb-stats">
-          <span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
-              style={{ color: liked ? '#22c1c3' : undefined }}>
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-            {localLikes} {localLikes === 1 ? 'like' : 'likes'}
-          </span>
-          <span style={{ cursor: 'pointer' }} onClick={() => setShowComments(true)}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            {commentsCount || 0} comentario{commentsCount !== 1 ? 's' : ''}
-          </span>
-          <span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13" /><path d="M8 7l4-4 4 4" />
-            </svg>
-            {localShares || 0} compartido{(localShares || 0) !== 1 ? 's' : ''}
-          </span>
-          <span style={{ marginLeft: 'auto' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-            </svg>
-            {typeof views === 'number' ? views : 0} vista{views !== 1 ? 's' : ''}
-          </span>
-        </div>
+        {(localLikes > 0 || (commentsCount || 0) > 0 || (localShares || 0) > 0 || (typeof views === 'number' ? views : 0) > 0) && (
+          <div className="fb-stats">
+            <div className="fb-stats-left">
+              {localLikes > 0 && (
+                <span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
+                    style={{ color: liked ? '#22c1c3' : undefined }}>
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  {localLikes} {localLikes === 1 ? 'like' : 'likes'}
+                </span>
+              )}
+              {(commentsCount || 0) > 0 && (
+                <span style={{ cursor: 'pointer' }} onClick={() => setShowComments(true)}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {commentsCount || 0} comentario{commentsCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              {(localShares || 0) > 0 && (
+                <span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13" /><path d="M8 7l4-4 4 4" />
+                  </svg>
+                  {localShares || 0} compartido{(localShares || 0) !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            {(typeof views === 'number' ? views : 0) > 0 && (
+              <span className="fb-stats-views">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                </svg>
+                {typeof views === 'number' ? views : 0} vista{views !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* ── Action buttons ── */}
         <div className="fb-actions">

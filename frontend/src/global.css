@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
+
+  html,
+  body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
@@ -12,6 +14,7 @@
     -moz-osx-font-smoothing: grayscale;
     background-color: #0F0F1A !important;
     overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
     max-width: 100vw;
     scrollbar-width: thin;
@@ -23,14 +26,18 @@
     width: 10px;
     height: 10px;
   }
+
   ::-webkit-scrollbar-track {
     background: #05050A;
   }
+
   ::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #6366F1, #8B5CF6, #2186EB);
     border-radius: 8px;
-    border: 2px solid #05050A; /* Creates a padding effect around the thumb */
+    border: 2px solid #05050A;
+    /* Creates a padding effect around the thumb */
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #8B5CF6, #2186EB, #6366F1);
   }
@@ -41,26 +48,26 @@
 }
 
 @layer components {
-   .hide-scrollbar {
-     -ms-overflow-style: none;
-     scrollbar-width: none;
-   }
- 
-   .hide-scrollbar::-webkit-scrollbar {
-     width:0;
-     height:0;
-     display: none;
-   }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-   .logo-glow {
-     animation: none;
-   }
+  .hide-scrollbar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
 
-   .gradient-text {
-     background-clip: text;
-     -webkit-background-clip: text;
-     color: transparent;
-   }
+  .logo-glow {
+    animation: none;
+  }
+
+  .gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
 
   .hide-scrollbar::-webkit-scrollbar {
     width: 0;
@@ -127,18 +134,29 @@
   }
 
   @keyframes blobAnimation {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
   }
 
 }
 
 /* Fix for Chrome autofill overriding transparent inputs */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset !important;
   -webkit-text-fill-color: #FFFFFF !important;

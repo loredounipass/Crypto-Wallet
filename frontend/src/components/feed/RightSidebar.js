@@ -171,7 +171,7 @@ export default function RightSidebar() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    fetchMyMessages().catch(() => {})
+    fetchMyMessages().catch(() => { })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -216,21 +216,21 @@ export default function RightSidebar() {
     }, []);
     if (unknown.length === 0) return
     let mounted = true
-    ;(async () => {
-      for (const uid of unknown) {
-        try {
-          const resp = await User.searchUsers(uid)
-          const data = resp?.data
-          let users = []
-          if (Array.isArray(data)) users = data
-          else if (data?.data && Array.isArray(data.data)) users = data.data
-          const found = users.find(u => u._id === uid)
-          if (found && mounted) setUserCache(prev => ({ ...prev, [uid]: found }))
-        } catch (err) {
-          // ignore
+      ; (async () => {
+        for (const uid of unknown) {
+          try {
+            const resp = await User.searchUsers(uid)
+            const data = resp?.data
+            let users = []
+            if (Array.isArray(data)) users = data
+            else if (data?.data && Array.isArray(data.data)) users = data.data
+            const found = users.find(u => u._id === uid)
+            if (found && mounted) setUserCache(prev => ({ ...prev, [uid]: found }))
+          } catch (err) {
+            // ignore
+          }
         }
-      }
-    })()
+      })()
     return () => { mounted = false }
   }, [contacts, userCache])
 
@@ -240,7 +240,7 @@ export default function RightSidebar() {
   }
 
   const handleOpenChat = (uid) => {
-    try { joinChat(uid) } catch (_) {}
+    try { joinChat(uid) } catch (_) { }
     navigate(`/chat/${uid}`)
   }
 
@@ -256,7 +256,7 @@ export default function RightSidebar() {
       <div style={styles.section}>
         <div style={styles.header}>
           <div style={styles.headerBadge}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
           </div>
           <span>Freeus Advertising</span>
         </div>
@@ -277,9 +277,9 @@ export default function RightSidebar() {
                 <div style={styles.sponsoredSub}>Promotional Ad</div>
                 <div style={styles.sponsoredLink}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/>
-                    <line x1="10" y1="14" x2="21" y2="3"/>
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
                   </svg>
                   {s.link}
                 </div>
@@ -298,7 +298,7 @@ export default function RightSidebar() {
         <div style={styles.searchWrap}>
           <span style={styles.searchIcon}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
             </svg>
           </span>
           <input

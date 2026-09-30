@@ -110,7 +110,7 @@ function AppContent() {
     return (
         <AuthContext.Provider value={{ auth, setAuth, loading }}>
             <SocketProvider>
-                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+                <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0F0F1A', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
                     <CssBaseline />
 
                     {isAuthenticated && !isPublicRoute && (
