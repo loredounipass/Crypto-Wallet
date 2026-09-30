@@ -15,7 +15,7 @@
 /* Layout */
 .fb-list-wrapper {
   flex: 1;
-  max-width: 680px;
+  max-width: 580px;
   width: 100%;
   margin: 0 auto;
   padding: 20px 10px;
@@ -29,9 +29,9 @@
   display: none;
   /* Fijos al hacer scroll del feed: solo se mueve la columna central */
   position: sticky;
-  top: 90px;
-  max-height: calc(100vh - 90px);
-  height: calc(100vh - 90px);
+  top: 65px;
+  max-height: calc(100vh - 65px);
+  height: calc(100vh - 65px);
   overflow-y: auto;
   overscroll-behavior: contain;
   align-self: flex-start;
@@ -65,7 +65,7 @@
   border: 1px solid var(--fn-border);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .fb-post-bar {
@@ -138,7 +138,6 @@
   margin: 10px 0;
   border-radius: 8px;
   overflow: hidden;
-  background: #000;
 }
 
 .btn-secondary {
@@ -309,5 +308,17 @@
 @media (min-width: 641px) and (max-width: 768px) {
   .fb-list-wrapper {
     padding: 16px 10px;
+  }
+}
+
+/* Ocultar barras laterales si el contenedor (afectado por el sidebar principal) se hace muy pequeño */
+@container (max-width: 1050px) {
+  .fb-right-sidebar-fixed {
+    display: none !important;
+  }
+}
+@container (max-width: 800px) {
+  .fb-left-sidebar-fixed {
+    display: none !important;
   }
 }

@@ -13,7 +13,7 @@ export class FeedCommentsService {
     private readonly userRepository: UserRepository,
     private readonly userService: UserService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   private get feedModel() {
     return this.feedRepository.feed;
@@ -57,8 +57,20 @@ export class FeedCommentsService {
         usedTransaction = true;
       } catch (txErr) {
         const msg = String((txErr as any)?.message || '').toLowerCase();
-        if (msg.includes('transaction numbers are only allowed') || msg.includes('transactions are not supported')) {
-        } else {
+        const nestedMsg = String(
+          (txErr as any)?.originalError?.message ||
+          (txErr as any)?.error?.originalError?.message ||
+          (txErr as any)?.errorResponse?.errmsg ||
+          (txErr as any)?.errmsg || '',
+        ).toLowerCase();
+        const isTxUnsupported =
+          msg.includes('transaction numbers are only allowed') ||
+          msg.includes('transactions are not supported') ||
+          msg.includes('retryable writes') ||
+          nestedMsg.includes('transaction numbers are only allowed') ||
+          nestedMsg.includes('transactions are not supported') ||
+          nestedMsg.includes('retryable writes');
+        if (!isTxUnsupported) {
           throw txErr;
         }
       }
@@ -140,10 +152,10 @@ export class FeedCommentsService {
     if (!actorId || !Types.ObjectId.isValid(actorId)) throw new BadRequestException('Invalid actor id');
     const oid = new Types.ObjectId(actorId);
     const pipeline: any[] = [
-      { $set: { likes: { $setUnion: ['$likes', [oid]] } } },
+      { $set: { likes: { $setUnion: [{ $ifNull: ['$likes', []] }, [oid]] } } },
       { $set: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
     ];
-    const updated = await this.commentModel.findOneAndUpdate({ _id: commentId } as any, pipeline as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.commentModel.findOneAndUpdate({ _id: commentId } as any, pipeline as any, { returnDocument: 'after', lean: true, updatePipeline: true } as any).exec();
     if (!updated) throw new NotFoundException('Comment not found');
     const out = {
       _id: updated._id?.toString(),
@@ -168,10 +180,10 @@ export class FeedCommentsService {
     if (!actorId || !Types.ObjectId.isValid(actorId)) throw new BadRequestException('Invalid actor id');
     const oid = new Types.ObjectId(actorId);
     const pipeline: any[] = [
-      { $set: { likes: { $filter: { input: '$likes', as: 'u', cond: { $ne: ['$$u', oid] } } } } },
+      { $set: { likes: { $filter: { input: { $ifNull: ['$likes', []] }, as: 'u', cond: { $ne: ['$$u', oid] } } } } },
       { $set: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
     ];
-    const updated = await this.commentModel.findOneAndUpdate({ _id: commentId } as any, pipeline as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.commentModel.findOneAndUpdate({ _id: commentId } as any, pipeline as any, { returnDocument: 'after', lean: true, updatePipeline: true } as any).exec();
     if (!updated) throw new NotFoundException('Comment not found');
     const out = {
       _id: updated._id?.toString(),

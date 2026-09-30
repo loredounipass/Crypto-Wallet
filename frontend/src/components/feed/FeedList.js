@@ -68,7 +68,7 @@ export default function FeedList() {
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {posts && posts.map((p, index) => (
             <div key={p._id} ref={index === posts.length - 1 ? lastPostRef : null}>
               <FeedItem

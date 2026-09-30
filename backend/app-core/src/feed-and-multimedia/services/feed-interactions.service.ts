@@ -8,7 +8,7 @@ export class FeedInteractionsService {
   constructor(
     private readonly feedRepository: FeedRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   private get feedModel() {
     return this.feedRepository.feed;
@@ -22,10 +22,10 @@ export class FeedInteractionsService {
     if (!actorId || !Types.ObjectId.isValid(actorId)) throw new BadRequestException('Invalid actor id');
     const oid = new Types.ObjectId(actorId);
     const pipeline: any[] = [
-      { $set: { likes: { $setUnion: ['$likes', [oid]] } } },
+      { $set: { likes: { $setUnion: [{ $ifNull: ['$likes', []] }, [oid]] } } },
       { $set: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
     ];
-    const updated = await this.feedModel.findOneAndUpdate({ _id: postId } as any, pipeline as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.feedModel.findOneAndUpdate({ _id: postId } as any, pipeline as any, { returnDocument: 'after', lean: true, updatePipeline: true } as any).exec();
     if (!updated) throw new NotFoundException('Post not found');
     const out = {
       _id: updated._id?.toString(),
@@ -57,10 +57,10 @@ export class FeedInteractionsService {
     if (!actorId || !Types.ObjectId.isValid(actorId)) throw new BadRequestException('Invalid actor id');
     const oid = new Types.ObjectId(actorId);
     const pipeline: any[] = [
-      { $set: { likes: { $filter: { input: '$likes', as: 'u', cond: { $ne: ['$$u', oid] } } } } },
+      { $set: { likes: { $filter: { input: { $ifNull: ['$likes', []] }, as: 'u', cond: { $ne: ['$$u', oid] } } } } },
       { $set: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
     ];
-    const updated = await this.feedModel.findOneAndUpdate({ _id: postId } as any, pipeline as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.feedModel.findOneAndUpdate({ _id: postId } as any, pipeline as any, { returnDocument: 'after', lean: true, updatePipeline: true } as any).exec();
     if (!updated) throw new NotFoundException('Post not found');
     const out = {
       _id: updated._id?.toString(),
@@ -89,7 +89,7 @@ export class FeedInteractionsService {
   // SUMA UNA NUEVA VISUALIZACION A LA PUBLICACION CUANDO EL USUARIO LA OBSERVA DESDE SU DISPOSITIVO
   async incrementView(postId: string, actorId?: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
-    const updated = await this.feedModel.findOneAndUpdate({ _id: postId } as any, { $inc: { views: 1 } } as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.feedModel.findOneAndUpdate({ _id: postId } as any, { $inc: { views: 1 } } as any, { returnDocument: 'after', lean: true }).exec();
     if (!updated) throw new NotFoundException('Post not found');
     const out = {
       _id: updated._id?.toString(),
@@ -117,7 +117,7 @@ export class FeedInteractionsService {
   // INCREMENTA EL CONTADOR QUE INDICA CUANTAS VECES HA SIDO COMPARTIDA ESTA PUBLICACION CON TERCEROS
   async incrementShare(postId: string, actorId?: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
-    const updated = await this.feedModel.findOneAndUpdate({ _id: postId } as any, { $inc: { shares: 1 } } as any, { returnDocument: 'after', lean: true }).exec();
+    const updated: any = await this.feedModel.findOneAndUpdate({ _id: postId } as any, { $inc: { shares: 1 } } as any, { returnDocument: 'after', lean: true }).exec();
     if (!updated) throw new NotFoundException('Post not found');
     const out = {
       _id: updated._id?.toString(),

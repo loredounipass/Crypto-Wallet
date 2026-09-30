@@ -9,8 +9,6 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
-  Avatar,
-  Typography,
 } from "../ui/material";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -213,11 +211,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     }
   };
 
-  const getAvatarColor = (name) => {
-    const colors = ["#F6851B", "#3C3C3B", "#E8E8E8"];
-    return colors[name.charCodeAt(0) % colors.length];
-  };
-
   const getListItemStyle = (isActive = false, itemColor) => {
     const isDanger = itemColor === "#FF6B6B";
     const activeColor = isDanger ? "#FF6B6B" : "#2186EB";
@@ -273,35 +266,6 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
           <Logo variant="sidebar-collapsed" />
         )}
       </Box>
-
-      {/* User Info - Only when expanded */}
-      {open && auth && (
-        <Box style={{
-          padding: "16px",
-          borderBottom: "1px solid #1A1A2E",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          textAlign: "left",
-        }}>
-          <Avatar
-            style={{
-              backgroundColor: getAvatarColor(auth.firstName),
-              width: 32,
-              height: 32,
-              fontSize: 14,
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            {auth.firstName.charAt(0)}
-          </Avatar>
-          <Typography style={{ color: "#E2E8F0", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {auth.firstName} {auth.lastName || ''}
-          </Typography>
-        </Box>
-      )}
 
       {/* Navigation Items */}
       <List style={{ flex: 1, padding: "12px", listStyle: "none", margin: 0 }}>

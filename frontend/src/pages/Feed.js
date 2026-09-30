@@ -3,7 +3,7 @@ import FeedList from '../components/feed/FeedList'
 
 const Feed = () => {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '1rem', padding: '0 10px', flexWrap: 'nowrap', width: '100%' }}>
+    <div className="feed-layout-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '1rem', padding: '0 10px', width: '100%', containerType: 'inline-size' }}>
       <FeedList />
     </div>
   )

@@ -1,9 +1,4 @@
-import React, { use, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AuthContext } from '../../hooks/AuthContext'
-import useMessagesAndMultimedia from '../../hooks/useMessagesAndMultimedia'
-import User from '../../services/user'
-import { apiOrigin } from '../../api/http'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 const styles = {
@@ -115,43 +110,6 @@ const styles = {
     color: "#64748B",
     display: "flex",
   },
-  contactItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "8px 14px",
-    cursor: "pointer",
-    background: "transparent",
-    border: "none",
-    color: "#E2E8F0",
-    width: "100%",
-    textAlign: "left",
-    fontFamily: "inherit",
-    fontSize: "13px",
-    transition: "background 0.15s",
-  },
-  contactAvatar: {
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #2186EB, #8B5CF6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#FFF",
-    fontSize: "13px",
-    fontWeight: 700,
-    flexShrink: 0,
-    overflow: "hidden",
-  },
-  contactName: {
-    fontWeight: 600,
-    color: "#E2E8F0",
-    fontSize: "13px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
   empty: {
     padding: "24px 14px",
     textAlign: "center",
@@ -161,89 +119,13 @@ const styles = {
 }
 
 export default function RightSidebar() {
-  const { auth } = use(AuthContext)
-  const { messages, fetchMyMessages, joinChat } = useMessagesAndMultimedia()
-  const navigate = useNavigate()
-
-  const currentUserId = auth?._id
-  const [userCache, setUserCache] = useState({})
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
 
-  useEffect(() => {
-    fetchMyMessages().catch(() => { })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const contacts = useMemo(() => {
-    if (!currentUserId || !Array.isArray(messages)) return []
-    const map = new Map()
-    for (const m of messages) {
-      if (!m) continue
-      const sender = m.sender || m.senderId
-      const receiver = m.receiver || m.receiverId
-      if (String(sender) !== String(currentUserId)) continue
-      if (!receiver) continue
-      const existing = map.get(receiver)
-      if (!existing) map.set(receiver, m)
-      else {
-        const tExisting = new Date(existing.createdAt || 0).getTime()
-        const tNew = new Date(m.createdAt || 0).getTime()
-        if (tNew > tExisting) map.set(receiver, m)
-      }
-    }
-    return Array.from(map.entries())
-      .map(([userId, lastMessage]) => ({ userId, lastMessage }))
-      .sort((a, b) => new Date(b.lastMessage.createdAt || 0) - new Date(a.lastMessage.createdAt || 0))
-      .slice(0, 8)
-  }, [messages, currentUserId])
-
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery || !searchQuery.trim()) return contacts
-    const q = searchQuery.toLowerCase()
-    return contacts.filter((c) => {
-      const u = userCache[c.userId] || {}
-      const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase()
-      const email = (u.email || '').toLowerCase()
-      return fullName.includes(q) || email.includes(q)
-    })
-  }, [contacts, searchQuery, userCache])
-
-  useEffect(() => {
-    const unknown = contacts.reduce((acc, c) => {
-      if (c.userId && !userCache[c.userId]) acc.push(c.userId);
-      return acc;
-    }, []);
-    if (unknown.length === 0) return
-    let mounted = true
-      ; (async () => {
-        for (const uid of unknown) {
-          try {
-            const resp = await User.searchUsers(uid)
-            const data = resp?.data
-            let users = []
-            if (Array.isArray(data)) users = data
-            else if (data?.data && Array.isArray(data.data)) users = data.data
-            const found = users.find(u => u._id === uid)
-            if (found && mounted) setUserCache(prev => ({ ...prev, [uid]: found }))
-          } catch (err) {
-            // ignore
-          }
-        }
-      })()
-    return () => { mounted = false }
-  }, [contacts, userCache])
-
-  function resolveProfilePhotoUrl(url) {
-    if (!url) return null
-    return url.startsWith('/') ? `${apiOrigin}${url}` : url
-  }
-
-  const handleOpenChat = (uid) => {
-    try { joinChat(uid) } catch (_) { }
-    navigate(`/chat/${uid}`)
-  }
-
+  // TODO(feed-chat): lista de contactos sin funciones por ahora.
+  // No llamar a fetchMyMessages / User.searchUsers / joinChat aquí:
+  // ese chat lo usa P2P. Cuando se cree el chat del feed, conectar aquí.
+  const contacts = []
   const sponsored = [
     { id: 's1', title: 'Promoción local', image: '/assets/sponsored1.jpg', url: 'https://tuempresa.com', link: 'tuempresa.com' },
     { id: 's2', title: 'Ofertas cerca de ti', image: '/assets/sponsored2.jpg', url: 'https://ofertas.com', link: 'ofertas.com' },
@@ -258,7 +140,7 @@ export default function RightSidebar() {
           <div style={styles.headerBadge}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
           </div>
-          <span>Freeus Advertising</span>
+          <span>Brivo Links</span>
         </div>
         <div>
           {sponsored.map(s => (
@@ -289,7 +171,7 @@ export default function RightSidebar() {
         </div>
       </div>
 
-      {/* Contacts */}
+      {/* Contacts — UI solamente, sin funciones por ahora */}
       <div style={styles.section}>
         <div style={styles.contactsHeader}>
           <span>Contacts</span>
@@ -310,33 +192,9 @@ export default function RightSidebar() {
         </div>
 
         <div>
-          {filteredContacts.length === 0 && (
+          {contacts.length === 0 && (
             <div style={styles.empty}>No has escrito a nadie aún.</div>
           )}
-
-          {filteredContacts.map((c) => {
-            const user = userCache[c.userId] || {}
-            const name = ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || user.name || user.email || `Usuario ${String(c.userId).slice(-4)}`
-            const thumb = resolveProfilePhotoUrl(user.profilePhotoUrl || user.profilePhoto || user.photoUrl || user.photo || user.avatarUrl)
-            return (
-              <button key={c.userId} style={styles.contactItem}
-                onClick={() => handleOpenChat(c.userId)}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(33,134,235,0.04)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-              >
-                <div style={styles.contactAvatar}>
-                  {thumb ? (
-                    <img src={thumb} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    (user.firstName && user.firstName[0]) || 'U'
-                  )}
-                </div>
-                <div style={{ overflow: "hidden" }}>
-                  <div style={styles.contactName}>{name}</div>
-                </div>
-              </button>
-            )
-          })}
         </div>
       </div>
     </div>

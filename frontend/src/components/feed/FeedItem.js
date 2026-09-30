@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { mediaBase, apiOrigin } from '../../api/http'
 import CommentsPanel from './CommentsPanel'
 import NewChatDialog from '../chat/NewChatDialog'
+import { ConfirmToast } from '../toasts/Toast'
 import { AuthContext } from '../../hooks/AuthContext'
 import UserAvatar from '../common/UserAvatar'
 
@@ -63,6 +64,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareFeedback, setShareFeedback] = useState('')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const containerRef = useRef(null)
   const viewed = useRef(false)
 
@@ -173,7 +175,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
 
   return (
     <>
-      <div className="fb-card mb-4" ref={containerRef}>
+      <div className="fb-card" ref={containerRef}>
 
         {/* ── Header ── */}
         <div style={{
@@ -221,11 +223,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
           </div>
           {isMyPost && deletePost && (
             <button
-              onClick={() => {
-                if (window.confirm('¿Seguro que deseas eliminar esta publicación?')) {
-                  deletePost(post._id);
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               style={{
                 background: 'transparent', border: 'none', color: 'var(--fn-muted)', cursor: 'pointer', padding: '8px', fontSize: '1.2rem',
                 opacity: 0.7, transition: 'opacity 0.2s'
@@ -254,13 +252,24 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
               alt="media"
               loading="lazy"
               onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.insertAdjacentHTML('afterend',
-                  '<div style="padding:24px;text-align:center;color:#a0a0a0;font-size:13px">⚠️ Imagen no disponible</div>'
-                );
+                const img = e.currentTarget;
+                const retries = parseInt(img.dataset.retries || '0');
+                if (retries < 3) {
+                  img.dataset.retries = retries + 1;
+                  setTimeout(() => {
+                    img.src = mediaUrl + (mediaUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                  }, 1500);
+                } else {
+                  img.onerror = null;
+                  img.style.display = 'none';
+                  if (!img.nextSibling || img.nextSibling.className !== 'img-error-msg') {
+                    img.insertAdjacentHTML('afterend',
+                      '<div class="img-error-msg" style="padding:24px;text-align:center;color:#a0a0a0;font-size:13px">⚠️ Imagen procesando, por favor recarga la página.</div>'
+                    );
+                  }
+                }
               }}
-              style={{ width: '100%', maxHeight: '480px', display: 'block', objectFit: 'contain' }}
+              style={{ width: '100%', height: 'auto', maxHeight: '800px', display: 'block', objectFit: 'contain' }}
             />
           </div>
         )}
@@ -357,6 +366,17 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
         currentUserId={auth?._id}
         shareUrl={shareUrl}
       />
+
+      {showDeleteConfirm && (
+        <ConfirmToast
+          message="¿Seguro que deseas eliminar esta publicación?"
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            deletePost(post._id);
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </>
   )
 }

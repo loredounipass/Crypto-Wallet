@@ -113,3 +113,46 @@ export function TransactionToast({ toast, onClose }) {
         </div>
     );
 }
+
+// ══════════════════════════════════════════════════════════════
+// CONFIRM TOAST — DIALOG FOR CONFIRMING ACTIONS (E.G. DELETE)
+// ══════════════════════════════════════════════════════════════
+export function ConfirmToast({ message, onConfirm, onCancel }) {
+    if (!message) return null;
+    return (
+        <div style={{
+            position: 'fixed',
+            bottom: '40px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#1A1A2E',
+            border: '1px solid #2D2D44',
+            boxShadow: '0 10px 24px rgba(0,0,0,0.6)',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '14px',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            alignItems: 'center',
+            textAlign: 'center'
+        }}>
+            <div style={{ fontSize: '14px', fontWeight: 600 }}>{message}</div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                    onClick={onCancel} 
+                    style={{ padding: '6px 16px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#E2E8F0', cursor: 'pointer', fontWeight: 600 }}
+                >
+                    Cancelar
+                </button>
+                <button 
+                    onClick={onConfirm} 
+                    style={{ padding: '6px 16px', borderRadius: '8px', background: '#EF4444', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                >
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    );
+}
