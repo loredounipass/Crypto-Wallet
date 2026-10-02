@@ -13,6 +13,7 @@ const normalizeCoin = (coin) => {
         'binance smart chain': 'bnb',
         binance: 'bnb',
         tether: 'usdt',
+        tusdt: 'usdc',
         'usd coin': 'usdc'
     }
 
