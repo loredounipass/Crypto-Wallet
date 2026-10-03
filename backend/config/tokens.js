@@ -33,7 +33,7 @@ const TOKEN_MAP = {
     // ---- AMOY (Testnet de Polygon - Chain ID: 80002) ----
     "80002": {
         '0x1fd169a4e50c3fd924c6de627b90a079c609c916': { symbol: 'USDT', decimals: 6, coinGeckoId: null },
-        '0x41e94eb019c4548104c8a4c8a0abc400b4e8c3b1': { symbol: 'USDC', decimals: 6, coinGeckoId: null }
+        '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582': { symbol: 'USDC', decimals: 6, coinGeckoId: null }
     },
 
     // ---- SONIC TESTNET (Chain ID: 14601) ----
