@@ -2,8 +2,8 @@ import React from 'react'
 import useFeedListLogic from './useFeedListLogic'
 import FeedItem from './FeedItem'
 import PostForm from './PostForm'
-import RightSidebar from './RightSidebar'
 import LeftSidebar from './LeftSidebar'
+import FeedExtrasDrawer from './FeedExtrasDrawer'
 import './FeedStyles.css'
 
 
@@ -17,12 +17,27 @@ export default function FeedList() {
       <div className="fb-left-sidebar-fixed">
         <LeftSidebar />
       </div>
+      <FeedExtrasDrawer />
 
       <div className="fb-list-wrapper">
         <PostForm />
 
         {loading && (
-          <div className="fb-loading">Cargando publicaciones</div>
+          <>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="fb-skeleton-card" aria-hidden="true">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <div className="fb-skeleton-line" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="fb-skeleton-line" style={{ height: 12, width: '40%', marginBottom: 8 }} />
+                    <div className="fb-skeleton-line" style={{ height: 10, width: '25%' }} />
+                  </div>
+                </div>
+                <div className="fb-skeleton-line" style={{ height: 12, marginBottom: 8 }} />
+                <div className="fb-skeleton-line" style={{ height: 12, width: '70%' }} />
+              </div>
+            ))}
+          </>
         )}
 
         {!loading && error && (
@@ -62,17 +77,13 @@ export default function FeedList() {
           ))}
         </div>
         {loadingMore && (
-          <div className="fb-loading">Cargando más publicaciones...</div>
+          <div className="fb-skeleton-bar" aria-hidden="true" />
         )}
         {!hasMore && posts && posts.length > 0 && (
           <div style={{ textAlign: 'center', padding: 20, color: 'var(--fn-muted)', fontSize: 13 }}>
             Has llegado al final 🏁
           </div>
         )}
-      </div>
-
-      <div className="fb-right-sidebar-fixed">
-        <RightSidebar />
       </div>
     </>
   )

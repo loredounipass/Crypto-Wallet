@@ -143,8 +143,13 @@ export default function useCoinTransactionsLogic({
         },
     };
 
+    // CONVIERTE FECHA UTC DE LA DB A HORA LOCAL DEL USUARIO EN FORMATO YYYY-MM-DD HH:mm:ss
     const getRealDate = (date) => {
-        return date?.replace('T', ' ').replace('Z', '').replace(/\.\d+/, "");
+        if (!date) return '-';
+        const d = new Date(date);
+        if (Number.isNaN(d.getTime())) return String(date);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     };
 
     const getTransactionCoin = (transaction) => {

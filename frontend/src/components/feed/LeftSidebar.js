@@ -1,6 +1,7 @@
 import React, { use } from 'react';
 import { AuthContext } from '../../hooks/AuthContext';
 import UserAvatar from '../common/UserAvatar';
+import SidebarExtras from './SidebarExtras';
 import useLeftSidebarLogic from './useLeftSidebarLogic';
 const styles = {
   wrapper: {
@@ -146,6 +147,10 @@ export default function LeftSidebar() {
           </div>
         </div>
       </div>
+
+      <hr style={styles.divider} />
+
+      <SidebarExtras />
     </div>
   );
 }

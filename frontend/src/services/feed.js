@@ -1,8 +1,9 @@
-import { 
-    get, 
-    post, 
-    postMultipart, 
-    feedApi, 
+import {
+    get,
+    post,
+    postMultipart,
+    put,
+    feedApi,
     feedUploadApi, 
     feedPostByIdApi, 
     feedPostCommentsApi, 
@@ -64,6 +65,14 @@ export default class FeedService {
     // DELETES A SPECIFIC POST FROM THE FEED
     static async deletePost(id) {
         return del(feedPostByIdApi(id));
+    }
+
+
+
+
+    // UPDATES THE DESCRIPTION OF A SPECIFIC POST (AUTHOR ONLY)
+    static async updatePost(id, data) {
+        return put(feedPostByIdApi(id), data);
     }
 
 

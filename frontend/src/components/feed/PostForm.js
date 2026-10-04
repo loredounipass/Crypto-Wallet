@@ -14,12 +14,14 @@ export default function PostForm() {
   return (
     <form onSubmit={onSubmit} className="fb-post-form">
       <div className="fb-post-bar">
-        <UserAvatar
-          user={auth}
-          size={36}
-          onClick={() => navigate('/profile')}
-          title="Ir a mi perfil"
-        />
+        <div className="fb-avatar-ring sm">
+          <UserAvatar
+            user={auth}
+            size={36}
+            onClick={() => navigate('/profile')}
+            title="Ir a mi perfil"
+          />
+        </div>
 
         <input
           ref={textareaRef}

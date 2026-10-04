@@ -28,74 +28,78 @@ const S = {
   },
   panel: {
     position: 'fixed', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: 420,
-    background: '#000', borderLeft: '1px solid #262626',
+    background: 'rgba(21,21,21,0.72)',
+    WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+    backdropFilter: 'blur(20px) saturate(140%)',
+    borderLeft: '1px solid rgba(255,255,255,0.12)',
+    boxShadow: '-16px 0 48px rgba(0,0,0,0.5)',
     zIndex: 901, display: 'flex', flexDirection: 'column',
     animation: 'slideInRight 0.25s ease-out',
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '14px 16px', borderBottom: '1px solid #262626', position: 'relative',
+    padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.12)', position: 'relative',
   },
-  headerTitle: { fontWeight: 700, fontSize: 16, color: '#F5F5F5' },
+  headerTitle: { fontWeight: 700, fontSize: 16, color: '#ffffff' },
   headerClose: {
     position: 'absolute', right: 12, background: 'none', border: 'none',
-    color: '#F5F5F5', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4,
+    color: '#a0a0a0', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4,
   },
   list: { flex: 1, overflowY: 'auto', padding: '8px 16px 12px' },
   row: { display: 'flex', gap: 12, padding: '10px 0' },
   body: { flex: 1, minWidth: 0 },
   nameRow: { display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 },
-  name: { fontWeight: 600, fontSize: 13, color: '#F5F5F5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  time: { fontSize: 12, color: '#A8A8A8', flexShrink: 0 },
-  text: { fontSize: 14, color: '#F5F5F5', marginTop: 2, wordBreak: 'break-word', lineHeight: 1.4 },
+  name: { fontWeight: 600, fontSize: 13, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  time: { fontSize: 12, color: '#a0a0a0', flexShrink: 0 },
+  text: { fontSize: 14, color: '#ffffff', marginTop: 2, wordBreak: 'break-word', lineHeight: 1.4 },
   actions: { display: 'flex', gap: 14, marginTop: 6, alignItems: 'center' },
-  replyBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#A8A8A8', padding: 0 },
+  replyBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#a0a0a0', padding: 0 },
   likeBtn: {
     background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 0 8px',
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0,
   },
-  likeCount: { fontSize: 11, color: '#A8A8A8' },
+  likeCount: { fontSize: 11, color: '#a0a0a0' },
   quoted: {
     display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, padding: '6px 10px',
-    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #0095F6', borderRadius: '0 8px 8px 0',
+    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #22c1c3', borderRadius: '0 8px 8px 0',
   },
-  quotedName: { fontSize: 11, fontWeight: 700, color: '#E0E0E0' },
-  quotedText: { fontSize: 12, color: '#A8A8A8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  quotedName: { fontSize: 11, fontWeight: 700, color: '#ffffff' },
+  quotedText: { fontSize: 12, color: '#a0a0a0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   thread: { marginLeft: 32, marginTop: 2 },
   replyLine: {
-    borderLeft: '2px solid #4A4A4A', paddingLeft: 12, marginTop: 4,
+    borderLeft: '2px solid rgba(255,255,255,0.12)', paddingLeft: 12, marginTop: 4,
   },
-  parentRef: { fontSize: 12, color: '#A8A8A8', marginTop: 2 },
-  parentName: { fontWeight: 700, color: '#38BDF8' },
+  parentRef: { fontSize: 12, color: '#a0a0a0', marginTop: 2 },
+  parentName: { fontWeight: 700, color: '#22c1c3' },
   viewReplies: {
     background: 'none', border: 'none', cursor: 'pointer', fontSize: 12,
-    fontWeight: 600, color: '#A8A8A8', margin: '2px 0 4px 52px', padding: 0,
+    fontWeight: 600, color: '#a0a0a0', margin: '2px 0 4px 52px', padding: 0,
   },
   replyBar: {
     display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
-    borderTop: '1px solid #262626', background: '#0A0A0A',
+    borderTop: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)',
   },
   replyPreview: {
     flex: 1, minWidth: 0, display: 'flex', gap: 8, alignItems: 'center',
-    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #0095F6',
+    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #22c1c3',
     borderRadius: '0 8px 8px 0', padding: '6px 10px',
   },
   replyCancel: {
-    background: 'none', border: 'none', color: '#A8A8A8', cursor: 'pointer',
+    background: 'none', border: 'none', color: '#a0a0a0', cursor: 'pointer',
     fontSize: 18, lineHeight: 1, padding: 4, flexShrink: 0,
   },
   form: {
     display: 'flex', gap: 10, padding: '12px 16px',
-    borderTop: '1px solid #262626', alignItems: 'center', background: '#000',
+    borderTop: '1px solid rgba(255,255,255,0.12)', alignItems: 'center', background: 'rgba(0,0,0,0.3)',
   },
   input: {
-    flex: 1, background: 'transparent', border: '1px solid #363636',
-    borderRadius: 22, padding: '9px 16px', color: '#F5F5F5',
+    flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 22, padding: '9px 16px', color: '#ffffff',
     outline: 'none', fontSize: 14, fontFamily: 'inherit',
   },
   send: {
-    background: 'none', border: 'none', color: '#0095F6', fontWeight: 700,
+    background: 'none', border: 'none', color: '#22c1c3', fontWeight: 700,
     fontSize: 14, cursor: 'pointer', padding: '6px 2px', flexShrink: 0,
   },
 }
@@ -171,8 +175,8 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
             <svg width="14" height="14" viewBox="0 0 24 24"
               key={liked ? 'liked' : 'unliked'}
               style={liked ? { animation: 'igPop 0.35s ease' } : undefined}
-              fill={liked ? '#FF3040' : 'none'}
-              stroke={liked ? '#FF3040' : '#F5F5F5'}
+              fill={liked ? '#EF4444' : 'none'}
+              stroke={liked ? '#EF4444' : '#a0a0a0'}
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
@@ -218,13 +222,13 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
         </div>
 
         <div ref={listRef} style={S.list}>
-          {loading && <div style={{ textAlign: 'center', color: '#A8A8A8', padding: 20 }}>Cargando…</div>}
+          {loading && <div style={{ textAlign: 'center', color: '#a0a0a0', padding: 20 }}>Cargando…</div>}
           {error && <div style={{ textAlign: 'center', color: '#FF6B6B', padding: 20 }}>{error}</div>}
           {!loading && !error && topLevel.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px 20px' }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>💬</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#F5F5F5' }}>Aún no hay comentarios</div>
-              <div style={{ fontSize: 13, color: '#A8A8A8', marginTop: 4 }}>Sé el primero en comentar.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>Aún no hay comentarios</div>
+              <div style={{ fontSize: 13, color: '#a0a0a0', marginTop: 4 }}>Sé el primero en comentar.</div>
             </div>
           )}
           {topLevel.map(c => renderComment(c))}
@@ -236,8 +240,8 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
           <div style={S.replyBar}>
             <div style={S.replyPreview}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#A8A8A8' }}>
-                  Respondiendo a <span style={{ fontWeight: 700, color: '#F5F5F5' }}>{replyTo.name}</span>
+                <div style={{ fontSize: 11, color: '#a0a0a0' }}>
+                  Respondiendo a <span style={{ fontWeight: 700, color: '#ffffff' }}>{replyTo.name}</span>
                 </div>
                 <div style={S.quotedText}>{snippet(replyTo.content, 70) || 'Foto'}</div>
               </div>

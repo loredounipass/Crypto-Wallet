@@ -51,11 +51,18 @@ export default class Transaction {
 
 
     // FETCHES THE TRANSACTION HISTORY FOR A SPECIFIC CRYPTOCURRENCY COIN
+    // (SORTED NEWEST-FIRST SO NEW TRANSACTIONS ALWAYS APPEAR ON TOP)
     static async getCoinTransactions(coin) {
-        return await get(transactionsApi,
+        const res = await get(transactionsApi,
             {
                 coin
             })
+        if (Array.isArray(res?.data)) {
+            res.data.sort((a, b) =>
+                (new Date(b.created_at).getTime() || 0) - (new Date(a.created_at).getTime() || 0)
+            )
+        }
+        return res
     }
 
 

@@ -4,7 +4,7 @@ import FeedService from '../services/feed'
 import useFeed from '../hooks/useFeed'
 import FeedItem from '../components/feed/FeedItem'
 import LeftSidebar from '../components/feed/LeftSidebar'
-import RightSidebar from '../components/feed/RightSidebar'
+import FeedExtrasDrawer from '../components/feed/FeedExtrasDrawer'
 import '../components/feed/FeedStyles.css'
 
 export default function PostPage() {
@@ -78,6 +78,7 @@ export default function PostPage() {
       <div className="fb-left-sidebar-fixed">
         <LeftSidebar />
       </div>
+      <FeedExtrasDrawer />
 
       <div className="fb-list-wrapper">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -97,10 +98,6 @@ export default function PostPage() {
             }}
           />
         </div>
-      </div>
-
-      <div className="fb-right-sidebar-fixed">
-        <RightSidebar />
       </div>
     </div>
   )

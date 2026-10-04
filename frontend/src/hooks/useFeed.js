@@ -204,6 +204,23 @@ export default function useFeed() {
 
 
 
+    // UPDATES A POST DESCRIPTION WITH OPTIMISTIC UI AND SERVER CONFIRMATION
+    const updatePost = async (postId, data) => {
+        try {
+            const { data: updated } = await FeedService.updatePost(postId, data);
+            if (updated?._id) {
+                updatePostOptimistic(postId, () => updated);
+            }
+            return updated;
+        } catch (err) {
+            console.error('Error updating post', err);
+            throw err;
+        }
+    };
+
+
+
+
     // ADDS A NEW COMMENT OR REPLY TO A SPECIFIC POST
     const addComment = async (postId, content, parentId = null) => {
         const res = await FeedService.addComment(postId, content, parentId);
@@ -289,6 +306,7 @@ export default function useFeed() {
         likePost,
         unlikePost,
         deletePost,
+        updatePost,
         addComment,
         getComments,
         likeComment,

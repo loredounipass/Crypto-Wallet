@@ -246,6 +246,13 @@ async function patch(url, body) {
 
 
 
+// SENDS AN HTTP PUT REQUEST WITH A JSON BODY
+async function put(url, body) {
+    return await api.put(url, body)
+}
+
+
+
 
 // SENDS AN HTTP DELETE REQUEST
 async function del(url) {
@@ -258,6 +265,7 @@ export {
     post,
     postMultipart,
     patch,
+    put,
     del,
     fetchCsrfToken,
     mediaBase,

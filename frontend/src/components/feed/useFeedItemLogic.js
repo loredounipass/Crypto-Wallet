@@ -110,6 +110,16 @@ export default function useFeedItemLogic({ post, actions, auth }) {
 
 
 
+  // BUILDS A REDDIT-STYLE HANDLE WITHOUT SPACES OR STRANGE CHARACTERS
+  const authorHandle = displayName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_.]/g, '') || 'usuario';
+
+
+
   // CONSTRUCTS THE SHARE URL FOR THE POST
   const shareUrl = (typeof window !== 'undefined' && window.location)
     ? `${window.location.origin}/feed/${post?._id}`
@@ -191,7 +201,7 @@ export default function useFeedItemLogic({ post, actions, auth }) {
     isMyPost, following, followLoading, handleFollow, handleUnfollow,
     liked, localLikes, showComments, setShowComments, localShares, shareBusy,
     shareFeedback, shareDialogOpen, setShareDialogOpen, showDeleteConfirm,
-    setShowDeleteConfirm, containerRef, displayName, shareUrl, mediaUrl,
+    setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrl,
     timeStr, handleLike, handleShare
   };
 }

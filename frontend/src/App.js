@@ -42,6 +42,7 @@ import Feed from './pages/Feed'
 //import Noticias from './pages/Noticias'
 import BrivoAgent from './components/brivo-agent/BrivoAgent'
 import { Menu as MenuIcon } from './ui/icons';
+import { toggleFeedExtras } from './components/feed/FeedExtrasDrawer';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminUsers from './pages/AdminUsers';
 
@@ -154,6 +155,22 @@ function AppContent() {
                             >
                                 <MenuIcon />
                             </IconButton>
+                            {location.pathname.startsWith('/feed') && (
+                                <IconButton
+                                    onClick={toggleFeedExtras}
+                                    aria-label="panel del feed"
+                                    title="Donaciones, links y contactos"
+                                    style={{
+                                        color: '#FFFFFF',
+                                        marginRight: '12px'
+                                    }}
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <line x1="15" y1="3" x2="15" y2="21" />
+                                    </svg>
+                                </IconButton>
+                            )}
                         </Box>
                     )}
 

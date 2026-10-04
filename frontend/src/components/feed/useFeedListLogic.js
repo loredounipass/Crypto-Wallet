@@ -8,10 +8,8 @@ export default function useFeedListLogic() {
   const {
     posts, loading, error,
     loadMore, hasMore, loadingMore,
-    likePost, unlikePost, deletePost,
-    addComment, joinPost, viewPost,
-    getComments, likeComment, unlikeComment,
-    sharePost
+    likePost, unlikePost, deletePost, updatePost, addComment, joinPost, viewPost,
+    getComments, likeComment, unlikeComment, sharePost
   } = useFeed();
   const observer = useRef(null);
 
@@ -33,7 +31,7 @@ export default function useFeedListLogic() {
 
   // GROUPS ALL ACTIONS TO BE PASSED DOWN TO THE FEED ITEMS
   const actions = {
-    likePost, unlikePost, deletePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost
+    likePost, unlikePost, deletePost, updatePost, addComment, joinPost, viewPost, getComments, likeComment, unlikeComment, sharePost
   };
 
 
