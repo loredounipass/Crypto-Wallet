@@ -148,16 +148,29 @@ const processDisputeResolution = async (order) => {
                 orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
             })
         } else {
-            // Award: enviar ERC20 al provider on-chain
+            // Award: enviar ERC20 al provider on-chain desde hot wallet (misma ruta que retiros)
             const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
-            const tokenDecimals = tokenInfo?.decimals || 6
+            const tokenDecimals = tokenInfo?.decimals ?? 18
             const onTxHash = async (hash) => {
                 console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
                 await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { releaseTxHash: hash } })
             }
-            const receipt = await interactor.sendERC20Transfer(
-                order.tokenAddress, order.providerWalletAddress, order.amount, tokenDecimals, onTxHash
-            )
+            let receipt = null
+            try {
+                receipt = await interactor.sendERC20Transfer(
+                    order.tokenAddress, order.providerWalletAddress, order.amount, tokenDecimals, onTxHash
+                )
+            } catch (e) {
+                if (e.message && e.message.includes('Insufficient ERC20 balance in hot wallet')) {
+                    console.log('[DISP-RESOLVE] Hot wallet short on ERC20, forwarding from seller contract and retrying...', { orderId: order.orderId })
+                    await interactor.forwardSellerERC20ToHotWallet(order.sellerWalletAddress, order.tokenAddress)
+                    receipt = await interactor.sendERC20Transfer(
+                        order.tokenAddress, order.providerWalletAddress, order.amount, tokenDecimals, onTxHash
+                    )
+                } else {
+                    throw e
+                }
+            }
             if (!receipt || !receipt.status) {
                 throw new Error(`ERC20 award transfer failed for order ${order.orderId}`)
             }

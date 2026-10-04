@@ -104,77 +104,144 @@ const processEscrowRelease = async (jobData) => {
 
     if (releaseTxHash && order.status !== 'completed') {
         console.log(`[ESCROW-RELEASE] Found pending releaseTxHash ${releaseTxHash}. Checking status...`)
+        let receipt = null
+        let txMissing = false
         try {
-            const receipt = await interactor.web3.eth.getTransactionReceipt(releaseTxHash)
-            if (receipt) {
-                if (receipt.status) {
-                    console.log(`[ESCROW-RELEASE] Previously pending tx ${releaseTxHash} succeeded!`)
+            receipt = await interactor.web3.eth.getTransactionReceipt(releaseTxHash)
+        } catch (e) {
+            // web3 v4 lanza TransactionNotFound cuando el hash nunca se broadcasteo (pre-save huerfano)
+            if (e.message && (e.message.includes('Transaction not found') || e.message.includes('not found'))) {
+                txMissing = true
+            } else {
+                console.warn(`[ESCROW-RELEASE] Error checking receipt for ${releaseTxHash}:`, e.message)
+                throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
+            }
+        }
+        if (txMissing || receipt === null) {
+            // Verificar si la tx existe en mempool antes de declararla stale
+            let txExists = false
+            let txNonce = null
+            try {
+                const tx = await interactor.web3.eth.getTransaction(releaseTxHash)
+                txExists = !!tx
+                if (txExists) txNonce = Number(tx.nonce)
+            } catch (e) {
+                txExists = false
+            }
+            if (!txExists) {
+                console.log(`[ESCROW-RELEASE] Stale pre-saved hash ${releaseTxHash} never broadcast. Clearing and retrying fresh...`)
+                await EscrowOrder.updateOne({ orderId }, { $unset: { releaseTxHash: '' } })
+                releaseTxHash = null
+            } else if (txNonce !== null) {
+                // Tx en mempool pero sin minar: si su nonce esta muy por encima del nonce real, quedo huerfana por gap (nunca minara)
+                const chainNonce = Number(await interactor.web3.eth.getTransactionCount(interactor.hotWalletAddress, 'pending'))
+                if (txNonce > chainNonce + 5) {
+                    console.log(`[ESCROW-RELEASE] Orphaned tx ${releaseTxHash} nonce=${txNonce} chainNonce=${chainNonce}. Clearing hash + resetting TxManager...`)
+                    await EscrowOrder.updateOne({ orderId }, { $unset: { releaseTxHash: '' } })
+                    const TxManager = require(`${appRoot}/config/utils/TxManager`)
+                    await TxManager.resetNonce(interactor.hotWalletAddress, interactor.chainId)
+                    releaseTxHash = null
                 } else {
-                    console.error(`[ESCROW-RELEASE] Previous tx ${releaseTxHash} failed on chain`)
-                    throw new Error(`[ESCROW-RELEASE] Previous tx ${releaseTxHash} failed on chain`)
+                    console.log(`[ESCROW-RELEASE] Existing tx ${releaseTxHash} is still pending on chain`)
+                    throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
                 }
             } else {
                 console.log(`[ESCROW-RELEASE] Existing tx ${releaseTxHash} is still pending on chain`)
                 throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
             }
-        } catch (e) {
-            if (e.message.includes('WAITING_FOR_RELEASE_CONFIRMATION') || e.message.includes('failed on chain')) {
-                throw e
+        } else if (receipt) {
+            if (receipt.status) {
+                console.log(`[ESCROW-RELEASE] Previously pending tx ${releaseTxHash} succeeded!`)
+            } else {
+                console.error(`[ESCROW-RELEASE] Previous tx ${releaseTxHash} failed on chain`)
+                await EscrowOrder.updateOne({ orderId }, { $unset: { releaseTxHash: '' } })
+                releaseTxHash = null
             }
-            console.warn(`[ESCROW-RELEASE] Error checking receipt for ${releaseTxHash}:`, e.message)
-            throw new Error('WAITING_FOR_RELEASE_CONFIRMATION')
         }
     } else if (order.status === 'completed') {
         console.log(`[ESCROW-RELEASE] Order ${orderId} already released, skipping`)
         return 'success'
-    } else {
-        if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
-            const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
-            if (!fundingTx || fundingTx.status !== 3) {
-                console.log(`[ESCROW-RELEASE] Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx?.status || 'not found'}). Retrying later...`)
-                throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
+    }
+    if (!releaseTxHash || order.status !== 'completed') {
+        if (!releaseTxHash) {
+            if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
+                const fundingTx = await Transaction.findOne({ txHash: order.escrowTxHash })
+                if (!fundingTx || fundingTx.status !== 3) {
+                    console.log(`[ESCROW-RELEASE] Funding transaction ${order.escrowTxHash} is still pending confirmations (Status: ${fundingTx?.status || 'not found'}). Retrying later...`)
+                    throw new Error('WAITING_FOR_FUNDING_CONFIRMATIONS')
+                }
+                console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
             }
-            console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
-        }
-        const onTxHash = async (txHash) => {
-            releaseTxHash = txHash
-            console.log(`[ESCROW-RELEASE] Pre-saving txHash ${txHash} to prevent duplicate retries`)
-            await EscrowOrder.updateOne(
-                { orderId },
-                { $set: { releaseTxHash: txHash } }
-            )
-        }
+            const onTxHash = async (txHash) => {
+                releaseTxHash = txHash
+                console.log(`[ESCROW-RELEASE] Pre-saving txHash ${txHash} to prevent duplicate retries`)
+                await EscrowOrder.updateOne(
+                    { orderId },
+                    { $set: { releaseTxHash: txHash } }
+                )
+            }
 
-        // BIFURCAR: ERC20 vs NATIVO
-        const isErc20Token = isToken || (order && order.isToken)
-        const theTokenAddress = tokenAddress || (order && order.tokenAddress)
-        
-        if (isErc20Token && theTokenAddress) {
-            // Obtener decimales correctos del token (USDC=6, USDT=6, etc)
-            const tokenInfo = getTokenInfo(chainId, theTokenAddress)
-            const tokenDecimals = tokenInfo?.decimals || 6
-            console.log('[ESCROW-RELEASE] Releasing ERC20 token via contract transfer...', { tokenDecimals })
-            const receipt = await interactor.sendERC20Transfer(
-                theTokenAddress, providerWalletAddress, amount, tokenDecimals, onTxHash
-            )
-            if (!receipt || !receipt.status) {
-                console.error('[ESCROW-RELEASE] ERC20 transfer failed')
-                throw new Error('[ESCROW-RELEASE] ERC20 transfer failed')
+            // BIFURCAR: ERC20 vs NATIVO
+            if (!coin) throw new Error('[ESCROW-RELEASE] Coin is undefined, cannot determine decimals')
+            const isErc20Token = isToken || (order && order.isToken)
+            const theTokenAddress = tokenAddress || (order && order.tokenAddress)
+            if (order && order.isToken && !theTokenAddress) {
+                throw new Error('[ESCROW-RELEASE] Missing tokenAddress for ERC20 order, refusing native fallback')
             }
-            releaseTxHash = receipt.transactionHash
-            console.log('[ESCROW-RELEASE] ERC20 transfer successful:', { orderId, txHash: releaseTxHash })
-        } else {
-            const decimals = coins[coin.toUpperCase()]?.decimals || 18
-            const amountWei = toWeiAmount(amount, decimals)
-            console.log('[ESCROW-RELEASE] Releasing via escrow wallet native transfer...')
-            await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
-            const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei, onTxHash)
-            if (!receipt || !receipt.status) {
-                console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
-                throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+
+            if (isErc20Token && theTokenAddress) {
+                // Obtener decimales correctos del token (USDC=6, USDT=6, etc)
+                const tokenInfo = getTokenInfo(chainId, theTokenAddress)
+                const tokenDecimals = tokenInfo?.decimals ?? 18
+                console.log('[ESCROW-RELEASE] Releasing ERC20 token from hot wallet...', { tokenDecimals, token: theTokenAddress })
+                let receipt = null
+                try {
+                    receipt = await interactor.sendERC20Transfer(
+                        theTokenAddress, providerWalletAddress, amount, tokenDecimals, onTxHash
+                    )
+                } catch (e) {
+                    // Si hot no tiene liquidez, los fondos siguen en el contrato del seller: forwardear y reintentar una vez
+                    if (e.message && e.message.includes('Insufficient ERC20 balance in hot wallet')) {
+                        console.log('[ESCROW-RELEASE] Hot wallet short on ERC20, forwarding from seller contract and retrying...', { orderId })
+                        await interactor.forwardSellerERC20ToHotWallet(order.sellerWalletAddress, theTokenAddress)
+                        const MAX_POLLS = 10
+                        for (let i = 0; i < MAX_POLLS; i++) {
+                            try {
+                                receipt = await interactor.sendERC20Transfer(
+                                    theTokenAddress, providerWalletAddress, amount, tokenDecimals, onTxHash
+                                )
+                                break
+                            } catch (retryErr) {
+                                if (retryErr.message && retryErr.message.includes('Insufficient ERC20 balance in hot wallet') && i < MAX_POLLS - 1) {
+                                    await new Promise(r => setTimeout(r, 3000))
+                                    continue
+                                }
+                                throw retryErr
+                            }
+                        }
+                    } else {
+                        throw e
+                    }
+                }
+                if (!receipt || !receipt.status) {
+                    console.error('[ESCROW-RELEASE] ERC20 transfer failed')
+                    throw new Error('[ESCROW-RELEASE] ERC20 transfer failed')
+                }
+                releaseTxHash = receipt.transactionHash
+                console.log('[ESCROW-RELEASE] ERC20 transfer successful:', { orderId, txHash: releaseTxHash })
+            } else {
+                const decimals = coins[coin.toUpperCase()]?.decimals || 18
+                const amountWei = toWeiAmount(amount, decimals)
+                console.log('[ESCROW-RELEASE] Releasing via escrow wallet native transfer...')
+                await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
+                const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei, onTxHash)
+                if (!receipt || !receipt.status) {
+                    console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+                    throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+                }
+                releaseTxHash = receipt.transactionHash
+                console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
             }
-            releaseTxHash = receipt.transactionHash
-            console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
         }
     }
     await EscrowOrder.updateOne(

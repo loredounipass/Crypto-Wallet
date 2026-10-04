@@ -35,4 +35,8 @@ export class CreateEscrowOrderDto {
     @IsOptional()
     @IsBoolean()
     isToken?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    chainId?: number;
 }

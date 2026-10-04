@@ -184,9 +184,27 @@ export class EscrowService {
     if (!provider) {
       throw new BadRequestException('Provider not found or not verified.');
     }
-    const matchedWallet = provider.destinationWallets?.find(w => w.coin?.toUpperCase() === dto.coin?.toUpperCase() && w.enabled);
+    // El match debe incluir la chain: el mismo simbolo (USDC) existe en varias chains y el find solo por coin elegia la primera (bug cross-chain)
+    const reqChainId = dto.chainId ? Number(dto.chainId) : undefined;
+    const matchByChain = (w: any) =>
+      w.coin?.toUpperCase() === dto.coin?.toUpperCase() &&
+      w.enabled &&
+      (reqChainId === undefined || Number(w.chainId) === reqChainId);
+    const matchedWallet = provider.destinationWallets?.find(matchByChain);
     if (!matchedWallet) {
-      throw new BadRequestException('Provider does not accept this coin or has no valid wallet configured for it.');
+      throw new BadRequestException(
+        reqChainId !== undefined
+          ? 'Provider does not accept this coin on the selected network.'
+          : 'Provider does not accept this coin or has no valid wallet configured for it.',
+      );
+    }
+    // Para ERC20 exigir ademas que el token coincida (misma coin en otra chain = otro contrato)
+    if (dto.isToken && dto.tokenAddress) {
+      const expected = String(dto.tokenAddress).toLowerCase();
+      const got = String(matchedWallet.tokenAddress || '').toLowerCase();
+      if (matchedWallet.tokenAddress && got !== expected) {
+        throw new BadRequestException('Provider wallet token does not match the selected token contract.');
+      }
     }
     if (provider.paymentMethods.length === 0) {
       throw new BadRequestException('Provider has no payment methods configured.');
@@ -199,14 +217,23 @@ export class EscrowService {
 
     // Para tokens ERC20, necesitamos buscar la wallet de la cadena padre (ej: wallet MATIC para USDC en Polygon)
     // La wallet nativa contiene la dirección donde el ledger ERC20 tiene el balance del token
+    // La chain de referencia es la del asset que eligio el seller (dto.chainId), no la del provider
     let walletCoinToSearch = dto.coin;
+    let sellerChainId: number | undefined = reqChainId;
     if (isTokenOrder) {
       // Mapear token → moneda nativa de la cadena donde vive
-      // El frontend envía el chainId correcto, usamos el matchedWallet del provider para determinar la cadena
       const chainCoinMap: Record<number, string> = { 11155111: 'ETH', 97: 'BNB', 80002: 'MATIC', 43113: 'AVAX', 14601: 'S', 11155420: 'OP' };
-      walletCoinToSearch = chainCoinMap[matchedWallet.chainId] || dto.coin;
+      const refChain = reqChainId ?? matchedWallet.chainId;
+      sellerChainId = refChain;
+      walletCoinToSearch = chainCoinMap[refChain] || dto.coin;
+    } else if (reqChainId !== undefined) {
+      sellerChainId = reqChainId;
     }
 
+    const walletMatch: any = { coin: walletCoinToSearch };
+    if (sellerChainId !== undefined) {
+      walletMatch.chainId = sellerChainId;
+    }
     const userData = await this.userModel.aggregate([
       { $match: { email: sellerEmail } },
       { $unwind: '$wallets' },
@@ -218,7 +245,7 @@ export class EscrowService {
           foreignField: '_id',
           as: 'walletsData',
           pipeline: [
-            { $match: { coin: walletCoinToSearch } }
+            { $match: walletMatch }
           ]
         }
       }
@@ -704,7 +731,7 @@ export class EscrowService {
     const user = await this.userModel.findOne({ email });
     const isDbAdmin = user?.isAdmin === true;
     const isEnvAdmin = adminEmails.includes(email.toLowerCase());
-    
+
     if (!isDbAdmin && !isEnvAdmin) {
       throw new ForbiddenException('Only administrators can view disputed orders.');
     }
@@ -718,7 +745,7 @@ export class EscrowService {
     const user = await this.userModel.findOne({ email });
     const isDbAdmin = user?.isAdmin === true;
     const isEnvAdmin = adminEmails.includes(email.toLowerCase());
-    
+
     if (!isDbAdmin && !isEnvAdmin) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }

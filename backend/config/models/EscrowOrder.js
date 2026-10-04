@@ -28,7 +28,7 @@ const EscrowOrderSchema = new mongoose.Schema({
     expiryLockedAt: { type: Date },
     refundTxHash: { type: String },
     gasFee: { type: Number, default: 0 },
-    tokenAddress: { type: String, default: null },
+    tokenAddress: { type: String },
     isToken: { type: Boolean, default: false },
 }, { timestamps: true })
 

@@ -236,6 +236,7 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
       fiatAmount: parseFloat(fiatAmount),
       providerEmail: provider.email,
       paymentMethod: resolvePaymentMethod(paymentMethod),
+      chainId: selectedAsset.chainId,
     };
     // Add token-specific fields for ERC20 orders
     if (selectedAsset.isToken && selectedAsset.tokenAddress) {
