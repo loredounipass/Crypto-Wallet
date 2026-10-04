@@ -266,7 +266,13 @@ const processDisputeResolution = async (order) => {
             throw new Error(`Escrow wallet transfer failed for order ${order.orderId}`)
         }
     }
-    await registerResolutionTransaction(order, txHash, resolvedType)
+    // NOTA duplicacion 2026-10-04: si la resolucion fue on-chain (hash 0x), NO crear
+    // Transaction aqui. La subscription WSS detecta la llegada al wallet ganador
+    // y crea el unico documento via transaction.js -> deposit.js (mismo fix que
+    // releases). Solo el caso interno (sin hash on-chain) necesita registro manual.
+    if (!txHash || !String(txHash).startsWith('0x')) {
+        await registerResolutionTransaction(order, txHash, resolvedType)
+    }
     await EscrowOrder.updateOne(
         { orderId: order.orderId },
         {

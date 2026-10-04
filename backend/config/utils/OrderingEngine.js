@@ -24,6 +24,7 @@ class OrderingEngine {
             walletAddress: to.toLowerCase(),
             amount: value.toString()
         }, {
+            jobId: eventId,
             priority: 2097151 - (Number(blockNumber) % 2097152),
             attempts: 5,
             backoff: { type: 'exponential', delay: 5000 },

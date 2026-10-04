@@ -23,6 +23,11 @@ const toWeiAmount = (amount, decimals) => {
 
 
 // REGISTRA LA TRANSACCION DE LIBERACION ASOCIANDOLA A LA BILLETERA DEL PROVEEDOR
+// DEPRECADO: no llamar desde processEscrowRelease. La subscription WSS nativa
+// (DepositedOnMetaDapp -> transaction.js -> deposit.js) es la unica creadora del
+// documento Transaction para el releaseTxHash. Crear otro aqui genera duplicados
+// en UI (mismo txHash, 2 docs) porque txHash no tiene indice unico.
+// Se conserva solo como fallback idempotente via upsert por si se necesita.
 const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
     const coin = String(order.coin || '').toUpperCase()
     const providerAddress = String(order.providerWalletAddress || '').toLowerCase()
@@ -41,34 +46,22 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
         })
         return null
     }
-    let transaction
-    try {
-        transaction = await new Transaction({
-            nature: 1,
-            amount: Number(order.amount || 0),
-            created_at: Date.now(),
-            status: 1,
-            confirmations: 0,
-            txHash: String(releaseTxHash).toLowerCase(),
-            to: order.providerWalletAddress
-        }).save()
-    } catch (err) {
-        if (err.code === 11000) {
-            console.log('[ESCROW-RELEASE] Tx already exists on-chain (duplicate txHash), skipping deposit enqueue:', {
-                orderId: order.orderId,
-                txHash: releaseTxHash
-            })
-            const existing = await Transaction.findOne({ txHash: String(releaseTxHash).toLowerCase() })
-            if (existing) {
-                await Wallet.updateOne(
-                    { _id: new ObjectId(wallet._id) },
-                    { $addToSet: { transactions: existing._id } }
-                )
+    const normalizedHash = String(releaseTxHash).toLowerCase()
+    const transaction = await Transaction.findOneAndUpdate(
+        { txHash: normalizedHash },
+        {
+            $setOnInsert: {
+                nature: 1,
+                amount: Number(order.amount || 0),
+                created_at: Date.now(),
+                status: 1,
+                confirmations: 0,
+                txHash: normalizedHash,
+                to: order.providerWalletAddress
             }
-            return existing || null
-        }
-        throw err
-    }
+        },
+        { upsert: true, returnDocument: 'after' }
+    )
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
@@ -253,7 +246,11 @@ const processEscrowRelease = async (jobData) => {
             }
         }
     )
-    await registerEscrowReleaseTransaction(order, releaseTxHash)
+    // NOTA: no crear Transaction aqui. La subscription WSS on-chain detecta esta
+    // transferencia al wallet del provider y crea el unico documento via
+    // transaction.js -> deposit.js. Crear otro aqui duplicaba el deposito en UI
+    // (mismo txHash, 2 docs) porque txHash no tiene indice unico. Ver fix 2026-08-21
+    // revertido por error en 2026-10-03 al agregar soporte ERC20.
     const providerResult = await Provider.updateOne(
         { email: providerEmail },
         {

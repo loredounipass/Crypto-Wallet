@@ -17,11 +17,27 @@ const POLL_INTERVAL_MS = 60000
 
 
 // REGISTRA EL REEMBOLSO COMO UNA NUEVA TRANSACCION ASOCIADA A LA BILLETERA DEL VENDEDOR
+// IDEMPOTENTE: verifica existencia por txHash antes de insertar porque txHash no
+// tiene indice unico y el catch 11000 nunca dispara. Si el scanner WSS ya creo el
+// doc, se reutiliza en vez de duplicar (mismo bug que releases 2026-10-04).
 const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
     const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`
+    const existing = await Transaction.findOne({ txHash: txHashToUse })
+    if (existing) {
+        console.log('[ESCROW-EXPIRY] Existing transaction found, reusing:', {
+            orderId: order.orderId,
+            txHash: txHashToUse,
+            transactionId: existing._id.toString()
+        })
+        await Wallet.updateOne(
+            { address: new RegExp(`^${sellerAddress}$`, 'i'), coin, chainId },
+            { $addToSet: { transactions: existing._id } }
+        )
+        return existing
+    }
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
     const wallet = await Wallet.findOne({

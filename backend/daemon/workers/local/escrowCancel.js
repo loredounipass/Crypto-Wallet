@@ -171,7 +171,14 @@ const processEscrowCancel = async (jobData) => {
     } else {
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] No on-chain transaction found (escrowTxHash is null). Proceeding with internal DB refund...`)
     }
-    await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
+    // NOTA duplicacion 2026-10-04: si el refund fue on-chain (hash 0x), NO crear
+    // Transaction aqui. La subscription WSS detecta la llegada al wallet del seller
+    // y crea el unico documento via transaction.js -> deposit.js (mismo fix que
+    // releases: el worker creaba un doc y el scanner otro con igual txHash).
+    // Solo el refund interno (sin hash) necesita doc + credito manual.
+    if (!refundTxHash) {
+        await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
+    }
     const cancelRefundTxHash = refundTxHash || `internal-refund-${order.orderId}`
     await EscrowOrder.updateOne(
         { orderId },
