@@ -10,6 +10,7 @@ const Wallet = require(`${appRoot}/config/models/Wallet`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
+const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
 const POLL_INTERVAL_MS = 30000
@@ -125,10 +126,75 @@ const findPreviousResolutionTx = async (orderId, recipientAddress, amount) => {
 // PROCESA LA TRANSFERENCIA DE FONDOS HACIA EL GANADOR DE LA DISPUTA Y ACTUALIZA LOS ESTADOS
 const processDisputeResolution = async (order) => {
     const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
-    const amountWei = toWeiAmount(order.amount, decimals)
     const interactor = new EscrowContractInteractor(order.chainId)
     const resolvedType = order.isReverted ? 'revert' : 'award'
     let txHash = null
+
+    // ERC20 TOKEN DISPUTE RESOLUTION
+    if (order.isToken && order.tokenAddress) {
+        if (resolvedType === 'revert') {
+            // Devolver al seller via Erc20Ledger (DB-only)
+            const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
+            await Erc20Ledger.updateOne(
+                {
+                    walletAddress: order.sellerWalletAddress.toLowerCase(),
+                    tokenAddress: order.tokenAddress.toLowerCase(),
+                    chainId: order.chainId
+                },
+                { $inc: { available_balance: order.amount } }
+            )
+            txHash = `internal-resolve-revert-${order.orderId}`
+            console.log('[DISP-RESOLVE] ERC20 token revert to seller ledger:', {
+                orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
+            })
+        } else {
+            // Award: enviar ERC20 al provider on-chain
+            const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
+            const tokenDecimals = tokenInfo?.decimals || 6
+            const onTxHash = async (hash) => {
+                console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
+                await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { releaseTxHash: hash } })
+            }
+            const receipt = await interactor.sendERC20Transfer(
+                order.tokenAddress, order.providerWalletAddress, order.amount, tokenDecimals, onTxHash
+            )
+            if (!receipt || !receipt.status) {
+                throw new Error(`ERC20 award transfer failed for order ${order.orderId}`)
+            }
+            txHash = receipt.transactionHash
+            console.log('[DISP-RESOLVE] ERC20 token award to provider:', {
+                orderId: order.orderId, txHash, amount: order.amount
+            })
+        }
+
+        await EscrowOrder.updateOne(
+            { orderId: order.orderId },
+            {
+                $set: {
+                    status: 'resolved',
+                    resolvedAt: new Date(),
+                    resolutionType: resolvedType,
+                    releaseTxHash: txHash
+                }
+            }
+        )
+        if (resolvedType === 'award') {
+            await Provider.updateOne(
+                { email: order.providerEmail },
+                { $inc: { completedOrders: 1, totalTradeVolume: order.fiatAmount || 0 } }
+            )
+        }
+        const statusQueue = new Queue('escrow-status-events')
+        statusQueue.add('status-update', {
+            orderId: order.orderId, status: 'resolved', resolutionType: resolvedType,
+            sellerEmail: order.sellerEmail, providerEmail: order.providerEmail
+        }, { removeOnComplete: true, removeOnFail: 50 })
+        console.log(`[DISP-RESOLVE] ERC20 Complete:`, { orderId: order.orderId, type: resolvedType, txHash })
+        return 'success'
+    }
+
+    // NATIVE COIN DISPUTE RESOLUTION (unchanged)
+    const amountWei = toWeiAmount(order.amount, decimals)
     const patternTx = await findPreviousResolutionTx(order.orderId, null, null)
     if (patternTx) {
         console.log('[DISP-RESOLVE] Resolution already processed (found via pattern txHash). Skipping on-chain transfer.', { orderId: order.orderId, txHash: patternTx.txHash })

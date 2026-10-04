@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../languages/i18n';
 import { Wallet, SwapHoriz, TrendingUp } from "../ui/icons";
 import useAllWallets from "../hooks/useAllWallets";
+import useTokenBalances from "../hooks/useTokenBalances";
 import { useNavigate } from "react-router-dom";
 import useTransitions from "../hooks/useTransactions";
 import CoinTransactions from "../components/coin-transactions/CoinTransactions";
@@ -15,6 +16,8 @@ const TrendingIcon = TrendingUp;
 const Dashboard = () => {
   const { t } = useTranslation();
   const { allWalletInfo, walletBalance } = useAllWallets();
+  const { tokenUsdValue } = useTokenBalances();
+  const totalBalance = parseFloat(walletBalance || 0) + tokenUsdValue;
   const [loading, setLoading] = useState(true);
   const { transactions, toast, dismissToast } = useTransitions(null);
   const navigate = useNavigate();
@@ -158,7 +161,7 @@ const Dashboard = () => {
                 margin: 0,
               }}
             >
-              ${parseFloat(walletBalance || 0).toFixed(2)}
+              ${totalBalance.toFixed(2)}
             </p>
           </div>
           <div style={iconContainerStyle("#2186EB")}>

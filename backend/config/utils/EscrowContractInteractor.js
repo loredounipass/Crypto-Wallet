@@ -485,6 +485,89 @@ class EscrowContractInteractor {
             return false
         }
     }
+
+
+
+    // TRANSFIERE TOKENS ERC20 DESDE LA BILLETERA DE CUSTODIA HACIA UNA DIRECCION DESTINO
+    async sendERC20Transfer(tokenAddress, recipientAddress, amount, decimals = 18, onTxHash = null) {
+        if (!this.escrowWalletAddress || !this.escrowWalletPrivateKey) {
+            throw new Error('Escrow wallet credentials are not configured for ERC20 transfer')
+        }
+        const { parseUnits } = require('ethers')
+        const erc20ABI = [
+            {
+                "name": "transfer",
+                "type": "function",
+                "inputs": [
+                    { "name": "to", "type": "address" },
+                    { "name": "amount", "type": "uint256" }
+                ],
+                "outputs": [{ "name": "", "type": "bool" }]
+            }
+        ]
+        const to = this.web3.utils.toChecksumAddress(recipientAddress)
+        const tokenContract = new this.web3.eth.Contract(erc20ABI, tokenAddress)
+        const amountWei = parseUnits(String(amount), decimals)
+        const txData = tokenContract.methods.transfer(to, amountWei.toString()).encodeABI()
+
+        const from = this.web3.utils.toChecksumAddress(this.escrowWalletAddress)
+        const nonce = await TxManager.getNonce(this.web3, from, this.chainId)
+        const gasPrice = await this.web3.eth.getGasPrice()
+        let gasLimit
+        try {
+            gasLimit = await this.web3.eth.estimateGas({
+                from,
+                to: tokenAddress,
+                data: txData
+            })
+            gasLimit = BigInt(gasLimit) * 130n / 100n // 30% buffer for ERC20
+        } catch (estimateError) {
+            console.warn('[ESCROW-ERC20] Gas estimation failed, using fallback:', estimateError.message)
+            gasLimit = 100000n
+        }
+
+        const transaction = {
+            from,
+            to: tokenAddress,
+            chainId: this.chainId,
+            nonce: this.web3.utils.toHex(nonce),
+            gasPrice: gasPrice.toString(),
+            gas: gasLimit.toString(),
+            data: txData,
+            value: '0'
+        }
+
+        const signedTx = await this.web3.eth.accounts.signTransaction(
+            transaction,
+            this._normalizePrivateKey(this.escrowWalletPrivateKey)
+        )
+
+        if (onTxHash) {
+            try {
+                await onTxHash(signedTx.transactionHash)
+            } catch (err) {
+                console.error('[ESCROW-ERC20] Error en onTxHash callback:', err.message)
+            }
+        }
+
+        console.log('[ESCROW-ERC20] Sending ERC20 transfer:', {
+            tokenAddress, from, to, amount, decimals, amountWei: amountWei.toString()
+        })
+
+        try {
+            const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+            console.log('[ESCROW-ERC20] Transfer successful:', {
+                txHash: receipt.transactionHash, status: receipt.status
+            })
+            return receipt
+        } catch (error) {
+            const failureType = await TxManager.classifyFailure(error)
+            if (failureType === 'NONCE_COLLISION') {
+                await TxManager.resetNonce(from, this.chainId)
+            }
+            throw error
+        }
+    }
 }
 
 module.exports = EscrowContractInteractor

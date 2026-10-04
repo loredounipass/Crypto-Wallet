@@ -71,14 +71,17 @@ export default function ProviderSettings({ open, onClose }) {
     t,
     settings,
     isLoading,
-    wallets,
+    error,
+    allToggleableAssets,
     newMethod,
     setNewMethod,
     handleAddMethod,
     handleDeleteMethod,
     handleToggle,
-    isWalletEnabled
+    isAssetEnabled
   } = useProviderSettingsLogic({ open, onClose });
+
+  if (!open) return null;
 
   return (
     <div style={{
@@ -102,13 +105,19 @@ export default function ProviderSettings({ open, onClose }) {
           }}>✕</button>
         </div>
 
-        {isLoading && !settings && (
+        {isLoading && !settings && !error && (
           <div style={{ textAlign: 'center', padding: 40, color: '#94A3B8', fontSize: 14 }}>
             {t('p2p_loading')}
           </div>
         )}
 
-        {settings && (
+        {error && (
+          <div style={{ textAlign: 'center', padding: 20, color: '#FCA5A5', backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {settings && !error && (
           <>
             {/* Payment Methods */}
             <div style={sectionCard}>
@@ -116,13 +125,13 @@ export default function ProviderSettings({ open, onClose }) {
                 {t('p2p_payment_methods')}
               </h4>
 
-              {settings.paymentMethods.length === 0 && (
+              {(settings.paymentMethods || []).length === 0 && (
                 <p style={{ margin: '0 0 12px', fontSize: 13, color: '#64748B' }}>
                   {t('p2p_no_payment_methods')}
                 </p>
               )}
 
-              {settings.paymentMethods.map((method) => (
+              {(settings.paymentMethods || []).map((method) => (
                 <div key={method} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '8px 12px', borderRadius: 8, marginBottom: 6,
@@ -155,30 +164,38 @@ export default function ProviderSettings({ open, onClose }) {
                 {t('p2p_destination_wallets')}
               </h4>
 
-              {wallets.length === 0 && (
+              {allToggleableAssets.length === 0 && (
                 <p style={{ margin: '0 0 12px', fontSize: 13, color: '#64748B' }}>
                   {t('p2p_no_wallets')}
                 </p>
               )}
 
-              {wallets.map((w) => {
-                const enabled = isWalletEnabled(w.address);
+              {allToggleableAssets.map((asset) => {
+                const enabled = isAssetEnabled(asset);
                 return (
-                  <div key={w.address} style={{
+                  <div key={asset.key} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 12px', borderRadius: 8, marginBottom: 6,
                     backgroundColor: 'rgba(15,15,26,0.5)',
                     opacity: enabled ? 1 : 0.5,
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 600 }}>
-                        {w.coin} <span style={{ color: '#64748B', fontWeight: 400 }}>(Chain {w.chainId})</span>
+                      <div style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {asset.label}
+                        {asset.isToken && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                            backgroundColor: 'rgba(139,92,246,0.15)', color: '#A78BFA',
+                            letterSpacing: '0.5px',
+                          }}>ERC20</span>
+                        )}
+                        <span style={{ color: '#64748B', fontWeight: 400 }}>({asset.sublabel})</span>
                       </div>
                       <div style={{
                         fontSize: 12, color: '#64748B', fontFamily: 'monospace',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
-                        {w.address}
+                        {asset.address}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -191,7 +208,7 @@ export default function ProviderSettings({ open, onClose }) {
                       </span>
                       <div
                         style={toggleTrack(enabled)}
-                        onClick={() => handleToggle(w.address)}
+                        onClick={() => handleToggle(asset)}
                       >
                         <div style={toggleThumb(enabled)} />
                       </div>

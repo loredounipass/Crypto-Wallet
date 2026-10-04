@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAllWallets from '../hooks/useAllWallets';
+import useTokenBalances from '../hooks/useTokenBalances';
 import useCoinPrice from '../hooks/useCoinPrice';
 import { get } from '../api/http';
 import { ArrowBack } from '../ui/icons';
@@ -35,7 +36,11 @@ ChartJS.register(
     LineController
 );
 
-const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t }) => (
+const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t, tokenBalances = [] }) => {
+    const walletTokens = tokenBalances.filter(
+        tok => tok.walletAddress.toLowerCase() === wallet.address.toLowerCase()
+    );
+    return (
     <div
         style={styles.walletCard}
         onClick={() => handleWalletClick(wallet.coin)}
@@ -80,8 +85,29 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t }) => (
                 {t('wallets_view', 'Ver')}
             </div>
         </div>
+        {walletTokens.length > 0 && (
+            <div style={{ borderTop: "1px solid #1F1F33", marginTop: "12px", paddingTop: "10px" }}>
+                <div style={{ color: "#9CA3AF", fontSize: "11px", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tokens</div>
+                {walletTokens.map(token => (
+                    <div key={`${token.chainId}-${token.tokenAddress}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <img
+                                src={getCoinLogo(token.tokenSymbol)}
+                                alt={token.tokenSymbol}
+                                onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(token.tokenSymbol); }}
+                                style={{ width: 16, height: 16 }}
+                            />
+                            <span style={{ color: "#9CA3AF", fontSize: "12px" }}>{token.tokenSymbol}</span>
+                        </div>
+                        <span style={{ color: "#34D399", fontWeight: 600, fontSize: isMobile ? "13px" : "14px" }}>
+                            {token.availableBalance.toFixed(4)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        )}
     </div>
-);
+)};
 
 const Wallets = () => {
     const { t } = useTranslation();
@@ -90,6 +116,8 @@ const Wallets = () => {
     const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
 
     const { walletBalance, allWalletInfo } = useAllWallets();
+    const { tokenBalances, tokenUsdValue } = useTokenBalances();
+    const totalBalance = parseFloat(walletBalance || 0) + tokenUsdValue;
     const defaultCoin = getDefaultCoin();
     const [selectedCoin, setSelectedCoin] = useState(() => {
         const saved = localStorage.getItem('selectedWalletCoin');
@@ -412,7 +440,7 @@ const Wallets = () => {
                         {t('wallets_total_balance', 'Balance Total')}
                     </div>
                     <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
-                        ${parseFloat(walletBalance || 0).toFixed(2)}
+                        ${totalBalance.toFixed(2)}
                     </div>
                 </div>
                 <div style={styles.section}>
@@ -568,7 +596,7 @@ const Wallets = () => {
                 {allWalletInfo.length > 0 ? (
                     <div className="grid gap-3 md:gap-4" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: isMobile ? "10px" : "16px" }}>
                         {allWalletInfo.map((wallet, index) => (
-                            <WalletCard key={index} wallet={wallet} isMobile={isMobile} styles={styles} handleWalletClick={handleWalletClick} t={t} />
+                            <WalletCard key={index} wallet={wallet} isMobile={isMobile} styles={styles} handleWalletClick={handleWalletClick} t={t} tokenBalances={tokenBalances} />
                         ))}
                     </div>
                 ) : (

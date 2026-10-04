@@ -5,6 +5,8 @@ const { Worker } = require(`${appRoot}/config/bullmq`)
 const { parseUnits } = require('ethers')
 
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
+const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
+const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const coins = require(`${appRoot}/config/coins/info`)
 
 
@@ -13,6 +15,24 @@ const coins = require(`${appRoot}/config/coins/info`)
 const processRefund = async (jobData) => {
     const { orderId, chainId, sellerWalletAddress, amount, coin } = jobData
     console.log('[ESCROW-REFUND] Processing:', { orderId, chainId, seller: sellerWalletAddress?.slice(0, 10) })
+
+    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    const order = await EscrowOrder.findOne({ orderId })
+    if (order && order.isToken && order.tokenAddress) {
+        await Erc20Ledger.updateOne(
+            {
+                walletAddress: order.sellerWalletAddress.toLowerCase(),
+                tokenAddress: order.tokenAddress.toLowerCase(),
+                chainId: order.chainId
+            },
+            { $inc: { available_balance: order.amount } }
+        )
+        console.log('[ESCROW-REFUND] ERC20 token refund to ledger complete:', {
+            orderId, amount: order.amount, tokenAddress: order.tokenAddress
+        })
+        return `internal-token-refund-${orderId}`
+    }
+
     const interactor = new EscrowContractInteractor(chainId)
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = parseUnits(String(amount), decimals)

@@ -20,10 +20,11 @@ export default function useProviderSettings() {
       const res = await Provider.getSettings(signal);
       setSettings(res);
       setError(null);
+      setIsLoading(false);
       return res;
     } catch (err) {
+      if (err.name === 'CanceledError' || err.message === 'canceled') return;
       setError(err.message);
-    } finally {
       setIsLoading(false);
     }
   }, []);

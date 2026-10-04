@@ -110,6 +110,32 @@ const processEscrowCancel = async (jobData) => {
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refund already processed (refundTxHash=${order.refundTxHash}), skipping`)
         return 'success'
     }
+
+    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    if (order.isToken && order.tokenAddress) {
+        const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
+        await Erc20Ledger.updateOne(
+            {
+                walletAddress: order.sellerWalletAddress.toLowerCase(),
+                tokenAddress: order.tokenAddress.toLowerCase(),
+                chainId: order.chainId
+            },
+            { $inc: { available_balance: order.amount } }
+        )
+        const internalTxHash = `internal-token-refund-${orderId}`
+        await EscrowOrder.updateOne({ orderId }, {
+            $set: { status: 'cancelled', refundTxHash: internalTxHash }
+        })
+        const statusQueue = new Queue('escrow-status-events')
+        statusQueue.add('status-update', {
+            orderId, status: 'cancelled', sellerEmail, providerEmail
+        }, { removeOnComplete: true, removeOnFail: 50 })
+        console.log('[ESCROW-CANCEL-WORKER] ✅ ERC20 token refund to ledger complete:', {
+            orderId, amount: order.amount, tokenAddress: order.tokenAddress
+        })
+        return 'success'
+    }
+
     let refundTxHash = null
     let refundAmountEth = null
     if (order.escrowTxHash) {

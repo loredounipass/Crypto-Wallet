@@ -13,6 +13,7 @@ import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 import { Provider, ProviderDocument } from '../providers/schemas/provider.schema';
 import { Chat, ChatDocument } from '../providers/schemas/chat-schema/chat.schema';
 import { Transaction, TransactionDocument } from '../transaction/schemas/transaction.schema';
+import { Erc20Ledger, Erc20LedgerDocument } from '../wallet/schemas/erc20-ledger.schema';
 import { default as EscrowQueueType } from './queue/types.queue';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class EscrowService {
     @InjectModel(Provider.name) private readonly providerModel: Model<ProviderDocument>,
     @InjectModel(Chat.name) private readonly chatModel: Model<ChatDocument>,
     @InjectModel(Transaction.name) private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(Erc20Ledger.name) private readonly erc20LedgerModel: Model<Erc20LedgerDocument>,
     @InjectQueue(EscrowQueueType.ESCROW_FUNDING) private readonly escrowFundingQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_RELEASE) private readonly escrowReleaseQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_STATUS_EVENTS) private readonly escrowStatusQueue: Queue,
@@ -50,6 +52,14 @@ export class EscrowService {
     eth: 'ethereum',
     matic: 'matic-network',
     op: 'optimism',
+    usdt: 'tether',
+    usdc: 'usd-coin',
+  };
+
+  // PRECIO DE FALLBACK PARA STABLECOINS EN TESTNET DONDE COINGECKO NO RETORNA PRECIO
+  private readonly stablecoinFallbackPrice: Record<string, number> = {
+    usdt: 1,
+    usdc: 1,
   };
 
 
@@ -184,6 +194,19 @@ export class EscrowService {
     if (!provider.paymentMethods.includes(dto.paymentMethod)) {
       throw new BadRequestException('Provider does not accept this payment method.');
     }
+    // --- DETERMINAR SI ES TOKEN ERC20 O MONEDA NATIVA ---
+    const isTokenOrder = dto.isToken && dto.tokenAddress;
+
+    // Para tokens ERC20, necesitamos buscar la wallet de la cadena padre (ej: wallet MATIC para USDC en Polygon)
+    // La wallet nativa contiene la dirección donde el ledger ERC20 tiene el balance del token
+    let walletCoinToSearch = dto.coin;
+    if (isTokenOrder) {
+      // Mapear token → moneda nativa de la cadena donde vive
+      // El frontend envía el chainId correcto, usamos el matchedWallet del provider para determinar la cadena
+      const chainCoinMap: Record<number, string> = { 11155111: 'ETH', 97: 'BNB', 80002: 'MATIC', 43113: 'AVAX', 14601: 'S', 11155420: 'OP' };
+      walletCoinToSearch = chainCoinMap[matchedWallet.chainId] || dto.coin;
+    }
+
     const userData = await this.userModel.aggregate([
       { $match: { email: sellerEmail } },
       { $unwind: '$wallets' },
@@ -195,7 +218,7 @@ export class EscrowService {
           foreignField: '_id',
           as: 'walletsData',
           pipeline: [
-            { $match: { coin: dto.coin } }
+            { $match: { coin: walletCoinToSearch } }
           ]
         }
       }
@@ -208,95 +231,201 @@ export class EscrowService {
       throw new BadRequestException('No wallet found for the specified coin.');
     }
     const wallet = walletEntry.walletsData[0];
-    const coinPriceUsd = await this.getCoinPriceUsd(dto.coin);
-    if (coinPriceUsd > 0) {
-      const balanceUsd = wallet.balance * coinPriceUsd;
-      if (balanceUsd < EscrowService.MIN_ORDER_USD) {
+
+    if (isTokenOrder) {
+      // --- FLUJO ERC20 TOKEN ---
+      const ledger = await this.erc20LedgerModel.findOne({
+        walletAddress: wallet.address.toLowerCase(),
+        tokenAddress: dto.tokenAddress.toLowerCase(),
+        chainId: wallet.chainId,
+      });
+      if (!ledger) {
+        throw new BadRequestException('No token balance found for the specified token.');
+      }
+      const tokenBalance = ledger.available_balance || 0;
+
+      // Verificar balance mínimo en USD
+      let coinPriceUsd = await this.getCoinPriceUsd(dto.coin);
+      if (coinPriceUsd === 0) {
+        coinPriceUsd = this.stablecoinFallbackPrice[dto.coin.toLowerCase()] || 0;
+      }
+      if (coinPriceUsd > 0) {
+        const balanceUsd = tokenBalance * coinPriceUsd;
+        if (balanceUsd < EscrowService.MIN_ORDER_USD) {
+          throw new BadRequestException('You do not have the minimum balance to create a P2P order.');
+        }
+      }
+
+      // Para tokens ERC20 no cobramos gas del token (gas se paga en moneda nativa)
+      const gasFee = 0;
+      const totalDeduction = dto.amount;
+
+      if (tokenBalance < totalDeduction) {
         throw new BadRequestException(
-          'You do not have the minimum balance to create a P2P order.',
+          `Insufficient token balance. Required: ${totalDeduction} ${dto.coin}, Available: ${tokenBalance} ${dto.coin}`
         );
       }
-    }
-    const orderId = uuidv4();
-    const gasEstimate = await this.getGasEstimate(dto.coin, wallet.chainId);
-    const gasFee = gasEstimate.gasFee;
-    if (dto.amount <= gasFee) {
-      throw new BadRequestException(
-        `Amount must be greater than network gas fee. Amount: ${dto.amount} ${dto.coin}, Gas: ${gasFee} ${dto.coin}`
+
+      // Descontar del ledger ERC20
+      await this.erc20LedgerModel.updateOne(
+        { _id: ledger._id },
+        { $inc: { available_balance: -totalDeduction } }
       );
-    }
-    let totalDeduction = dto.amount + gasFee;
-    if (wallet.balance < totalDeduction && wallet.balance > gasFee * 2) {
-      const adjustedAmount = this.truncateToDecimals(wallet.balance - gasFee, 8);
-      console.log(`[ESCROW] Auto-adjusting amount: ${dto.amount} → ${adjustedAmount} ${dto.coin} (balance=${wallet.balance}, gas=${gasFee})`);
-      dto.amount = adjustedAmount;
-      totalDeduction = dto.amount + gasFee;
-    }
-    if (wallet.balance < totalDeduction) {
-      throw new BadRequestException(
-        `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
+
+      const orderId = uuidv4();
+      const chatroomId = uuidv4();
+      const chat = new this.chatModel({
+        chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
+        users: [sellerEmail, dto.providerEmail],
+        chatroomId,
+        latestMessage: 'P2P Order created. Funds are in escrow.',
+      });
+      await chat.save();
+      const expirySeconds = parseInt(this.configService.get<string>('ESCROW_ORDER_EXPIRY_SECONDS') || '1800');
+      const escrowOrder = new this.escrowOrderModel({
+        orderId,
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+        sellerWalletAddress: wallet.address,
+        providerWalletAddress: matchedWallet.address,
+        coin: dto.coin,
+        chainId: wallet.chainId,
+        amount: dto.amount,
+        fiatAmount: dto.fiatAmount,
+        paymentMethod: dto.paymentMethod,
+        status: 'pending',
+        chatroomId,
+        expiresAt: new Date(Date.now() + expirySeconds * 1000),
+        gasFee,
+        tokenAddress: dto.tokenAddress,
+        isToken: true,
+      });
+      await escrowOrder.save();
+      await this.escrowFundingQueue.add('fund', {
+        orderId,
+        sellerWalletAddress: wallet.address,
+        providerWalletAddress: matchedWallet.address,
+        amount: dto.amount,
+        coin: dto.coin,
+        chainId: wallet.chainId,
+        gasFee,
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+        tokenAddress: dto.tokenAddress,
+        isToken: true,
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 3000 },
+      });
+      await this.escrowStatusQueue.add('status-update', {
+        orderId,
+        status: 'pending',
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+      }, { removeOnComplete: true, removeOnFail: 50 });
+      return {
+        orderId,
+        chatroomId,
+        status: 'pending',
+        amount: dto.amount,
+        coin: dto.coin,
+        providerEmail: dto.providerEmail,
+        paymentMethod: dto.paymentMethod,
+        gasFee,
+      };
+
+    } else {
+      // --- FLUJO MONEDA NATIVA (sin cambios) ---
+      const coinPriceUsd = await this.getCoinPriceUsd(dto.coin);
+      if (coinPriceUsd > 0) {
+        const balanceUsd = wallet.balance * coinPriceUsd;
+        if (balanceUsd < EscrowService.MIN_ORDER_USD) {
+          throw new BadRequestException(
+            'You do not have the minimum balance to create a P2P order.',
+          );
+        }
+      }
+      const orderId = uuidv4();
+      const gasEstimate = await this.getGasEstimate(dto.coin, wallet.chainId);
+      const gasFee = gasEstimate.gasFee;
+      if (dto.amount <= gasFee) {
+        throw new BadRequestException(
+          `Amount must be greater than network gas fee. Amount: ${dto.amount} ${dto.coin}, Gas: ${gasFee} ${dto.coin}`
+        );
+      }
+      let totalDeduction = dto.amount + gasFee;
+      if (wallet.balance < totalDeduction && wallet.balance > gasFee * 2) {
+        const adjustedAmount = this.truncateToDecimals(wallet.balance - gasFee, 8);
+        console.log(`[ESCROW] Auto-adjusting amount: ${dto.amount} → ${adjustedAmount} ${dto.coin} (balance=${wallet.balance}, gas=${gasFee})`);
+        dto.amount = adjustedAmount;
+        totalDeduction = dto.amount + gasFee;
+      }
+      if (wallet.balance < totalDeduction) {
+        throw new BadRequestException(
+          `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
+        );
+      }
+      await this.walletModel.updateOne(
+        { _id: new Types.ObjectId(wallet._id) },
+        { $inc: { balance: -totalDeduction } }
       );
+      const chatroomId = uuidv4();
+      const chat = new this.chatModel({
+        chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
+        users: [sellerEmail, dto.providerEmail],
+        chatroomId,
+        latestMessage: 'P2P Order created. Funds are in escrow.',
+      });
+      await chat.save();
+      const expirySeconds = parseInt(this.configService.get<string>('ESCROW_ORDER_EXPIRY_SECONDS') || '1800');
+      const escrowOrder = new this.escrowOrderModel({
+        orderId,
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+        sellerWalletAddress: wallet.address,
+        providerWalletAddress: matchedWallet.address,
+        coin: dto.coin,
+        chainId: wallet.chainId,
+        amount: dto.amount,
+        fiatAmount: dto.fiatAmount,
+        paymentMethod: dto.paymentMethod,
+        status: 'pending',
+        chatroomId,
+        expiresAt: new Date(Date.now() + expirySeconds * 1000),
+        gasFee,
+      });
+      await escrowOrder.save();
+      await this.escrowFundingQueue.add('fund', {
+        orderId,
+        sellerWalletAddress: wallet.address,
+        providerWalletAddress: matchedWallet.address,
+        amount: dto.amount,
+        coin: dto.coin,
+        chainId: wallet.chainId,
+        gasFee,
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 3000 },
+      });
+      await this.escrowStatusQueue.add('status-update', {
+        orderId,
+        status: 'pending',
+        sellerEmail,
+        providerEmail: dto.providerEmail,
+      }, { removeOnComplete: true, removeOnFail: 50 });
+      return {
+        orderId,
+        chatroomId,
+        status: 'pending',
+        amount: dto.amount,
+        coin: dto.coin,
+        providerEmail: dto.providerEmail,
+        paymentMethod: dto.paymentMethod,
+        gasFee,
+      };
     }
-    await this.walletModel.updateOne(
-      { _id: new Types.ObjectId(wallet._id) },
-      { $inc: { balance: -totalDeduction } }
-    );
-    const chatroomId = uuidv4();
-    const chat = new this.chatModel({
-      chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
-      users: [sellerEmail, dto.providerEmail],
-      chatroomId,
-      latestMessage: 'P2P Order created. Funds are in escrow.',
-    });
-    await chat.save();
-    const expirySeconds = parseInt(this.configService.get<string>('ESCROW_ORDER_EXPIRY_SECONDS') || '1800');
-    const escrowOrder = new this.escrowOrderModel({
-      orderId,
-      sellerEmail,
-      providerEmail: dto.providerEmail,
-      sellerWalletAddress: wallet.address,
-      providerWalletAddress: matchedWallet.address,
-      coin: dto.coin,
-      chainId: wallet.chainId,
-      amount: dto.amount,
-      fiatAmount: dto.fiatAmount,
-      paymentMethod: dto.paymentMethod,
-      status: 'pending',
-      chatroomId,
-      expiresAt: new Date(Date.now() + expirySeconds * 1000),
-      gasFee,
-    });
-    await escrowOrder.save();
-    await this.escrowFundingQueue.add('fund', {
-      orderId,
-      sellerWalletAddress: wallet.address,
-      providerWalletAddress: matchedWallet.address,
-      amount: dto.amount,
-      coin: dto.coin,
-      chainId: wallet.chainId,
-      gasFee,
-      sellerEmail,
-      providerEmail: dto.providerEmail,
-    }, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 3000 },
-    });
-    await this.escrowStatusQueue.add('status-update', {
-      orderId,
-      status: 'pending',
-      sellerEmail,
-      providerEmail: dto.providerEmail,
-    }, { removeOnComplete: true, removeOnFail: 50 });
-    return {
-      orderId,
-      chatroomId,
-      status: 'pending',
-      amount: dto.amount,
-      coin: dto.coin,
-      providerEmail: dto.providerEmail,
-      paymentMethod: dto.paymentMethod,
-      gasFee,
-    };
   }
 
 
@@ -478,6 +607,8 @@ export class EscrowService {
       chainId: order.chainId,
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
+      isToken: order.isToken,
+      tokenAddress: order.tokenAddress,
     }, {
       jobId: `escrow-release-${order.orderId}`,
       attempts: 5,

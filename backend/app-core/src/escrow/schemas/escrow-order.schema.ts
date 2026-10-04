@@ -85,6 +85,12 @@ export class EscrowOrder {
 
     @Prop({ default: 0 })
     gasFee: number;
+
+    @Prop()
+    tokenAddress: string;
+
+    @Prop({ default: false })
+    isToken: boolean;
 }
 
 export const EscrowOrderSchema = SchemaFactory.createForClass(EscrowOrder);

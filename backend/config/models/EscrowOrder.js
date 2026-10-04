@@ -24,10 +24,12 @@ const EscrowOrderSchema = new mongoose.Schema({
     resolvedAt: { type: Date },
     resolutionType: { type: String },
     expiresAt: { type: Date },
-    fundingMethod: { type: String, enum: ['contract', 'wallet'] },
+    fundingMethod: { type: String, enum: ['contract', 'wallet', 'offchain-ledger'] },
     expiryLockedAt: { type: Date },
     refundTxHash: { type: String },
     gasFee: { type: Number, default: 0 },
+    tokenAddress: { type: String, default: null },
+    isToken: { type: Boolean, default: false },
 }, { timestamps: true })
 
 EscrowOrderSchema.index({ status: 1, isReverted: 1, isAwarded: 1, resolvedAt: 1 })

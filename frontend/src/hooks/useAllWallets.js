@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Wallet from '../services/wallet'
 import Price from '../services/price'
 
@@ -123,7 +123,7 @@ export default function useAllWallets() {
 
 
     // FORCES A REFRESH OF WALLET DATA BYPASSING THE LOCAL CACHE
-    async function refreshWallets() {
+    const refreshWallets = useCallback(async () => {
         setIsLoading(true);
         try {
             const { wallets, balance } = await fetchAllWalletsAndBalance(true);
@@ -132,7 +132,7 @@ export default function useAllWallets() {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, []);
 
     return {
         allWalletInfo,

@@ -90,13 +90,33 @@ const registerEscrowFundingTransaction = async (order, escrowTxHash, escrowTarge
 const processEscrowFunding = async (jobData) => {
     const {
         orderId, sellerWalletAddress, providerWalletAddress,
-        amount, coin, chainId, gasFee, sellerEmail, providerEmail
+        amount, coin, chainId, gasFee, sellerEmail, providerEmail,
+        tokenAddress, isToken
     } = jobData
     console.log('[ESCROW-FUNDING] Processing:', {
-        orderId, amount, coin, chainId,
+        orderId, amount, coin, chainId, isToken: !!isToken,
         seller: sellerWalletAddress?.slice(0, 10) + '...',
         provider: providerWalletAddress?.slice(0, 10) + '...'
     })
+
+    // ERC20 TOKEN: skip on-chain transfer (balance already deducted from Erc20Ledger in createOrder)
+    if (isToken && tokenAddress) {
+        const offchainTxHash = `offchain-ledger-${orderId}`
+        await EscrowOrder.updateOne({ orderId }, {
+            $set: {
+                escrowTxHash: offchainTxHash,
+                fundingMethod: 'offchain-ledger',
+                status: 'funded'
+            }
+        })
+        const statusQueue = new Queue('escrow-status-events')
+        statusQueue.add('status-update', {
+            orderId, status: 'funded', sellerEmail, providerEmail, escrowTxHash: offchainTxHash
+        }, { removeOnComplete: true, removeOnFail: 50 })
+        console.log('[ESCROW-FUNDING] ERC20 token order funded via offchain-ledger:', { orderId, tokenAddress })
+        return 'success'
+    }
+
     const order = await EscrowOrder.findOne({ orderId })
     if (!order) {
         throw new Error(`[ESCROW-FUNDING] Order not found: ${orderId}`)

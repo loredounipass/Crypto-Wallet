@@ -198,8 +198,9 @@ export class ProviderService {
     if (!user) {
       throw new NotFoundException('User not found.');
     }
+    // Validate that the address belongs to the user (works for both native and tokens)
     const wallet = (user.wallets as any).find(
-      (w: any) => w.address === dto.address
+      (w: any) => w.address.toLowerCase() === dto.address.toLowerCase()
     );
     if (!wallet) {
       throw new BadRequestException('Wallet not found or does not belong to this user.');
@@ -208,19 +209,42 @@ export class ProviderService {
     if (!provider) {
       throw new NotFoundException('Provider not found.');
     }
-    const existingIndex = provider.destinationWallets.findIndex(
-      (w) => w.address === dto.address
-    );
-    if (existingIndex >= 0) {
-      provider.destinationWallets[existingIndex].enabled =
-        !provider.destinationWallets[existingIndex].enabled;
+
+    if (dto.isToken && dto.tokenAddress) {
+      // --- ERC20 Token toggle ---
+      const existingIndex = provider.destinationWallets.findIndex(
+        (w) => w.address === dto.address && w.isToken === true && w.tokenAddress === dto.tokenAddress
+      );
+      if (existingIndex >= 0) {
+        provider.destinationWallets[existingIndex].enabled =
+          !provider.destinationWallets[existingIndex].enabled;
+      } else {
+        provider.destinationWallets.push({
+          address: dto.address,
+          coin: dto.coin || 'UNKNOWN',
+          chainId: dto.chainId || wallet.chainId,
+          enabled: true,
+          isToken: true,
+          tokenAddress: dto.tokenAddress,
+        });
+      }
     } else {
-      provider.destinationWallets.push({
-        address: wallet.address,
-        coin: wallet.coin,
-        chainId: wallet.chainId,
-        enabled: true,
-      });
+      // --- Native wallet toggle (original flow) ---
+      const existingIndex = provider.destinationWallets.findIndex(
+        (w) => w.address === dto.address && !w.isToken
+      );
+      if (existingIndex >= 0) {
+        provider.destinationWallets[existingIndex].enabled =
+          !provider.destinationWallets[existingIndex].enabled;
+      } else {
+        provider.destinationWallets.push({
+          address: wallet.address,
+          coin: wallet.coin,
+          chainId: wallet.chainId,
+          enabled: true,
+          isToken: false,
+        });
+      }
     }
     return provider.save();
   }

@@ -95,8 +95,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>{t('p2p_cryptocurrency')}</label>
           <select
-            value={coin}
-            onChange={e => { setCoin(e.target.value); setAmount(''); }}
+            value={selectedWallet?.key || ''}
+            onChange={e => { setCoin(e.target.value); }}
             style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36 }}
           >
             <option value="">{t('p2p_select_crypto')}</option>
@@ -104,8 +104,8 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               <option value="" disabled>{t('p2p_no_compatible_wallets')}</option>
             ) : (
               compatibleWallets.map(w => (
-                <option key={w.coin} value={w.coin}>
-                  {w.coin?.toUpperCase()} — Balance: {w.balance?.toFixed(6)}
+                <option key={w.key} value={w.key}>
+                  {w.label}
                 </option>
               ))
             )}

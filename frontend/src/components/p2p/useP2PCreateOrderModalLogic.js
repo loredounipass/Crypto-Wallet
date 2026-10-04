@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAllWallets from '../../hooks/useAllWallets';
+import useTokenBalances from '../../hooks/useTokenBalances';
 import Price from '../../services/price';
 import Escrow from '../../services/escrow';
+import { getNetworkName } from '../utils/Chains';
 
 const MIN_ORDER_USD = 10;
+const STABLECOIN_FALLBACK_PRICE = { USDT: 1, USDC: 1 };
 
 
 
@@ -24,23 +27,68 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
   }, []);
 
   const { allWalletInfo: wallets } = useAllWallets();
+  const { tokenBalances } = useTokenBalances();
   const shouldRender = Boolean(open && provider);
 
 
 
-  // MEMOIZED LIST OF COMPATIBLE WALLETS BASED ON THE PROVIDER'S DESTINATION WALLETS
-  const compatibleWallets = useMemo(() => {
+  // MEMOIZED UNIFIED LIST OF SELECTABLE ASSETS (NATIVE COINS + ERC20 TOKENS)
+  const allSelectableAssets = useMemo(() => {
     if (!wallets || !provider?.destinationWallets) return [];
-    return wallets.filter(w => provider.destinationWallets.some(dw => dw.coin?.toUpperCase() === w.coin?.toUpperCase() && dw.enabled));
-  }, [wallets, provider]);
+    const enabledDestCoins = provider.destinationWallets.filter(dw => dw.enabled);
 
-  const [coin, setCoin] = useState('');
+    // Native wallets compatible with provider
+    const nativeAssets = wallets
+      .filter(w => enabledDestCoins.some(dw => dw.coin?.toUpperCase() === w.coin?.toUpperCase()))
+      .map(w => ({
+        key: `native-${w.coin}`,
+        coin: w.coin,
+        balance: w.balance,
+        address: w.address,
+        chainId: w.chainId,
+        isToken: false,
+        tokenAddress: null,
+        label: `${w.coin?.toUpperCase()} — Balance: ${Number(w.balance || 0).toFixed(6)}`,
+      }));
+
+    // ERC20 tokens compatible with provider
+    const tokenAssets = (tokenBalances || [])
+      .filter(t => enabledDestCoins.some(dw => dw.coin?.toUpperCase() === t.tokenSymbol?.toUpperCase()))
+      .filter(t => t.availableBalance > 0)
+      .map(t => ({
+        key: `token-${t.chainId}-${t.tokenAddress}`,
+        coin: t.tokenSymbol,
+        balance: t.availableBalance,
+        address: t.walletAddress,
+        chainId: t.chainId,
+        isToken: true,
+        tokenAddress: t.tokenAddress,
+        label: `${t.tokenSymbol?.toUpperCase()} (${getNetworkName(t.chainId)}) — Balance: ${t.availableBalance?.toFixed(6)}`,
+      }));
+
+    return [...nativeAssets, ...tokenAssets];
+  }, [wallets, tokenBalances, provider]);
+
+
+  // For backward compat, compatibleWallets maps to allSelectableAssets
+  const compatibleWallets = allSelectableAssets;
+
+  const [selectedAssetKey, setSelectedAssetKey] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [coinPriceUsd, setCoinPriceUsd] = useState(0);
   const [gasFee, setGasFee] = useState(0);
   const [gasLoading, setGasLoading] = useState(false);
 
+
+
+  // DERIVED SELECTED ASSET FROM THE KEY
+  const selectedAsset = useMemo(() => {
+    return allSelectableAssets.find(a => a.key === selectedAssetKey) || null;
+  }, [allSelectableAssets, selectedAssetKey]);
+
+  const coin = selectedAsset?.coin || '';
+  const setCoin = (key) => { setSelectedAssetKey(key); setAmount(''); };
 
 
   // LIST OF AVAILABLE PAYMENT METHODS DERIVED FROM THE PROVIDER
@@ -52,13 +100,13 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
     )
     : ['Transferencia Bancaria'];
 
-  const selectedWallet = wallets?.find(w => w.coin?.toUpperCase() === coin?.toUpperCase());
-  const balance = Number(selectedWallet?.balance || 0);
-  const chainId = selectedWallet?.chainId || 0;
+  const selectedWallet = selectedAsset;
+  const balance = Number(selectedAsset?.balance || 0);
+  const chainId = selectedAsset?.chainId || 0;
 
 
 
-  // CALCULATES THE AVAILABLE BALANCE BASED ON THE SELECTED WALLET
+  // CALCULATES THE AVAILABLE BALANCE BASED ON THE SELECTED ASSET
   const availableBalance = useMemo(() => {
     return balance || 0;
   }, [balance]);
@@ -96,9 +144,19 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
       }
       try {
         const { data } = await Price.getPrice(coin);
-        if (isMountedLocal) setCoinPriceUsd(Number(data?.USD || 0));
+        const price = Number(data?.USD || 0);
+        if (isMountedLocal) {
+          if (price > 0) {
+            setCoinPriceUsd(price);
+          } else {
+            // Fallback for testnet stablecoins
+            setCoinPriceUsd(STABLECOIN_FALLBACK_PRICE[coin.toUpperCase()] || 0);
+          }
+        }
       } catch (_) {
-        if (isMountedLocal) setCoinPriceUsd(0);
+        if (isMountedLocal) {
+          setCoinPriceUsd(STABLECOIN_FALLBACK_PRICE[coin.toUpperCase()] || 0);
+        }
       }
     }
     loadPrice();
@@ -111,15 +169,19 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
   useEffect(() => {
     let isMountedLocal = true;
     async function loadGasEstimate() {
+      // ERC20 tokens don't have gas in token units (gas is paid in native coin)
+      if (selectedAsset?.isToken) {
+        if (isMountedLocal) setGasFee(0);
+        setGasLoading(false);
+        return;
+      }
       if (!coin || !chainId) {
         if (isMountedLocal) setGasFee(0);
         return;
       }
       setGasLoading(true);
-      console.log('[P2P Gas] Fetching estimate:', { coin, chainId, selectedWallet: selectedWallet ? { address: selectedWallet.address, balance: selectedWallet.balance, chainId: selectedWallet.chainId } : 'none' });
       try {
         const data = await Escrow.getGasEstimate(coin, chainId);
-        console.log('[P2P Gas] Response:', data);
         if (isMountedLocal) setGasFee(Number(data.gasFee || 0));
       } catch (err) {
         console.error('[P2P Gas] Error:', err?.response?.data || err?.message || err);
@@ -130,7 +192,7 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
     }
     loadGasEstimate();
     return () => { isMountedLocal = false; };
-  }, [coin, chainId, selectedWallet]);
+  }, [coin, chainId, selectedAsset]);
 
   const amountNum = parseFloat(amount) || 0;
   const netAmount = Math.max(0, amountNum - gasFee);
@@ -166,15 +228,21 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
 
   // HANDLES THE SUBMISSION OF THE NEW P2P ORDER
   const handleSubmit = () => {
-    if (!isValid) return;
+    if (!isValid || !selectedAsset) return;
     const safeNetAmount = truncateToDecimals(netAmount, 8);
-    onSubmit({
+    const body = {
       coin: coin.toUpperCase(),
       amount: safeNetAmount,
       fiatAmount: parseFloat(fiatAmount),
       providerEmail: provider.email,
       paymentMethod: resolvePaymentMethod(paymentMethod),
-    });
+    };
+    // Add token-specific fields for ERC20 orders
+    if (selectedAsset.isToken && selectedAsset.tokenAddress) {
+      body.tokenAddress = selectedAsset.tokenAddress;
+      body.isToken = true;
+    }
+    onSubmit(body);
   };
 
 
@@ -212,3 +280,4 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
     handleSetMax
   };
 }
+

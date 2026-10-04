@@ -90,6 +90,23 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
 
 // REEMBOLSA LOS FONDOS DIRECTAMENTE DESDE LA BILLETERA ESCROW HACIA LA BILLETERA DEL VENDEDOR
 const refundSellerWallet = async (order) => {
+    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    if (order.isToken && order.tokenAddress) {
+        const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
+        await Erc20Ledger.updateOne(
+            {
+                walletAddress: order.sellerWalletAddress.toLowerCase(),
+                tokenAddress: order.tokenAddress.toLowerCase(),
+                chainId: order.chainId
+            },
+            { $inc: { available_balance: order.amount } }
+        )
+        console.log('[ESCROW-EXPIRY] ERC20 token refund to ledger complete:', {
+            orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
+        })
+        return
+    }
+
     let refundTxHash = null;
     let refundAmountEth = null;
     if (order.escrowTxHash) {

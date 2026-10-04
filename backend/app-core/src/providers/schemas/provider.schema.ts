@@ -38,12 +38,14 @@ export class Provider {
   @Prop({ required: false })
   preferredBank?: string;
 
-  @Prop({ type: [{ address: String, coin: String, chainId: Number, enabled: Boolean }], default: [] })
+  @Prop({ type: [{ address: String, coin: String, chainId: Number, enabled: Boolean, isToken: { type: Boolean, default: false }, tokenAddress: String }], default: [] })
   destinationWallets: {
     address: string;
     coin: string;
     chainId: number;
     enabled: boolean;
+    isToken?: boolean;
+    tokenAddress?: string;
   }[];
 
   @Prop({ default: 0 })

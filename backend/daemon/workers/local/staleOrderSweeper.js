@@ -89,7 +89,9 @@ const sweepStaleOrders = async () => {
                 chainId: order.chainId,
                 gasFee: order.gasFee,
                 sellerEmail: order.sellerEmail,
-                providerEmail: order.providerEmail
+                providerEmail: order.providerEmail,
+                isToken: order.isToken,
+                tokenAddress: order.tokenAddress
             }, {
                 jobId: customJobId,
                 attempts: 3,

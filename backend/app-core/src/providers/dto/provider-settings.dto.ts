@@ -28,4 +28,20 @@ export class ToggleDestinationWalletDto {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isToken?: boolean;
+
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  coin?: string;
+
+  @IsOptional()
+  @IsNumber()
+  chainId?: number;
 }

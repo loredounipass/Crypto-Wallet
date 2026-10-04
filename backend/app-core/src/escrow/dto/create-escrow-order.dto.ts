@@ -3,7 +3,9 @@ import {
     IsEmail,
     IsNumber,
     IsPositive,
-    IsString
+    IsString,
+    IsOptional,
+    IsBoolean
 } from 'class-validator';
 
 export class CreateEscrowOrderDto {
@@ -25,4 +27,12 @@ export class CreateEscrowOrderDto {
 
     @IsString()
     paymentMethod: string;
+
+    @IsOptional()
+    @IsString()
+    tokenAddress?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isToken?: boolean;
 }

@@ -10,6 +10,7 @@ const Wallet = require(`${appRoot}/config/models/Wallet`)
 const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Provider = require(`${appRoot}/config/models/Provider`)
 const coins = require(`${appRoot}/config/coins/info`)
+const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
 
@@ -86,7 +87,8 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
 const processEscrowRelease = async (jobData) => {
     const {
         orderId, providerWalletAddress, sellerWalletAddress,
-        amount, coin, chainId, sellerEmail, providerEmail
+        amount, coin, chainId, sellerEmail, providerEmail,
+        isToken, tokenAddress
     } = jobData
     console.log('[ESCROW-RELEASE] Processing release:', {
         orderId, amount, coin, chainId,
@@ -134,12 +136,6 @@ const processEscrowRelease = async (jobData) => {
             }
             console.log(`[ESCROW-RELEASE] Funding transaction confirmed. Proceeding with release...`)
         }
-        const decimals = coins[coin.toUpperCase()]?.decimals || 18
-        const amountWei = toWeiAmount(amount, decimals)
-        
-        console.log('[ESCROW-RELEASE] Releasing via escrow wallet transfer...')
-        await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
-        
         const onTxHash = async (txHash) => {
             releaseTxHash = txHash
             console.log(`[ESCROW-RELEASE] Pre-saving txHash ${txHash} to prevent duplicate retries`)
@@ -148,14 +144,38 @@ const processEscrowRelease = async (jobData) => {
                 { $set: { releaseTxHash: txHash } }
             )
         }
+
+        // BIFURCAR: ERC20 vs NATIVO
+        const isErc20Token = isToken || (order && order.isToken)
+        const theTokenAddress = tokenAddress || (order && order.tokenAddress)
         
-        const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei, onTxHash)
-        if (!receipt || !receipt.status) {
-            console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
-            throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+        if (isErc20Token && theTokenAddress) {
+            // Obtener decimales correctos del token (USDC=6, USDT=6, etc)
+            const tokenInfo = getTokenInfo(chainId, theTokenAddress)
+            const tokenDecimals = tokenInfo?.decimals || 6
+            console.log('[ESCROW-RELEASE] Releasing ERC20 token via contract transfer...', { tokenDecimals })
+            const receipt = await interactor.sendERC20Transfer(
+                theTokenAddress, providerWalletAddress, amount, tokenDecimals, onTxHash
+            )
+            if (!receipt || !receipt.status) {
+                console.error('[ESCROW-RELEASE] ERC20 transfer failed')
+                throw new Error('[ESCROW-RELEASE] ERC20 transfer failed')
+            }
+            releaseTxHash = receipt.transactionHash
+            console.log('[ESCROW-RELEASE] ERC20 transfer successful:', { orderId, txHash: releaseTxHash })
+        } else {
+            const decimals = coins[coin.toUpperCase()]?.decimals || 18
+            const amountWei = toWeiAmount(amount, decimals)
+            console.log('[ESCROW-RELEASE] Releasing via escrow wallet native transfer...')
+            await interactor.ensureEscrowWalletBalanceForTransfer(orderId, providerWalletAddress, amountWei)
+            const receipt = await interactor.releaseFundsFromEscrowWallet(orderId, providerWalletAddress, amountWei, onTxHash)
+            if (!receipt || !receipt.status) {
+                console.error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+                throw new Error('[ESCROW-RELEASE] Escrow wallet transfer failed')
+            }
+            releaseTxHash = receipt.transactionHash
+            console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
         }
-        releaseTxHash = receipt.transactionHash
-        console.log('[ESCROW-RELEASE] Escrow wallet transfer successful:', { orderId, txHash: releaseTxHash })
     }
     await EscrowOrder.updateOne(
         { orderId },
@@ -166,6 +186,7 @@ const processEscrowRelease = async (jobData) => {
             }
         }
     )
+    await registerEscrowReleaseTransaction(order, releaseTxHash)
     const providerResult = await Provider.updateOne(
         { email: providerEmail },
         {

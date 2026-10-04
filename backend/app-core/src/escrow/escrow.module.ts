@@ -13,6 +13,7 @@ import { Wallet, WalletSchema } from '../wallet/schemas/wallet.schema';
 import { Provider, ProviderSchema } from '../providers/schemas/provider.schema';
 import { Chat, ChatSchema } from '../providers/schemas/chat-schema/chat.schema';
 import { Transaction, TransactionSchema } from '../transaction/schemas/transaction.schema';
+import { Erc20Ledger, Erc20LedgerSchema } from '../wallet/schemas/erc20-ledger.schema';
 import { default as EscrowQueueType } from './queue/types.queue';
 
 @Module({
@@ -25,6 +26,7 @@ import { default as EscrowQueueType } from './queue/types.queue';
       { name: Provider.name, schema: ProviderSchema },
       { name: Chat.name, schema: ChatSchema },
       { name: Transaction.name, schema: TransactionSchema },
+      { name: Erc20Ledger.name, schema: Erc20LedgerSchema },
     ]),
     BullModule.registerQueue({
       name: EscrowQueueType.ESCROW_FUNDING,
