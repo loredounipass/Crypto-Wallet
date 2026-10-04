@@ -133,26 +133,67 @@ const processEscrowFunding = async (jobData) => {
     if (escrowTxHash && !order.fundingMethod) {
         // Tenemos un hash pendiente del intento anterior — verificar en cadena
         console.log(`[ESCROW-FUNDING] Found pending escrowTxHash ${escrowTxHash}. Checking status...`)
+        let chainReceipt = null
+        let receiptMissing = false
         try {
-            const chainReceipt = await interactor.web3.eth.getTransactionReceipt(escrowTxHash)
-            if (chainReceipt) {
-                if (!chainReceipt.status) {
-                    throw new Error(`[ESCROW-FUNDING] Previous tx ${escrowTxHash} failed on chain`)
+            chainReceipt = await interactor.web3.eth.getTransactionReceipt(escrowTxHash)
+        } catch (e) {
+            // web3 v4 lanza TransactionNotFound cuando el hash se pre-guardo pero nunca se broadcasteo
+            if (e.message && (e.message.includes('Transaction not found') || e.message.includes('not found'))) {
+                receiptMissing = true
+            } else {
+                throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
+            }
+        }
+        if (receiptMissing || chainReceipt === null) {
+            // Confirmar que la tx no exista en mempool antes de declararla stale
+            let txExists = false
+            let txNonce = null
+            try {
+                const tx = await interactor.web3.eth.getTransaction(escrowTxHash)
+                txExists = !!tx
+                if (txExists) txNonce = Number(tx.nonce)
+            } catch (e) {
+                txExists = false
+            }
+            if (!txExists) {
+                console.log(`[ESCROW-FUNDING] Stale pre-saved hash ${escrowTxHash} never broadcast. Clearing and retrying fresh...`)
+                await EscrowOrder.updateOne({ orderId }, { $unset: { escrowTxHash: '' } })
+                escrowTxHash = null
+            } else if (txNonce !== null) {
+                // Tx en mempool sin minar con nonce muy por encima del real = huerfana por gap, nunca minara
+                const hotAddr = interactor.hotWalletAddress
+                const chainNonce = Number(await interactor.web3.eth.getTransactionCount(hotAddr, 'pending'))
+                if (txNonce > chainNonce + 5) {
+                    console.log(`[ESCROW-FUNDING] Orphaned tx ${escrowTxHash} nonce=${txNonce} chainNonce=${chainNonce}. Clearing hash + resetting TxManager...`)
+                    await EscrowOrder.updateOne({ orderId }, { $unset: { escrowTxHash: '' } })
+                    const TxManager = require(`${appRoot}/config/utils/TxManager`)
+                    await TxManager.resetNonce(hotAddr, interactor.chainId)
+                    escrowTxHash = null
+                } else {
+                    console.log(`[ESCROW-FUNDING] Tx ${escrowTxHash} still pending on chain, waiting...`)
+                    throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
                 }
-                console.log(`[ESCROW-FUNDING] Pending tx ${escrowTxHash} confirmed on chain!`)
             } else {
                 console.log(`[ESCROW-FUNDING] Tx ${escrowTxHash} still pending on chain, waiting...`)
                 throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
             }
-        } catch (e) {
-            if (e.message.includes('WAITING_FOR_FUNDING_CONFIRMATION') || e.message.includes('failed on chain')) throw e
-            throw new Error('WAITING_FOR_FUNDING_CONFIRMATION')
+        } else if (chainReceipt) {
+            if (!chainReceipt.status) {
+                console.log(`[ESCROW-FUNDING] Previous tx ${escrowTxHash} failed on chain. Clearing and retrying fresh...`)
+                await EscrowOrder.updateOne({ orderId }, { $unset: { escrowTxHash: '' } })
+                escrowTxHash = null
+            } else {
+                console.log(`[ESCROW-FUNDING] Pending tx ${escrowTxHash} confirmed on chain!`)
+            }
         }
-    } else if (escrowTxHash && order.fundingMethod) {
+    }
+    if (escrowTxHash && order.fundingMethod) {
         console.log(`[ESCROW-FUNDING] Order ${orderId} already funded (method=${order.fundingMethod}, tx=${escrowTxHash}), skipping`)
         return 'success'
-    } else {
-        // Primera ejecucion: enviar fondos y pre-guardar hash
+    }
+    if (!escrowTxHash) {
+        // Primera ejecucion o reintento tras limpiar hash stale: enviar fondos y pre-guardar hash
         console.log('[ESCROW-FUNDING] Funding escrow wallet...')
         const onTxHash = async (hash) => {
             escrowTxHash = hash
