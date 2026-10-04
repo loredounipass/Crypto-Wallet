@@ -79,17 +79,27 @@ const processERC20Event = async (job) => {
         })
 
         if (!txRecord) {
-            txRecord = new Transaction({
-                nature: 1,
-                txHash,
-                amount: displayAmount,
-                status: 2,
-                to: walletAddress,
-                tokenSymbol: symbol,
-                confirmations: confirmations,
-                created_at: new Date()
-            })
-            await txRecord.save()
+            try {
+                txRecord = new Transaction({
+                    nature: 1,
+                    txHash,
+                    amount: displayAmount,
+                    status: 2,
+                    to: walletAddress,
+                    tokenSymbol: symbol,
+                    confirmations: confirmations,
+                    created_at: new Date()
+                })
+                await txRecord.save()
+            } catch (saveErr) {
+                if (saveErr.code === 11000) {
+                    console.log(`[ERC20-PROCESSOR] Duplicate {txHash,nature}, reusing existing doc:`, txHash)
+                    txRecord = await Transaction.findOne({ txHash, nature: 1 })
+                    if (!txRecord) throw saveErr
+                } else {
+                    throw saveErr
+                }
+            }
             await Wallet.updateOne(
                 { address: new RegExp(`^${walletAddress.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`, 'i') },
                 { $push: { transactions: txRecord._id } }
@@ -123,65 +133,46 @@ const processERC20Event = async (job) => {
             throw new DelayedError()
         }
 
-        const existing = await Erc20Transaction.findOne({ eventId })
-
-        if (existing) {
-            if (!existing.ledgerApplied) {
-                await Erc20Ledger.findOneAndUpdate(
-                    { walletAddress, tokenAddress, chainId },
-                    {
-                        $inc: {
-                            available_balance: displayAmount,
-                            locked_for_forward: displayAmount
-                        }
-                    },
-                    { upsert: true }
-                )
-                await Erc20Transaction.updateOne({ eventId }, { $set: { ledgerApplied: true } })
-            }
+        // IDEMPOTENCIA EN 2 FASES (fix doble-credito 2026-10-04):
+        // Fase 1: upsert atomico -> un solo doc por eventId aunque N jobs concurran.
+        // Fase 2: claim atomico de ledgerApplied -> solo el ganador hace el $inc.
+        // El claim va ANTES del $inc: si el proceso muere entre ambos, el evento
+        // queda marcado sin acreditar y el reconciliation-job lo detecta como drift
+        // (reparable). El orden inverso crearia dinero de la nada. Sin replica-set
+        // no hay transacciones multi-doc, este es el patron correcto.
+        await Erc20Transaction.findOneAndUpdate(
+            { eventId },
+            {
+                $setOnInsert: {
+                    eventId,
+                    chainId,
+                    txHash,
+                    logIndex,
+                    walletAddress,
+                    tokenAddress,
+                    amount: displayAmount,
+                    amountRaw: amountBig.toString(),
+                    blockNumber,
+                    confirmations,
+                    status: 2,
+                    ledgerApplied: false
+                }
+            },
+            { upsert: true }
+        )
+        const claimed = await Erc20Transaction.findOneAndUpdate(
+            { eventId, ledgerApplied: { $ne: true } },
+            { $set: { ledgerApplied: true } }
+        )
+        if (!claimed) {
             console.log(`[ERC20-PROCESSOR] Event ${eventId} already processed (Idempotency Hit).`)
             return 'duplicate'
         }
-
-        try {
-            const transaction = new Erc20Transaction({
-                eventId,
-                chainId,
-                txHash,
-                logIndex,
-                walletAddress,
-                tokenAddress,
-                amount: displayAmount,
-                amountRaw: amountBig.toString(),
-                blockNumber,
-                confirmations,
-                status: 2,
-                ledgerApplied: false
-            })
-            await transaction.save()
-        } catch (err) {
-            if (err.code === 11000) {
-                const tx = await Erc20Transaction.findOne({ eventId })
-                if (tx && !tx.ledgerApplied) {
-                    await Erc20Ledger.findOneAndUpdate(
-                        { walletAddress, tokenAddress, chainId },
-                        { $inc: { available_balance: displayAmount, locked_for_forward: displayAmount } },
-                        { upsert: true }
-                    )
-                    await Erc20Transaction.updateOne({ eventId }, { $set: { ledgerApplied: true } })
-                }
-                return 'duplicate'
-            }
-            throw err
-        }
-
         await Erc20Ledger.findOneAndUpdate(
             { walletAddress, tokenAddress, chainId },
             { $inc: { available_balance: displayAmount, locked_for_forward: displayAmount } },
             { upsert: true }
         )
-
-        await Erc20Transaction.updateOne({ eventId }, { $set: { ledgerApplied: true } })
 
         console.log(`[ERC20-PROCESSOR] Event ${eventId} Ledger Updated for wallet ${walletAddress}. Amount: ${displayAmount} ${symbol}`)
 

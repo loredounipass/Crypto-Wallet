@@ -69,11 +69,18 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
             if (pendingExecs === 0) {
                 console.log(`[RESIDUAL-SWEEP] Orphan balance ${balanceDisplay} detected for ${walletAddress}. Forcing sweep.`)
                 const aggregationQueue = new Queue('erc20-aggregation')
+                // jobId estable: 2 sweeps concurrentes sobre el mismo wallet encolan 1 solo job
                 await aggregationQueue.add('aggregate', {
                     walletAddress,
                     tokenAddress,
                     chainId,
                     trigger_event: 'residual_sweep'
+                }, {
+                    jobId: `residual-sweep-${chainId}-${tokenAddress}-${walletAddress}`.toLowerCase(),
+                    attempts: 3,
+                    backoff: { type: 'exponential', delay: 5000 },
+                    removeOnComplete: { age: 86400, count: 500 },
+                    removeOnFail: 50
                 })
             }
         }

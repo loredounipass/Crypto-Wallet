@@ -109,6 +109,18 @@ const refundSellerWallet = async (order) => {
     // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
     if (order.isToken && order.tokenAddress) {
         const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
+        // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
+        const internalTxHash = `internal-token-refund-${order.orderId}`
+        const claimed = await EscrowOrder.findOneAndUpdate(
+            { orderId: order.orderId, refundTxHash: { $exists: false } },
+            { $set: { refundTxHash: internalTxHash } }
+        )
+        if (!claimed) {
+            console.log('[ESCROW-EXPIRY] ERC20 refund already processed, skipping:', {
+                orderId: order.orderId
+            })
+            return
+        }
         await Erc20Ledger.updateOne(
             {
                 walletAddress: order.sellerWalletAddress.toLowerCase(),

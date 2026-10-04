@@ -53,4 +53,11 @@ export class Transaction {
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction);
+
+// INDICE UNICO COMPUESTO: impide 2 docs con igual {txHash, nature} (bug duplicacion
+// P2P 2026-10-04). Parcial: solo aplica a txHash string.
+TransactionSchema.index(
+  { txHash: 1, nature: 1 },
+  { unique: true, partialFilterExpression: { txHash: { $type: 'string' } } },
+);
  

@@ -32,7 +32,6 @@ export class EscrowService {
     @InjectQueue(EscrowQueueType.ESCROW_CANCEL) private readonly escrowCancelQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_GAS_ESTIMATE) private readonly escrowGasEstimateQueue: Queue,
     @InjectQueue(EscrowQueueType.ESCROW_DISPUTE_MARK) private readonly escrowDisputeMarkQueue: Queue,
-    @InjectQueue(EscrowQueueType.ESCROW_REFUND) private readonly escrowRefundQueue: Queue,
     private readonly configService: ConfigService,
     @Inject(REDIS_CLIENT) private readonly redis: any,
   ) { }
@@ -93,6 +92,14 @@ export class EscrowService {
 
 
 
+  // ESCAPA CARACTERES ESPECIALES DE REGEX EN EMAILS (ej. '+' o '(') PARA EVITAR
+  // SyntaxError -> 500 AL CONSTRUIR LA CONSULTA INSENSIBLE A MAYUSCULAS
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+
+
   // REDUCE LOS DECIMALES DE UN VALOR FLOTANTE PARA EVITAR PROBLEMAS DE PRECISION MATEMATICA EN LA BLOCKCHAIN
   private truncateToDecimals(value: number, decimals: number = 8): number {
     const factor = 10 ** decimals;
@@ -101,79 +108,7 @@ export class EscrowService {
 
 
 
-  // BUSCA LA BILLETERA DEL USUARIO Y REGISTRA EN LA BASE DE DATOS EL REEMBOLSO DE UNA TRANSACCION FALLIDA O CANCELADA
-  private async registerRefundTransaction(order: any, refundTxHash: string | null) {
-    const coin = String(order.coin || '').toUpperCase();
-    const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase();
-    const chainId = Number(order.chainId);
-    const txHashToUse = refundTxHash ? String(refundTxHash).toLowerCase() : `internal-refund-${order.orderId}`;
-    const existing = await this.transactionModel.findOne({ txHash: txHashToUse });
-    if (existing) {
-      return existing;
-    }
-    const walletData = await this.userModel.aggregate([
-      { $match: { email: order.sellerEmail } },
-      { $unwind: '$wallets' },
-      { $project: { _id: 0 } },
-      {
-        $lookup: {
-          from: 'wallets',
-          localField: 'wallets',
-          foreignField: '_id',
-          as: 'walletsData',
-          pipeline: [
-            { $match: { coin: order.coin } }
-          ]
-        }
-      }
-    ]).exec();
-    let wallet = null;
-    if (walletData && walletData.length > 0) {
-      const walletEntry = walletData.find(w => w.walletsData.length > 0);
-      if (walletEntry) {
-        wallet = walletEntry.walletsData[0];
-      }
-    }
-    if (!wallet) {
-      console.error(`[ESCROW] Wallet not found for refund: seller=${order.sellerEmail} coin=${order.coin} chainId=${order.chainId}`);
-      throw new Error(`Wallet not found for refund: order ${order.orderId}`);
-    }
-    const isInternal = !refundTxHash;
-    const transaction = new this.transactionModel({
-      nature: 1,
-      amount: Number(order.amount || 0),
-      created_at: Date.now(),
-      status: isInternal ? 3 : 1,
-      confirmations: 0,
-      txHash: txHashToUse,
-      to: order.sellerWalletAddress
-    });
-    let savedTransaction = transaction;
-    try {
-      await transaction.save();
-    } catch (err: any) {
-      if (err.code === 11000) {
-        console.log(`[ESCROW] Duplicate txHash on refund, using existing tracking doc for order ${order.orderId}`);
-        const existingDoc = await this.transactionModel.findOne({ txHash: txHashToUse });
-        if (existingDoc) {
-          savedTransaction = existingDoc;
-        }
-      } else {
-        throw err;
-      }
-    }
-    await this.walletModel.updateOne(
-      { _id: new Types.ObjectId(wallet._id) },
-      { $addToSet: { transactions: savedTransaction._id } }
-    );
-    if (isInternal) {
-      await this.walletModel.updateOne(
-        { _id: new Types.ObjectId(wallet._id) },
-        { $inc: { balance: order.amount } }
-      );
-    }
-    return savedTransaction;
-  }
+  // NOTA 2026-10-04: expireOrders/markCompleted/registerRefundTransaction eliminados (codigo muerto sin llamadas); la expiracion viva esta en daemon/workers/local/escrowExpiry.js
 
 
 
@@ -293,11 +228,17 @@ export class EscrowService {
         );
       }
 
-      // Descontar del ledger ERC20
-      await this.erc20LedgerModel.updateOne(
-        { _id: ledger._id },
+      // Descontar del ledger ERC20 con guarda atomica: si dos ordenes concurrentes
+      // leen el mismo balance, solo una reclama los fondos (evita doble-gasto)
+      const debitResult = await this.erc20LedgerModel.updateOne(
+        { _id: ledger._id, available_balance: { $gte: totalDeduction } },
         { $inc: { available_balance: -totalDeduction } }
       );
+      if (debitResult.modifiedCount === 0) {
+        throw new BadRequestException(
+          `Insufficient token balance. Required: ${totalDeduction} ${dto.coin}, Available: ${tokenBalance} ${dto.coin}`
+        );
+      }
 
       const orderId = uuidv4();
       const chatroomId = uuidv4();
@@ -392,10 +333,17 @@ export class EscrowService {
           `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
         );
       }
-      await this.walletModel.updateOne(
-        { _id: new Types.ObjectId(wallet._id) },
+      // Debito atomico: el filtro balance >= totalDeduction evita que dos ordenes
+      // concurrentes sobregiren la wallet (check-then-act seria race condition)
+      const debitResult = await this.walletModel.updateOne(
+        { _id: new Types.ObjectId(wallet._id), balance: { $gte: totalDeduction } },
         { $inc: { balance: -totalDeduction } }
       );
+      if (debitResult.modifiedCount === 0) {
+        throw new BadRequestException(
+          `Insufficient balance. Required: ${totalDeduction} ${dto.coin} (amount: ${dto.amount} + gas: ${gasFee})`
+        );
+      }
       const chatroomId = uuidv4();
       const chat = new this.chatModel({
         chatName: `P2P Order - ${dto.coin} ${dto.amount}`,
@@ -502,7 +450,7 @@ export class EscrowService {
         continue;
       }
       const provider = await this.providerModel.findOne({
-        email: { $regex: new RegExp(`^${order.providerEmail.trim()}$`, 'i') }
+        email: { $regex: new RegExp(`^${this.escapeRegExp(order.providerEmail.trim())}$`, 'i') }
       }).lean().exec();
       if (provider && (provider.firstName || provider.lastName)) {
         (order as any).counterpartName = `${provider.firstName || ''} ${provider.lastName || ''}`.trim();
@@ -528,11 +476,11 @@ export class EscrowService {
         continue;
       }
       let user: any = await this.userModel.findOne({
-        email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
+        email: { $regex: new RegExp(`^${this.escapeRegExp(order.sellerEmail.trim())}$`, 'i') }
       }).lean().exec();
       if (!user) {
         user = await this.providerModel.findOne({
-          email: { $regex: new RegExp(`^${order.sellerEmail.trim()}$`, 'i') }
+          email: { $regex: new RegExp(`^${this.escapeRegExp(order.sellerEmail.trim())}$`, 'i') }
         }).lean().exec();
       }
       if (user && (user.firstName || user.lastName)) {
@@ -674,6 +622,7 @@ export class EscrowService {
       chainId: order.chainId,
       escrowTxHash: order.escrowTxHash,
     }, {
+      jobId: `escrow-dispute-mark-${orderId}`,
       attempts: 3,
       backoff: { type: 'exponential', delay: 3000 },
       removeOnComplete: true,
@@ -712,6 +661,7 @@ export class EscrowService {
       sellerEmail: order.sellerEmail,
       providerEmail: order.providerEmail,
     }, {
+      jobId: `escrow-cancel-${order.orderId}`,
       attempts: 20,
       backoff: { type: 'exponential', delay: 5000 },
     });
@@ -749,25 +699,27 @@ export class EscrowService {
     if (!isDbAdmin && !isEnvAdmin) {
       throw new ForbiddenException('Only administrators can resolve disputes.');
     }
-    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
+    // CLAIM ATOMICO: solo el primer admin en resolver reclama la orden. Sin esto,
+    // dos resoluciones concurrentes podian dejar isReverted + isAwarded en true.
+    const claimUpdate = type === 'revert' ? { isReverted: true } : { isAwarded: true };
+    const order = await this.escrowOrderModel.findOneAndUpdate(
+      { orderId: String(orderId), status: 'disputed', isReverted: false, isAwarded: false },
+      { $set: claimUpdate },
+      { returnDocument: 'after' },
+    );
     if (!order) {
-      throw new BadRequestException('Order not found.');
+      const current = await this.escrowOrderModel.findOne({ orderId: String(orderId) }).lean().exec();
+      if (!current) {
+        throw new BadRequestException('Order not found.');
+      }
+      if (current.isReverted && current.isAwarded) {
+        throw new BadRequestException('Invalid state: both isReverted and isAwarded cannot be true.');
+      }
+      if (current.isReverted || current.isAwarded) {
+        throw new BadRequestException('Dispute already resolved.');
+      }
+      throw new BadRequestException(`Cannot resolve dispute for order with status: ${current.status}`);
     }
-    if (order.status !== 'disputed') {
-      throw new BadRequestException(`Cannot resolve dispute for order with status: ${order.status}`);
-    }
-    if (order.isReverted && order.isAwarded) {
-      throw new BadRequestException('Invalid state: both isReverted and isAwarded cannot be true.');
-    }
-    if (order.isReverted || order.isAwarded) {
-      throw new BadRequestException('Dispute already resolved.');
-    }
-    if (type === 'revert') {
-      order.isReverted = true;
-    } else {
-      order.isAwarded = true;
-    }
-    await order.save();
     console.log(`[ESCROW] Admin resolved dispute: ${orderId} -> ${type}`);
     await this.escrowStatusQueue.add('status-update', {
       orderId,
@@ -781,88 +733,4 @@ export class EscrowService {
 
 
 
-  // ACTUALIZA LAS ESTADISTICAS DEL PROVEEDOR Y MARCA LA ORDEN COMO COMPLETADA TRAS UNA LIBERACION EXITOSA
-  async markCompleted(orderId: string, releaseTxHash?: string) {
-    const order = await this.escrowOrderModel.findOne({ orderId: String(orderId) });
-    if (!order) return;
-    order.status = 'completed';
-    if (releaseTxHash) {
-      order.releaseTxHash = releaseTxHash;
-    }
-    await order.save();
-    await this.providerModel.updateOne(
-      { email: order.providerEmail },
-      {
-        $inc: {
-          completedOrders: 1,
-          totalTradeVolume: order.fiatAmount,
-        }
-      }
-    );
-    await this.escrowStatusQueue.add('status-update', {
-      orderId,
-      status: 'completed',
-      sellerEmail: order.sellerEmail,
-      providerEmail: order.providerEmail,
-    }, { removeOnComplete: true, removeOnFail: 50 });
-  }
-
-
-
-  // BUSCA TODAS LAS ORDENES QUE SUPERARON SU TIEMPO LIMITE Y EMITE AUTOMATICAMENTE LOS REEMBOLSOS CORRESPONDIENTES
-  async expireOrders() {
-    const expiredOrders = await this.escrowOrderModel.find({
-      status: { $in: ['pending', 'funded'] },
-      expiresAt: { $lt: new Date() },
-    }).exec();
-    for (const order of expiredOrders) {
-      try {
-        let refundTxHash = null;
-        if (order.escrowTxHash) {
-          try {
-            const queueEvents = new QueueEvents(EscrowQueueType.ESCROW_REFUND, {
-              connection: {
-                host: this.configService.get('REDIS_HOST'),
-                port: parseInt(this.configService.get('REDIS_PORT') || '6379'),
-                password: this.configService.get('REDIS_PASS') || undefined,
-              },
-            });
-            try {
-              const job = await this.escrowRefundQueue.add('refund', {
-                orderId: order.orderId,
-                chainId: order.chainId,
-                sellerWalletAddress: order.sellerWalletAddress,
-                amount: order.amount,
-                coin: order.coin,
-              }, {
-                attempts: 3,
-                backoff: { type: 'exponential', delay: 5000 },
-                removeOnComplete: true,
-                removeOnFail: 50,
-              });
-              refundTxHash = await job.waitUntilFinished(queueEvents, 60000);
-            } finally {
-              await queueEvents.close();
-            }
-          } catch (err) {
-            console.error(`[ESCROW-EXPIRE] Failed to refund:`, (err as Error).message);
-            continue;
-          }
-        }
-        await this.registerRefundTransaction(order, refundTxHash);
-        order.status = 'expired';
-        await order.save();
-        await this.escrowStatusQueue.add('status-update', {
-          orderId: order.orderId,
-          status: 'expired',
-          sellerEmail: order.sellerEmail,
-          providerEmail: order.providerEmail,
-        }, { removeOnComplete: true, removeOnFail: 50 });
-        console.log(`[ESCROW-EXPIRE] Order expired and refunded: ${order.orderId}`);
-      } catch (orderError) {
-        console.error(`[ESCROW-EXPIRE] Error processing expired order:`, order.orderId, (orderError as Error).message);
-      }
-    }
-    return { expired: expiredOrders.length };
-  }
 }

@@ -135,15 +135,27 @@ const processDisputeResolution = async (order) => {
         if (resolvedType === 'revert') {
             // Devolver al seller via Erc20Ledger (DB-only)
             const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
-            await Erc20Ledger.updateOne(
-                {
-                    walletAddress: order.sellerWalletAddress.toLowerCase(),
-                    tokenAddress: order.tokenAddress.toLowerCase(),
-                    chainId: order.chainId
-                },
-                { $inc: { available_balance: order.amount } }
+            // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
+            const revertMarker = `internal-resolve-revert-${order.orderId}`
+            const claimed = await EscrowOrder.findOneAndUpdate(
+                { orderId: order.orderId, releaseTxHash: { $exists: false } },
+                { $set: { releaseTxHash: revertMarker } }
             )
-            txHash = `internal-resolve-revert-${order.orderId}`
+            if (!claimed) {
+                console.log('[DISP-RESOLVE] ERC20 revert already processed, skipping ledger credit:', {
+                    orderId: order.orderId
+                })
+            } else {
+                await Erc20Ledger.updateOne(
+                    {
+                        walletAddress: order.sellerWalletAddress.toLowerCase(),
+                        tokenAddress: order.tokenAddress.toLowerCase(),
+                        chainId: order.chainId
+                    },
+                    { $inc: { available_balance: order.amount } }
+                )
+            }
+            txHash = revertMarker
             console.log('[DISP-RESOLVE] ERC20 token revert to seller ledger:', {
                 orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
             })
