@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/static/css/main.26b91b83.css",
+    "main.js": "/static/js/main.dc8e9f75.js",
+    "static/media/p2p_security_lock_1780904458349.png": "/static/media/p2p_security_lock_1780904458349.731879381038c5c0f01c.png",
+    "static/media/web3_network_nodes_1780904477811.png": "/static/media/web3_network_nodes_1780904477811.f855423490c87244c9ff.png",
+    "static/media/trading_chart_ui_1780904602514.png": "/static/media/trading_chart_ui_1780904602514.15376d6137036703fa8c.png",
+    "index.html": "/index.html",
+    "static/media/sonic.svg": "/static/media/sonic.b243a77ccb1cf9b8ba7b50b5825ef725.svg"
+  },
+  "entrypoints": [
+    "static/css/main.26b91b83.css",
+    "static/js/main.dc8e9f75.js"
+  ]
+}
