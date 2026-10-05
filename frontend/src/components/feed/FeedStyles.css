@@ -78,13 +78,6 @@
   }
 }
 
-/* Mini navbar del feed: fijo arriba dentro de la columna */
-.fb-mini-nav {
-  position: sticky;
-  top: 12px;
-  z-index: 60;
-}
-
 /* Forms and Cards */
 .fb-post-form {
   background: var(--fn-glass-bg);
@@ -306,8 +299,8 @@
 
 .fb-delete-btn:hover {
   color: #F87171;
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .fb-edit-btn {
@@ -551,28 +544,57 @@
 
 /* Mobile responsive */
 @media (max-width: 640px) {
-  .fb-mini-nav {
-    /* Debajo de la barra superior movil de 64px */
-    top: 72px;
+  /* Full-bleed en móvil: sin gutters laterales */
+  .feed-layout-container {
+    padding: 0 !important;
+    gap: 0 !important;
   }
   .fb-post-form {
     /* Debajo de la barra superior movil de 64px */
     top: 72px;
   }
   .fb-list-wrapper {
-    padding: 12px 8px;
+    padding: 8px 0 24px;
+    max-width: 100%;
   }
 
   .fb-card {
-    border-radius: 12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 
   .fb-desc {
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .fb-author {
+    font-size: 16px;
+  }
+
+  .fb-time {
+    font-size: 13px;
+  }
+
+  .fb-media {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin: 12px 0;
+  }
+
+  .fb-actions {
+    padding: 4px 12px 10px;
+    gap: 4px;
   }
 
   .fb-actions button {
-    padding: 6px 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .fb-views {
     font-size: 13px;
   }
 

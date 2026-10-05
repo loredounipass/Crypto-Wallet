@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Link } from 'react-router-dom'
 import { AuthContext } from './hooks/AuthContext'
 import { SocketProvider } from './hooks/SocketContext'
 import useFindUser from './hooks/useFindUser'
@@ -107,7 +107,7 @@ function AppContent() {
         marginLeft: (isAuthenticated && !isPublicRoute && !isMobile) ? (sidebarOpen ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED) : 0,
         transition: 'margin-left 0.3s ease-in-out',
         minHeight: '100vh',
-        padding: isPublicRoute ? 0 : (isMobile && isAuthenticated ? '80px 16px 16px 16px' : (isMobile ? '16px' : '24px')),
+        padding: isPublicRoute ? 0 : (isMobile && isAuthenticated ? (location.pathname.startsWith('/feed') ? '64px 0 0 0' : '80px 16px 16px 16px') : (isMobile ? '16px' : '24px')),
         width: (isAuthenticated && !isPublicRoute) ? undefined : '100%',
         minWidth: 0,
         boxSizing: 'border-box',
@@ -150,26 +150,55 @@ function AppContent() {
                                 onClick={handleMobileOpen}
                                 style={{
                                     color: '#FFFFFF',
-                                    marginRight: '12px'
+                                    position: 'absolute',
+                                    left: 16,
                                 }}
                             >
                                 <MenuIcon />
                             </IconButton>
                             {location.pathname.startsWith('/feed') && (
-                                <IconButton
-                                    onClick={toggleFeedExtras}
-                                    aria-label="panel del feed"
-                                    title="Donaciones, links y contactos"
-                                    style={{
-                                        color: '#FFFFFF',
-                                        marginRight: '12px'
-                                    }}
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                                        <line x1="15" y1="3" x2="15" y2="21" />
-                                    </svg>
-                                </IconButton>
+                                <Box style={{
+                                    position: 'absolute',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '2px',
+                                }}>
+                                    <IconButton
+                                        onClick={toggleFeedExtras}
+                                        aria-label="panel del feed"
+                                        title="Donaciones, links y contactos"
+                                        style={{
+                                            color: '#FFFFFF',
+                                        }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <line x1="15" y1="3" x2="15" y2="21" />
+                                        </svg>
+                                    </IconButton>
+                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+                                            <circle cx="16" cy="11" r="1" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/marketplace" aria-label="Marketplace" title="Marketplace" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                            <polyline points="9 22 9 12 15 12 15 22" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/p2p" aria-label="Vender P2P" title="Vender P2P" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M7 7h10" />
+                                            <path d="M14 4l3 3-3 3" />
+                                            <path d="M10 14l-3 3 3 3" />
+                                            <path d="M17 17H7" />
+                                        </svg>
+                                    </Link>
+                                </Box>
                             )}
                         </Box>
                     )}

@@ -360,7 +360,7 @@ const Wallets = () => {
             minWidth: 0,
             boxSizing: "border-box",
             minHeight: "220px",
-            height: "220px",
+            height: isMobile ? "auto" : "220px",
             display: "flex",
             flexDirection: "column",
         },
@@ -374,6 +374,7 @@ const Wallets = () => {
         coinPickerWrap: {
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: "10px",
             marginBottom: isMobile ? "12px" : "20px",
             backgroundColor: "#0A0A14",
@@ -474,27 +475,27 @@ const Wallets = () => {
                         {t('wallets_select_coin')}
                     </label>
                     <div style={styles.coinPickerWrap}>
-                        <div ref={coinMenuRef} style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                        <div ref={coinMenuRef} style={{ position: "relative", flex: isMobile ? "1 1 100%" : 1, minWidth: 0 }}>
                             <button
                                 type="button"
                                 style={styles.coinMenuButton}
                                 onClick={() => setIsCoinMenuOpen((prev) => !prev)}
                                 aria-expanded={isCoinMenuOpen}
                             >
-                                <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1, overflow: "hidden" }}>
                                     <img
                                         src={getCoinLogo(selectedCoin)}
                                         alt={selectedCoin}
                                         onError={(e) => {
                                             e.currentTarget.src = getCoinFallbackLogo(selectedCoin);
                                         }}
-                                        style={{ width: 18, height: 18, borderRadius: "999px" }}
+                                        style={{ width: 18, height: 18, borderRadius: "999px", flexShrink: 0 }}
                                     />
                                     <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                         {selectedCoin.toUpperCase()} - {getNetworkName(getDefaultNetworkId(selectedCoin))}
                                     </span>
                                 </span>
-                                <span style={{ opacity: 0.7 }}>{isCoinMenuOpen ? "▲" : "▼"}</span>
+                                <span style={{ opacity: 0.7, flexShrink: 0 }}>{isCoinMenuOpen ? "▲" : "▼"}</span>
                             </button>
 
                             {isCoinMenuOpen && (
@@ -534,6 +535,7 @@ const Wallets = () => {
                             fontSize: isMobile ? "12px" : "13px",
                             whiteSpace: "nowrap",
                             height: isMobile ? 36 : 40,
+                            width: isMobile ? "100%" : "auto",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",

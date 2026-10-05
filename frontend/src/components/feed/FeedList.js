@@ -1,10 +1,9 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import useFeedListLogic from './useFeedListLogic'
 import FeedItem from './FeedItem'
 import PostForm from './PostForm'
 import LeftSidebar from './LeftSidebar'
-import FeedExtrasDrawer, { toggleFeedExtras } from './FeedExtrasDrawer'
+import FeedExtrasDrawer from './FeedExtrasDrawer'
 import './FeedStyles.css'
 
 
@@ -15,13 +14,11 @@ export default function FeedList() {
   const [showPostDialog, setShowPostDialog] = React.useState(false)
   const [formInView, setFormInView] = React.useState(true)
   const [isMobileView, setIsMobileView] = React.useState(() => window.innerWidth <= 640)
-  const [showPanelBtn, setShowPanelBtn] = React.useState(() => window.innerWidth < 1024)
   const formWrapRef = React.useRef(null)
 
   React.useEffect(() => {
     const onResize = () => {
       setIsMobileView(window.innerWidth <= 640);
-      setShowPanelBtn(window.innerWidth < 1024);
     };
     onResize();
     window.addEventListener('resize', onResize);
@@ -58,118 +55,6 @@ export default function FeedList() {
       <FeedExtrasDrawer />
 
       <div className="fb-list-wrapper">
-        {/* Mini navbar del feed */}
-        <div
-          className="fb-mini-nav"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            gap: 10, background: '#12121E',
-            border: '1px solid #1F1F2E', borderRadius: 16,
-            padding: '10px 14px', marginBottom: 10,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            <div
-              style={{
-                width: 30, height: 30, flexShrink: 0,
-                clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                background: "linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #3B82F6 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#FFFFFF", fontWeight: 800, fontSize: 15, lineHeight: 1,
-              }}
-            >
-              B
-            </div>
-            <span style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Brivo Forum
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <Link
-              to="/wallets"
-              aria-label="Mis billeteras"
-              title="Mis billeteras"
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'transparent', border: '1px solid #23233A',
-                color: '#9CA3AF', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s', textDecoration: 'none',
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#23233A'; }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-                <circle cx="16" cy="11" r="1" />
-              </svg>
-            </Link>
-            <Link
-              to="/marketplace"
-              aria-label="Marketplace"
-              title="Marketplace"
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'transparent', border: '1px solid #23233A',
-                color: '#9CA3AF', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s', textDecoration: 'none',
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#23233A'; }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-            </Link>
-            <Link
-              to="/p2p"
-              aria-label="Vender P2P"
-              title="Vender P2P"
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'transparent', border: '1px solid #23233A',
-                color: '#9CA3AF', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s', textDecoration: 'none',
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#23233A'; }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 7h10" />
-                <path d="M14 4l3 3-3 3" />
-                <path d="M17 17H7" />
-                <path d="M10 14l-3 3 3 3" />
-              </svg>
-            </Link>
-            {showPanelBtn && (
-              <button
-                type="button"
-                onClick={toggleFeedExtras}
-                aria-label="Abrir panel del feed"
-                title="Donaciones, links y contactos"
-                style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: 'transparent', border: '1px solid #23233A',
-                  color: '#9CA3AF', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  flexShrink: 0,
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = '#23233A'; }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="15" y1="3" x2="15" y2="21" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
         {!isMobileView && <div className="fb-post-inline" ref={formWrapRef}><PostForm /></div>}
 
         {loading && (
