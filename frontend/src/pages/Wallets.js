@@ -40,6 +40,12 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t, tokenBalan
     const walletTokens = tokenBalances.filter(
         tok => tok.walletAddress.toLowerCase() === wallet.address.toLowerCase()
     );
+    // Mostrar USDC y USDT siempre (placeholder en 0 si aún no hay depósito). Solo visual.
+    const realBySym = {};
+    walletTokens.forEach(tok => { realBySym[String(tok.tokenSymbol || '').toUpperCase()] = tok; });
+    const rowFor = (sym) => realBySym[sym] || { tokenSymbol: sym, availableBalance: 0, isPlaceholder: true };
+    const otherTokens = walletTokens.filter(tok => !['USDC', 'USDT'].includes(String(tok.tokenSymbol || '').toUpperCase()));
+    const displayTokens = [rowFor('USDC'), rowFor('USDT'), ...otherTokens];
     return (
     <div
         style={styles.walletCard}
@@ -85,11 +91,11 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t, tokenBalan
                 {t('wallets_view', 'Ver')}
             </div>
         </div>
-        {walletTokens.length > 0 && (
-            <div style={{ borderTop: "1px solid #1F1F33", marginTop: "12px", paddingTop: "10px" }}>
+        {(
+            <div style={{ borderTop: "1px solid #1C1C2A", marginTop: "12px", paddingTop: "10px" }}>
                 <div style={{ color: "#9CA3AF", fontSize: "11px", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tokens</div>
-                {walletTokens.map(token => (
-                    <div key={`${token.chainId}-${token.tokenAddress}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                {displayTokens.map((token, i) => (
+                    <div key={token.isPlaceholder ? `placeholder-${wallet.address}-${token.tokenSymbol}` : `${token.chainId}-${token.tokenAddress}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", opacity: token.isPlaceholder ? 0.85 : 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <img
                                 src={getCoinLogo(token.tokenSymbol)}
@@ -100,7 +106,7 @@ const WalletCard = ({ wallet, isMobile, styles, handleWalletClick, t, tokenBalan
                             <span style={{ color: "#9CA3AF", fontSize: "12px" }}>{token.tokenSymbol}</span>
                         </div>
                         <span style={{ color: "#34D399", fontWeight: 600, fontSize: isMobile ? "13px" : "14px" }}>
-                            {token.availableBalance.toFixed(4)}
+                            {Number(token.availableBalance || 0).toFixed(4)}
                         </span>
                     </div>
                 ))}
@@ -113,7 +119,6 @@ const Wallets = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
-    const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
 
     const { walletBalance, allWalletInfo } = useAllWallets();
     const { tokenBalances, tokenUsdValue } = useTokenBalances();
@@ -162,13 +167,13 @@ const Wallets = () => {
                 fill: true,
                 backgroundColor: (context) => {
                     const { ctx, chartArea } = context.chart;
-                    if (!chartArea) return "rgba(99, 102, 241, 0.3)";
+                    if (!chartArea) return "rgba(139, 92, 246, 0.3)";
                     const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                    gradient.addColorStop(0, "rgba(99, 102, 241, 0.4)");
-                    gradient.addColorStop(1, "rgba(99, 102, 241, 0.0)");
+                    gradient.addColorStop(0, "rgba(139, 92, 246, 0.4)");
+                    gradient.addColorStop(1, "rgba(139, 92, 246, 0.0)");
                     return gradient;
                 },
-                borderColor: "#6366F1",
+                borderColor: "#A855F7",
                 borderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 0,
@@ -228,7 +233,6 @@ const Wallets = () => {
     useEffect(() => {
         const onResize = () => {
             setIsMobile(window.innerWidth <= 640);
-            setIsTablet(window.innerWidth <= 768);
         };
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
@@ -250,107 +254,109 @@ const Wallets = () => {
 
     const styles = {
         container: {
-            padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
-            maxWidth: "960px",
+            padding: isMobile ? "12px 12px 32px" : "20px 28px 40px",
+            maxWidth: "1080px",
             margin: "0 auto",
             width: "100%",
             boxSizing: "border-box",
             overflowX: "hidden",
         },
         header: {
-            marginBottom: isMobile ? "12px" : "32px",
+            marginBottom: isMobile ? "14px" : "18px",
         },
         backLink: {
             display: "inline-flex",
             alignItems: "center",
-            gap: "8px",
-            marginBottom: isMobile ? "12px" : "24px",
+            gap: "7px",
+            marginBottom: isMobile ? "14px" : "18px",
             cursor: "pointer",
-            color: "#A5B4FC",
+            color: "#CBD5E1",
             fontSize: "13px",
             fontWeight: 500,
-            padding: "6px 14px",
-            borderRadius: "8px",
-            background: "rgba(99, 102, 241, 0.1)",
-            border: "1px solid rgba(99, 102, 241, 0.2)",
+            padding: "7px 14px",
+            borderRadius: "10px",
+            background: "#12121E",
+            border: "1px solid #232332",
             transition: "all 0.2s ease",
         },
         statsGrid: {
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: isMobile ? "10px" : "24px",
-            marginBottom: isMobile ? "12px" : "32px",
+            gap: isMobile ? "14px" : "20px",
+            marginBottom: isMobile ? "14px" : "20px",
         },
         section: {
-            background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+            background: "#12121E",
             borderRadius: "16px",
-            padding: isMobile ? "14px" : "24px",
-            border: "1px solid #1F1F33",
-            marginBottom: isMobile ? "12px" : "24px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            padding: isMobile ? "18px 16px" : "24px",
+            border: "1px solid #1F1F2E",
+            marginBottom: isMobile ? "14px" : "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
         },
         walletCard: {
-            background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
-            borderRadius: "16px",
+            background: "#1A1A28",
+            borderRadius: "12px",
             padding: isMobile ? "14px" : "18px",
-            border: "1px solid #1F1F33",
+            border: "1px solid #2A2A3A",
             cursor: "pointer",
             transition: "all 0.2s ease-in-out",
             boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
         },
         walletActionPill: {
-            backgroundColor: "#2186EB",
+            background: "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)",
             color: "white",
             padding: isMobile ? "7px 12px" : "8px 14px",
             borderRadius: "10px",
             fontSize: isMobile ? "11px" : "12px",
-            fontWeight: 600,
+            fontWeight: 700,
             letterSpacing: "0.2px",
+            boxShadow: "0 4px 14px rgba(139,92,246,0.35)",
         },
         button: (primary = false) => ({
-            backgroundColor: primary ? "#2186EB" : "transparent",
+            background: primary ? "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)" : "transparent",
+            backgroundColor: primary ? undefined : "transparent",
             color: primary ? "white" : "#FFFFFF",
-            border: primary ? "none" : "1px solid #2D2D44",
+            border: primary ? "none" : "1px solid #23233A",
             borderRadius: "12px",
             padding: isMobile ? "12px 16px" : "14px 24px",
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: "pointer",
             textTransform: "none",
             fontSize: isMobile ? "13px" : "14px",
+            boxShadow: primary ? "0 8px 24px rgba(139,92,246,0.35)" : "none",
         }),
         select: {
             width: "100%",
-            padding: isMobile ? "12px 14px" : "14px 16px",
+            padding: isMobile ? "12px 14px" : "13px 14px",
             borderRadius: "12px",
-            border: "1px solid #2D2D44",
-            backgroundColor: "#0F0F1A",
-            color: "#FFFFFF",
-            fontSize: isMobile ? "13px" : "14px",
-            fontWeight: 500,
+            border: "1px solid #23233A",
+            backgroundColor: "#0A0A14",
+            color: "#E5E7EB",
+            fontSize: isMobile ? "13px" : "13.5px",
+            fontWeight: 600,
             outline: "none",
             marginBottom: isMobile ? "12px" : "20px",
             appearance: "none",
             WebkitAppearance: "none",
             MozAppearance: "none",
-            boxShadow: "0 0 0 1px rgba(45,45,68,0.2)",
             backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "right 12px center",
             paddingRight: "36px",
         },
         gradientCard: {
-            background: "linear-gradient(135deg, #2186EB 0%, #1A6BC7 100%)",
+            background: "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)",
             borderRadius: "16px",
             padding: isMobile ? "14px" : "24px",
             minWidth: 0,
             boxSizing: "border-box",
         },
         createWalletCard: {
-            background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+            background: "#12121E",
             borderRadius: "16px",
-            padding: isMobile ? "12px" : "16px",
-            border: "1px solid #2D2D44",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+            padding: isMobile ? "18px 16px" : "24px 24px",
+            border: "1px solid #1F1F2E",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
             minWidth: 0,
             boxSizing: "border-box",
             minHeight: "220px",
@@ -361,6 +367,7 @@ const Wallets = () => {
         sectionSubtleText: {
             color: "#9CA3AF",
             fontSize: "13px",
+            lineHeight: 1.5,
             marginBottom: "14px",
             marginTop: 0,
         },
@@ -369,19 +376,19 @@ const Wallets = () => {
             alignItems: "center",
             gap: "10px",
             marginBottom: isMobile ? "12px" : "20px",
-            backgroundColor: "#0F0F1A",
-            border: "1px solid #2D2D44",
-            borderRadius: "14px",
+            backgroundColor: "#0A0A14",
+            border: "1px solid #23233A",
+            borderRadius: "12px",
             padding: isMobile ? "10px" : "12px",
         },
         coinMenuButton: {
             width: "100%",
-            border: "1px solid #2D2D44",
-            backgroundColor: "#141427",
-            color: "#FFFFFF",
+            border: "1px solid #23233A",
+            backgroundColor: "#0A0A14",
+            color: "#E5E7EB",
             borderRadius: "12px",
             padding: isMobile ? "10px 12px" : "11px 13px",
-            fontSize: isMobile ? "13px" : "14px",
+            fontSize: isMobile ? "13px" : "13.5px",
             fontWeight: 600,
             cursor: "pointer",
             display: "flex",
@@ -396,8 +403,8 @@ const Wallets = () => {
             left: 0,
             width: "100%",
             zIndex: 30,
-            backgroundColor: "#141427",
-            border: "1px solid #2D2D44",
+            backgroundColor: "#12121E",
+            border: "1px solid #23233A",
             borderRadius: "12px",
             boxShadow: "0 12px 28px rgba(0,0,0,0.4)",
             maxHeight: "230px",
@@ -406,7 +413,7 @@ const Wallets = () => {
         coinMenuItem: (isActive) => ({
             width: "100%",
             border: "none",
-            backgroundColor: isActive ? "#1F2A44" : "transparent",
+            backgroundColor: isActive ? "rgba(139,92,246,0.16)" : "transparent",
             color: "#FFFFFF",
             padding: "10px 12px",
             cursor: "pointer",
@@ -517,12 +524,12 @@ const Wallets = () => {
                             )}
                         </div>
                         <button onClick={handleCreateWallet} style={{
-                            backgroundColor: "#2186EB",
+                            background: "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)",
                             color: "white",
                             border: "none",
                             borderRadius: "10px",
                             padding: isMobile ? "8px 14px" : "8px 18px",
-                            fontWeight: 600,
+                            fontWeight: 700,
                             cursor: "pointer",
                             fontSize: isMobile ? "12px" : "13px",
                             whiteSpace: "nowrap",
@@ -531,6 +538,7 @@ const Wallets = () => {
                             alignItems: "center",
                             justifyContent: "center",
                             flexShrink: 0,
+                            boxShadow: "0 4px 14px rgba(139,92,246,0.35)",
                         }}>
                             {selectedWalletExists ? t('wallets_deposit_withdraw', "Depositar / Retirar") : t('wallets_create', "Crear")}
                         </button>
@@ -538,10 +546,10 @@ const Wallets = () => {
                 </div>
 
                 <div style={{
-                    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+                    background: "#12121E",
                     borderRadius: "16px",
-                    border: "1px solid #2D2D44",
-                    boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+                    border: "1px solid #1F1F2E",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
@@ -555,7 +563,7 @@ const Wallets = () => {
                         right: "-10%",
                         width: "200px",
                         height: "200px",
-                        background: "radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%)",
+                        background: "radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0,0,0,0) 70%)",
                         filter: "blur(20px)",
                         zIndex: 0
                     }} />

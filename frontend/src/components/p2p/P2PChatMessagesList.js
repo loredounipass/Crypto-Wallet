@@ -54,8 +54,8 @@ export default function P2PChatMessagesList({
         justifyContent: messages.length === 0 ? 'center' : 'flex-end',
       }}>
         {messages.length === 0 ? (
-          <div style={{ margin: 'auto', textAlign: 'center', color: '#94A3B8' }}>
-            <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ margin: 'auto', textAlign: 'center', color: '#9CA3AF' }}>
+            <div style={{ width: 64, height: 64, margin: '0 auto 16px', borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 24 }}>💬</span>
             </div>
             <p style={{ margin: 0, fontSize: 14 }}>{t('p2p_no_messages')}</p>
@@ -114,7 +114,7 @@ export default function P2PChatMessagesList({
               return (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginTop }}>
                   {showName && (
-                    <p style={{ margin: '0 0 3px 8px', fontSize: 11, fontWeight: 600, color: '#8B5CF6' }}>
+                    <p style={{ margin: '0 0 3px 8px', fontSize: 11, fontWeight: 600, color: '#A855F7' }}>
                       {counterpartName}
                     </p>
                   )}
@@ -122,10 +122,10 @@ export default function P2PChatMessagesList({
                     maxWidth: '70%', minWidth: 48,
                     padding: isTransparentBubble ? 0 : (isMediaMsg && hasNoText ? 0 : '8px 12px'),
                     borderRadius: isTransparentBubble ? 0 : bubbleRadius,
-                    background: isTransparentBubble ? 'transparent' : (isMe ? 'linear-gradient(135deg, #7C3AED, #6366F1)' : '#1E1E2E'),
-                    color: isMe ? '#FFF' : '#E2E8F0',
+                    background: isTransparentBubble ? 'transparent' : (isMe ? 'linear-gradient(135deg, #A855F7, #6366F1)' : '#1A1A28'),
+                    color: isMe ? '#FFF' : '#E5E7EB',
                     border: isTransparentBubble ? 'none' : (isMe ? 'none' : `1px solid ${borderColor}`),
-                    boxShadow: isTransparentBubble ? 'none' : (isMe ? '0 1px 4px rgba(124,58,237,0.15)' : '0 1px 3px rgba(0,0,0,0.12)'),
+                    boxShadow: isTransparentBubble ? 'none' : (isMe ? '0 1px 4px rgba(168,85,247,0.15)' : '0 1px 3px rgba(0,0,0,0.12)'),
                     overflow: 'hidden',
                     position: 'relative',
                   }}>
@@ -191,22 +191,22 @@ export default function P2PChatMessagesList({
                             <div style={{
                               display: 'flex', alignItems: 'center', gap: 8,
                               padding: '10px 14px', borderRadius: 8, margin: '4px 0',
-                              backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
+                              backgroundColor: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)',
                             }}>
                               <span style={{
                                 width: 16, height: 16,
-                                border: '2px solid #8B5CF6', borderTop: '2px solid transparent',
+                                border: '2px solid #A855F7', borderTop: '2px solid transparent',
                                 borderRadius: '50%', animation: 'spin 0.8s linear infinite',
                                 display: 'inline-block', flexShrink: 0,
                               }} />
-                              <span style={{ fontSize: 12, color: '#A78BFA' }}>
+                              <span style={{ fontSize: 12, color: '#C4B5FD' }}>
                                 {t(msg.multimediaStatus === 'uploading' ? 'p2p_uploading' : 'p2p_processing')}
                               </span>
                             </div>
                           )}
                           {/* Failed state */}
                           {isMediaMsg && msg.multimediaStatus === 'failed' && (
-                            <p style={{ fontSize: 12, color: '#EF4444', margin: '4px 0 8px' }}>{t('p2p_process_error')}</p>
+                            <p style={{ fontSize: 12, color: '#F87171', margin: '4px 0 8px' }}>{t('p2p_process_error')}</p>
                           )}
                         </>
                       );
@@ -234,7 +234,7 @@ export default function P2PChatMessagesList({
                         marginTop: 2,
                       }}>
                         <span style={{
-                          fontSize: 10, color: isMe ? 'rgba(255,255,255,0.55)' : '#64748B',
+                          fontSize: 10, color: isMe ? 'rgba(255,255,255,0.55)' : '#9CA3AF',
                           lineHeight: 1,
                         }}>
                           {time}
@@ -245,7 +245,7 @@ export default function P2PChatMessagesList({
 
                   {/* Timestamp for emoji-only messages (outside bubble) */}
                   {isTransparentBubble && time && (
-                    <span style={{ fontSize: 10, color: '#64748B', marginTop: 2, paddingRight: isMe ? 4 : 0, paddingLeft: isMe ? 0 : 4 }}>
+                    <span style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2, paddingRight: isMe ? 4 : 0, paddingLeft: isMe ? 0 : 4 }}>
                       {time}
                     </span>
                   )}
@@ -296,7 +296,7 @@ export default function P2PChatMessagesList({
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.2s'
               }}
-              onMouseOver={e => e.currentTarget.style.background = 'rgba(239,68,68,0.3)'}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(248,113,113,0.3)'}
               onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               title={t('p2p_close')}
             >

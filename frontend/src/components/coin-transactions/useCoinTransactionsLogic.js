@@ -35,80 +35,107 @@ export default function useCoinTransactionsLogic({
 
     const styles = {
         container: {
-            background: "linear-gradient(180deg, #151529 0%, #10101C 100%)",
-            borderRadius: "18px",
-            padding: isCompact ? "12px" : "20px",
-            border: `1px solid ${"#2D2D44"}`,
+            background: "#12121E",
+            borderRadius: "16px",
+            padding: isCompact ? "16px 14px" : "24px 24px 12px",
+            border: "1px solid #1F1F2E",
             overflow: "hidden",
-            boxShadow: "0 14px 28px rgba(0,0,0,0.28)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
         },
         tableWrapper: {
             overflowY: fixedHeight ? "auto" : "visible",
             overflowX: "auto",
             maxHeight: fixedHeight ? `${tableHeight}px` : "none",
-            borderRadius: "12px",
-            border: `1px solid ${"#232338"}`,
-            backgroundColor: "#121224",
+            borderRadius: "0",
+            border: "none",
+            backgroundColor: "transparent",
         },
         titleRow: {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: "10px",
-            marginBottom: isCompact ? "10px" : "14px",
+            marginBottom: isCompact ? "12px" : "18px",
         },
         title: {
             color: "#FFFFFF",
-            fontSize: isCompact ? "16px" : "19px",
-            fontWeight: 700,
+            fontSize: isCompact ? "16px" : "18px",
+            fontWeight: 800,
             margin: 0,
         },
         countBadge: {
-            padding: isCompact ? "3px 8px" : "4px 10px",
+            padding: isCompact ? "4px 10px" : "5px 12px",
             borderRadius: "999px",
-            fontSize: "11px",
+            fontSize: "12px",
             fontWeight: 700,
-            color: "#BFDBFE",
-            backgroundColor: "rgba(37,99,235,0.2)",
-            border: `1px solid ${"#1D4ED8"}`,
+            color: "#C4B5FD",
+            backgroundColor: "rgba(139,92,246,0.12)",
+            border: "1px solid rgba(139,92,246,0.35)",
         },
         table: {
             width: "100%",
             borderCollapse: "collapse",
-            fontSize: isCompact ? "12px" : "14px",
+            fontSize: isCompact ? "12px" : "13.5px",
         },
         th: {
             textAlign: "left",
-            padding: isCompact ? "8px 6px" : "12px",
-            borderBottom: `2px solid ${"#2D2D44"}`,
-            color: "#9CA3AF",
+            padding: isCompact ? "10px 8px" : "10px 12px 14px",
+            borderBottom: "1px solid #1E1E2E",
+            color: "#7A7A90",
             fontWeight: 700,
             fontSize: isCompact ? "10px" : "11px",
             textTransform: "uppercase",
-            letterSpacing: "0.6px",
+            letterSpacing: "0.8px",
             position: "sticky",
             top: 0,
-            backgroundColor: "#121224",
+            backgroundColor: "#12121E",
             zIndex: 2,
+            whiteSpace: "nowrap",
+        },
+        thRight: {
+            textAlign: "right",
+            padding: isCompact ? "10px 8px" : "10px 12px 14px",
+            borderBottom: "1px solid #1E1E2E",
+            color: "#7A7A90",
+            fontWeight: 700,
+            fontSize: isCompact ? "10px" : "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.8px",
+            position: "sticky",
+            top: 0,
+            backgroundColor: "#12121E",
+            zIndex: 2,
+            whiteSpace: "nowrap",
         },
         td: {
-            padding: isCompact ? "8px 6px" : "12px",
-            borderBottom: `1px solid ${"#2D2D44"}`,
+            padding: isCompact ? "12px 8px" : "15px 12px",
+            borderBottom: "1px solid #1C1C2A",
             color: "#FFFFFF",
         },
+        tdRight: {
+            padding: isCompact ? "12px 8px" : "15px 12px",
+            borderBottom: "1px solid #1C1C2A",
+            color: "#9CA3AF",
+            textAlign: "right",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            fontSize: "12.5px",
+            whiteSpace: "nowrap",
+        },
         statusBadge: (status) => {
+            // Solo presentación estilo foto: pill verde Completed
+            if (status === 3) return { bg: "rgba(52,211,153,0.12)", text: "#34D399", border: "rgba(52,211,153,0.30)" };
             const colors = {
-                1: { bg: "#FEF3C7", text: "#92400E" },
-                2: { bg: "#DBEAFE", text: "#1E40AF" },
-                3: { bg: "#D1FAE5", text: "#065F46" },
-                4: { bg: "#FEE2E2", text: "#991B1B" },
-                5: { bg: "#FEE2E2", text: "#991B1B" }, // Broadcast failed
+                1: { bg: "rgba(251,191,36,0.12)", text: "#FBBF24", border: "rgba(251,191,36,0.30)" },
+                2: { bg: "rgba(96,165,250,0.12)", text: "#60A5FA", border: "rgba(96,165,250,0.30)" },
+                3: { bg: "rgba(52,211,153,0.12)", text: "#34D399", border: "rgba(52,211,153,0.30)" },
+                4: { bg: "rgba(248,113,113,0.12)", text: "#F87171", border: "rgba(248,113,113,0.30)" },
+                5: { bg: "rgba(248,113,113,0.12)", text: "#F87171", border: "rgba(248,113,113,0.30)" },
             };
-            return colors[status] || { bg: "#F3F4F6", text: "#6B7280" };
+            return colors[status] || { bg: "rgba(156,163,175,0.12)", text: "#9CA3AF", border: "rgba(156,163,175,0.30)" };
         },
         amount: (nature) => ({
-            color: nature === 1 ? "#10B981" : "#EF4444",
-            fontWeight: 700,
+            color: nature === 1 ? "#34D399" : "#F87171",
+            fontWeight: 800,
         }),
         dialog: {
             position: "fixed",
@@ -193,8 +220,16 @@ export default function useCoinTransactionsLogic({
     };
 
     const formatAmount = (value, transaction) => {
-        const decimals = getCoinDecimalsPlace(getTransactionCoin(transaction));
-        return toSafeNumber(value).toFixed(decimals);
+        // Usa los decimales del token real (ej. USDC=6) y no los de la red (ej. S=18),
+        // luego recorta ceros sobrantes para mostrar el valor tal como está en DB.
+        const sym = transaction?.tokenSymbol
+            ? String(transaction.tokenSymbol)
+            : getTransactionCoin(transaction);
+        const decimals = getCoinDecimalsPlace(sym);
+        const fixed = toSafeNumber(value).toFixed(decimals);
+        if (!fixed.includes('.')) return fixed;
+        const trimmed = fixed.replace(/\.?0+$/, '');
+        return trimmed === '' || trimmed === '-' ? '0' : trimmed;
     };
 
     const getSafeFee = (transaction) => {

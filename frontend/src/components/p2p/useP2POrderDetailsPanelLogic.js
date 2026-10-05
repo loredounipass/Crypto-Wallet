@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 export default function useP2POrderDetailsPanelLogic() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const borderColor = '#1F1F33';
+  const borderColor = '#1F1F2E';
 
   return {
     t,

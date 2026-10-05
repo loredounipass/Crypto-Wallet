@@ -122,10 +122,10 @@ export default function P2POrderChat() {
 
   if (!currentOrder && !isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: 60, color: '#94A3B8' }}>
+      <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -136,8 +136,8 @@ export default function P2POrderChat() {
     );
   }
 
-  const cardBg = '#080811';
-  const borderColor = '#1F1F33';
+  const cardBg = '#12121E';
+  const borderColor = '#1F1F2E';
 
   return (
     <div className="p2p-chat-layout" style={{ display: 'grid', gap: 16, height: 'calc(100dvh - 16px)', minHeight: 'calc(100dvh - 16px)', width: '100%', overflow: 'hidden', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 420px)' }}>
@@ -246,7 +246,7 @@ export default function P2POrderChat() {
         <button 
           onClick={() => setActiveMobileTab('chat')}
           style={{
-            background: 'none', border: 'none', color: activeMobileTab === 'chat' ? '#8B5CF6' : '#94A3B8',
+            background: 'none', border: 'none', color: activeMobileTab === 'chat' ? '#A855F7' : '#9CA3AF',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
             flex: 1
           }}>
@@ -256,7 +256,7 @@ export default function P2POrderChat() {
         <button 
           onClick={() => setActiveMobileTab('details')}
           style={{
-            background: 'none', border: 'none', color: activeMobileTab === 'details' ? '#8B5CF6' : '#94A3B8',
+            background: 'none', border: 'none', color: activeMobileTab === 'details' ? '#A855F7' : '#9CA3AF',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
             flex: 1
           }}>

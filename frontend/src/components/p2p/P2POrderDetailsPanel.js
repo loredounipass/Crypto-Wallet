@@ -46,7 +46,7 @@ export default function P2POrderDetailsPanel({
       <div style={{
         borderRadius: 16, padding: 20,
         border: `1px solid ${borderColor}`,
-        background: 'linear-gradient(135deg, #131327 0%, rgba(139,92,246,0.05) 100%)',
+        background: '#12121E',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
@@ -54,16 +54,16 @@ export default function P2POrderDetailsPanel({
         }}>
           <div style={{
             width: 28, height: 28, borderRadius: 8,
-            background: 'rgba(139,92,246,0.12)',
+            background: 'rgba(168,85,247,0.12)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
             </svg>
           </div>
           <h3 style={{
             margin: 0, fontSize: 14, fontWeight: 700,
-            color: '#F1F5F9', letterSpacing: '-0.01em',
+            color: '#FFFFFF', letterSpacing: '-0.01em',
           }}>
             {t('p2p_order_status')}
           </h3>
@@ -75,7 +75,7 @@ export default function P2POrderDetailsPanel({
       <div className="p2p-order-scroll-hidden" style={{
         borderRadius: 16, padding: 20,
         border: `1px solid ${borderColor}`,
-        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
+        background: '#12121E',
         flex: 1, minHeight: 0, overflowY: 'auto',
       }}>
         <div style={{
@@ -84,17 +84,17 @@ export default function P2POrderDetailsPanel({
         }}>
           <div style={{
             width: 28, height: 28, borderRadius: 8,
-            background: 'rgba(139,92,246,0.12)',
+            background: 'rgba(168,85,247,0.12)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
           </div>
           <h3 style={{
             margin: 0, fontSize: 14, fontWeight: 700,
-            color: '#F1F5F9', letterSpacing: '-0.01em',
+            color: '#FFFFFF', letterSpacing: '-0.01em',
           }}>
             {t('p2p_details')}
           </h3>
@@ -103,7 +103,7 @@ export default function P2POrderDetailsPanel({
         {/* Detail rows */}
         {[
           { label: t('p2p_amount'), value: `${currentOrder?.amount} ${currentOrder?.coin}`, highlight: true },
-          { label: t('p2p_amount_usd'), value: `$${currentOrder?.fiatAmount}`, color: '#10B981' },
+          { label: t('p2p_amount_usd'), value: `$${currentOrder?.fiatAmount}`, color: '#34D399' },
           { label: t('p2p_payment_method'), value: currentOrder?.paymentMethod },
           { label: t('p2p_your_role'), value: isSeller ? t('p2p_role_seller') : t('p2p_role_provider') },
           { label: t('p2p_order_id'), value: currentOrder?.orderId?.slice(0, 12) + '...' },
@@ -111,12 +111,12 @@ export default function P2POrderDetailsPanel({
           <div key={i} style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             padding: '10px 0',
-            borderBottom: i < 4 ? `1px solid rgba(45,45,68,0.6)` : 'none',
+            borderBottom: i < 4 ? `1px solid rgba(35,35,58,0.6)` : 'none',
           }}>
-            <span style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>{item.label}</span>
+            <span style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 500 }}>{item.label}</span>
             <span style={{
               fontSize: 13, fontWeight: 700,
-              color: item.color || (item.highlight ? '#8B5CF6' : '#E2E8F0'),
+              color: item.color || (item.highlight ? '#A855F7' : '#E5E7EB'),
               fontFamily: item.highlight ? 'monospace, monospace' : 'inherit',
             }}>
               {item.value}
@@ -133,10 +133,10 @@ export default function P2POrderDetailsPanel({
               disabled={actionLoading === 'confirm'}
               style={{
                 ...primaryBtnBase,
-                background: 'linear-gradient(135deg, #10B981, #059669)',
+                background: 'linear-gradient(135deg, #34D399, #059669)',
                 color: '#FFF',
                 opacity: actionLoading === 'confirm' ? 0.7 : 1,
-                boxShadow: '0 4px 14px rgba(16,185,129,0.25)',
+                boxShadow: '0 4px 14px rgba(52,211,153,0.25)',
               }}
               onMouseEnter={e => { if (actionLoading !== 'confirm') e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
@@ -152,10 +152,10 @@ export default function P2POrderDetailsPanel({
               disabled={actionLoading === 'release'}
               style={{
                 ...primaryBtnBase,
-                background: 'linear-gradient(135deg, #7C3AED, #6366F1)',
+                background: 'linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)',
                 color: '#FFF',
                 opacity: actionLoading === 'release' ? 0.7 : 1,
-                boxShadow: '0 4px 14px rgba(124,58,237,0.3)',
+                boxShadow: '0 4px 14px rgba(168,85,247,0.3)',
               }}
               onMouseEnter={e => { if (actionLoading !== 'release') e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
@@ -170,11 +170,11 @@ export default function P2POrderDetailsPanel({
               onClick={() => setShowDispute(true)}
               style={{
                 ...outlineBtnBase,
-                color: '#EF4444',
-                borderColor: 'rgba(239,68,68,0.2)',
+                color: '#F87171',
+                borderColor: 'rgba(248,113,113,0.2)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.05)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.2)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#F87171'; e.currentTarget.style.backgroundColor = 'rgba(248,113,113,0.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(248,113,113,0.2)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               {t('p2p_open_dispute')}
             </button>
@@ -187,10 +187,10 @@ export default function P2POrderDetailsPanel({
               disabled={actionLoading === 'cancel'}
               style={{
                 ...outlineBtnBase,
-                color: '#94A3B8',
+                color: '#9CA3AF',
                 opacity: actionLoading === 'cancel' ? 0.7 : 1,
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#94A3B8'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#9CA3AF'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = borderColor; }}
             >
               {t(actionLoading === 'cancel' ? 'p2p_cancelling' : 'p2p_cancel_order')}
@@ -201,14 +201,14 @@ export default function P2POrderDetailsPanel({
           {currentOrder?.status === 'completed' && (
             <div style={{
               padding: 16, borderRadius: 14, textAlign: 'center',
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))',
-              border: '1px solid rgba(16,185,129,0.15)',
+              background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
+              border: '1px solid rgba(52,211,153,0.15)',
             }}>
               <p style={{ margin: 0, fontSize: 24, marginBottom: 6 }}>🎉</p>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#10B981' }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#34D399' }}>
                 {t('p2p_order_completed')}
               </p>
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748B' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9CA3AF' }}>
                 {t('p2p_funds_transferred')}
               </p>
             </div>
@@ -218,23 +218,23 @@ export default function P2POrderDetailsPanel({
           {currentOrder?.status === 'disputed' && (
             <div style={{
               padding: 16, borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02))',
-              border: '1px solid rgba(239,68,68,0.15)',
+              background: 'linear-gradient(135deg, rgba(248,113,113,0.08), rgba(248,113,113,0.02))',
+              border: '1px solid rgba(248,113,113,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#EF4444' }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#F87171' }}>
                   {t('p2p_dispute_opened')}
                 </p>
               </div>
-              <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
+              <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9CA3AF', lineHeight: 1.4 }}>
                 {currentOrder?.disputeReason}
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
+              <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>
                 Por: {currentOrder?.disputeOpenedBy === authEmail ? t('p2p_you') : (counterpartName || currentOrder?.disputeOpenedBy)}
               </p>
             </div>
@@ -246,20 +246,20 @@ export default function P2POrderDetailsPanel({
               padding: 16, borderRadius: 14,
               background: currentOrder?.resolutionType === 'revert'
                 ? 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))'
-                : 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))',
+                : 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
               border: currentOrder?.resolutionType === 'revert'
                 ? '1px solid rgba(245,158,11,0.15)'
-                : '1px solid rgba(16,185,129,0.15)',
+                : '1px solid rgba(52,211,153,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 18 }}>
                   {currentOrder?.resolutionType === 'revert' ? '↩️' : '✅'}
                 </span>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: currentOrder?.resolutionType === 'revert' ? '#F59E0B' : '#10B981' }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: currentOrder?.resolutionType === 'revert' ? '#F59E0B' : '#34D399' }}>
                   {t('p2p_dispute_resolved')}
                 </p>
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#9CA3AF', lineHeight: 1.4 }}>
                 {currentOrder?.resolutionType === 'revert'
                   ? t('p2p_funds_returned')
                   : t('p2p_funds_delivered')}
@@ -285,11 +285,11 @@ export default function P2POrderDetailsPanel({
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '12px 14px', borderRadius: 12,
-              backgroundColor: 'rgba(59,130,246,0.06)',
-              border: '1px solid rgba(59,130,246,0.12)',
+              backgroundColor: 'rgba(96,165,250,0.06)',
+              border: '1px solid rgba(96,165,250,0.12)',
             }}>
               <span style={{ fontSize: 14 }}>⏳</span>
-              <p style={{ margin: 0, fontSize: 12, color: '#3B82F6', fontWeight: 500 }}>
+              <p style={{ margin: 0, fontSize: 12, color: '#60A5FA', fontWeight: 500 }}>
                 {t('p2p_waiting_funds_release')}
               </p>
             </div>
@@ -298,16 +298,16 @@ export default function P2POrderDetailsPanel({
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '12px 14px', borderRadius: 12,
-              backgroundColor: 'rgba(139,92,246,0.06)',
-              border: '1px solid rgba(139,92,246,0.12)',
+              backgroundColor: 'rgba(168,85,247,0.06)',
+              border: '1px solid rgba(168,85,247,0.12)',
             }}>
               <span style={{
                 width: 14, height: 14,
-                border: '2px solid #8B5CF6', borderTop: '2px solid transparent',
+                border: '2px solid #A855F7', borderTop: '2px solid transparent',
                 borderRadius: '50%', animation: 'spin 0.8s linear infinite',
                 display: 'inline-block', flexShrink: 0,
               }} />
-              <p style={{ margin: 0, fontSize: 12, color: '#8B5CF6', fontWeight: 500 }}>
+              <p style={{ margin: 0, fontSize: 12, color: '#A855F7', fontWeight: 500 }}>
                 {t('p2p_processing_onchain')}
               </p>
             </div>
@@ -320,21 +320,21 @@ export default function P2POrderDetailsPanel({
         onClick={() => navigate(isProvider ? '/provider-dashboard' : '/p2p')}
         style={{
           width: '100%', padding: '13px', borderRadius: 12,
-          border: '1px solid #1F1F33',
+          border: '1px solid #1F1F2E',
           backgroundColor: 'transparent',
-          color: '#94A3B8', fontSize: 13, fontWeight: 600,
+          color: '#9CA3AF', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', transition: 'all 0.2s',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           flexShrink: 0,
         }}
         onMouseEnter={e => {
-          e.currentTarget.style.borderColor = '#EF4444';
-          e.currentTarget.style.color = '#EF4444';
-          e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.05)';
+          e.currentTarget.style.borderColor = '#F87171';
+          e.currentTarget.style.color = '#F87171';
+          e.currentTarget.style.backgroundColor = 'rgba(248,113,113,0.05)';
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.borderColor = '#1F1F33';
-          e.currentTarget.style.color = '#94A3B8';
+          e.currentTarget.style.borderColor = '#1F1F2E';
+          e.currentTarget.style.color = '#9CA3AF';
           e.currentTarget.style.backgroundColor = 'transparent';
         }}
       >

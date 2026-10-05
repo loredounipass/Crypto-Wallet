@@ -90,7 +90,7 @@ export default function SecureAudio({ url, isMe }) {
 
   if (error) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 12, width: '240px', background: 'rgba(239, 68, 68, 0.1)', color: '#F87171', fontSize: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 12, width: '240px', background: 'rgba(248,113,113, 0.1)', color: '#F87171', fontSize: 12 }}>
         ⚠️ Error al cargar el audio.
       </div>
     );
@@ -101,16 +101,16 @@ export default function SecureAudio({ url, isMe }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '240px' }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%',
-          background: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(139,92,246,0.15)',
+          background: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(168,85,247,0.15)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{
             width: 14, height: 14, borderRadius: '50%',
-            border: `2px solid ${isMe ? '#FFF' : '#8B5CF6'}`, borderTop: '2px solid transparent',
+            border: `2px solid ${isMe ? '#FFF' : '#A855F7'}`, borderTop: '2px solid transparent',
             animation: 'spin 0.8s linear infinite',
           }} />
         </div>
-        <span style={{ fontSize: 12, color: isMe ? 'rgba(255,255,255,0.7)' : '#94A3B8' }}>Cargando audio...</span>
+        <span style={{ fontSize: 12, color: isMe ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}>Cargando audio...</span>
       </div>
     );
   }
@@ -118,11 +118,11 @@ export default function SecureAudio({ url, isMe }) {
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   // Colors based on sender
-  const playBtnBg = isMe ? 'rgba(255,255,255,0.2)' : 'rgba(139,92,246,0.15)';
-  const playIconColor = isMe ? '#FFFFFF' : '#8B5CF6';
-  const barActiveColor = isMe ? '#FFFFFF' : '#8B5CF6';
-  const barInactiveColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139,92,246,0.25)';
-  const timeColor = isMe ? 'rgba(255,255,255,0.6)' : '#64748B';
+  const playBtnBg = isMe ? 'rgba(255,255,255,0.2)' : 'rgba(168,85,247,0.15)';
+  const playIconColor = isMe ? '#FFFFFF' : '#A855F7';
+  const barActiveColor = isMe ? '#FFFFFF' : '#A855F7';
+  const barInactiveColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(168,85,247,0.25)';
+  const timeColor = isMe ? 'rgba(255,255,255,0.6)' : '#9CA3AF';
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: '220px', maxWidth: '280px' }}>

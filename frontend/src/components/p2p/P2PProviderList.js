@@ -16,11 +16,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
     return (
       <div style={{
         textAlign: 'center', padding: '60px 20px',
-        color: '#64748B', fontSize: 15,
+        color: '#9CA3AF', fontSize: 15,
       }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
               <line x1="23" y1="11" x2="17" y2="11" />
@@ -37,8 +37,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px' }}>
         {providers.map((provider) => (
           <div key={provider._id} style={{
-            backgroundColor: '#080811',
-            border: '1px solid #1F1F33',
+            backgroundColor: '#1A1A28',
+            border: '1px solid #2A2A3A',
             borderRadius: 16,
             padding: 16,
             display: 'flex',
@@ -50,13 +50,13 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 <div style={{
                   width: 44, height: 44, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
+                  background: 'linear-gradient(135deg, #A855F7, #6366F1)',
                   color: '#FFF', fontSize: 18, fontWeight: 700, flexShrink: 0,
                 }}>
                   {provider.firstName?.charAt(0)?.toUpperCase()}
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#F1F5F9' }}>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
                     {provider.firstName} {provider.lastName}
                   </p>
                 </div>
@@ -64,8 +64,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '4px 8px', borderRadius: 6,
-                backgroundColor: 'rgba(16,185,129,0.1)',
-                color: '#10B981', fontSize: 12, fontWeight: 600,
+                backgroundColor: 'rgba(52,211,153,0.1)',
+                color: '#34D399', fontSize: 12, fontWeight: 600,
               }}>
                 {provider.completedOrders || 0}
                 <span style={{ fontSize: 10, fontWeight: 400 }}>{t('p2p_orders')}</span>
@@ -73,7 +73,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             </div>
 
             <div>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_payment_methods')}</p>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_payment_methods')}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {(provider.paymentMethods || []).map((pm, i) => {
                   const displayPm = (pm === 'Transferencia Bancaria' && provider.preferredBank)
@@ -82,34 +82,34 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                   return (
                     <span key={i} style={{
                       padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
-                      backgroundColor: '#1E1E2E',
-                      color: '#94A3B8',
-                      border: '1px solid #1F1F33',
+                      backgroundColor: '#1C1C2A',
+                      color: '#9CA3AF',
+                      border: '1px solid #1F1F2E',
                     }}>
                       {displayPm}
                     </span>
                   );
                 })}
                 {(!provider.paymentMethods || provider.paymentMethods.length === 0) && (
-                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
                 )}
               </div>
             </div>
 
             <div>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_tokens')}</p>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase' }}>{t('p2p_tokens')}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {(provider.destinationWallets || []).filter(w => w.enabled).map((w, i) => (
                   <span key={i} style={{
                     padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
-                    backgroundColor: 'rgba(59,130,246,0.1)',
-                    color: '#3B82F6',
+                    backgroundColor: 'rgba(96,165,250,0.1)',
+                    color: '#60A5FA',
                   }}>
                     {w.coin?.toUpperCase()}
                   </span>
                 ))}
                 {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
-                  <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
                 )}
               </div>
             </div>
@@ -122,11 +122,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
                 border: 'none',
                 background: provider.destinationWallets?.some(w => w.enabled)
-                  ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
-                  : ('#1F1F33'),
-                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#94A3B8',
+                  ? 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)'
+                  : ('#1F1F2E'),
+                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#9CA3AF',
                 cursor: provider.destinationWallets?.some(w => w.enabled) ? 'pointer' : 'not-allowed',
-                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 4px 12px rgba(139,92,246,0.25)' : 'none',
+                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 4px 12px rgba(168,85,247,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -144,8 +144,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
       <div style={{
         display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1.5fr 1fr',
         padding: '12px 20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.5px', color: '#64748B',
-        borderBottom: `1px solid ${'#1E1E2E'}`,
+        letterSpacing: '0.5px', color: '#9CA3AF',
+        borderBottom: `1px solid ${'#1C1C2A'}`,
         minWidth: 700,
       }}>
         <span>{t('p2p_provider_header')}</span>
@@ -162,11 +162,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
           style={{
             display: 'grid', gridTemplateColumns: '2fr 1fr 2fr 1.5fr 1fr',
             padding: '16px 20px', alignItems: 'center',
-            borderBottom: `1px solid ${'#1E1E2E'}`,
+            borderBottom: `1px solid ${'#1C1C2A'}`,
             transition: 'background-color 0.15s',
             minWidth: 700,
           }}
-          onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(139,92,246,0.08)'}
+          onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(168,85,247,0.08)'}
           onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           {/* Provider Info */}
@@ -174,7 +174,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, #8B5CF6, #6366F1)',
+              background: 'linear-gradient(135deg, #A855F7, #6366F1)',
               color: '#FFF', fontSize: 16, fontWeight: 700, flexShrink: 0,
             }}>
               {provider.firstName?.charAt(0)?.toUpperCase()}
@@ -182,7 +182,7 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <div>
               <p style={{
                 margin: 0, fontSize: 14, fontWeight: 600,
-                color: '#F1F5F9',
+                color: '#FFFFFF',
               }}>
                 {provider.firstName} {provider.lastName}
               </p>
@@ -194,8 +194,8 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '4px 10px', borderRadius: 6,
-              backgroundColor: 'rgba(16,185,129,0.1)',
-              color: '#10B981', fontSize: 13, fontWeight: 600,
+              backgroundColor: 'rgba(52,211,153,0.1)',
+              color: '#34D399', fontSize: 13, fontWeight: 600,
             }}>
               {provider.completedOrders || 0}
               <span style={{ fontSize: 11, fontWeight: 400 }}>{t('p2p_completed')}</span>
@@ -211,21 +211,21 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
               return (
                 <span key={i} style={{
                   padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 500,
-                  backgroundColor: '#1E1E2E',
-                  color: '#94A3B8',
-                  border: `1px solid ${'#1F1F33'}`,
+                  backgroundColor: '#1C1C2A',
+                  color: '#9CA3AF',
+                  border: `1px solid ${'#1F1F2E'}`,
                 }}>
                   {displayPm}
                 </span>
               );
             })}
             {(provider.paymentMethods || []).length > 3 && (
-              <span style={{ fontSize: 11, color: '#94A3B8', alignSelf: 'center' }}>
+              <span style={{ fontSize: 11, color: '#9CA3AF', alignSelf: 'center' }}>
                 +{provider.paymentMethods.length - 3}
               </span>
             )}
             {(!provider.paymentMethods || provider.paymentMethods.length === 0) && (
-              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
+              <span style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>{t('p2p_no_methods')}</span>
             )}
           </div>
 
@@ -234,14 +234,14 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
             {(provider.destinationWallets || []).filter(w => w.enabled).map((w, i) => (
               <span key={i} style={{
                 padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
-                backgroundColor: 'rgba(59,130,246,0.1)',
-                color: '#3B82F6',
+                backgroundColor: 'rgba(96,165,250,0.1)',
+                color: '#60A5FA',
               }}>
                 {w.coin?.toUpperCase()}
               </span>
             ))}
             {(!provider.destinationWallets || !provider.destinationWallets.some(w => w.enabled)) && (
-              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
+              <span style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>{t('p2p_no_tokens')}</span>
             )}
           </div>
 
@@ -254,11 +254,11 @@ export default function P2PProviderList({ providers, onSelectProvider }) {
                 padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                 border: 'none',
                 background: provider.destinationWallets?.some(w => w.enabled)
-                  ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)'
-                  : ('#1F1F33'),
-                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#94A3B8',
+                  ? 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)'
+                  : ('#1F1F2E'),
+                color: provider.destinationWallets?.some(w => w.enabled) ? '#FFF' : '#9CA3AF',
                 cursor: provider.destinationWallets?.some(w => w.enabled) ? 'pointer' : 'not-allowed',
-                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 2px 8px rgba(139,92,246,0.25)' : 'none',
+                boxShadow: provider.destinationWallets?.some(w => w.enabled) ? '0 2px 8px rgba(168,85,247,0.25)' : 'none',
                 transition: 'all 0.2s',
               }}
             >

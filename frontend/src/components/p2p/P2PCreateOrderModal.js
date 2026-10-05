@@ -34,9 +34,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     padding: '12px 14px',
     borderRadius: 10,
     fontSize: 14,
-    border: '1px solid #1F1F33',
-    backgroundColor: '#080811',
-    color: '#E2E8F0',
+    border: '1px solid #23233A',
+    backgroundColor: '#0A0A14',
+    color: '#E5E7EB',
     outline: 'none',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
@@ -48,7 +48,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     fontSize: 11,
     fontWeight: 600,
     marginBottom: 8,
-    color: '#94A3B8',
+    color: '#9CA3AF',
     textTransform: 'uppercase',
     letterSpacing: '0.6px',
   };
@@ -63,31 +63,31 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
     }}>
       <div style={{
         width: '100%', maxWidth: 480, borderRadius: 20, padding: '28px 28px 24px',
-        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
-        border: '1px solid #1F1F33',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.05)',
+        background: '#12121E',
+        border: '1px solid #1F1F2E',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.08)',
         maxHeight: '90vh', overflowY: 'auto',
         margin: '0 16px',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#F1F5F9', letterSpacing: '-0.3px' }}>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.3px' }}>
               {t('p2p_sell_title')}
             </h3>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94A3B8' }}>
-              {t('p2p_provider_label')} <span style={{ color: '#8B5CF6', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: '#9CA3AF' }}>
+              {t('p2p_provider_label')} <span style={{ color: '#A855F7', fontWeight: 600 }}>{provider.firstName} {provider.lastName}</span>
             </p>
           </div>
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: '50%',
             background: 'rgba(255,255,255,0.05)', border: 'none',
-            fontSize: 16, color: '#64748B', cursor: 'pointer',
+            fontSize: 16, color: '#9CA3AF', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.15s', flexShrink: 0,
           }}
-            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#E2E8F0'; }}
-            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#64748B'; }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#E5E7EB'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#9CA3AF'; }}
           >✕</button>
         </div>
 
@@ -118,7 +118,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             <span>{t('p2p_amount_to_sell')}</span>
             {selectedWallet && (
               <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>
-                {t('p2p_available')} <span style={{ color: '#8B5CF6' }}>{truncateToDecimals(availableBalance, 8).toFixed(8)} {coin?.toUpperCase()}</span>
+                {t('p2p_available')} <span style={{ color: '#A855F7' }}>{truncateToDecimals(availableBalance, 8).toFixed(8)} {coin?.toUpperCase()}</span>
               </span>
             )}
           </div>
@@ -141,9 +141,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 right: 10,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                background: 'rgba(139,92,246,0.15)',
+                background: 'rgba(168,85,247,0.16)',
                 border: 'none',
-                color: '#8B5CF6',
+                color: '#D8B4FE',
                 borderRadius: 6,
                 padding: '5px 12px',
                 fontSize: 11,
@@ -177,7 +177,7 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
               </span>
             </div>
             {netAmount <= 0 && amountNum > 0 && (
-              <p style={{ color: '#EF4444', fontSize: 11, margin: '6px 0 0', fontWeight: 500 }}>
+              <p style={{ color: '#F87171', fontSize: 11, margin: '6px 0 0', fontWeight: 500 }}>
                 {t('p2p_amount_below_gas') || `Amount must be greater than network gas (${gasFee.toFixed(8)} ${coin?.toUpperCase()})`}
               </p>
             )}
@@ -185,13 +185,13 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         )}
 
         {insufficientBalance && (
-          <p style={{ color: '#EF4444', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
+          <p style={{ color: '#F87171', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
           {t('p2p_insufficient_balance')}
           </p>
         )}
 
         {belowMinimum && (
-          <p style={{ color: '#EF4444', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
+          <p style={{ color: '#F87171', fontSize: 11, margin: '0 0 16px', fontWeight: 500 }}>
             {t('p2p_minimum_balance_required')}
           </p>
         )}
@@ -211,11 +211,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             />
             <span style={{
               position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-              color: '#64748B', fontSize: 14, fontWeight: 600, pointerEvents: 'none',
+              color: '#9CA3AF', fontSize: 14, fontWeight: 600, pointerEvents: 'none',
             }}>$</span>
           </div>
           {coin && (
-            <p style={{ color: '#64748B', fontSize: 11, margin: '6px 0 0' }}>
+            <p style={{ color: '#9CA3AF', fontSize: 11, margin: '6px 0 0' }}>
               1 {coin.toUpperCase()} = {coinPriceUsd ? `$${coinPriceUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
             </p>
           )}
@@ -232,11 +232,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
                 onClick={() => setPaymentMethod(pm)}
                 style={{
                   padding: '8px 18px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                  border: paymentMethod === pm ? '1.5px solid #8B5CF6' : '1px solid #1F1F33',
+                  border: paymentMethod === pm ? '1.5px solid #A855F7' : '1px solid #1F1F2E',
                   backgroundColor: paymentMethod === pm
-                    ? 'rgba(139,92,246,0.12)'
+                    ? 'rgba(168,85,247,0.12)'
                     : 'rgba(255,255,255,0.02)',
-                  color: paymentMethod === pm ? '#A78BFA' : '#94A3B8',
+                  color: paymentMethod === pm ? '#C4B5FD' : '#9CA3AF',
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}
               >
@@ -250,23 +250,23 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
         {coin && amountNum > 0 && (
           <div style={{
             padding: '14px 16px', borderRadius: 12, marginBottom: 20,
-            backgroundColor: 'rgba(139,92,246,0.06)',
-            border: '1px solid rgba(139,92,246,0.15)',
+            backgroundColor: 'rgba(168,85,247,0.06)',
+            border: '1px solid rgba(168,85,247,0.15)',
           }}>
-            <p style={{ margin: 0, fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+            <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
               {t('p2p_order_summary')}
             </p>
-            <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
+            <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 700, color: '#FFFFFF' }}>
               {netAmount.toFixed(8)} {coin?.toUpperCase()} → {fiatAmount ? `$${fiatAmount} USD` : '...'}
             </p>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: '#FCD34D' }}>
               Network Gas: {gasFee.toFixed(8)} {coin?.toUpperCase()} (prepaid)
             </p>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94A3B8' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9CA3AF' }}>
               Total deduction: {amountNum.toFixed(8)} {coin?.toUpperCase()}
             </p>
             {paymentMethod && (
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8B5CF6' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#A855F7' }}>
                 {t('p2p_via')} {paymentMethod}
               </p>
             )}
@@ -280,9 +280,9 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             disabled={isLoading}
             style={{
               flex: 1, padding: '13px 20px', borderRadius: 12, fontSize: 14, fontWeight: 600,
-              border: '1px solid #1F1F33',
+              border: '1px solid #1F1F2E',
               backgroundColor: 'transparent',
-              color: '#94A3B8', cursor: 'pointer',
+              color: '#9CA3AF', cursor: 'pointer',
               transition: 'all 0.15s',
             }}
           >
@@ -294,11 +294,11 @@ export default function P2PCreateOrderModal({ open, onClose, provider, onSubmit,
             style={{
               flex: 2, padding: '13px 20px', borderRadius: 12, fontSize: 14, fontWeight: 700,
               border: 'none',
-              background: isValid ? 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)' : '#1F1F33',
-              color: isValid ? '#FFF' : '#64748B',
+              background: isValid ? 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)' : '#1F1F2E',
+              color: isValid ? '#FFF' : '#9CA3AF',
               cursor: isValid ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,
-              boxShadow: isValid ? '0 4px 20px rgba(139,92,246,0.3)' : 'none',
+              boxShadow: isValid ? '0 4px 20px rgba(168,85,247,0.3)' : 'none',
               transition: 'all 0.2s',
             }}
           >

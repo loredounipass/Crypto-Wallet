@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 const STATUS_COLORS = {
-  funded: '#F59E0B', buyer_paid: '#3B82F6', released: '#8B5CF6',
-  completed: '#10B981', disputed: '#EF4444', refunded: '#6B7280',
-  cancelled: '#6B7280', expired: '#6B7280', pending: '#94A3B8',
+  funded: '#F59E0B', buyer_paid: '#60A5FA', released: '#A855F7',
+  completed: '#34D399', disputed: '#F87171', refunded: '#6B7280',
+  cancelled: '#6B7280', expired: '#6B7280', pending: '#9CA3AF',
 };
 
 

@@ -22,7 +22,6 @@ const Dashboard = () => {
   const { transactions, toast, dismissToast } = useTransitions(null);
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
-  const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -33,7 +32,6 @@ const Dashboard = () => {
   useEffect(() => {
     const onResize = () => {
       setIsMobile(window.innerWidth <= 640);
-      setIsTablet(window.innerWidth <= 768);
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -58,8 +56,8 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div style={{ width: "100%", padding: "16px" }}>
-        <div style={{ height: "4px", backgroundColor: "#2D2D44", borderRadius: "2px", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: "100%", backgroundColor: "#2186EB", animation: "loading 1.5s infinite" }} />
+        <div style={{ height: "4px", backgroundColor: "#23233A", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: "100%", background: "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)", animation: "loading 1.5s infinite" }} />
         </div>
         <style>{`@keyframes loading { 0% { width: 0% } 50% { width: 70% } 100% { width: 100% } }`}</style>
       </div>
@@ -67,8 +65,8 @@ const Dashboard = () => {
   }
 
   const containerStyle = {
-    padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
-    maxWidth: "960px",
+    padding: isMobile ? "12px 12px 32px" : "20px 28px 40px",
+    maxWidth: "1080px",
     margin: "0 auto",
     width: "100%",
     boxSizing: "border-box",
@@ -76,7 +74,7 @@ const Dashboard = () => {
   };
 
   const headerStyle = {
-    marginBottom: isMobile ? "12px" : "32px",
+    marginBottom: isMobile ? "14px" : "18px",
   };
 
   const statsGridStyle = {
@@ -84,16 +82,16 @@ const Dashboard = () => {
     gridTemplateColumns: isMobile
       ? "1fr"
       : "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: isMobile ? "10px" : "24px",
-    marginBottom: isMobile ? "12px" : "32px",
+    gap: isMobile ? "14px" : "20px",
+    marginBottom: isMobile ? "14px" : "20px",
   };
 
   const statCardStyle = (color) => ({
-    background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+    background: "#12121E",
     borderRadius: "16px",
-    padding: isMobile ? "16px" : "24px",
-    border: "1px solid #1F1F33",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+    padding: isMobile ? "18px 16px" : "24px",
+    border: "1px solid #1F1F2E",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
     position: "relative",
     overflow: "hidden",
     display: "flex",
@@ -105,7 +103,8 @@ const Dashboard = () => {
     width: isMobile ? "42px" : "56px",
     height: isMobile ? "42px" : "56px",
     borderRadius: "12px",
-    backgroundColor: `${color}15`,
+    backgroundColor: `${color}1F`,
+    border: `1px solid ${color}33`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -140,7 +139,7 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid gap-3 md:gap-6" style={statsGridStyle}>
-        <div style={statCardStyle("#2186EB")}>
+        <div style={statCardStyle("#A855F7")}>
           <div>
             <p
               style={{ 
@@ -157,19 +156,20 @@ const Dashboard = () => {
               style={{ 
                 color: "#FFFFFF", 
                 fontSize: isMobile ? "22px" : "28px", 
-                fontWeight: 700,
+                fontWeight: 800,
                 margin: 0,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               ${totalBalance.toFixed(2)}
             </p>
           </div>
-          <div style={iconContainerStyle("#2186EB")}>
-            <WalletIcon style={{ color: "#2186EB", fontSize: 24 }} />
+          <div style={iconContainerStyle("#A855F7")}>
+            <WalletIcon style={{ color: "#A855F7", fontSize: 24 }} />
           </div>
         </div>
 
-        <div style={statCardStyle("#4CAF50")}>
+        <div style={statCardStyle("#34D399")}>
           <div>
             <p
               style={{ 
@@ -194,18 +194,18 @@ const Dashboard = () => {
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div style={iconContainerStyle("#4CAF50")}>
-              <TrendingIcon style={{ color: "#4CAF50", fontSize: 24 }} />
+            <div style={iconContainerStyle("#34D399")}>
+              <TrendingIcon style={{ color: "#34D399", fontSize: 24 }} />
             </div>
             <button
               onClick={() => navigate("/wallets")}
               style={{
                 background: "none",
                 border: "none",
-                color: "#4CAF50",
+                color: "#34D399",
                 fontSize: isMobile ? "11px" : "12px",
                 cursor: "pointer",
-                fontWeight: 500,
+                fontWeight: 700,
                 padding: 0,
                 lineHeight: 1,
               }}
@@ -215,7 +215,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div style={statCardStyle("#F6851B")}>
+        <div style={statCardStyle("#60A5FA")}>
           <div>
             <p
               style={{ 
@@ -232,15 +232,16 @@ const Dashboard = () => {
               style={{ 
                 color: "#FFFFFF", 
                 fontSize: isMobile ? "22px" : "28px", 
-                fontWeight: 700,
+                fontWeight: 800,
                 margin: 0,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {transactions.length}
             </p>
           </div>
-          <div style={iconContainerStyle("#F6851B")}>
-            <SwapIcon style={{ color: "#F6851B", fontSize: 24 }} />
+          <div style={iconContainerStyle("#60A5FA")}>
+            <SwapIcon style={{ color: "#60A5FA", fontSize: 24 }} />
           </div>
         </div>
       </div>

@@ -19,25 +19,25 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
     }}>
       <div style={{
         width: '100%', maxWidth: 460, borderRadius: 16, padding: 28,
-        backgroundColor: '#1E1E2E',
-        border: `1px solid ${'#2D2D44'}`,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        backgroundColor: '#12121E',
+        border: `1px solid ${'#23233A'}`,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <div style={{
             width: 40, height: 40, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backgroundColor: 'rgba(239,68,68,0.12)', fontSize: 18,
+            backgroundColor: 'rgba(248,113,113,0.12)', fontSize: 18,
           }}>
             ⚠️
           </div>
           <div>
             <h3 style={{
               margin: 0, fontSize: 18, fontWeight: 700,
-              color: '#F1F5F9',
+              color: '#FFFFFF',
             }}>{t('p2p_dispute_title')}</h3>
-            <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>
+            <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
               {t('p2p_dispute_description')}
             </p>
           </div>
@@ -51,9 +51,9 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
           rows={4}
           style={{
             width: '100%', padding: 12, borderRadius: 10, fontSize: 14,
-            border: `1px solid ${'#2D2D44'}`,
-            backgroundColor: '#0F0F1A',
-            color: '#E2E8F0',
+            border: `1px solid ${'#23233A'}`,
+            backgroundColor: '#0A0A14',
+            color: '#E5E7EB',
             resize: 'vertical', outline: 'none',
             fontFamily: 'inherit',
             boxSizing: 'border-box',
@@ -67,9 +67,9 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
             disabled={isLoading}
             style={{
               padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-              border: `1px solid ${'#2D2D44'}`,
+              border: `1px solid ${'#23233A'}`,
               backgroundColor: 'transparent',
-              color: '#94A3B8',
+              color: '#9CA3AF',
               cursor: 'pointer',
             }}
           >
@@ -81,8 +81,8 @@ export default function P2PDisputeModal({ open, onClose, onSubmit, isLoading }) 
             style={{
               padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
               border: 'none',
-              backgroundColor: reason.trim() ? '#EF4444' : ('#2D2D44'),
-              color: reason.trim() ? '#FFF' : '#94A3B8',
+              backgroundColor: reason.trim() ? '#F87171' : ('#23233A'),
+              color: reason.trim() ? '#FFF' : '#9CA3AF',
               cursor: reason.trim() ? 'pointer' : 'not-allowed',
               opacity: isLoading ? 0.7 : 1,
             }}

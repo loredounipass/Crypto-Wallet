@@ -90,13 +90,13 @@ export default function P2P() {
       <div style={{ marginBottom: 24 }}>
         <h1 style={{
           margin: 0, fontSize: 28, fontWeight: 800,
-          color: '#F1F5F9',
+          color: '#FFFFFF',
           letterSpacing: '-0.5px',
         }}>
           {t('p2p_trading')}
         </h1>
         <p style={{
-          margin: '6px 0 0', fontSize: 14, color: '#94A3B8',
+          margin: '6px 0 0', fontSize: 14, color: '#9CA3AF',
         }}>
           {t('p2p_sell_escrow_desc')}
         </p>
@@ -108,8 +108,8 @@ export default function P2P() {
           display: 'flex', 
           flexDirection: 'row',
           borderRadius: 12, overflow: 'hidden',
-          border: '1px solid #1F1F33',
-          backgroundColor: '#080811',
+          border: '1px solid #1F1F2E',
+          backgroundColor: '#0B0B14',
           marginBottom: 20,
         }}>
           {TAB_CONFIG.map((tab) => (
@@ -121,8 +121,8 @@ export default function P2P() {
                 borderRadius: 0,
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 backgroundColor: 'transparent',
-                background: activeTab === tab.key ? 'linear-gradient(90deg, #8B5CF6, #6366F1)' : 'transparent',
-                color: activeTab === tab.key ? '#FFF' : '#64748B',
+                background: activeTab === tab.key ? 'linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)' : 'transparent',
+                color: activeTab === tab.key ? '#FFF' : '#9CA3AF',
                 transition: 'all 0.2s',
               }}
             >
@@ -130,8 +130,8 @@ export default function P2P() {
               {tab.key === 'my-orders' && orders.length > 0 && (
                 <span style={{
                   marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)',
-                  color: activeTab === tab.key ? '#FFF' : '#8B5CF6',
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(168,85,247,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#A855F7',
                 }}>
                   {orders.length}
                 </span>
@@ -139,8 +139,8 @@ export default function P2P() {
               {tab.key === 'provider-orders' && providerOrders.length > 0 && (
                 <span style={{
                   marginLeft: 6, padding: '2px 7px', borderRadius: 10, fontSize: 11,
-                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)',
-                  color: activeTab === tab.key ? '#FFF' : '#8B5CF6',
+                  backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'rgba(168,85,247,0.15)',
+                  color: activeTab === tab.key ? '#FFF' : '#A855F7',
                 }}>
                   {providerOrders.length}
                 </span>
@@ -153,10 +153,10 @@ export default function P2P() {
       {/* Content Card */}
       <div style={{
         borderRadius: 16,
-        border: '1px solid #1F1F33',
-        background: 'linear-gradient(180deg, #131327 0%, #0C0C17 100%)',
+        border: '1px solid #1F1F2E',
+        background: '#12121E',
         overflow: 'hidden',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
       }}>
         {activeTab === 'marketplace' && (
           <P2PProviderList
@@ -187,7 +187,7 @@ export default function P2P() {
       {isMobile && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          backgroundColor: '#080811', borderTop: '1px solid #1F1F33',
+          backgroundColor: '#0B0B14', borderTop: '1px solid #1F1F2E',
           display: 'flex', justifyContent: 'space-around', alignItems: 'center',
           padding: '10px 0', zIndex: 100, margin: 0,
         }}>
@@ -199,7 +199,7 @@ export default function P2P() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  background: 'none', border: 'none', color: isActive ? '#8B5CF6' : '#94A3B8',
+                  background: 'none', border: 'none', color: isActive ? '#A855F7' : '#9CA3AF',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
                   flex: 1, position: 'relative'
                 }}>
@@ -209,14 +209,14 @@ export default function P2P() {
                   <span style={{
                     position: 'absolute', top: -5, right: '15%',
                     padding: '2px 6px', borderRadius: 10, fontSize: 10, fontWeight: 700,
-                    backgroundColor: '#EF4444', color: '#FFF',
+                    backgroundColor: '#F87171', color: '#FFF',
                   }}>{orders.length}</span>
                 )}
                 {tab.key === 'provider-orders' && providerOrders.length > 0 && (
                   <span style={{
                     position: 'absolute', top: -5, right: '15%',
                     padding: '2px 6px', borderRadius: 10, fontSize: 10, fontWeight: 700,
-                    backgroundColor: '#EF4444', color: '#FFF',
+                    backgroundColor: '#F87171', color: '#FFF',
                   }}>{providerOrders.length}</span>
                 )}
               </button>

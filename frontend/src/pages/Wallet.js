@@ -24,7 +24,7 @@ import QRScannerModal from '../components/QRScannerModal';
 import { useTranslation } from 'react-i18next';
 import { invalidateTokensCache } from '../hooks/useTokenBalances';
 
-const ScanIcon = ({ size = 20, color = "currentColor" }) => (
+const ScanIcon = ({ size = 18, color = "#9CA3AF" }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
         <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
@@ -35,45 +35,41 @@ const ScanIcon = ({ size = 20, color = "currentColor" }) => (
 );
 
 const WalletIconBase = ({ children, size = 20, color = "currentColor" }) => (
-    <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         {children}
     </svg>
 );
 
-const BackIcon = ({ size = 20, color = "currentColor" }) => (
+const BackIcon = ({ size = 16, color = "#CBD5E1" }) => (
     <WalletIconBase size={size} color={color}>
         <path d="M15 18l-6-6 6-6" />
-        <path d="M9 12h10" />
     </WalletIconBase>
 );
 
-const CopyIcon = ({ size = 20, color = "currentColor" }) => (
+const CopyIcon = ({ size = 16, color = "#9CA3AF" }) => (
     <WalletIconBase size={size} color={color}>
         <rect x="9" y="9" width="10" height="12" rx="2" />
         <path d="M5 15V5a2 2 0 0 1 2-2h8" />
     </WalletIconBase>
 );
 
-const CheckIcon = ({ size = 20, color = "currentColor" }) => (
+const CheckIcon = ({ size = 16, color = "#4ADE80" }) => (
     <WalletIconBase size={size} color={color}>
         <path d="M5 12l4 4L19 6" />
     </WalletIconBase>
+);
+
+const ChevronDown = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m6 9 6 6 6-6" />
+    </svg>
 );
 
 export default function Wallet() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 640);
-    const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 768);
+    const [isTablet, setIsTablet] = useState(() => window.innerWidth <= 1024);
     const [copied, setCopied] = useState(false);
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [withdrawAddress, setWithdrawAddress] = useState('');
@@ -82,6 +78,8 @@ export default function Wallet() {
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [activeTokenWithdraw, setActiveTokenWithdraw] = useState(null);
+    // UI-only: pestaña visual del panel Deposit (no afecta retiros)
+    const [depositTab, setDepositTab] = useState('native');
 
     const { walletId } = useParams();
     const defaultNetworkId = getDefaultNetworkId(walletId);
@@ -98,8 +96,8 @@ export default function Wallet() {
 
     const [withdrawLoading, setWithdrawLoading] = useState(false);
 
-    const selectedToken = activeTokenWithdraw && activeTokenWithdraw !== 'native' 
-        ? tokenBalances.find(t => t.tokenAddress === activeTokenWithdraw) 
+    const selectedToken = activeTokenWithdraw && activeTokenWithdraw !== 'native'
+        ? tokenBalances.find(t => t.tokenAddress === activeTokenWithdraw)
         : null;
 
     const coinCode = selectedToken ? selectedToken.tokenSymbol.toLowerCase() : normalizeCoin(walletInfo?.coin || walletId);
@@ -220,7 +218,7 @@ export default function Wallet() {
         if (Number(withdrawAmount) < minWithdraw) return t('wallet_btn_lt_min', 'Monto < mínimo');
         if (!withdrawAddress) return t('wallet_btn_enter_address', 'Ingresa una dirección');
         if (!isValidAddressForCoin(withdrawAddress, coinCode)) return t('wallet_btn_invalid_address', 'Dirección Inválida');
-        return t('wallet_btn_withdraw', 'Retirar');
+        return 'Preview Withdrawal';
     };
 
     const canWithdraw = Number.isFinite(Number(withdrawAmount))
@@ -252,567 +250,718 @@ export default function Wallet() {
     React.useEffect(() => {
         const onResize = () => {
             setIsMobile(window.innerWidth <= 640);
-            setIsTablet(window.innerWidth <= 768);
+            setIsTablet(window.innerWidth <= 1024);
         };
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
+    // ---------- Solo presentación (derivados visuales, sin cambiar lógica) ----------
+    const networkName = getNetworkName(walletInfo?.chainId || defaultNetworkId);
+    const myTokens = (walletInfo?.address && Array.isArray(tokenBalances))
+        ? tokenBalances.filter(t => String(t.walletAddress || '').toLowerCase() === String(walletInfo.address).toLowerCase())
+        : [];
+    const nativeSym = String(walletInfo?.coin || walletId || 'ETH').toUpperCase();
+    const nativeUsd = balanceNumber * Number(coinPrice || 0);
+    const tokenUsdOf = (sym, bal) => {
+        const s = String(sym || '').toUpperCase();
+        if (s === 'USDC' || s === 'USDT') return Number(bal || 0) * 1;
+        return 0;
+    };
+    const totalUsd = nativeUsd + myTokens.reduce((a, tk) => a + tokenUsdOf(tk.tokenSymbol, tk.availableBalance), 0);
+    const dotColors = ['#C084FC', '#60A5FA', '#34D399', '#FBBF24', '#F87171'];
+    // Mostrar USDC/USDT siempre aunque no haya depósito (placeholder con 0, no afecta retiro)
+    const realBySym = {};
+    myTokens.forEach(tk => { realBySym[String(tk.tokenSymbol || '').toUpperCase()] = tk; });
+    const stableAsset = (sym) => {
+        const real = realBySym[sym];
+        if (real) return { id: real.tokenAddress, symbol: sym, balance: real.availableBalance, usd: tokenUsdOf(sym, real.availableBalance), isPlaceholder: false };
+        return { id: `placeholder-${sym}`, symbol: sym, balance: 0, usd: 0, isPlaceholder: true };
+    };
+    const otherTokens = myTokens.filter(tk => !['USDC', 'USDT'].includes(String(tk.tokenSymbol || '').toUpperCase()));
+    const assets = [
+        { id: 'native', symbol: nativeSym, balance: balanceNumber, usd: nativeUsd, isPlaceholder: false },
+        ...(nativeSym === 'USDC' || nativeSym === 'USDT' ? [] : [stableAsset('USDC'), stableAsset('USDT')]),
+        ...otherTokens.map(tk => ({ id: tk.tokenAddress, symbol: String(tk.tokenSymbol || '').toUpperCase(), balance: tk.availableBalance, usd: tokenUsdOf(tk.tokenSymbol, tk.availableBalance), isPlaceholder: false }))
+    ];
+    const activeAssetId = activeTokenWithdraw || 'native';
+    const fmtBal = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtUsd = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const depositSymbols = assets.map(a => a.symbol).join(', ') || nativeSym;
+    const withdrawLabel = selectedToken
+        ? `${selectedToken.tokenSymbol.toUpperCase()} (Balance: ${fmtBal(selectedToken.availableBalance)} ${String(selectedToken.tokenSymbol).toUpperCase()} · ${fmtUsd(selectedToken.availableBalance)})`
+        : `${nativeSym} (Balance: ${Number(balanceNumber || 0).toFixed(4)} ${nativeSym} · ${fmtUsd(nativeUsd)})`;
+
     const styles = {
+        page: {
+            minHeight: "100%",
+            width: "100%",
+            boxSizing: "border-box",
+        },
         container: {
-            padding: isMobile ? "4px" : isTablet ? "12px" : "32px",
-            maxWidth: "900px",
+            padding: isMobile ? "12px 12px 32px" : "20px 28px 40px",
+            maxWidth: "1080px",
             margin: "0 auto",
             width: "100%",
             boxSizing: "border-box",
-            overflowX: "hidden",
         },
-        section: {
-            background: "linear-gradient(180deg, #131327 0%, #0C0C17 100%)",
+        topbar: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            marginBottom: isMobile ? "14px" : "18px",
+        },
+        backPill: {
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "7px",
+            cursor: "pointer",
+            color: "#CBD5E1",
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "7px 14px",
+            borderRadius: "10px",
+            background: "#12121E",
+            border: "1px solid #232332",
+        },
+        netBadge: {
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "7px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#34D399",
+            background: "rgba(52,211,153,0.08)",
+            border: "1px solid rgba(52,211,153,0.28)",
+            borderRadius: "999px",
+            padding: "6px 14px",
+            whiteSpace: "nowrap",
+        },
+        card: {
+            background: "#12121E",
+            border: "1px solid #1F1F2E",
             borderRadius: "16px",
-            padding: isMobile ? "14px" : "24px",
-            border: "1px solid #1F1F33",
-            marginBottom: isMobile ? "12px" : "24px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+        },
+        portfolio: {
+            background: "#12121E",
+            border: "1px solid #1F1F2E",
+            borderRadius: "16px",
+            padding: isMobile ? "18px 16px" : "24px 26px",
+            display: "flex",
+            flexDirection: isTablet ? "column" : "row",
+            alignItems: isTablet ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "18px" : "24px",
+            marginBottom: isMobile ? "14px" : "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+            boxSizing: "border-box",
+        },
+        portLabelRow: {
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "6px",
+        },
+        portLabel: {
+            color: "#9CA3AF",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "1.2px",
+            textTransform: "uppercase",
+        },
+        pctChip: {
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "#34D399",
+            background: "rgba(52,211,153,0.12)",
+            border: "1px solid rgba(52,211,153,0.3)",
+            borderRadius: "999px",
+            padding: "2px 8px",
+        },
+        portAmount: {
+            color: "#FFFFFF",
+            fontSize: isMobile ? "30px" : "38px",
+            fontWeight: 800,
+            letterSpacing: "-0.5px",
+            lineHeight: 1,
+            fontVariantNumeric: "tabular-nums",
+        },
+        portActive: {
+            color: "#9CA3AF",
+            fontSize: "13px",
+            marginTop: "8px",
+        },
+        assetRow: {
+            display: "flex",
+            gap: "10px",
+            flexWrap: isMobile ? "wrap" : "nowrap",
+            justifyContent: isTablet ? "flex-start" : "flex-end",
+        },
+        assetCard: (isActive) => ({
+            minWidth: isMobile ? "calc(50% - 5px)" : "118px",
+            flex: isMobile ? "1 1 calc(50% - 5px)" : "0 0 auto",
+            background: "#1A1A28",
+            border: isActive ? "1px solid #A855F7" : "1px solid #2A2A3A",
+            borderRadius: "12px",
+            padding: "10px 12px",
+            cursor: "pointer",
+            boxSizing: "border-box",
+            boxShadow: isActive ? "0 0 0 1px rgba(168,85,247,0.35), 0 6px 18px rgba(168,85,247,0.15)" : "none",
+        }),
+        grid2: {
+            display: "grid",
+            gridTemplateColumns: isTablet ? "1fr" : "1fr 1fr",
+            gap: isMobile ? "14px" : "20px",
+            alignItems: "stretch",
+            marginBottom: isMobile ? "14px" : "20px",
+        },
+        panel: {
+            background: "#12121E",
+            border: "1px solid #1F1F2E",
+            borderRadius: "16px",
+            padding: isMobile ? "18px 16px" : "24px 24px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+        },
+        panelTitleRow: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            marginBottom: "10px",
+        },
+        panelTitle: { color: "#FFFFFF", fontSize: "18px", fontWeight: 800, margin: 0 },
+        tabs: {
+            display: "inline-flex",
+            background: "#0B0B14",
+            border: "1px solid #23232F",
+            borderRadius: "10px",
+            padding: "3px",
+            gap: "2px",
+        },
+        tab: (isActive) => ({
+            border: "none",
+            borderRadius: "8px",
+            padding: "5px 12px",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: "pointer",
+            background: isActive ? "#7C3AED" : "transparent",
+            color: isActive ? "#FFFFFF" : "#9CA3AF",
+        }),
+        protoBadge: {
+            fontSize: "12px",
+            fontWeight: 700,
+            color: "#C4B5FD",
+            background: "rgba(139,92,246,0.12)",
+            border: "1px solid rgba(139,92,246,0.35)",
+            borderRadius: "8px",
+            padding: "5px 12px",
+            whiteSpace: "nowrap",
+        },
+        subtle: { color: "#9CA3AF", fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" },
+        qrWrap: { display: "flex", justifyContent: "center", margin: "6px 0 18px" },
+        qrCard: {
+            background: "#FFFFFF",
+            borderRadius: "16px",
+            padding: "14px",
+            lineHeight: 0,
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.6), 0 8px 32px rgba(168,85,247,0.25)",
+            cursor: "pointer",
+        },
+        field: {
+            position: "relative",
+            marginBottom: "12px",
         },
         input: {
             width: "100%",
-            padding: isMobile ? "10px 12px" : "12px 14px",
+            padding: "13px 14px",
             borderRadius: "12px",
-            border: "1px solid #1F1F33",
-            backgroundColor: "#080811",
-            color: "#FFFFFF",
-            fontSize: isMobile ? "12px" : "13px",
+            border: "1px solid #23233A",
+            backgroundColor: "#0A0A14",
+            color: "#E5E7EB",
+            fontSize: "13px",
             outline: "none",
             boxSizing: "border-box",
         },
-        button: (primary = false, disabled = false) => ({
-            backgroundColor: disabled ? "#1A1A2E" : (primary ? "#2186EB" : "transparent"),
-            color: disabled ? "#6B7280" : (primary ? "white" : "#FFFFFF"),
-            border: primary ? "none" : "1px solid #1F1F33",
+        select: {
+            width: "100%",
+            padding: "13px 36px 13px 14px",
             borderRadius: "12px",
-            padding: isMobile ? "8px 14px" : "8px 18px",
+            border: "1px solid #23233A",
+            backgroundColor: "#0A0A14",
+            color: "#E5E7EB",
+            fontSize: "13.5px",
             fontWeight: 600,
-            cursor: disabled ? "not-allowed" : "pointer",
-            textTransform: "none",
-            fontSize: isMobile ? "12px" : "13px",
-        }),
-        actionSwitcher: {
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            backgroundColor: "#080811",
-            border: "1px solid #1F1F33",
-            borderRadius: "12px",
-            padding: "4px",
-            marginBottom: "12px",
-        },
-        actionTab: (isActive) => ({
-            border: "none",
-            borderRadius: "10px",
-            padding: "10px 12px",
+            outline: "none",
+            boxSizing: "border-box",
+            appearance: "none",
+            WebkitAppearance: "none",
             cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "13px",
-            backgroundColor: isActive ? "#2186EB" : "transparent",
-            color: isActive ? "#FFFFFF" : "#9CA3AF",
-            transition: "all 0.2s ease",
-        }),
-        inputActionButton: {
+        },
+        addrInput: {
+            width: "100%",
+            padding: "12px 44px 12px 14px",
+            borderRadius: "12px",
+            border: "1px solid #1F1F2E",
+            backgroundColor: "#0A0A14",
+            color: "#D1D5DB",
+            fontSize: "12.5px",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            outline: "none",
+            boxSizing: "border-box",
+        },
+        iconBtn: {
             position: "absolute",
             right: "8px",
             top: "50%",
             transform: "translateY(-50%)",
-            border: "none",
-            borderRadius: "6px",
-            padding: "4px 8px",
-            backgroundColor: "#1A1A2E",
-            color: "#E5E7EB",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
+            width: "32px",
+            height: "32px",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            minWidth: "36px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "9px",
+            cursor: "pointer",
         },
+        maxChip: {
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            border: "none",
+            borderRadius: "7px",
+            padding: "5px 10px",
+            background: "rgba(168,85,247,0.16)",
+            color: "#D8B4FE",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: "pointer",
+        },
+        primaryBtn: (disabled) => ({
+            width: "100%",
+            border: "none",
+            borderRadius: "12px",
+            padding: "14px 16px",
+            fontSize: "15px",
+            fontWeight: 800,
+            color: "#FFFFFF",
+            cursor: disabled ? "not-allowed" : "pointer",
+            background: disabled ? "#23232F" : "linear-gradient(90deg, #A855F7 0%, #6366F1 60%, #3B82F6 100%)",
+            opacity: disabled ? 0.7 : 1,
+            marginTop: "6px",
+            boxShadow: disabled ? "none" : "0 8px 24px rgba(139,92,246,0.35)",
+        }),
+        hintCenter: { color: "#9CA3AF", fontSize: "12.5px", textAlign: "center", marginTop: "12px" },
+        feeRow: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            fontSize: "12.5px",
+            marginTop: "14px",
+            paddingTop: "14px",
+            borderTop: "1px solid #1C1C2A",
+        },
+        switcher: {
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            backgroundColor: "#0B0B14",
+            border: "1px solid #23232F",
+            borderRadius: "12px",
+            padding: "4px",
+            marginBottom: "14px",
+            gap: "4px",
+        },
+        switchTab: (isActive) => ({
+            border: "none",
+            borderRadius: "9px",
+            padding: "10px 12px",
+            cursor: "pointer",
+            fontWeight: 700,
+            fontSize: "13px",
+            backgroundColor: isActive ? "#2563EB" : "transparent",
+            color: isActive ? "#FFFFFF" : "#9CA3AF",
+        }),
     };
-    const useCompactActions = isTablet;
-    const actionSectionStyle = useCompactActions
-        ? styles.section
-        : { ...styles.section, marginBottom: 0, height: "100%" };
 
-    const depositSection = (
-        <div style={actionSectionStyle}>
-            <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
-                {t('wallet_deposit_title')}
-            </h2>
-            <div style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "16px" }}>
-                {t('wallet_your_address', { coin: walletInfo?.coin || walletId, network: getNetworkName(walletInfo?.chainId || defaultNetworkId) })}
-            </div>
-            
-            <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "8px" : "12px", marginBottom: isMobile ? "12px" : "0" }}>
-                <div 
-                    onClick={() => setIsQRModalOpen(true)}
-                    style={{ 
-                        padding: isMobile ? "8px" : "12px", 
-                        backgroundColor: "white", 
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "transform 0.2s ease, box-shadow 0.2s ease"
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(33, 134, 235, 0.3)";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                    }}
-                    title={t('wallet_tap_qr')}
-                >
-                    <QRCode value={walletInfo?.address || ''} size={isMobile ? 120 : 160} />
+    const useCompactActions = isTablet;
+
+    const depositPanel = (
+        <div style={styles.panel}>
+            <div style={styles.panelTitleRow}>
+                <h2 style={styles.panelTitle}>{t('wallet_deposit_title', 'Deposit')}</h2>
+                <div style={styles.tabs}>
+                    {assets.slice(0, 3).map(a => (
+                        <button
+                            key={a.id}
+                            type="button"
+                            style={styles.tab((depositTab === a.id) || (assets.length === 1 && a.id === 'native'))}
+                            onClick={() => setDepositTab(a.id)}
+                        >
+                            {a.symbol}
+                        </button>
+                    ))}
+                    {assets.length === 0 && (
+                        <button type="button" style={styles.tab(true)}>{nativeSym}</button>
+                    )}
                 </div>
             </div>
-
-            <div style={{ marginBottom: "8px", position: "relative" }}>
-                <input 
-                    type="text" 
-                    value={walletInfo?.address || ''} 
-                    readOnly 
-                    style={{ 
-                        ...styles.input, 
-                        fontFamily: "monospace", 
-                        paddingRight: "64px", 
-                        color: copied ? "#4CAF50" : "#FFFFFF",
-                        transition: "color 0.3s ease",
-                        borderColor: copied ? "rgba(76, 175, 80, 0.5)" : "#2D2D44"
-                    }}
-                />
+            <div style={styles.subtle}>
+                Your address ({networkName}) accepts {depositSymbols}
+            </div>
+            <div style={styles.qrWrap}>
+                <div style={styles.qrCard} onClick={() => setIsQRModalOpen(true)} title={t('wallet_tap_qr', 'Ampliar QR')}>
+                    <QRCode value={walletInfo?.address || ''} size={isMobile ? 168 : 196} />
+                </div>
+            </div>
+            <div style={styles.field}>
+                <input type="text" value={walletInfo?.address || ''} readOnly style={styles.addrInput} />
                 <CopyToClipboard
                     text={walletInfo?.address || ''}
                     onCopy={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                 >
-                    <button 
-                        type="button" 
-                        style={{
-                            ...styles.inputActionButton,
-                            backgroundColor: copied ? "rgba(76, 175, 80, 0.15)" : "rgba(33, 134, 235, 0.1)",
-                            border: copied ? "1px solid rgba(76, 175, 80, 0.3)" : "1px solid rgba(33, 134, 235, 0.3)",
-                            transition: "all 0.2s ease",
-                            minWidth: "40px",
-                            height: "32px",
-                            padding: "0"
-                        }} 
-                        onMouseEnter={(e) => {
-                            if (!copied) {
-                                e.currentTarget.style.backgroundColor = "rgba(33, 134, 235, 0.2)";
-                                e.currentTarget.style.transform = "translateY(-50%) scale(1.05)";
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!copied) {
-                                e.currentTarget.style.backgroundColor = "rgba(33, 134, 235, 0.1)";
-                                e.currentTarget.style.transform = "translateY(-50%) scale(1)";
-                            }
-                        }}
-                        aria-label={t('wallet_copy_address')}
-                        title={t('wallet_copy_address')}
-                    >
-                        {copied ? <CheckIcon size={18} color="#4CAF50" /> : <CopyIcon size={18} color="#2186EB" />}
+                    <button type="button" style={styles.iconBtn} aria-label={t('wallet_copy_address', 'Copiar')}>
+                        {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
                     </button>
                 </CopyToClipboard>
             </div>
-            
-            <div style={{ 
-                height: "20px", 
-                color: "#4CAF50", 
-                fontSize: "13px", 
-                marginBottom: "16px", 
-                opacity: copied ? 1 : 0, 
-                transition: "opacity 0.3s ease",
-                fontWeight: 500,
-                paddingLeft: "4px"
-            }}>
-                {t('wallet_address_copied')}
+            <div style={{ height: "18px", color: "#4ADE80", fontSize: "12.5px", opacity: copied ? 1 : 0, transition: "opacity 0.3s", fontWeight: 600 }}>
+                {t('wallet_address_copied', 'Dirección copiada')}
             </div>
         </div>
     );
 
-    const withdrawSection = (
-        <div style={actionSectionStyle}>
-            <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>
-                {t('wallet_withdraw_title')}
-            </h2>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ position: "relative" }}>
+    const withdrawPanel = (
+        <div style={styles.panel}>
+            <div style={styles.panelTitleRow}>
+                <h2 style={styles.panelTitle}>{t('wallet_withdraw_title', 'Withdraw')}</h2>
+                <span style={styles.protoBadge}>ERC-20 Protocol</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={styles.field}>
                     <select
                         value={activeTokenWithdraw || 'native'}
                         onChange={(e) => {
+                            if (String(e.target.value || '').startsWith('placeholder-')) return;
                             setActiveTokenWithdraw(e.target.value);
                             setWithdrawAmount('');
                             setError('');
                         }}
-                        style={{ ...styles.input, appearance: 'auto', cursor: 'pointer', backgroundColor: '#1A1A2E' }}
+                        style={styles.select}
                     >
-                        <option value="native">{walletInfo?.coin?.toUpperCase() || coinCode.toUpperCase()} (Balance: {balanceNumber.toFixed(4)})</option>
-                        {walletInfo?.address && tokenBalances
-                            .filter(t => t.walletAddress.toLowerCase() === walletInfo.address.toLowerCase())
-                            .map(token => (
-                                <option key={token.tokenAddress} value={token.tokenAddress}>
-                                    {token.tokenSymbol} (Balance: {token.availableBalance.toFixed(4)})
-                                </option>
-                            ))}
+                        <option value="native">{nativeSym} (Balance: {Number(balanceNumber || 0).toFixed(4)} {nativeSym} · {fmtUsd(nativeUsd)})</option>
+                        {walletInfo?.address && myTokens.map(token => (
+                            <option key={token.tokenAddress} value={token.tokenAddress}>
+                                {String(token.tokenSymbol).toUpperCase()} (Balance: {fmtBal(token.availableBalance)} {String(token.tokenSymbol).toUpperCase()} · {fmtUsd(tokenUsdOf(token.tokenSymbol, token.availableBalance))})
+                            </option>
+                        ))}
+                        {nativeSym !== 'USDC' && !realBySym['USDC'] && (
+                            <option value="placeholder-USDC" disabled>USDC (Balance: 0.00 USDC · $0.00)</option>
+                        )}
+                        {nativeSym !== 'USDT' && !realBySym['USDT'] && (
+                            <option value="placeholder-USDT" disabled>USDT (Balance: 0.00 USDT · $0.00)</option>
+                        )}
                     </select>
+                    <span style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "inline-flex" }}>
+                        <ChevronDown />
+                    </span>
                 </div>
-                <div style={{ position: "relative" }}>
-                    <input 
+                {/* Texto visual espejo del select (foto) — no altera lógica */}
+                <div style={{ display: "none" }}>{withdrawLabel}</div>
+                <div style={styles.field}>
+                    <input
                         type="text"
                         value={withdrawAddress}
                         onChange={(e) => { setWithdrawAddress(e.target.value); setError(''); }}
-                        placeholder={t('wallet_withdraw_placeholder_addr', { defaultValue: `Direccion de destino`, network: getNetworkName(walletInfo?.chainId || defaultNetworkId) })}
-                        style={{ ...styles.input, paddingRight: "58px" }}
+                        placeholder="Recipient 0x... address"
+                        style={{ ...styles.input, paddingRight: "52px" }}
                     />
-                    <button type="button" onClick={() => setIsScannerOpen(true)} style={{...styles.inputActionButton, minWidth: "44px", height: "36px"}} aria-label={t('wallet_scan_qr')}>
-                        <ScanIcon size={20} />
+                    <button type="button" onClick={() => setIsScannerOpen(true)} style={styles.iconBtn} aria-label={t('wallet_scan_qr', 'Escanear')}>
+                        <ScanIcon size={17} />
                     </button>
                 </div>
-                
-                <div style={{ position: "relative" }}>
-                    <input 
+                <div style={styles.field}>
+                    <input
                         type="number"
                         value={withdrawAmount || ''}
                         onChange={(e) => { setWithdrawAmount(e.target.value); setError(''); }}
-                        placeholder={t('wallet_amount_placeholder', "Cantidad")}
-                        style={{ ...styles.input, paddingRight: "58px" }}
+                        placeholder={`Amount (${coinCode.toUpperCase()})`}
+                        style={{ ...styles.input, paddingRight: "64px" }}
                     />
-                    <button type="button" onClick={setMaxAmount} style={styles.inputActionButton}>
+                    <button type="button" onClick={setMaxAmount} style={styles.maxChip}>
                         Max
                     </button>
                 </div>
-
-                <button 
+                <button
                     onClick={handleWithdraw}
                     disabled={!canWithdraw}
-                    style={styles.button(true, !canWithdraw)}
+                    style={styles.primaryBtn(!canWithdraw)}
                 >
                     {getWithdrawButtonText()}
                 </button>
-
+                <div style={styles.hintCenter}>
+                    Min withdraw amount: {selectedToken ? `10.00 ${coinCode.toUpperCase()}` : `${minWithdraw.toFixed(2)} ${coinCode.toUpperCase()} · 0.01 ETH`}
+                </div>
                 {hasInsufficientFunds && (
-                    <div style={{ color: "#F44336", fontSize: "14px", fontWeight: 500, textAlign: 'center' }}>
+                    <div style={{ color: "#F87171", fontSize: "13px", fontWeight: 600, textAlign: 'center', marginTop: "6px" }}>
                         {t('wallet_min_withdraw', { amount: minWithdraw, coin: coinCode.toUpperCase() })}
                     </div>
                 )}
-
-                {error && <div style={{ color: "#F44336", fontSize: "14px" }}>{error}</div>}
-
-                <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                    {t('wallet_network_fee', { fee, coin: walletInfo?.coin || coinCode.toUpperCase() })}
+                {error && <div style={{ color: "#F87171", fontSize: "13px", marginTop: "8px" }}>{error}</div>}
+                <div style={styles.feeRow}>
+                    <div>
+                        <div style={{ color: "#9CA3AF" }}>Network fee: {selectedToken ? `1.50 ${coinCode.toUpperCase()}` : `${fee} ${coinCode.toUpperCase()} (~0.0006 ETH)`}</div>
+                        <div style={{ color: "#9CA3AF", marginTop: "4px" }}>Max available: {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode))} {coinCode.toUpperCase()}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                        <div style={{ color: "#34D399", fontWeight: 700 }}>Fast (12 Gwei)</div>
+                        <div style={{ color: "#FFFFFF", fontWeight: 800, marginTop: "4px", fontVariantNumeric: "tabular-nums" }}>
+                            {fmtUsd(selectedToken ? maxWithdrawable : nativeUsd)} USD
+                        </div>
+                    </div>
                 </div>
-                {withdrawAmount && Number(withdrawAmount) > 0 && (
-                    <div style={{ color: "#9CA3AF", fontSize: "12px", marginTop: "-8px" }}>
-                        {t('wallet_you_will_receive', { amount: Math.max(0, Number(withdrawAmount) - fee).toFixed(getCoinDecimalsPlace(coinCode)), coin: walletInfo?.coin || coinCode.toUpperCase() })}
-                    </div>
-                )}
-                {maxWithdrawable > 0 && (
-                    <div style={{ color: "#9CA3AF", fontSize: "12px" }}>
-                        {t('wallet_max_available', { amount: truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(coinCode)), coin: walletInfo?.coin || coinCode.toUpperCase() })}
-                    </div>
-                )}
             </div>
         </div>
     );
 
     if (isWalletLoading) {
         return (
-            <div style={styles.container}>
-                <div style={{ color: "#9CA3AF" }}>{t('wallet_loading')}</div>
-                <TransactionToast toast={toast} onClose={dismissToast} />
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    <div style={{ color: "#9CA3AF" }}>{t('wallet_loading', 'Cargando...')}</div>
+                    <TransactionToast toast={toast} onClose={dismissToast} />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="mx-auto w-full" style={styles.container}>
-            {/* Back */}
-            <div 
-                style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: isMobile ? "12px" : "24px", cursor: "pointer", color: "#A5B4FC", fontSize: "13px", fontWeight: 500, padding: "6px 14px", borderRadius: "8px", background: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.2)", transition: "all 0.2s ease" }}
-                onClick={() => navigate('/wallets')}
-            >
-                <BackIcon size={16} color="#A5B4FC" />
-                <span>{t('wallet_back')}</span>
-            </div>
+        <div style={styles.page}>
+            <div style={styles.container}>
+                <div style={styles.topbar}>
+                    <div style={styles.backPill} onClick={() => navigate('/wallets')}>
+                        <BackIcon size={14} />
+                        <span>Back to Wallets</span>
+                    </div>
+                    <div style={styles.netBadge}>
+                        <span style={{ width: "7px", height: "7px", borderRadius: "999px", backgroundColor: "#34D399", display: "inline-block" }} />
+                        {networkName}
+                    </div>
+                </div>
 
-            {!isWalletLoading && walletInfo ? (
-                <>
-                    {/* Balance Card */}
-                    <div style={styles.section}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                                <div
-                                    style={{
-                                        width: isMobile ? 38 : 44,
-                                        height: isMobile ? 38 : 44,
-                                    borderRadius: "999px",
-                                    overflow: "hidden",
-                                    backgroundColor: "#2D2D44",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
+                {!isWalletLoading && walletInfo ? (
+                    <>
+                        <div style={styles.portfolio}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                                    <div style={{
+                                        width: 56, height: 56, borderRadius: "16px", overflow: "hidden",
+                                        background: "#1E1E30", border: "1px solid #2D2D44",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "0 0 24px rgba(139,92,246,0.35)",
+                                    }}>
+                                        <img
+                                            src={getCoinLogo(walletInfo.coin)}
+                                            alt={`${networkName} network`}
+                                            title={`${networkName} network`}
+                                            onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(walletInfo.coin); }}
+                                            style={{ width: "32px", height: "32px", objectFit: "contain" }}
+                                        />
+                                    </div>
+                                    <span style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "1px", color: "#A78BFA", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                                        {({ s: 'Sonic Network', eth: 'Ethereum Network', bnb: 'BNB Network', avax: 'Avalanche Network', matic: 'Polygon Network', op: 'Optimism Network' })[String(walletInfo.coin || '').toLowerCase()] || `${nativeSym} Network`}
+                                    </span>
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={styles.portLabelRow}>
+                                        <span style={styles.portLabel}>Total Portfolio Value</span>
+                                        <span style={styles.pctChip}>+2.4%</span>
+                                    </div>
+                                    <div style={styles.portAmount}>
+                                        {fmtUsd(totalUsd || (balanceNumber * Number(coinPrice || 0)))}
+                                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#9CA3AF", marginLeft: "8px", letterSpacing: "0.5px" }}>USD</span>
+                                    </div>
+                                    <div style={styles.portActive}>Active Network: {String(walletInfo.coin || '').toLowerCase() === 'eth' ? `${networkName} (ERC-20)` : networkName}</div>
+                                </div>
+                            </div>
+                            <div style={styles.assetRow}>
+                                {assets.slice(0, 4).map((a, idx) => {
+                                    const isActive = (activeAssetId === a.id);
+                                    return (
+                                        <div
+                                            key={a.id + idx}
+                                            style={{ ...styles.assetCard(isActive), opacity: a.isPlaceholder ? 0.85 : 1, cursor: a.isPlaceholder ? "default" : "pointer" }}
+                                            onClick={() => {
+                                                if (a.isPlaceholder) return;
+                                                setActiveTokenWithdraw(a.id === 'native' ? 'native' : a.id);
+                                                setWithdrawAmount('');
+                                                setError('');
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                                    <img
+                                                        src={getCoinLogo(a.symbol)}
+                                                        alt={a.symbol}
+                                                        onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(a.symbol); }}
+                                                        style={{ width: 18, height: 18, borderRadius: "999px", objectFit: "cover", display: "block" }}
+                                                    />
+                                                    <span style={{ color: "#C4B5FD", fontSize: "11px", fontWeight: 800, letterSpacing: "0.4px" }}>{a.symbol}</span>
+                                                </span>
+                                                <span style={{ width: "8px", height: "8px", borderRadius: "999px", backgroundColor: dotColors[idx % dotColors.length] }} />
+                                            </div>
+                                            <div style={{ color: "#FFFFFF", fontSize: "15px", fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                                                {a.id === 'native'
+                                                    ? Number(a.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                                    : fmtBal(a.balance)}
+                                            </div>
+                                            <div style={{ color: "#8B8DA3", fontSize: "12px", marginTop: "3px", fontVariantNumeric: "tabular-nums" }}>{fmtUsd(a.usd)}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: "0" }}>
+                            {useCompactActions ? (
+                                <>
+                                    <div style={styles.switcher}>
+                                        <button type="button" style={styles.switchTab(activeAction === 'deposit')} onClick={() => setActiveAction('deposit')}>
+                                            {t('wallet_deposit_tab', 'Deposit')}
+                                        </button>
+                                        <button type="button" style={styles.switchTab(activeAction === 'withdraw')} onClick={() => setActiveAction('withdraw')}>
+                                            {t('wallet_withdraw_tab', 'Withdraw')}
+                                        </button>
+                                    </div>
+                                    <div style={{ marginBottom: isMobile ? "14px" : "20px" }}>
+                                        {activeAction === 'deposit' ? depositPanel : withdrawPanel}
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={styles.grid2}>
+                                    {depositPanel}
+                                    {withdrawPanel}
+                                </div>
+                            )}
+                        </div>
+
+                        <CoinTransactions
+                            transactions={transactions}
+                            chainId={defaultNetworkId}
+                            coin={walletId}
+                            hideDateOnMobile
+                            compactMobile
+                            fixedHeight
+                            desktopHeight={390}
+                            mobileHeight={270}
+                        />
+                    </>
+                ) : walletInfo === null ? (
+                    <div style={styles.panel}>
+                        <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 700, textAlign: "center", marginBottom: "12px" }}>
+                            {t('wallet_create_title', { coin: walletId.toUpperCase() })}
+                        </h2>
+                        <div style={{ textAlign: "center", marginBottom: "16px", color: "#9CA3AF" }}>
+                            {t('wallet_no_wallet', 'No tienes wallet aún')}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "center" }}>
+                            <button onClick={handleCreateWallet} disabled={creating} style={styles.primaryBtn(creating)}>
+                                {creating ? t('wallet_creating', 'Creando...') : t('wallet_create_btn', 'Crear')}
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
+                <TransactionToast toast={toast} onClose={dismissToast} />
+                <QRScannerModal
+                    isOpen={isScannerOpen}
+                    onClose={() => setIsScannerOpen(false)}
+                    onScan={(data) => {
+                        // some wallets encode URLs like ethereum:0x..., handle that
+                        let address = data;
+                        if (data.includes(':')) {
+                            const parts = data.split(':');
+                            if (parts.length > 1) {
+                                address = parts[1];
+                            }
+                        }
+                        if (address.includes('?')) {
+                            address = address.split('?')[0];
+                        }
+                        setWithdrawAddress(address);
+                        setError('');
+                    }}
+                />
+
+                {isQRModalOpen && (
+                    <div
+                        style={{
+                            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+                            backgroundColor: "rgba(0,0,0,0.85)", zIndex: 9999,
+                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                            backdropFilter: "blur(4px)",
+                        }}
+                        onClick={() => setIsQRModalOpen(false)}
+                    >
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                background: "#12121E",
+                                padding: isMobile ? "24px" : "32px",
+                                borderRadius: "20px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                border: "1px solid #2D2D44",
+                                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.6)",
+                                position: "relative",
+                                maxWidth: "92vw",
+                                boxSizing: "border-box",
+                            }}
+                        >
+                            <button
+                                onClick={() => setIsQRModalOpen(false)}
+                                style={{
+                                    position: "absolute", top: "12px", right: "12px",
+                                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+                                    borderRadius: "50%", width: "32px", height: "32px",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    cursor: "pointer", color: "#9CA3AF", fontSize: "16px",
                                 }}
                             >
-                                <img
-                                    src={getCoinLogo(walletInfo.coin)}
-                                    alt={walletInfo.coin}
-                                    onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(walletInfo.coin); }}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
+                                ✕
+                            </button>
+                            <div style={{ background: "#FFFFFF", borderRadius: "16px", padding: "14px", lineHeight: 0 }}>
+                                <QRCode value={walletInfo?.address || ''} size={isMobile ? 240 : 300} />
                             </div>
-                            <div>
-                                <div style={{ color: "#9CA3AF", fontSize: "14px" }}>Balance</div>
-                                <div style={{ color: "#FFFFFF", fontSize: isMobile ? "24px" : "32px", fontWeight: 700 }}>
-                                    {truncateToDecimals(maxWithdrawable, getCoinDecimalsPlace(walletInfo.coin))} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{walletInfo.coin}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {coinPrice && (
-                            <div style={{ color: "#9CA3AF", fontSize: "14px", marginTop: "8px" }}>
-                                ≈ ${(parseFloat(maxWithdrawable) * parseFloat(coinPrice)).toFixed(2)} USD
-                            </div>
-                        )}
-
-                        {walletInfo?.address && tokenBalances
-                            .filter(t => t.walletAddress.toLowerCase() === walletInfo.address.toLowerCase())
-                            .map(token => (
-                                <div key={token.tokenAddress} style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1F1F33" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                            <div
-                                                style={{
-                                                    width: isMobile ? 32 : 38,
-                                                    height: isMobile ? 32 : 38,
-                                                    borderRadius: "999px",
-                                                    overflow: "hidden",
-                                                    backgroundColor: "#2D2D44",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <img
-                                                    src={getCoinLogo(token.tokenSymbol)}
-                                                    alt={token.tokenSymbol}
-                                                    onError={(e) => { e.currentTarget.src = getCoinFallbackLogo(token.tokenSymbol); }}
-                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <div style={{ color: "#9CA3AF", fontSize: "14px" }}>{token.tokenSymbol} {t('balance')}</div>
-                                                <div style={{ color: "#34D399", fontSize: isMobile ? "20px" : "24px", fontWeight: 700 }}>
-                                                    {token.availableBalance.toFixed(4)} <span style={{ fontSize: isMobile ? "13px" : "16px" }}>{token.tokenSymbol}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-
-                    <div style={{ marginBottom: isMobile ? "12px" : "24px" }}>
-                        {useCompactActions ? (
-                            <>
-                                <div style={styles.actionSwitcher}>
-                                    <button
-                                        type="button"
-                                        style={styles.actionTab(activeAction === 'deposit')}
-                                        onClick={() => setActiveAction('deposit')}
-                                    >
-                                        {t('wallet_deposit_tab')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        style={styles.actionTab(activeAction === 'withdraw')}
-                                        onClick={() => setActiveAction('withdraw')}
-                                    >
-                                        {t('wallet_withdraw_tab')}
-                                    </button>
-                                </div>
-                                {activeAction === 'deposit' ? depositSection : withdrawSection}
-                            </>
-                        ) : (
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignItems: "stretch" }}>
-                                {depositSection}
-                                {withdrawSection}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Transactions */}
-                    <CoinTransactions
-                        transactions={transactions}
-                        chainId={defaultNetworkId}
-                        coin={walletId}
-                        hideDateOnMobile
-                        compactMobile
-                        fixedHeight
-                        desktopHeight={390}
-                        mobileHeight={270}
-                    />
-                </>
-            ) : walletInfo === null ? (
-                <div style={styles.section}>
-                    <h2 style={{ color: "#FFFFFF", fontSize: "20px", fontWeight: 600, textAlign: "center", marginBottom: "12px" }}>
-                        {t('wallet_create_title', { coin: walletId.toUpperCase() })}
-                    </h2>
-                    <div style={{ textAlign: "center", marginBottom: "16px", color: "#9CA3AF" }}>
-                        {t('wallet_no_wallet')}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                        <button onClick={handleCreateWallet} disabled={creating} style={styles.button(true)}>
-                            {creating ? t('wallet_creating') : t('wallet_create_btn')}
-                        </button>
-                    </div>
-                </div>
-            ) : null}
-            <TransactionToast toast={toast} onClose={dismissToast} />
-            <QRScannerModal 
-                isOpen={isScannerOpen} 
-                onClose={() => setIsScannerOpen(false)} 
-                onScan={(data) => {
-                    // some wallets encode URLs like ethereum:0x..., handle that
-                    let address = data;
-                    if (data.includes(':')) {
-                        const parts = data.split(':');
-                        if (parts.length > 1) {
-                            address = parts[1];
-                        }
-                    }
-                    if (address.includes('?')) {
-                        address = address.split('?')[0];
-                    }
-                    setWithdrawAddress(address);
-                    setError('');
-                }} 
-            />
-
-            {/* Enlarged QR Modal */}
-            {isQRModalOpen && (
-                <div 
-                    style={{
-                        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.85)", zIndex: 9999,
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                        backdropFilter: "blur(4px)",
-                        animation: "fadeIn 0.2s ease-out"
-                    }}
-                    onClick={() => setIsQRModalOpen(false)}
-                >
-                    <style>
-                        {`
-                            @keyframes slideUp {
-                                from { transform: translateY(50px) scale(0.95); opacity: 0; }
-                                to { transform: translateY(0) scale(1); opacity: 1; }
-                            }
-                            @keyframes fadeIn {
-                                from { opacity: 0; }
-                                to { opacity: 1; }
-                            }
-                        `}
-                    </style>
-                    <div 
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            background: "linear-gradient(180deg, #1A1A33 0%, #131327 100%)",
-                            padding: isMobile ? "24px" : "36px",
-                            borderRadius: "24px",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            border: "1px solid #2D2D44",
-                            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                            animation: "slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                            position: "relative",
-                        }}
-                    >
-                        <button
-                            onClick={() => setIsQRModalOpen(false)}
-                            style={{
-                                position: "absolute",
-                                top: "12px",
-                                right: "12px",
-                                background: "rgba(255,255,255,0.06)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                borderRadius: "50%",
-                                width: "32px",
-                                height: "32px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                color: "#9CA3AF",
-                                fontSize: "18px",
-                                fontWeight: 300,
-                                transition: "all 0.2s"
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "rgba(255,255,255,0.12)";
-                                e.currentTarget.style.color = "#FFFFFF";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                                e.currentTarget.style.color = "#9CA3AF";
-                            }}
-                        >
-                            ✕
-                        </button>
-
-                        <div style={{
-                            background: "#FFFFFF",
-                            borderRadius: "20px",
-                            padding: "16px",
-                            boxShadow: "0 8px 32px rgba(33, 134, 235, 0.2)",
-                            lineHeight: 0
-                        }}>
-                            <QRCode value={walletInfo?.address || ''} size={isMobile ? 240 : 340} />
-                        </div>
-
-                        <div style={{ 
-                            marginTop: "20px",
-                            width: "100%",
-                            background: "rgba(0,0,0,0.3)",
-                            border: "1px solid rgba(255,255,255,0.06)",
-                            borderRadius: "14px",
-                            padding: "14px 16px",
-                            boxSizing: "border-box"
-                        }}>
                             <div style={{
-                                fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
-                                fontSize: isMobile ? "12px" : "14px",
-                                color: "#D1D5DB",
-                                wordBreak: "break-all",
-                                textAlign: "center",
-                                lineHeight: "1.6",
-                                letterSpacing: "0.01em"
+                                marginTop: "18px", width: "100%", background: "rgba(0,0,0,0.3)",
+                                border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px",
+                                padding: "12px 14px", boxSizing: "border-box",
+                                fontFamily: "monospace", fontSize: "12px", color: "#D1D5DB",
+                                wordBreak: "break-all", textAlign: "center", lineHeight: 1.6,
                             }}>
-                                <span style={{ color: "#9CA3AF" }}>{walletInfo?.address?.slice(0, 6)}</span>
-                                <span style={{ color: "#6B7280" }}>{walletInfo?.address?.slice(6, -4)}</span>
-                                <span style={{ color: "#60A5FA", fontWeight: 500 }}>{walletInfo?.address?.slice(-4)}</span>
+                                {walletInfo?.address}
                             </div>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(walletInfo?.address || '');
+                                    setIsQRModalOpen(false);
+                                }}
+                                style={styles.primaryBtn(false)}
+                            >
+                                {t('wallet_copy_address', 'Copiar dirección')}
+                            </button>
                         </div>
-
-                        <button 
-                            onClick={() => {
-                                navigator.clipboard.writeText(walletInfo?.address || '');
-                                setIsQRModalOpen(false);
-                            }}
-                            className="mt-4 bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none rounded-xl px-4 py-3 font-semibold text-sm cursor-pointer w-full transition-opacity duration-200 hover:opacity-90"
-                        >
-                            {t('wallet_copy_address')}
-                        </button>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

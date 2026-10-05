@@ -44,14 +44,14 @@ export default function P2PChatInputArea({
       {selectedFile && (
         <div style={{
           marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10,
-          padding: '8px 10px', backgroundColor: '#080811', borderRadius: 12,
-          border: `1px solid rgba(139,92,246,0.2)`
+          padding: '8px 10px', backgroundColor: '#0A0A14', borderRadius: 12,
+          border: `1px solid rgba(168,85,247,0.2)`
         }}>
           {/* Image thumbnail */}
           {selectedFile.type?.startsWith('image/') ? (
             <div style={{
               width: 48, height: 48, borderRadius: 8, overflow: 'hidden',
-              flexShrink: 0, backgroundColor: '#080811',
+              flexShrink: 0, backgroundColor: '#0A0A14',
             }}>
               <img
                 src={URL.createObjectURL(selectedFile)}
@@ -62,17 +62,17 @@ export default function P2PChatInputArea({
           ) : (
             <div style={{
               width: 48, height: 48, borderRadius: 8, flexShrink: 0,
-              background: 'rgba(139,92,246,0.1)',
+              background: 'rgba(168,85,247,0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <span style={{ fontSize: 22 }}>📎</span>
             </div>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#E5E7EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {selectedFile.name}
             </span>
-            <span style={{ fontSize: 11, color: '#8B5CF6', fontWeight: 500 }}>
+            <span style={{ fontSize: 11, color: '#A855F7', fontWeight: 500 }}>
               {selectedFile.size < 1024 * 1024
                 ? `${(selectedFile.size / 1024).toFixed(1)} KB`
                 : `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`
@@ -85,13 +85,13 @@ export default function P2PChatInputArea({
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
             style={{
-              background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444',
+              background: 'rgba(248,113,113, 0.1)', border: 'none', color: '#F87171',
               cursor: 'pointer', width: 30, height: 30, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s', flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -104,15 +104,15 @@ export default function P2PChatInputArea({
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '6px 12px', borderRadius: 24,
-          border: `1px solid #EF4444`,
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: `1px solid #F87171`,
+          backgroundColor: 'rgba(248,113,113, 0.1)',
           flex: 1, height: 52
         }}>
-          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1.5s infinite' }} />
-          <span style={{ color: '#EF4444', fontWeight: '500', flex: 1, fontSize: 14 }}>Grabando... {formatTime(recordingTime)}</span>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#F87171', animation: 'pulse 1.5s infinite' }} />
+          <span style={{ color: '#F87171', fontWeight: '500', flex: 1, fontSize: 14 }}>Grabando... {formatTime(recordingTime)}</span>
           <button 
             onClick={() => stopRecording(true)}
-            style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 8 }}
+            style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 8 }}
             title="Cancelar"
           >
             <TrashIcon />
@@ -121,7 +121,7 @@ export default function P2PChatInputArea({
             onClick={() => stopRecording(false)}
             style={{ 
               width: 34, height: 34, borderRadius: '50%', border: 'none',
-              background: '#10B981', color: '#FFF', cursor: 'pointer',
+              background: '#34D399', color: '#FFF', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}
             title="Enviar audio"
@@ -134,13 +134,13 @@ export default function P2PChatInputArea({
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 6px 6px 16px', borderRadius: 24,
           border: `1px solid ${borderColor}`,
-          backgroundColor: '#080811',
+          backgroundColor: '#0A0A14',
         }}>
           <input
             style={{
               flex: 1, border: 'none', outline: 'none', fontSize: 14,
               backgroundColor: 'transparent',
-              color: '#E2E8F0',
+              color: '#E5E7EB',
             }}
             placeholder="Escribe tu mensaje..."
             value={messageContent}
@@ -173,9 +173,9 @@ export default function P2PChatInputArea({
               }}
             />
             <div 
-              style={{ display: 'flex', padding: 6, color: '#94A3B8', transition: 'color 0.2s', borderRadius: '50%' }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#C084FC'; e.currentTarget.style.backgroundColor = 'rgba(192, 132, 252, 0.1)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+              style={{ display: 'flex', padding: 6, color: '#9CA3AF', transition: 'color 0.2s', borderRadius: '50%' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#D8B4FE'; e.currentTarget.style.backgroundColor = 'rgba(216,180,254, 0.1)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               <PaperclipIcon />
             </div>
@@ -185,12 +185,12 @@ export default function P2PChatInputArea({
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             style={{
               background: 'transparent', border: 'none', cursor: 'pointer',
-              display: 'flex', padding: 6, color: showEmojiPicker ? '#C084FC' : '#94A3B8', 
+              display: 'flex', padding: 6, color: showEmojiPicker ? '#D8B4FE' : '#9CA3AF', 
               transition: 'color 0.2s', borderRadius: '50%',
-              backgroundColor: showEmojiPicker ? 'rgba(192, 132, 252, 0.1)' : 'transparent'
+              backgroundColor: showEmojiPicker ? 'rgba(216,180,254, 0.1)' : 'transparent'
             }}
-            onMouseEnter={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#C084FC'; e.currentTarget.style.backgroundColor = 'rgba(192, 132, 252, 0.1)'; } }}
-            onMouseLeave={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.backgroundColor = 'transparent'; } }}
+            onMouseEnter={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#D8B4FE'; e.currentTarget.style.backgroundColor = 'rgba(216,180,254, 0.1)'; } }}
+            onMouseLeave={(e) => { if(!showEmojiPicker) { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.backgroundColor = 'transparent'; } }}
             title="Añadir emoji"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -212,7 +212,7 @@ export default function P2PChatInputArea({
             disabled={!counterpartId}
             style={{
               width: 38, height: 38, borderRadius: '50%', border: 'none',
-              background: counterpartId ? 'linear-gradient(135deg, #8B5CF6, #6366F1)' : '#1F1F33',
+              background: counterpartId ? 'linear-gradient(135deg, #A855F7, #6366F1)' : '#1F1F2E',
               color: '#FFF', cursor: counterpartId ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s ease',

@@ -15,11 +15,11 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
     return (
       <div style={{
         textAlign: 'center', padding: '60px 20px',
-        color: '#64748B', fontSize: 15,
+        color: '#9CA3AF', fontSize: 15,
       }}>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -36,7 +36,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px' }}>
         {orders.map((order) => {
-          const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
+          const statusColor = STATUS_COLORS[order.status] || '#9CA3AF';
           const statusLabel = STATUS_LABELS[order.status] || order.status;
           const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
           const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
@@ -45,8 +45,8 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
 
           return (
             <div key={order.orderId} style={{
-              backgroundColor: '#0F0F1A',
-              border: '1px solid #2D2D44',
+              backgroundColor: '#1A1A28',
+              border: '1px solid #23233A',
               borderRadius: 16,
               padding: 16,
               display: 'flex',
@@ -55,10 +55,10 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#E2E8F0' }}>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#E5E7EB' }}>
                     {order.orderId?.slice(0, 8)}...
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: '#94A3B8' }}>{date}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>{date}</p>
                 </div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -71,24 +71,24 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
                 </div>
               </div>
 
-              <div style={{ padding: '12px', backgroundColor: '#1A1A2E', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ padding: '12px', backgroundColor: '#0A0A14', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t('p2p_crypto')}</p>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#F1F5F9' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>{t('p2p_crypto')}</p>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
                     {order.amount} <span style={{ fontSize: 12, color: '#9CA3AF' }}>{order.coin}</span>
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t('p2p_fiat')}</p>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#8B5CF6' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>{t('p2p_fiat')}</p>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#A855F7' }}>
                     ${order.fiatAmount} <span style={{ fontSize: 12, color: '#9CA3AF' }}>USD</span>
                   </p>
                 </div>
               </div>
 
               <div>
-                <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 600 }}>{t(userRole === 'seller' ? 'p2p_provider' : 'p2p_seller')}</p>
-                <p style={{ margin: 0, fontSize: 13, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>{t(userRole === 'seller' ? 'p2p_provider' : 'p2p_seller')}</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#E5E7EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {counterparty}
                 </p>
               </div>
@@ -99,13 +99,13 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
                   width: '100%',
                   marginTop: 8,
                   padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-                  border: '1px solid #2D2D44',
+                  border: '1px solid #23233A',
                   backgroundColor: 'transparent',
                   color: '#FFF',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)'; }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = '#23233A'; e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
                 {t('p2p_view_order')}
               </button>
@@ -122,8 +122,8 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
       <div style={{
         display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr',
         padding: '12px 20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.5px', color: '#64748B',
-        borderBottom: `1px solid ${'#1E1E2E'}`,
+        letterSpacing: '0.5px', color: '#9CA3AF',
+        borderBottom: `1px solid ${'#1C1C2A'}`,
         minWidth: 700,
       }}>
         <span>{t('p2p_order_header')}</span>
@@ -136,7 +136,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
 
       {/* Rows */}
       {orders.map((order) => {
-        const statusColor = STATUS_COLORS[order.status] || '#94A3B8';
+        const statusColor = STATUS_COLORS[order.status] || '#9CA3AF';
         const statusLabel = STATUS_LABELS[order.status] || order.status;
         const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
         const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
@@ -149,28 +149,28 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
             style={{
               display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr',
               padding: '14px 20px', alignItems: 'center',
-              borderBottom: `1px solid ${'#1E1E2E'}`,
+              borderBottom: `1px solid ${'#1C1C2A'}`,
               transition: 'background-color 0.15s',
               minWidth: 700,
             }}
-            onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(139,92,246,0.04)'}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(168,85,247,0.04)'}
             onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             {/* Order ID + date */}
             <div>
               <p style={{
                 margin: 0, fontSize: 13, fontWeight: 600, fontFamily: 'monospace',
-                color: '#E2E8F0',
+                color: '#E5E7EB',
               }}>
                 {order.orderId?.slice(0, 8)}...
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#94A3B8' }}>{date}</p>
+              <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>{date}</p>
             </div>
 
             {/* Counterparty */}
             <div>
               <p style={{
-                margin: 0, fontSize: 13, color: '#94A3B8',
+                margin: 0, fontSize: 13, color: '#9CA3AF',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {counterparty}
@@ -180,7 +180,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
             {/* Amount */}
             <div>
               <span style={{
-                fontSize: 14, fontWeight: 700, color: '#F1F5F9',
+                fontSize: 14, fontWeight: 700, color: '#FFFFFF',
               }}>
                 {order.amount} {order.coin}
               </span>
@@ -188,10 +188,10 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
 
             {/* Fiat */}
             <div>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#8B5CF6' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#A855F7' }}>
                 ${order.fiatAmount}
               </span>
-              <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 4 }}>USD</span>
+              <span style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 4 }}>USD</span>
             </div>
 
             {/* Status */}
@@ -216,13 +216,13 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
               onClick={() => navigate(`/p2p/order/${order.orderId}`)}
               style={{
                 padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                border: `1px solid ${'#2D2D44'}`,
+                border: `1px solid ${'#23233A'}`,
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
+                color: '#9CA3AF',
                 cursor: 'pointer', transition: 'all 0.15s',
               }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = '#2D2D44'; e.currentTarget.style.color = '#94A3B8'; }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.color = '#A855F7'; }}
+              onMouseOut={e => { e.currentTarget.style.borderColor = '#23233A'; e.currentTarget.style.color = '#9CA3AF'; }}
             >
               {t('p2p_view')}
               </button>

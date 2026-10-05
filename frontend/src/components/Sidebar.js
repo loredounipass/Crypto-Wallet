@@ -183,7 +183,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
 
   const bottomItems = [
     { text: t("sidebar_settings", "Ajustes"), icon: SettingsIcon, path: "/settings" },
-    { text: t("sidebar_logout", "Salir"), icon: LogoutIcon, path: "logout", color: "#FF6B6B" },
+    { text: t("sidebar_logout", "Salir"), icon: LogoutIcon, path: "logout", color: "#F87171" },
   ];
 
   const { logoutUser } = useAuth();
@@ -212,11 +212,11 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
   };
 
   const getListItemStyle = (isActive = false, itemColor) => {
-    const isDanger = itemColor === "#FF6B6B";
-    const activeColor = isDanger ? "#FF6B6B" : "#2186EB";
-    const activeBg = isDanger ? "rgba(255, 107, 107, 0.1)" : "rgba(33, 134, 235, 0.1)";
-    const activeBorder = isDanger ? "rgba(255, 107, 107, 0.2)" : "rgba(33, 134, 235, 0.2)";
-    const defaultColor = isDanger ? "#FF6B6B" : "#8F95A3";
+    const isDanger = itemColor === "#FF6B6B" || itemColor === "#F87171";
+    const activeColor = isDanger ? "#F87171" : "#C4B5FD";
+    const activeBg = isDanger ? "rgba(248, 113, 113, 0.1)" : "rgba(168, 85, 247, 0.14)";
+    const activeBorder = isDanger ? "rgba(248, 113, 113, 0.3)" : "rgba(168, 85, 247, 0.35)";
+    const defaultColor = isDanger ? "#F87171" : "#9CA3AF";
 
     return {
       color: isActive ? activeColor : defaultColor,
@@ -251,15 +251,15 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        background: "#080811",
+        background: "#0B0B14",
         width: isMobile ? "100%" : (open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED),
         transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         overflowX: "hidden",
         overflowY: "auto",
-        borderRight: "1px solid #1A1A2E",
+        borderRight: "1px solid #1F1F2E",
       }}>
       {/* Logo Section */}
-      <Box style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "64px", borderBottom: "1px solid #1A1A2E" }}>
+      <Box style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "64px", borderBottom: "1px solid #1F1F2E" }}>
         {open || isMobile ? (
           <Logo variant="sidebar-expanded" />
         ) : (
@@ -293,7 +293,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 {(open || isMobile) && (
                   <ListItemText
                     primary={item.text}
-                    style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }}
+                    style={{ fontSize: "14px", fontWeight: isActive ? 700 : 500, color: "inherit" }}
                   />
                 )}
               </ListItem>
@@ -310,9 +310,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 width: "28px",
                 height: "28px",
                 borderRadius: "8px",
-                border: "1px solid #1F1F33",
-                background: "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))",
-                color: "#8F95A3",
+                border: "1px solid #23233A",
+                background: "linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(99, 102, 241, 0.12))",
+                color: "#9CA3AF",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -320,15 +320,15 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 transition: "all 0.25s ease",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.2), rgba(139, 92, 246, 0.15))";
-                e.currentTarget.style.borderColor = "rgba(33, 134, 235, 0.3)";
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(99, 102, 241, 0.2))";
+                e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)";
                 e.currentTarget.style.color = "#FFFFFF";
-                e.currentTarget.style.boxShadow = "0 0 12px rgba(33, 134, 235, 0.15)";
+                e.currentTarget.style.boxShadow = "0 0 12px rgba(168, 85, 247, 0.25)";
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = "linear-gradient(135deg, rgba(33, 134, 235, 0.1), rgba(139, 92, 246, 0.08))";
-                e.currentTarget.style.borderColor = "#1F1F33";
-                e.currentTarget.style.color = "#8F95A3";
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(99, 102, 241, 0.12))";
+                e.currentTarget.style.borderColor = "#23233A";
+                e.currentTarget.style.color = "#9CA3AF";
                 e.currentTarget.style.boxShadow = "none";
               }}
             >
@@ -343,7 +343,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       {/* Bottom Items (Settings & Logout) */}
       <Box style={{
         padding: "12px",
-        borderTop: "1px solid #1A1A2E",
+        borderTop: "1px solid #1F1F2E",
       }}>
         {bottomItems.map((item) => {
           const isActive = checkIsActive(item);
@@ -372,7 +372,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
                 {(open || isMobile) && (
                   <ListItemText
                     primary={item.text}
-                    style={{ fontSize: "14px", fontWeight: isActive ? 600 : 500, color: "inherit" }}
+                    style={{ fontSize: "14px", fontWeight: isActive ? 700 : 500, color: "inherit" }}
                   />
                 )}
               </ListItem>
@@ -393,9 +393,9 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
         sx={{
           zIndex: 1200,
           '& .MuiDrawer-paper': {
-            backgroundColor: '#080811',
-            background: '#080811',
-            borderRight: '1px solid #1A1A2E',
+            backgroundColor: '#0B0B14',
+            background: '#0B0B14',
+            borderRight: '1px solid #1F1F2E',
             boxShadow: 'none',
             padding: '0',
             margin: '0',
@@ -428,7 +428,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
       <div style={{
         height: "100vh",
         width: open ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED,
-        background: "#080811",
+        background: "#0B0B14",
         transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
       }}>
         {sidebarContent}

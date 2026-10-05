@@ -42,11 +42,11 @@ export default function P2POrderStatus({ status }) {
                     width: 28, height: 28, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700,
-                    backgroundColor: isActive ? '#7C3AED' : 'rgba(45,45,68,0.8)',
-                    color: isActive ? '#FFF' : '#475569',
+                    backgroundColor: isActive ? '#A855F7' : 'rgba(35,35,58,0.8)',
+                    color: isActive ? '#FFF' : '#6B7280',
                     boxShadow: isCurrent
-                      ? '0 0 0 3px rgba(124,58,237,0.2), 0 2px 8px rgba(124,58,237,0.3)'
-                      : (isCompleted ? '0 1px 4px rgba(124,58,237,0.2)' : 'none'),
+                      ? '0 0 0 3px rgba(168,85,247,0.2), 0 2px 8px rgba(168,85,247,0.3)'
+                      : (isCompleted ? '0 1px 4px rgba(168,85,247,0.2)' : 'none'),
                     transition: 'all 0.3s ease',
                   }}>
                     {isCompleted ? (
@@ -59,7 +59,7 @@ export default function P2POrderStatus({ status }) {
                   </div>
                   <span style={{
                     fontSize: 10, marginTop: 5, fontWeight: 600,
-                    color: isActive ? '#E2E8F0' : '#475569',
+                    color: isActive ? '#E5E7EB' : '#6B7280',
                     letterSpacing: '0.02em',
                   }}>
                     {step}
@@ -70,8 +70,8 @@ export default function P2POrderStatus({ status }) {
                     flex: 1, height: 2, marginTop: -16,
                     borderRadius: 1,
                     background: i < activeStep
-                      ? 'linear-gradient(90deg, #7C3AED, #8B5CF6)'
-                      : 'rgba(45,45,68,0.8)',
+                      ? 'linear-gradient(90deg, #A855F7, #6366F1)'
+                      : 'rgba(35,35,58,0.8)',
                     transition: 'background 0.3s ease',
                   }} />
                 )}
