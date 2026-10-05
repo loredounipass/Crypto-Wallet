@@ -1,6 +1,5 @@
 import React from 'react'
 import LeftSidebar from './LeftSidebar'
-import PostForm from './PostForm'
 
 // DRAWER MOVIL CON EL CONTENIDO DE LA COLUMNA IZQUIERDA
 // (perfil, donaciones, Brivo Links, contacts). Se abre desde el icono
@@ -35,9 +34,6 @@ export default function FeedExtrasDrawer() {
           &times;
         </button>
         <LeftSidebar />
-        <div style={{ marginTop: 12 }}>
-          <PostForm />
-        </div>
       </aside>
     </>
   )

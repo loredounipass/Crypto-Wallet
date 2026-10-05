@@ -28,7 +28,7 @@ const S = {
   },
   panel: {
     position: 'fixed', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: 420,
-    background: 'rgba(21,21,21,0.72)',
+    background: 'rgba(18,18,30,0.78)',
     WebkitBackdropFilter: 'blur(20px) saturate(140%)',
     backdropFilter: 'blur(20px) saturate(140%)',
     borderLeft: '1px solid rgba(255,255,255,0.12)',
@@ -44,37 +44,37 @@ const S = {
   headerTitle: { fontWeight: 700, fontSize: 16, color: '#ffffff' },
   headerClose: {
     position: 'absolute', right: 12, background: 'none', border: 'none',
-    color: '#a0a0a0', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4,
+    color: '#9CA3AF', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4,
   },
   list: { flex: 1, overflowY: 'auto', padding: '8px 16px 12px' },
   row: { display: 'flex', gap: 12, padding: '10px 0' },
   body: { flex: 1, minWidth: 0 },
   nameRow: { display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 },
   name: { fontWeight: 600, fontSize: 13, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  time: { fontSize: 12, color: '#a0a0a0', flexShrink: 0 },
+  time: { fontSize: 12, color: '#9CA3AF', flexShrink: 0 },
   text: { fontSize: 14, color: '#ffffff', marginTop: 2, wordBreak: 'break-word', lineHeight: 1.4 },
   actions: { display: 'flex', gap: 14, marginTop: 6, alignItems: 'center' },
-  replyBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#a0a0a0', padding: 0 },
+  replyBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#9CA3AF', padding: 0 },
   likeBtn: {
     background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 0 8px',
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0,
   },
-  likeCount: { fontSize: 11, color: '#a0a0a0' },
+  likeCount: { fontSize: 11, color: '#9CA3AF' },
   quoted: {
     display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, padding: '6px 10px',
-    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #22c1c3', borderRadius: '0 8px 8px 0',
+    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #A855F7', borderRadius: '0 8px 8px 0',
   },
   quotedName: { fontSize: 11, fontWeight: 700, color: '#ffffff' },
-  quotedText: { fontSize: 12, color: '#a0a0a0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  quotedText: { fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   thread: { marginLeft: 32, marginTop: 2 },
   replyLine: {
     borderLeft: '2px solid rgba(255,255,255,0.12)', paddingLeft: 12, marginTop: 4,
   },
-  parentRef: { fontSize: 12, color: '#a0a0a0', marginTop: 2 },
-  parentName: { fontWeight: 700, color: '#22c1c3' },
+  parentRef: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
+  parentName: { fontWeight: 700, color: '#A855F7' },
   viewReplies: {
     background: 'none', border: 'none', cursor: 'pointer', fontSize: 12,
-    fontWeight: 600, color: '#a0a0a0', margin: '2px 0 4px 52px', padding: 0,
+    fontWeight: 600, color: '#9CA3AF', margin: '2px 0 4px 52px', padding: 0,
   },
   replyBar: {
     display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
@@ -82,11 +82,11 @@ const S = {
   },
   replyPreview: {
     flex: 1, minWidth: 0, display: 'flex', gap: 8, alignItems: 'center',
-    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #22c1c3',
+    background: 'rgba(255,255,255,0.06)', borderLeft: '2px solid #A855F7',
     borderRadius: '0 8px 8px 0', padding: '6px 10px',
   },
   replyCancel: {
-    background: 'none', border: 'none', color: '#a0a0a0', cursor: 'pointer',
+    background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer',
     fontSize: 18, lineHeight: 1, padding: 4, flexShrink: 0,
   },
   form: {
@@ -99,7 +99,7 @@ const S = {
     outline: 'none', fontSize: 14, fontFamily: 'inherit',
   },
   send: {
-    background: 'none', border: 'none', color: '#22c1c3', fontWeight: 700,
+    background: 'none', border: 'none', color: '#A855F7', fontWeight: 700,
     fontSize: 14, cursor: 'pointer', padding: '6px 2px', flexShrink: 0,
   },
 }
@@ -159,7 +159,7 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
               {meId && String(c.author) === meId && (
                 <button
                   onClick={() => setConfirmDeleteId(c._id)}
-                  style={{ ...S.replyBtn, color: '#6B6B6B' }}
+                  style={{ ...S.replyBtn, color: '#6B7280' }}
                   aria-label="Eliminar comentario"
                 >
                   Eliminar
@@ -175,8 +175,8 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
             <svg width="14" height="14" viewBox="0 0 24 24"
               key={liked ? 'liked' : 'unliked'}
               style={liked ? { animation: 'igPop 0.35s ease' } : undefined}
-              fill={liked ? '#EF4444' : 'none'}
-              stroke={liked ? '#EF4444' : '#a0a0a0'}
+              fill={liked ? '#F87171' : 'none'}
+              stroke={liked ? '#F87171' : '#9CA3AF'}
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
@@ -222,13 +222,13 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
         </div>
 
         <div ref={listRef} style={S.list}>
-          {loading && <div style={{ textAlign: 'center', color: '#a0a0a0', padding: 20 }}>Cargando…</div>}
-          {error && <div style={{ textAlign: 'center', color: '#FF6B6B', padding: 20 }}>{error}</div>}
+          {loading && <div style={{ textAlign: 'center', color: '#9CA3AF', padding: 20 }}>Cargando…</div>}
+          {error && <div style={{ textAlign: 'center', color: '#F87171', padding: 20 }}>{error}</div>}
           {!loading && !error && topLevel.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px 20px' }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>💬</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>Aún no hay comentarios</div>
-              <div style={{ fontSize: 13, color: '#a0a0a0', marginTop: 4 }}>Sé el primero en comentar.</div>
+              <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Sé el primero en comentar.</div>
             </div>
           )}
           {topLevel.map(c => renderComment(c))}
@@ -240,7 +240,7 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
           <div style={S.replyBar}>
             <div style={S.replyPreview}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#a0a0a0' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>
                   Respondiendo a <span style={{ fontWeight: 700, color: '#ffffff' }}>{replyTo.name}</span>
                 </div>
                 <div style={S.quotedText}>{snippet(replyTo.content, 70) || 'Foto'}</div>

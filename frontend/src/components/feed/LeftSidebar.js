@@ -10,7 +10,7 @@ const styles = {
     flexDirection: "column",
     gap: 12,
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    color: "#E2E8F0",
+    color: "#E5E7EB",
   },
   profileBtn: {
     display: "flex",
@@ -26,22 +26,22 @@ const styles = {
   },
   name: {
     fontWeight: 700,
-    color: "#F1F5F9",
+    color: "#FFFFFF",
     fontSize: 14,
   },
   divider: {
     border: "none",
-    borderTop: "1px solid #2D2D44",
+    borderTop: "1px solid #1F1F2E",
     margin: 0,
   },
   donationLabel: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#9CA3AF",
     fontWeight: 600,
   },
   donationDesc: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#9CA3AF",
   },
   walletCard: {
     display: "flex",
@@ -49,8 +49,8 @@ const styles = {
     gap: 8,
     padding: "0.45rem",
     borderRadius: 8,
-    border: "1px solid #2D2D44",
-    backgroundColor: "#1A1A2E",
+    border: "1px solid #2A2A3A",
+    backgroundColor: "#1A1A28",
   },
   walletBadge: {
     width: 36,
@@ -64,11 +64,11 @@ const styles = {
   walletName: {
     fontSize: 13,
     fontWeight: 700,
-    color: "#F1F5F9",
+    color: "#FFFFFF",
   },
   walletAddress: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#9CA3AF",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -78,13 +78,13 @@ const styles = {
     background: "transparent",
     border: "none",
     cursor: "pointer",
-    color: "#64748B",
+    color: "#9CA3AF",
     display: "inline-flex",
     padding: 2,
   },
   copied: {
     fontSize: 12,
-    color: "#10B981",
+    color: "#34D399",
   },
 }
 
@@ -129,7 +129,7 @@ export default function LeftSidebar() {
 
           {/* USDT */}
           <div style={styles.walletCard}>
-            <div style={{ ...styles.walletBadge, background: "linear-gradient(180deg,#22c1c3,#1e90ff)" }}>
+            <div style={{ ...styles.walletBadge, background: "linear-gradient(180deg,#A855F7,#6366F1)" }}>
               <span style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>USDT</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>

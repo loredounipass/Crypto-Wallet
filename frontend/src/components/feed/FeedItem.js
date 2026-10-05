@@ -97,7 +97,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
                   fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 20,
                   border: following ? '1.5px solid var(--fn-border)' : '1.5px solid var(--fn-teal)',
                   background: following ? 'transparent' : 'var(--fn-teal)',
-                  color: following ? 'var(--fn-muted)' : '#04111a',
+                  color: following ? 'var(--fn-muted)' : '#FFFFFF',
                   cursor: followLoading ? 'wait' : 'pointer',
                   transition: 'all 0.18s', whiteSpace: 'nowrap', lineHeight: 1.6,
                 }}
@@ -152,7 +152,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
               style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
             />
             {editError && (
-              <div style={{ color: '#EF4444', fontSize: 12, marginTop: 6 }}>{editError}</div>
+              <div style={{ color: '#F87171', fontSize: 12, marginTop: 6 }}>{editError}</div>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn-secondary" style={{ marginTop: 0 }} onClick={cancelEditing} disabled={saving}>
@@ -196,7 +196,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
                   img.style.display = 'none';
                   if (!img.nextSibling || img.nextSibling.className !== 'img-error-msg') {
                     img.insertAdjacentHTML('afterend',
-                      '<div class="img-error-msg" style="padding:24px;text-align:center;color:#a0a0a0;font-size:13px">⚠️ Imagen procesando, por favor recarga la página.</div>'
+                      '<div class="img-error-msg" style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px">⚠️ Imagen procesando, por favor recarga la página.</div>'
                     );
                   }
                 }

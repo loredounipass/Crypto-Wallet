@@ -156,7 +156,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
   };
 
   return (
-    <AppBarStyled position="fixed" open={sidebarOpen} style={{ background: "linear-gradient(90deg, #2186EB 0%, #1A6BC7 100%)" }}>
+    <AppBarStyled position="fixed" open={sidebarOpen} style={{ background: "#0B0B14", borderBottom: "1px solid #1F1F2E", boxShadow: "none" }}>
       <Toolbar
         style={{
           display: "flex",
@@ -171,13 +171,37 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
             color="inherit"
             aria-label="menu"
             onClick={onMobileMenuToggle}
-            style={{ position: "absolute", left: 16 }}
+            style={{ position: "absolute", left: 16, zIndex: 1 }}
           >
             <MenuIcon />
           </IconButton>
         )}
 
-        <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", ml: 3 }}>
+        {isMobile && (
+          <Box sx={{ display: "flex", alignItems: "center", ml: 5 }}>
+            <Link
+              href="/"
+              style={{ display: "flex", alignItems: "center", textDecoration: "none", color: "inherit" }}
+              aria-label="BrivoTrust inicio"
+            >
+              <div
+                style={{
+                  width: 36, height: 36,
+                  clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                  background: "linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #3B82F6 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#FFFFFF", fontWeight: 800, fontSize: 18, lineHeight: 1,
+                  textShadow: "0 0 10px rgba(255,255,255,0.5)",
+                  flexShrink: 0,
+                }}
+              >
+                B
+              </div>
+            </Link>
+          </Box>
+        )}
+
+        <Box sx={{ flexGrow: 1, display: isMobile ? "none" : "flex", alignItems: "center", ml: 3 }}>
           <Link
             href="/"
             style={{ display: "flex", alignItems: "center", textDecoration: "none", color: "inherit" }}
@@ -195,7 +219,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
                   width: 45,
                   height: 50,
                   clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                  bgcolor: "#2186EB",
+                  background: "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -218,7 +242,7 @@ function DashboardContent({ sidebarOpen, onMobileMenuToggle }) {
           </Link>
         </Box>
 
-        {renderNavLinks()}
+        {!isMobile && renderNavLinks()}
 
         <Box style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <Tooltip title={t('nav_settings')}>
