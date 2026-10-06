@@ -13,23 +13,10 @@ export default function FeedList() {
   } = useFeedListLogic()
   const [showPostDialog, setShowPostDialog] = React.useState(false)
   const [formInView, setFormInView] = React.useState(true)
-  const [isMobileView, setIsMobileView] = React.useState(() => window.innerWidth <= 640)
   const formWrapRef = React.useRef(null)
-
-  React.useEffect(() => {
-    const onResize = () => {
-      setIsMobileView(window.innerWidth <= 640);
-    };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-    };
-  }, [])
 
   /* La cruz solo aparece cuando el form sale por completo de pantalla */
   React.useEffect(() => {
-    if (isMobileView) return;
     const el = formWrapRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const obs = new IntersectionObserver(
@@ -38,7 +25,7 @@ export default function FeedList() {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [isMobileView])
+  }, [])
 
   React.useEffect(() => {
     if (!showPostDialog) return
@@ -55,7 +42,7 @@ export default function FeedList() {
       <FeedExtrasDrawer />
 
       <div className="fb-list-wrapper">
-        {!isMobileView && <div className="fb-post-inline" ref={formWrapRef}><PostForm /></div>}
+        <div className="fb-post-inline" ref={formWrapRef}><PostForm /></div>
 
         {loading && (
           <>
@@ -121,8 +108,8 @@ export default function FeedList() {
         )}
       </div>
 
-      {/* FAB crear publicación: siempre en móvil, en desktop solo con el form fuera de vista */}
-      {(isMobileView || !formInView) && (
+      {/* FAB crear publicación: solo cuando el form sale de vista (top = form completo) */}
+      {!formInView && (
       <button
         type="button"
         onClick={() => setShowPostDialog(true)}

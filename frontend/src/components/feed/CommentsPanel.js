@@ -24,7 +24,7 @@ function snippet(text, max = 80) {
 /* ── instagram-like styles ── */
 const S = {
   backdrop: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 900,
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 1299,
   },
   panel: {
     position: 'fixed', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: 420,
@@ -33,7 +33,7 @@ const S = {
     backdropFilter: 'blur(20px) saturate(140%)',
     borderLeft: '1px solid rgba(255,255,255,0.12)',
     boxShadow: '-16px 0 48px rgba(0,0,0,0.5)',
-    zIndex: 901, display: 'flex', flexDirection: 'column',
+    zIndex: 1300, display: 'flex', flexDirection: 'column',
     animation: 'slideInRight 0.25s ease-out',
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
@@ -43,8 +43,11 @@ const S = {
   },
   headerTitle: { fontWeight: 700, fontSize: 16, color: '#ffffff' },
   headerClose: {
-    position: 'absolute', right: 12, background: 'none', border: 'none',
-    color: '#9CA3AF', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4,
+    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+    width: 36, height: 36, borderRadius: '50%', zIndex: 2,
+    background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)',
+    color: '#FFFFFF', cursor: 'pointer', fontSize: 18, fontWeight: 700, lineHeight: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
   },
   list: { flex: 1, overflowY: 'auto', padding: '8px 16px 12px' },
   row: { display: 'flex', gap: 12, padding: '10px 0' },
@@ -93,14 +96,20 @@ const S = {
     display: 'flex', gap: 10, padding: '12px 16px',
     borderTop: '1px solid rgba(255,255,255,0.12)', alignItems: 'center', background: 'rgba(0,0,0,0.3)',
   },
+  commentField: {
+    flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 4,
+    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 999, padding: '4px 4px 4px 16px',
+  },
   input: {
-    flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 22, padding: '9px 16px', color: '#ffffff',
-    outline: 'none', fontSize: 14, fontFamily: 'inherit',
+    flex: 1, minWidth: 0, background: 'transparent', border: 'none',
+    color: '#ffffff', outline: 'none', fontSize: 14, fontFamily: 'inherit', padding: '8px 0',
   },
   send: {
-    background: 'none', border: 'none', color: '#A855F7', fontWeight: 700,
-    fontSize: 14, cursor: 'pointer', padding: '6px 2px', flexShrink: 0,
+    background: 'linear-gradient(135deg, #A855F7, #60A5FA)', border: 'none', color: '#fff',
+    cursor: 'pointer', padding: 0, flexShrink: 0, width: 34, height: 34, borderRadius: '50%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(168,85,247,0.35)',
   },
 }
 /* ── component ── */
@@ -210,7 +219,8 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
 
   return (
     <>
-      <style>{`@keyframes igPop { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }`}</style>
+      <style>{`@keyframes igPop { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
+      .fb-comments-close:hover { background: rgba(255,255,255,0.16) !important; color: #fff !important; }`}</style>
       <div onClick={onClose} style={S.backdrop} />
 
       <div style={S.panel}>
@@ -218,7 +228,7 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
           <span style={S.headerTitle}>
             Comentarios{comments.length > 0 ? ` (${comments.length})` : ''}
           </span>
-          <button onClick={onClose} style={S.headerClose} aria-label="Cerrar comentarios">&times;</button>
+          <button onClick={onClose} style={S.headerClose} className="fb-comments-close" aria-label="Cerrar comentarios">✕</button>
         </div>
 
         <div ref={listRef} style={S.list}>
@@ -252,23 +262,31 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
 
         <form onSubmit={handleSubmit} style={S.form}>
           <UserAvatar user={auth} size={32} />
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={replyTo ? `Responde a ${replyTo.name}…` : 'Añade un comentario…'}
-            disabled={submitting}
-            style={S.input}
-          />
-          {(text.trim().length > 0) && (
-            <button type="submit" disabled={submitting} style={{
+          <div style={S.commentField}>
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={replyTo ? `Responde a ${replyTo.name}…` : 'Añade un comentario…'}
+              disabled={submitting}
+              style={S.input}
+              autoComplete="off"
+              enterKeyHint="send"
+              aria-label="Escribe un comentario"
+            />
+            <button type="submit" disabled={submitting || text.trim().length === 0} title="Publicar" aria-label="Publicar comentario" style={{
               ...S.send,
-              opacity: submitting ? 0.5 : 1,
-              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: (submitting || text.trim().length === 0) ? 0.4 : 1,
+              cursor: (submitting || text.trim().length === 0) ? 'not-allowed' : 'pointer',
             }}>
-              Publicar
+              {submitting ? '…' : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              )}
             </button>
-          )}
+          </div>
         </form>
       </div>
 

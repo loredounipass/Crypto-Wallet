@@ -323,13 +323,159 @@
   border-color: rgba(168, 85, 247, 0.3);
 }
 
+/* ── Composer: avatar + pill con acciones dentro ── */
+.fb-composer {
+  padding: 14px 16px;
+}
+.fb-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fb-composer-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--fn-glass-bg-soft);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 5px 5px 5px 18px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.fb-composer-field:focus-within {
+  border-color: rgba(168, 85, 247, 0.55);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+.fb-composer-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fn-text);
+  font-size: 14.5px;
+  font-family: inherit;
+  padding: 9px 0;
+}
+.fb-composer-input::placeholder {
+  color: var(--fn-muted);
+}
+.fb-composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.fb-composer-tool {
+  color: var(--fn-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+.fb-composer-tool:hover {
+  color: var(--fn-teal);
+  background: rgba(168, 85, 247, 0.12);
+  transform: scale(1.08);
+}
+.fb-composer-send {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, var(--fn-teal), var(--fn-blue));
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s, opacity 0.2s;
+}
+.fb-composer-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(168, 85, 247, 0.5);
+  filter: brightness(1.08);
+}
+.fb-composer-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.fb-attach-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 7px 8px 7px 14px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--fn-text);
+}
+.fb-attach-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fb-attach-x {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fn-muted);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.fb-attach-x:hover {
+  background: rgba(248, 113, 113, 0.25);
+  color: #F87171;
+}
+
+@media (max-width: 520px) {
+  .fb-composer {
+    padding: 12px;
+  }
+  .fb-composer-row {
+    gap: 8px;
+  }
+  .fb-composer-field {
+    padding: 4px 4px 4px 14px;
+  }
+  .fb-composer-send span {
+    display: none;
+  }
+  .fb-composer-send {
+    padding: 9px 11px;
+  }
+}
+
 /* Post Cards */
 .fb-card {
   background: var(--fn-glass-bg);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--fn-glass-border);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: var(--fn-glass-hi), var(--fn-glass-shadow);
   transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.25s ease;
@@ -471,7 +617,7 @@
   background: var(--fn-glass-bg);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid var(--fn-glass-border);
   box-shadow: var(--fn-glass-hi), var(--fn-glass-shadow);
 }
@@ -489,7 +635,7 @@
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--fn-glass-border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px;
   margin-bottom: 6px;
   box-shadow: var(--fn-glass-shadow);
@@ -559,9 +705,10 @@
   }
 
   .fb-card {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    border-radius: 14px;
+    margin: 0 8px;
+    border-left: 1px solid var(--fn-glass-border);
+    border-right: 1px solid var(--fn-glass-border);
   }
 
   .fb-desc {

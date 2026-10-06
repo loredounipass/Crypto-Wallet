@@ -68,6 +68,7 @@ function AppContent() {
     const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [showNotif, setShowNotif] = useState(false);
 
     const isPublicRoute = publicRoutes.includes(location.pathname);
     const isAuthenticated = !!auth;
@@ -159,38 +160,38 @@ function AppContent() {
                             {location.pathname.startsWith('/feed') && (
                                 <Box style={{
                                     position: 'absolute',
-                                    left: '50%',
+                                    left: '54%',
                                     transform: 'translateX(-50%)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '2px',
+                                    justifyContent: 'center',
+                                    gap: '20px',
+                                    padding: '0 8px',
                                 }}>
-                                    <IconButton
+                                    <button
                                         onClick={toggleFeedExtras}
                                         aria-label="panel del feed"
                                         title="Donaciones, links y contactos"
-                                        style={{
-                                            color: '#FFFFFF',
-                                        }}
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                             <rect x="3" y="3" width="18" height="18" rx="2" />
                                             <line x1="15" y1="3" x2="15" y2="21" />
                                         </svg>
-                                    </IconButton>
-                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                    </button>
+                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
                                             <circle cx="16" cy="11" r="1" />
                                         </svg>
                                     </Link>
-                                    <Link to="/marketplace" aria-label="Marketplace" title="Marketplace" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                    <Link to="/marketplace" aria-label="Marketplace" title="Marketplace" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                                             <polyline points="9 22 9 12 15 12 15 22" />
                                         </svg>
                                     </Link>
-                                    <Link to="/p2p" aria-label="Vender P2P" title="Vender P2P" style={{ color: '#FFFFFF', display: 'flex', padding: '8px' }}>
+                                    <Link to="/p2p" aria-label="Vender P2P" title="Vender P2P" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M7 7h10" />
                                             <path d="M14 4l3 3-3 3" />
@@ -198,7 +199,48 @@ function AppContent() {
                                             <path d="M17 17H7" />
                                         </svg>
                                     </Link>
+                                    <button
+                                        onClick={() => setShowNotif((v) => !v)}
+                                        aria-label="Notificaciones"
+                                        title="Notificaciones"
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                        </svg>
+                                        <span style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: '#F87171', border: '1px solid #1A1A2E' }} />
+                                    </button>
                                 </Box>
+                            )}
+                            {showNotif && location.pathname.startsWith('/feed') && (
+                                <>
+                                    <div
+                                        onClick={() => setShowNotif(false)}
+                                        style={{ position: 'fixed', inset: 0, zIndex: 1199, background: 'transparent' }}
+                                    />
+                                    <div style={{
+                                        position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)',
+                                        zIndex: 1200, width: 'min(320px, 90vw)',
+                                        background: '#12121E', border: '1px solid #2A2A3A', borderRadius: 14,
+                                        boxShadow: '0 12px 40px rgba(0,0,0,0.5)', padding: '14px 16px',
+                                        color: '#FFFFFF', fontSize: 14,
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <strong>🔔 Notificaciones</strong>
+                                            <button
+                                                onClick={() => setShowNotif(false)}
+                                                aria-label="Cerrar notificaciones"
+                                                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#9CA3AF', width: 26, height: 26, borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <div style={{ color: '#9CA3AF', fontSize: 13 }}>
+                                            No tienes notificaciones nuevas.
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </Box>
                     )}
