@@ -24,7 +24,7 @@ export default function useFeedItemLogic({ post, actions, auth, initialFollowing
     if (typeof initialFollowing === 'boolean') return initialFollowing;
     return false;
   });
-  const followLoading = useRef(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // SYNCS INITIAL FOLLOW STATE FOR THE POST AUTHOR
   useEffect(() => {
@@ -51,10 +51,9 @@ export default function useFeedItemLogic({ post, actions, auth, initialFollowing
 
   // FOLLOWS THE POST AUTHOR (SYNCED WITH THE PROFILE FOLLOW API)
   const handleFollow = useCallback(async () => {
-    if (followLoading.current || following) return;
     const authorId = post?.author ? String(post.author._id || post.author) : '';
     if (!authorId) return;
-    followLoading.current = true;
+    setFollowLoading(true);
     setFollowing(true);
     try {
       const res = await followUserProfile(authorId);
@@ -63,17 +62,16 @@ export default function useFeedItemLogic({ post, actions, auth, initialFollowing
     } catch (err) {
       console.error('[FeedItem] Error following user:', err);
       setFollowing(false);
-    } finally { followLoading.current = false; }
-  }, [following, post?.author]);
+    } finally { setFollowLoading(false); }
+  }, [post?.author]);
 
 
 
   // UNFOLLOWS THE POST AUTHOR (SYNCED WITH THE PROFILE FOLLOW API)
   const handleUnfollow = useCallback(async () => {
-    if (followLoading.current || !following) return;
     const authorId = post?.author ? String(post.author._id || post.author) : '';
     if (!authorId) return;
-    followLoading.current = true;
+    setFollowLoading(true);
     setFollowing(false);
     try {
       const res = await unfollowUserProfile(authorId);
@@ -82,8 +80,8 @@ export default function useFeedItemLogic({ post, actions, auth, initialFollowing
     } catch (err) {
       console.error('[FeedItem] Error unfollowing user:', err);
       setFollowing(true);
-    } finally { followLoading.current = false; }
-  }, [following, post?.author]);
+    } finally { setFollowLoading(false); }
+  }, [post?.author]);
 
 
 
