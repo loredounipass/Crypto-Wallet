@@ -87,19 +87,23 @@ export default function usePostFormLogic(auth) {
     if (submitting || processing) return;
     setSubmitting(true);
     try {
+      let created = null;
       if (files.length > 0) {
         const formData = new FormData();
         for (const f of files) formData.append('files', f);
         formData.append('description', (description || '').trim());
         formData.append('type', 'image');
-        await createPostWithFile(formData);
+        created = await createPostWithFile(formData);
       } else {
-        await createPost({ description, type: 'text', authorId: auth._id });
+        created = await createPost({ description, type: 'text', authorId: auth._id });
       }
       clearFiles();
       setDescription('');
       setExpanded(false);
       if (e.target?.reset) e.target.reset();
+      if (typeof onCreated === 'function') {
+        try { await onCreated(created); } catch (_) { }
+      }
     } catch (err) {
       console.error(err);
       if (!err?.response) {

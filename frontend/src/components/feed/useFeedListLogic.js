@@ -7,7 +7,7 @@ import useFeed from '../../hooks/useFeed';
 export default function useFeedListLogic() {
   const {
     posts, loading, error,
-    loadMore, hasMore, loadingMore,
+    loadMore, hasMore, loadingMore, refetch,
     likePost, unlikePost, deletePost, updatePost, addComment, joinPost, viewPost,
     getComments, likeComment, unlikeComment, sharePost
   } = useFeed();
@@ -36,6 +36,6 @@ export default function useFeedListLogic() {
 
 
   return {
-    posts, loading, error, hasMore, loadingMore, actions, lastPostRef
+    posts, loading, error, hasMore, loadingMore, actions, lastPostRef, refetch
   };
 }

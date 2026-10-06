@@ -85,7 +85,22 @@ export default function useFeed() {
             });
 
             socket.on('postUpdated', (updatedPost) => {
-                setPosts((prev) => prev.map(p => p._id === updatedPost._id ? { ...p, ...updatedPost } : p));
+                // BLINDAJE: JAMAS SOBREESCRIBIR ARREGLOS BUENOS CON VACIOS/INDEFINIDOS
+                // (UN EVENTO VIEJO O PARCIAL BORRABA EL CARRUSEL EN EL NAVEGADOR).
+                setPosts((prev) => prev.map(p => {
+                    if (p._id !== updatedPost._id) return p;
+                    const merged = { ...p, ...updatedPost };
+                    if (!Array.isArray(updatedPost.multimediaUrls) || updatedPost.multimediaUrls.length === 0) {
+                        merged.multimediaUrls = p.multimediaUrls;
+                    }
+                    if (!Array.isArray(updatedPost.thumbnailUrls) || updatedPost.thumbnailUrls.length === 0) {
+                        merged.thumbnailUrls = p.thumbnailUrls;
+                    }
+                    if (!Array.isArray(updatedPost.multimediaIds) || updatedPost.multimediaIds.length === 0) {
+                        merged.multimediaIds = p.multimediaIds;
+                    }
+                    return merged;
+                }));
             });
 
             socket.on('commentCreated', (comment) => {
