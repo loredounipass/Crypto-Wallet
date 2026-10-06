@@ -63,7 +63,7 @@ function compressImage(file, maxDim = 1280, quality = 0.78) {
 
 
 // CUSTOM HOOK THAT MANAGES THE STATE AND LOGIC FOR THE POST FORM
-export default function usePostFormLogic(auth) {
+export default function usePostFormLogic(auth, onCreated) {
   const navigate = useNavigate();
   const { createPostWithFile, createPost } = useFeed();
   const [description, setDescription] = useState('');

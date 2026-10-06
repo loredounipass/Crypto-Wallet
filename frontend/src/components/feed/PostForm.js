@@ -3,7 +3,7 @@ import { AuthContext } from '../../hooks/AuthContext';
 import Toast from '../toasts/Toast';
 import UserAvatar from '../common/UserAvatar';
 import usePostFormLogic from './usePostFormLogic';
-export default function PostForm() {
+export default function PostForm({ onCreated }) {
   const { auth } = use(AuthContext);
   const fileInputId = useId();
   const {
@@ -11,7 +11,7 @@ export default function PostForm() {
     expanded, setExpanded, submitting, processing, textareaRef, fileInputRef,
     onSubmit, handleFileChange, removeFile, MAX_FILES,
     handleDiscard, firstName, hasContent
-  } = usePostFormLogic(auth);
+  } = usePostFormLogic(auth, onCreated);
   const busy = submitting || processing;
 
   return (

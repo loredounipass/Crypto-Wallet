@@ -9,7 +9,7 @@ import './FeedStyles.css'
 
 export default function FeedList() {
   const {
-    posts, loading, error, hasMore, loadingMore, actions, lastPostRef
+    posts, loading, error, hasMore, loadingMore, actions, lastPostRef, refetch
   } = useFeedListLogic()
   const [showPostDialog, setShowPostDialog] = React.useState(false)
   const [formInView, setFormInView] = React.useState(true)
@@ -42,7 +42,7 @@ export default function FeedList() {
       <FeedExtrasDrawer />
 
       <div className="fb-list-wrapper">
-        <div className="fb-post-inline" ref={formWrapRef}><PostForm /></div>
+        <div className="fb-post-inline" ref={formWrapRef}><PostForm onCreated={() => refetch?.()} /></div>
 
         {loading && (
           <>
@@ -109,7 +109,7 @@ export default function FeedList() {
       </div>
 
       {/* FAB crear publicación: solo cuando el form sale de vista (top = form completo) */}
-      {!formInView && (
+        {!formInView && (
       <button
         type="button"
         onClick={() => setShowPostDialog(true)}
@@ -187,7 +187,7 @@ export default function FeedList() {
                 ✕
               </button>
             </div>
-            <PostForm />
+            <PostForm onCreated={() => { setShowPostDialog(false); refetch?.(); }} />
           </div>
         </div>
       )}
