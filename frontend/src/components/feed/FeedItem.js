@@ -91,7 +91,6 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS, initialFollowi
             <Link to={authorId ? `/profile/${authorId}` : '/profile'} style={{ textDecoration: 'none', color: 'inherit' }} title={displayName}>
               <span className="fb-author" style={{ fontSize: 13 }}>{authorHandle}</span>
             </Link>
-            <span className="fb-time">· {timeStr}</span>
             {!isMyPost && (
               <button
                 onClick={following ? handleUnfollow : handleFollow}
@@ -109,6 +108,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS, initialFollowi
                 {following ? 'Siguiendo' : '+ Seguir'}
               </button>
             )}
+            <span className="fb-time">· {timeStr}</span>
           </div>
           {isMyPost && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
