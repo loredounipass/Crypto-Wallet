@@ -393,7 +393,8 @@ export class WalletService {
       amount: -1 * tokenWithdrawDto.amount,
       created_at: Date.now(),
       status: 0,
-      to: tokenWithdrawDto.to
+      to: tokenWithdrawDto.to,
+      tokenSymbol: tokenInfo?.symbol || 'UNKNOWN'
     });
     const saved = await transaction.save();
     if (!saved) {
@@ -410,6 +411,7 @@ export class WalletService {
       nature: 2,
       amount: transaction.amount,
       coin: wallet.coin,
+      tokenSymbol: tokenInfo?.symbol || 'UNKNOWN',
       chainId: entry.chainId,
       to: tokenWithdrawDto.to,
       fee: 0,
