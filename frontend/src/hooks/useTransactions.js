@@ -7,7 +7,7 @@ import Transaction from '../services/transaction';
 
 
 // CUSTOM HOOK TO MANAGE TRANSACTION HISTORY AND REAL-TIME STATUS UPDATES VIA WEBSOCKETS
-export default function useTransitions(coin) {
+export default function useTransitions(coin, chainId = null) {
     const [transactions, setTransactions] = useState([]);
     const [toast, setToast] = useState(null);
     const notifiedCompletedTxRef = useRef(null);
@@ -70,9 +70,17 @@ export default function useTransitions(coin) {
     const upsertTransaction = useCallback((incoming) => {
         if (!incoming || !incoming.transactionId) return;
 
+        // FILTRO POR MONEDA CONSCIENTE DE TOKENS: LOS EVENTOS ERC20 TRAEN EL SIMBOLO
+        // DEL TOKEN EN `coin` O `tokenSymbol` (EJ. USDC), NO LA NATIVA (ETH). SI NO
+        // COINCIDE EL SIMBOLO, ACEPTAR IGUAL CUANDO LA CHAIN COINCIDE (ES TOKEN DE ESTA WALLET).
         const requestedCoin = coin ? String(coin).toLowerCase() : null;
-        const incomingCoin = incoming.coin ? String(incoming.coin).toLowerCase() : null;
-        if (requestedCoin && incomingCoin && requestedCoin !== incomingCoin) return;
+        const incomingSymbols = [incoming.coin, incoming.tokenSymbol]
+            .filter(Boolean)
+            .map((s) => String(s).toLowerCase());
+        const chainMatch = chainId != null && incoming.chainId != null
+            && Number(incoming.chainId) === Number(chainId);
+        if (requestedCoin && incomingSymbols.length > 0
+            && !incomingSymbols.includes(requestedCoin) && !chainMatch) return;
 
         let completedTxToNotify = null;
         setTransactions((prev) => {
@@ -115,7 +123,9 @@ export default function useTransitions(coin) {
 
         if (completedTxToNotify) {
             const isDeposit = Number(completedTxToNotify.nature) === 1;
-            const normalizedCoin = String(completedTxToNotify.coin || coin || '').toUpperCase();
+            const normalizedCoin = String(
+                completedTxToNotify.tokenSymbol || completedTxToNotify.coin || coin || ''
+            ).toUpperCase();
             setToast({
                 id: `${completedTxToNotify.transactionId}-${Date.now()}`,
                 kind: isDeposit ? 'deposit' : 'withdraw',
@@ -124,7 +134,7 @@ export default function useTransitions(coin) {
                     : `${i18n.t('tx_withdraw_completed')}${normalizedCoin ? ` (${normalizedCoin})` : ''}`
             });
         }
-    }, [coin]);
+    }, [coin, chainId]);
 
     upsertTransactionRef.current = upsertTransaction;
 

@@ -195,12 +195,27 @@ connectDB.then(() => {
             nature: 2,
             amount: -1 * amount,
             coin: symbol,
+            tokenSymbol: symbol,
             chainId,
             txHash: receipt.transactionHash,
             to: withdrawAddress,
             fee: 0,
             source: 'erc20-withdraw'
         })
+        // EMAIL DE RETIRO ERC20 (PARIDAD CON RETIROS NATIVOS)
+        try {
+            const WalletForEmail = require(`${appRoot}/config/models/Wallet`)
+            const UserForEmail = require(`${appRoot}/config/models/User`)
+            const { sendWithdrawEmail } = require(`${appRoot}/jobs/notifications/mailService`)
+            const w = await WalletForEmail.findOne({ transactions: transactionId }, { _id: 1 }).lean()
+                || await WalletForEmail.findOne({ address: String(walletAddress).toLowerCase() }, { _id: 1 }).lean()
+            const u = w ? await UserForEmail.findOne({ wallets: w._id }, { email: 1 }).lean() : null
+            if (u && u.email) {
+                await sendWithdrawEmail(amount, symbol, withdrawAddress, receipt.transactionHash, u.email)
+            }
+        } catch (mailErr) {
+            console.error('[ERC20-WITHDRAW] withdraw notification email failed', mailErr?.message || mailErr)
+        }
         return receipt.transactionHash
     }, { concurrency: 15 })
 

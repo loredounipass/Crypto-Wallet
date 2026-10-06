@@ -87,7 +87,7 @@ export default function Wallet() {
     const { coinPrice } = useCoinPrice(walletId);
     const { tokenBalances, refreshTokens } = useTokenBalances();
     const { withdraw, withdrawToken } = useWithdraw(walletId);
-    const { transactions, getTransactions, toast, dismissToast } = useTransitions(walletId);
+    const { transactions, getTransactions, toast, dismissToast } = useTransitions(walletId, defaultNetworkId);
 
     const truncateToDecimals = (num, dec) => {
         const calcDec = Math.pow(10, dec);

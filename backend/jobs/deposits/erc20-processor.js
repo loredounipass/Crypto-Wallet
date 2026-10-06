@@ -176,10 +176,15 @@ const processERC20Event = async (job) => {
 
         console.log(`[ERC20-PROCESSOR] Event ${eventId} Ledger Updated for wallet ${walletAddress}. Amount: ${displayAmount} ${symbol}`)
 
-        if (txRecord && txRecord.status !== 3) {
-            txRecord.status = 3
-            txRecord.confirmations = confirmations
-            await txRecord.save()
+        // CLAIM ATOMICO: SOLO EL GANADOR PUBLICA Y ENVIA EMAIL (EVITA DUPLICADOS CONCURRENTES)
+        let emailClaim = null
+        if (txRecord) {
+            emailClaim = await Transaction.findOneAndUpdate(
+                { _id: txRecord._id, status: { $ne: 3 } },
+                { $set: { status: 3, confirmations: confirmations } }
+            )
+        }
+        if (emailClaim) {
             try {
                 const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
                 await publishTransactionStatusUpdate({
@@ -195,6 +200,19 @@ const processERC20Event = async (job) => {
                     fee: 0
                 })
             } catch (pubErr) {}
+            // EMAIL DE DEPOSITO ERC20 (PARIDAD CON DEPOSITOS NATIVOS)
+            try {
+                const WalletForEmail = require(`${appRoot}/config/models/Wallet`)
+                const UserForEmail = require(`${appRoot}/config/models/User`)
+                const { sendDepositEmail } = require(`${appRoot}/jobs/notifications/mailService`)
+                const w = await WalletForEmail.findOne({ transactions: txRecord._id }, { _id: 1 }).lean()
+                const u = w ? await UserForEmail.findOne({ wallets: w._id }, { email: 1 }).lean() : null
+                if (u && u.email) {
+                    await sendDepositEmail(displayAmount, symbol, u.email)
+                }
+            } catch (mailErr) {
+                console.error('[ERC20-PROCESSOR] deposit notification email failed', mailErr?.message || mailErr)
+            }
         }
 
         const aggregationQueue = new Queue('erc20-aggregation')
