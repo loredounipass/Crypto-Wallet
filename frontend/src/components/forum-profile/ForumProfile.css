@@ -350,4 +350,9 @@
   .fp-wall-title {
     margin-left: 10px;
   }
+  .fp-meta-row .fp-action-btns {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
 }
