@@ -18,6 +18,9 @@ export class FeedPost {
   @Prop({ type: Types.ObjectId, ref: 'Multimedia' })
   multimediaId?: Types.ObjectId;
 
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Multimedia' }], default: [] })
+  multimediaIds: Types.ObjectId[];
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
   likes: Types.ObjectId[];
 
@@ -42,8 +45,14 @@ export class FeedPost {
   @Prop({ type: String, required: false })
   multimediaUrl?: string;
 
+  @Prop({ type: [String], default: [] })
+  multimediaUrls: string[];
+
   @Prop({ type: String, required: false })
   thumbnailUrl?: string;
+
+  @Prop({ type: [String], default: [] })
+  thumbnailUrls: string[];
 
   @Prop({ type: String, required: false })
   multimediaStatus?: string;

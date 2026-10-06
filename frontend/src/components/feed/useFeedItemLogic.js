@@ -134,6 +134,11 @@ export default function useFeedItemLogic({ post, actions, auth }) {
     (post.multimedia?.filename ? `${mediaBase}/${post.multimedia.filename}` : null)
   );
 
+  // RESOLVES ALL CAROUSEL PHOTOS (FALLBACK TO THE SINGLE LEGACY URL)
+  const mediaUrls = post && Array.isArray(post.multimediaUrls) && post.multimediaUrls.length > 0
+    ? post.multimediaUrls.map(resolveUrl).filter(Boolean)
+    : (mediaUrl ? [mediaUrl] : []);
+
 
 
   // FORMATS THE CREATION DATE OF THE POST
@@ -201,7 +206,7 @@ export default function useFeedItemLogic({ post, actions, auth }) {
     isMyPost, following, followLoading, handleFollow, handleUnfollow,
     liked, localLikes, showComments, setShowComments, localShares, shareBusy,
     shareFeedback, shareDialogOpen, setShareDialogOpen, showDeleteConfirm,
-    setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrl,
+    setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrl, mediaUrls,
     timeStr, handleLike, handleShare
   };
 }

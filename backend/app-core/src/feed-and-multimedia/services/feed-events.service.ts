@@ -24,11 +24,12 @@ export class FeedEventsService implements OnModuleInit {
 
 
 
-  // CONFIGURA LOS EVENTOS DEL SISTEMA PARA MANTENER SINCRONIZADOS LOS ESTADOS MULTIMEDIA Y LA INFORMACION DEL AUTOR
+  // CONFIGURA LOS EVENTOS DEL SISTEMA PARA MANTENER SINCRONIZADOS LOS ESTADOS MULTIMEDIA Y LA INFORMACION DEL AUTOR.
+  // NOTA: NO usar removeAllListeners('multimedia.ready'/'multimedia.failed') AQUI:
+  // BORRARIA LOS LISTENERS DE FeedPostsService (CARRUSEL MULTI-FOTO) Y LOS POSTS DE
+  // VARIAS FOTOS QUEDARIAN CON URLS TEMPORALES (SOLO FUNCIONABA 1 FOTO).
   onModuleInit() {
     try {
-      try { void (this.eventEmitter as any).removeAllListeners('multimedia.ready'); } catch (_) { }
-      try { void (this.eventEmitter as any).removeAllListeners('multimedia.failed'); } catch (_) { }
       this.eventEmitter.on('multimedia.ready', async (payload: any) => {
         try {
           const mmId = payload?.multimediaId;
@@ -42,6 +43,9 @@ export class FeedEventsService implements OnModuleInit {
             postDoc = await this.feedModel.findOne({ multimediaId: new Types.ObjectId(mmId) }).lean().exec();
           }
           if (!postDoc) return;
+          // POSTS CARRUSEL (VARIAS FOTOS): LOS GESTIONA FeedPostsService (ARREGLOS + LEGACY).
+          // ESTE HANDLER SOLO MANTIENE COMPATIBILIDAD CON POSTS VIEJOS DE 1 FOTO.
+          if (Array.isArray(postDoc.multimediaIds) && postDoc.multimediaIds.length > 0) return;
           try {
             const mm = await this.multimediaModel.findById(mmId).lean().exec().catch(() => undefined);
             if (mm) {

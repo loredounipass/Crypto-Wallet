@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, UseGuards, Param, Delete, Put, UseInterceptors, UploadedFile, BadRequestException, Request, Query } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Body, Controller, Get, Post, UseGuards, Param, Delete, Put, UseInterceptors, UploadedFiles, BadRequestException, Request, Query } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FeedPostsService } from './services/feed-posts.service';
 import { FeedCommentsService } from './services/feed-comments.service';
 import { FeedInteractionsService } from './services/feed-interactions.service';
@@ -39,12 +39,24 @@ export class FeedAndMultimediaController {
 
 
 
-  // PROCESA LA CREACION DE UNA PUBLICACION QUE INCLUYE UN ARCHIVO MULTIMEDIA ADJUNTO COMO IMAGEN O VIDEO
+  // PROCESA LA CREACION DE UNA PUBLICACION QUE INCLUYE HASTA 10 IMAGENES (CARRUSEL).
+  // ACEPTA 'files' (NUEVO) Y 'file' (LEGACY DE UNA SOLA FOTO).
   @UseGuards(AuthenticatedGuard, EmailThrottlerGuard)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 15 * 1024 * 1024 } }))
+  @UseInterceptors(FileFieldsInterceptor(
+    [
+      { name: 'files', maxCount: 10 },
+      { name: 'file', maxCount: 1 },
+    ],
+    { limits: { fileSize: 15 * 1024 * 1024 } },
+  ))
   @Post('upload')
-  async createWithFile(@UploadedFile() file: MulterFile, @Body() body: any, @Request() req) {
-    return this.feedPostsService.createPostWithFile(file, body, req.user._id.toString());
+  async createWithFile(
+    @UploadedFiles() files: { files?: MulterFile[]; file?: MulterFile[] },
+    @Body() body: any,
+    @Request() req,
+  ) {
+    const list = [...(files?.files || []), ...(files?.file || [])].slice(0, 10);
+    return this.feedPostsService.createPostWithFiles(list, body, req.user._id.toString());
   }
 
 

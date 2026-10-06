@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import CommentsPanel from './CommentsPanel'
+import FeedCarousel from './FeedCarousel'
 import NewChatDialog from '../chat/NewChatDialog'
 import { ConfirmToast } from '../toasts/Toast'
 import { AuthContext } from '../../hooks/AuthContext'
@@ -17,7 +18,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     isMyPost, following, followLoading, handleFollow, handleUnfollow,
     liked, localLikes, showComments, setShowComments, localShares, shareBusy,
     shareFeedback, shareDialogOpen, setShareDialogOpen, showDeleteConfirm,
-    setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrl,
+    setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrls,
     timeStr, handleLike, handleShare
   } = useFeedItemLogic({ post, actions, auth });
 
@@ -176,33 +177,10 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
           )
         )}
 
-        {/* ── Media ── */}
-        {mediaUrl && (
+        {/* ── Media: carrusel si hay varias fotos ── */}
+        {mediaUrls && mediaUrls.length > 0 && (
           <div className="fb-media">
-            <img
-              src={mediaUrl}
-              alt="media"
-              loading="lazy"
-              onError={(e) => {
-                const img = e.currentTarget;
-                const retries = parseInt(img.dataset.retries || '0');
-                if (retries < 3) {
-                  img.dataset.retries = retries + 1;
-                  setTimeout(() => {
-                    img.src = mediaUrl + (mediaUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-                  }, 1500);
-                } else {
-                  img.onerror = null;
-                  img.style.display = 'none';
-                  if (!img.nextSibling || img.nextSibling.className !== 'img-error-msg') {
-                    img.insertAdjacentHTML('afterend',
-                      '<div class="img-error-msg" style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px">⚠️ Imagen procesando, por favor recarga la página.</div>'
-                    );
-                  }
-                }
-              }}
-              style={{ width: '100%', height: 'auto', maxHeight: '460px', display: 'block', objectFit: 'contain' }}
-            />
+            <FeedCarousel urls={mediaUrls} />
           </div>
         )}
 

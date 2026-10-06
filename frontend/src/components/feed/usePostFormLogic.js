@@ -4,19 +4,15 @@ import useFeed from '../../hooks/useFeed';
 
 
 
-// GETS A SAFE URL FOR THE IMAGE PREVIEW
-function getSafePreviewUrl(url) {
-  if (typeof url !== 'string') return null;
-  return url.startsWith('blob:') ? url : null;
-}
-
-
-
-// CUSTOM HOOK THAT CLEANS UP THE PREVIEW URL WHEN UNMOUNTING
-function useCleanupPreview(url) {
+// CUSTOM HOOK THAT CLEANS UP THE PREVIEW URLS WHEN UNMOUNTING
+function useCleanupPreviews(urls) {
   useEffect(() => {
-    return () => { if (url) { try { URL.revokeObjectURL(url); } catch (_) { } } };
-  }, [url]);
+    return () => {
+      for (const url of urls) {
+        if (url) { try { URL.revokeObjectURL(url); } catch (_) { } }
+      }
+    };
+  }, [urls]);
 }
 
 
@@ -71,37 +67,38 @@ export default function usePostFormLogic(auth) {
   const navigate = useNavigate();
   const { createPostWithFile, createPost } = useFeed();
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [toast, setToast] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [processing, setProcessing] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-  useCleanupPreview(previewUrl);
+  useCleanupPreviews(previews);
+
+  const MAX_FILES = 10;
 
 
 
-  // SUBMITS THE POST DATA AND FILE TO THE SERVER
+  // SUBMITS THE POST DATA AND FILES TO THE SERVER
   const onSubmit = async (e) => {
     e.preventDefault();
     if (submitting || processing) return;
     setSubmitting(true);
     try {
-      if (file) {
+      if (files.length > 0) {
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("description", (description || '').trim());
-        formData.append("type", "image");
+        for (const f of files) formData.append('files', f);
+        formData.append('description', (description || '').trim());
+        formData.append('type', 'image');
         await createPostWithFile(formData);
       } else {
         await createPost({ description, type: 'text', authorId: auth._id });
       }
+      clearFiles();
       setDescription('');
-      setFile(null);
       setExpanded(false);
-      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
       if (e.target?.reset) e.target.reset();
     } catch (err) {
       console.error(err);
@@ -117,61 +114,94 @@ export default function usePostFormLogic(auth) {
 
 
 
-  // HANDLES THE SELECTION OF A FILE FOR THE POST.
+  // CLEARS ALL SELECTED FILES AND THEIR PREVIEWS
+  const clearFiles = () => {
+    for (const u of previews) { try { URL.revokeObjectURL(u); } catch (_) { } }
+    setFiles([]);
+    setPreviews([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+
+  // REMOVES ONE PHOTO BY INDEX
+  const removeFile = (idx) => {
+    const url = previews[idx];
+    if (url) { try { URL.revokeObjectURL(url); } catch (_) { } }
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => prev.filter((_, i) => i !== idx));
+    if (files.length <= 1 && fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+
+  // HANDLES THE SELECTION OF FILES FOR THE POST (UP TO 10 PHOTOS).
   // MOBILE PHOTOS ARE HUGE (8-30MB) AND iPHONES SHOOT HEIC: THE SERVER ONLY
   // ACCEPTS JPEG/PNG/GIF/WEBP, SO WE DOWNSCALE + RE-ENCODE CLIENT-SIDE.
   const handleFileChange = async (e) => {
-    const f = e.target.files?.[0];
+    const picked = Array.from(e.target.files || []);
     if (toast) setToast('');
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { } }
-    if (!f) { setFile(null); setPreviewUrl(null); return; }
+    if (picked.length === 0) return;
 
-    const name = (f.name || '').toLowerCase();
-    const isHeic = f.type === 'image/heic' || f.type === 'image/heif'
-      || name.endsWith('.heic') || name.endsWith('.heif');
-    if (!f.type?.startsWith('image/')) {
-      setToast('Solo se permiten imágenes (JPG, PNG, GIF, WebP).');
-      setFile(null); setPreviewUrl(null); e.target.value = '';
+    const room = MAX_FILES - files.length;
+    if (room <= 0) {
+      setToast(`Máximo ${MAX_FILES} fotos por publicación.`);
+      e.target.value = '';
       return;
     }
+    const batch = picked.slice(0, room);
+    if (picked.length > room) setToast(`Solo se agregaron ${room} (máximo ${MAX_FILES}).`);
 
     const MAX_IMAGE_SIZE = 15 * 1024 * 1024;
-    if (f.size > MAX_IMAGE_SIZE) {
-      setToast('La imagen no puede superar 15 MB.');
-      setFile(null); setPreviewUrl(null); e.target.value = '';
-      return;
+    const valid = [];
+    for (const f of batch) {
+      const name = (f.name || '').toLowerCase();
+      const isHeic = f.type === 'image/heic' || f.type === 'image/heif'
+        || name.endsWith('.heic') || name.endsWith('.heif');
+      if (!f.type?.startsWith('image/')) {
+        setToast('Solo se permiten imágenes (JPG, PNG, GIF, WebP).');
+        continue;
+      }
+      if (f.size > MAX_IMAGE_SIZE) {
+        setToast(`"${f.name}" supera 15 MB y se omitió.`);
+        continue;
+      }
+      if (isHeic) {
+        setToast('HEIC no soportado: usa Ajustes > Cámara > Formatos > Más compatible.');
+        continue;
+      }
+      valid.push(f);
     }
+    if (valid.length === 0) { e.target.value = ''; return; }
 
-    // Intentar comprimir (también convierte HEIC→JPEG si el navegador lo decodifica,
-    // como Safari). Si falla y es HEIC, avisar con la solución.
+    // Intentar comprimir cada foto (GIFs se dejan intactos dentro de compressImage)
     setProcessing(true);
     try {
-      const out = await compressImage(f);
-      setFile(out);
-      try { setPreviewUrl(URL.createObjectURL(out)); } catch (_) { setPreviewUrl(null); }
-      setExpanded(true);
-    } catch (_) {
-      if (isHeic) {
-        setToast('Tu iPhone guarda fotos en HEIC, no soportado. Ve a Ajustes > Cámara > Formatos > Más compatible y reintenta.');
-      } else {
-        setToast('No se pudo procesar la imagen. Prueba con otra foto.');
+      const out = [];
+      for (const f of valid) {
+        try {
+          out.push(await compressImage(f));
+        } catch (_) {
+          setToast(`No se pudo procesar "${f.name}".`);
+        }
       }
-      setFile(null); setPreviewUrl(null); e.target.value = '';
+      if (out.length === 0) { e.target.value = ''; return; }
+      const urls = out.map((f) => { try { return URL.createObjectURL(f); } catch (_) { return null; } });
+      setFiles((prev) => [...prev, ...out]);
+      setPreviews((prev) => [...prev, ...urls]);
+      setExpanded(true);
     } finally {
       setProcessing(false);
+      e.target.value = '';
     }
   };
 
 
 
-  // DISCARDS THE CURRENT POST CONTENT AND FILE
+  // DISCARDS THE CURRENT POST CONTENT AND FILES
   const handleDiscard = (e) => {
     e.preventDefault();
     setDescription('');
-    setFile(null);
+    clearFiles();
     setExpanded(false);
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) { }; setPreviewUrl(null); }
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
 
@@ -179,14 +209,13 @@ export default function usePostFormLogic(auth) {
   // COMPUTES THE DISPLAY NAME OF THE CURRENT USER
   const displayName = auth ? `${auth.firstName || ''}`.trim() || auth.username || 'Tú' : 'Tú';
   const firstName = displayName.split(' ')[0];
-  const hasContent = file || description.trim().length > 0;
-  const safePreviewUrl = getSafePreviewUrl(previewUrl);
+  const hasContent = files.length > 0 || description.trim().length > 0;
 
 
   return {
-    navigate, description, setDescription, file, previewUrl, toast, setToast,
+    navigate, description, setDescription, files, previews, toast, setToast,
     expanded, setExpanded, submitting, processing, textareaRef, fileInputRef,
-    onSubmit, handleFileChange,
-    handleDiscard, firstName, hasContent, safePreviewUrl
+    onSubmit, handleFileChange, removeFile, clearFiles, MAX_FILES,
+    handleDiscard, firstName, hasContent
   };
 }

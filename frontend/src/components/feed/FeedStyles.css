@@ -469,6 +469,139 @@
   }
 }
 
+/* ── Carrusel estilo Instagram ── */
+.fb-carousel {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  touch-action: pan-y;
+}
+.fb-carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+.fb-carousel-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+.fb-carousel-slide img {
+  width: 100%;
+  height: auto;
+  max-height: 460px;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.fb-carousel-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.fb-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #111;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 2px 0;
+  transition: background 0.2s, transform 0.15s;
+}
+.fb-carousel-arrow:hover {
+  background: #fff;
+  transform: translateY(-50%) scale(1.08);
+}
+.fb-carousel-arrow.left { left: 10px; }
+.fb-carousel-arrow.right { right: 10px; }
+.fb-carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+}
+.fb-carousel-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.fb-carousel-dots span.on {
+  background: #fff;
+  transform: scale(1.25);
+}
+
+/* ── Grid de previews multi-foto en el composer ── */
+.fb-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.fb-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #000;
+}
+.fb-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fb-thumb-x {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fb-thumb-x:hover {
+  background: rgba(248, 113, 113, 0.85);
+}
+.fb-thumb-count {
+  font-size: 12px;
+  color: var(--fn-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
 /* Post Cards */
 .fb-card {
   background: var(--fn-glass-bg);

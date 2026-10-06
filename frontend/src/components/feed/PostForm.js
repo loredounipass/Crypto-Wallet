@@ -7,9 +7,10 @@ export default function PostForm() {
   const { auth } = use(AuthContext);
   const fileInputId = useId();
   const {
-    navigate, description, setDescription, file, toast, setToast,
+    navigate, description, setDescription, files, previews, toast, setToast,
     expanded, setExpanded, submitting, processing, textareaRef, fileInputRef,
-    onSubmit, handleFileChange, handleDiscard, firstName, hasContent, safePreviewUrl
+    onSubmit, handleFileChange, removeFile, MAX_FILES,
+    handleDiscard, firstName, hasContent
   } = usePostFormLogic(auth);
   const busy = submitting || processing;
 
@@ -38,7 +39,7 @@ export default function PostForm() {
             aria-label="Escribe una publicación"
           />
           <div className="fb-composer-tools">
-            <label className="fb-composer-tool" htmlFor={fileInputId} title="Subir imagen">
+            <label className="fb-composer-tool" htmlFor={fileInputId} title="Subir fotos (máx. 10)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
@@ -52,6 +53,7 @@ export default function PostForm() {
               className="fb-file-input"
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileChange}
             />
 
@@ -71,24 +73,25 @@ export default function PostForm() {
       </div>
 
       {(() => {
-        if (!(expanded && (safePreviewUrl || file))) return null;
+        if (!(expanded && files.length > 0)) return null;
         return (
           <div className="fb-post-expanded">
-            {file && (
-              <div className="fb-attach-chip">
-                <span className="fb-attach-name" title={file.name}>
-                  {file.name} ({(file.size / 1024).toFixed(0)} KB)
-                </span>
-                <button type="button" className="fb-attach-x" onClick={handleDiscard} disabled={busy} aria-label="Quitar imagen">
-                  ✕
-                </button>
-              </div>
-            )}
-            {safePreviewUrl && (
-              <div className="fb-media">
-                <img src={safePreviewUrl} alt="preview" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', borderRadius: 10 }} />
-              </div>
-            )}
+            <div className="fb-thumb-count">
+              {files.length}/{MAX_FILES} foto{files.length > 1 ? 's' : ''}
+              <button type="button" className="btn-secondary" style={{ margin: '0 0 0 10px', padding: '2px 10px', fontSize: 12 }} onClick={handleDiscard} disabled={busy}>
+                Quitar todas
+              </button>
+            </div>
+            <div className="fb-thumbs">
+              {files.map((f, i) => (
+                <div className="fb-thumb" key={`${f.name}-${f.size}-${i}`}>
+                  {previews[i] && <img src={previews[i]} alt={`foto ${i + 1}`} />}
+                  <button type="button" className="fb-thumb-x" onClick={() => removeFile(i)} disabled={busy} aria-label={`Quitar foto ${i + 1}`}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         );
       })()}

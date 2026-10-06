@@ -134,6 +134,7 @@ export class MultimediaProcessor {
         void this.eventEmitter.emit('multimedia.ready', {
           multimediaId: multimediaId,
           messageId: job.data.messageId,
+          stagingKey: stagingKey,
           url: publicUrl,
           thumbnailUrl: thumbnailUrl,
           metadata,

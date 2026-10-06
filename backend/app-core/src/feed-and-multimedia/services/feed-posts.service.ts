@@ -22,19 +22,45 @@ export class FeedPostsService {
     private readonly storage: LocalStorageProvider,
   ) { }
 
-  // ESCUCHA CUANDO EL PROCESADOR MULTIMEDIA TERMINA DE OPTIMIZAR UNA IMAGEN Y ACTUALIZA EL POST DEL FEED CON LA URL FINAL
+  // ESCUCHA CUANDO EL PROCESADOR MULTIMEDIA TERMINA DE OPTIMIZAR UNA IMAGEN Y ACTUALIZA EL POST DEL FEED CON LA URL FINAL.
+  // RECOMPUTA LOS ARREGLOS DESDE LOS DOCUMENTOS MULTIMEDIA (IDEMPOTENTE: NO IMPORTA EL ORDEN DE LOS EVENTOS).
   onModuleInit() {
     this.eventEmitter.on('multimedia.ready', async (payload: any) => {
       try {
         if (!payload?.messageId) return;
         const postId = payload.messageId;
-        const update: any = { multimediaStatus: 'ready' };
-        if (payload.url) update.multimediaUrl = payload.url;
-        if (payload.thumbnailUrl) update.thumbnailUrl = payload.thumbnailUrl;
-        const updated = await this.feedModel.findByIdAndUpdate(postId, { $set: update }, { new: true }).lean().exec();
+        const post: any = await this.feedModel.findById(postId).lean().exec();
+        if (!post) return;
+        const rawIds: any[] = [
+          ...(post.multimediaId ? [post.multimediaId] : []),
+          ...(Array.isArray(post.multimediaIds) ? post.multimediaIds : []),
+        ];
+        const ids = [...new Set(rawIds.map((id) => String(id)))];
+        const mdocs: any[] = ids.length > 0
+          ? await this.multimediaModel.find({ _id: { $in: ids } }).select('_id url thumbnailUrl status').lean().exec()
+          : [];
+        const byId = new Map(mdocs.map((m: any) => [String(m._id), m]));
+        const urls: string[] = [];
+        const thumbs: string[] = [];
+        for (const id of ids) {
+          const m = byId.get(id);
+          if (m?.url) urls.push(m.url);
+          if (m?.thumbnailUrl) thumbs.push(m.thumbnailUrl);
+        }
+        const set: any = {
+          multimediaUrls: [...new Set(urls)],
+          thumbnailUrls: [...new Set(thumbs)],
+        };
+        const first = ids.length > 0 ? byId.get(ids[0]) : undefined;
+        if (first && first.status === 'ready' && first.url) {
+          set.multimediaUrl = first.url;
+          if (first.thumbnailUrl) set.thumbnailUrl = first.thumbnailUrl;
+          set.multimediaStatus = 'ready';
+        }
+        await this.feedModel.updateOne({ _id: postId }, { $set: set }).exec();
+        const updated = await this.getPostById(postId);
         if (updated) {
-          const out = await this.getPostById(postId);
-          void this.eventEmitter.emit('post.updated', out);
+          void this.eventEmitter.emit('post.updated', updated);
         }
       } catch (err) {
         console.error('[FeedPostsService] Error handling multimedia.ready for feed post:', err);
@@ -56,29 +82,42 @@ export class FeedPostsService {
 
 
 
+  // MAPEA UN DOCUMENTO DE POST AL FORMATO DE API (CON FALLBACK PARA POSTS DE UNA SOLA FOTO)
+  private toApiPost(doc: any) {
+    const legacyUrls = doc.multimediaUrl ? [doc.multimediaUrl] : [];
+    const legacyThumbs = doc.thumbnailUrl ? [doc.thumbnailUrl] : [];
+    const legacyIds = doc.multimediaId ? [doc.multimediaId] : [];
+    return {
+      _id: doc._id?.toString(),
+      description: doc.description,
+      type: doc.type,
+      author: doc.author?.toString(),
+      authorFirstName: doc.authorFirstName || undefined,
+      authorLastName: doc.authorLastName || undefined,
+      multimediaId: doc.multimediaId,
+      multimediaIds: Array.isArray(doc.multimediaIds) && doc.multimediaIds.length > 0 ? doc.multimediaIds : legacyIds,
+      multimediaUrl: doc.multimediaUrl || undefined,
+      multimediaUrls: Array.isArray(doc.multimediaUrls) && doc.multimediaUrls.length > 0 ? doc.multimediaUrls : legacyUrls,
+      thumbnailUrl: doc.thumbnailUrl || undefined,
+      thumbnailUrls: Array.isArray(doc.thumbnailUrls) && doc.thumbnailUrls.length > 0 ? doc.thumbnailUrls : legacyThumbs,
+      multimediaStatus: doc.multimediaStatus || undefined,
+      likes: Array.isArray(doc.likes) ? doc.likes.map((id: any) => id?.toString()) : [],
+      likesCount: typeof doc.likesCount === 'number' ? doc.likesCount : (Array.isArray(doc.likes) ? doc.likes.length : 0),
+      commentsCount: typeof doc.commentsCount === 'number' ? doc.commentsCount : 0,
+      shares: doc.shares || 0,
+      views: doc.views || 0,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
+
   // OBTIENE LOS DETALLES COMPLETOS DE UNA PUBLICACION INCLUYENDO SUS ESTADISTICAS Y CONTENIDO MULTIMEDIA
   async getPostById(postId: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
     const post = await this.feedModel.findById(postId).lean().exec();
     if (!post) throw new NotFoundException('Post not found');
-    return {
-      _id: post._id?.toString(),
-      description: post.description,
-      type: post.type,
-      author: post.author?.toString(),
-      authorFirstName: (post as any).authorFirstName || undefined,
-      authorLastName: (post as any).authorLastName || undefined,
-      multimediaId: post.multimediaId,
-      multimediaUrl: (post as any).multimediaUrl || undefined,
-      thumbnailUrl: (post as any).thumbnailUrl || undefined,
-      likes: Array.isArray(post.likes) ? post.likes.map((id: any) => id?.toString()) : [],
-      likesCount: typeof (post as any).likesCount === 'number' ? (post as any).likesCount : (Array.isArray(post.likes) ? post.likes.length : 0),
-      commentsCount: typeof (post as any).commentsCount === 'number' ? (post as any).commentsCount : 0,
-      shares: post.shares || 0,
-      views: post.views || 0,
-      createdAt: (post as any).createdAt,
-      updatedAt: (post as any).updatedAt,
-    };
+    return this.toApiPost(post);
   }
 
 
@@ -126,11 +165,21 @@ export class FeedPostsService {
   // CARGA UN ARCHIVO AL ALMACENAMIENTO TEMPORAL CREA EL REGISTRO MULTIMEDIA Y LA PUBLICACION DE FORMA TRANSACCIONAL
   async createPostWithFile(file: any, body: any, authorId: string) {
     if (!file) throw new BadRequestException('File is required');
+    return this.createPostWithFiles([file], body, authorId);
+  }
+
+
+  // CARGA HASTA 10 IMAGENES CREA SUS REGISTROS MULTIMEDIA Y UNA SOLA PUBLICACION TIPO CARRUSEL
+  async createPostWithFiles(files: any[], body: any, authorId: string) {
+    if (!files || files.length === 0) throw new BadRequestException('File is required');
+    if (files.length > 10) throw new BadRequestException('Máximo 10 imágenes por publicación');
     if (!authorId || !Types.ObjectId.isValid(authorId)) throw new BadRequestException('Invalid authorId');
 
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!file.mimetype || !allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
-      throw new BadRequestException('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)');
+    for (const f of files) {
+      if (!f?.mimetype || !allowedMimeTypes.includes(String(f.mimetype).toLowerCase())) {
+        throw new BadRequestException('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)');
+      }
     }
 
     const dto: CreatePostDto = {
@@ -138,44 +187,50 @@ export class FeedPostsService {
       type: 'image' as any,
       authorId: authorId,
     } as CreatePostDto;
-    const ext = file.originalname ? path.extname(file.originalname).toLowerCase() : '';
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const safeExt = allowedExts.includes(ext) ? ext : '.bin';
-    const stagingKey = `staging/${crypto.randomUUID()}${safeExt}`;
-    const uploadResult = await this.storage.upload(file.buffer, stagingKey, file.mimetype);
+    const ext = (f: any) => {
+      const e = f.originalname ? path.extname(f.originalname).toLowerCase() : '';
+      const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      return allowedExts.includes(e) ? e : '.bin';
+    };
+    const staged: Array<{ file: any; stagingKey: string; uploadResult: any }> = [];
+    for (const f of files) {
+      const stagingKey = `staging/${crypto.randomUUID()}${ext(f)}`;
+      const uploadResult = await this.storage.upload(f.buffer, stagingKey, f.mimetype);
+      staged.push({ file: f, stagingKey, uploadResult });
+    }
     const actor = await this.userService.getUserById(authorId);
     if (!actor) {
-      try { await this.storage.delete(uploadResult.key) } catch (_) { }
+      for (const s of staged) { try { await this.storage.delete(s.uploadResult.key) } catch (_) { } }
       throw new NotFoundException('Author not found');
     }
     const session = await this.feedModel.db.startSession();
     let createdPostId: string | undefined = undefined;
-    let multimediaIdCreated: any = undefined;
-    let createdMultimediaDoc: any = undefined;
+    let multimediaIdsCreated: any[] = [];
+    let createdMultimediaDocs: any[] = [];
     let createdPostDoc: any = undefined;
     let usedTransaction = false;
     try {
       try {
         await session.withTransaction(async () => {
-          const multimediaDocs = await this.multimediaModel.create([
-            {
-              url: uploadResult.url,
+          const multimediaDocs = await this.multimediaModel.create(
+            staged.map((s) => ({
+              url: s.uploadResult.url,
               type: dto.type,
               owner: new Types.ObjectId(authorId),
               description: dto.description || undefined,
-              mimeType: uploadResult.mimeType,
-              size: uploadResult.size,
+              mimeType: s.uploadResult.mimeType,
+              size: s.uploadResult.size,
               status: 'processing',
               processingJob: {
-                stagingKey,
+                stagingKey: s.stagingKey,
                 ownerId: authorId,
-                mimeType: file.mimetype,
+                mimeType: s.file.mimetype,
                 enqueued: false,
               },
-            },
-          ], { session });
-          const mDoc = Array.isArray(multimediaDocs) ? multimediaDocs[0] : multimediaDocs;
-          multimediaIdCreated = mDoc._id;
+            })),
+            { session, ordered: true });
+          const mDocs = Array.isArray(multimediaDocs) ? multimediaDocs : [multimediaDocs];
+          multimediaIdsCreated = mDocs.map((m: any) => m._id);
           const created = await this.feedModel.create([
             {
               description: dto.description,
@@ -183,22 +238,29 @@ export class FeedPostsService {
               author: new Types.ObjectId(authorId),
               authorFirstName: actor.firstName || undefined,
               authorLastName: actor.lastName || undefined,
-              multimediaId: mDoc._id,
-              multimediaUrl: uploadResult.url,
-              thumbnailUrl: mDoc.thumbnailUrl || undefined,
-              multimediaStatus: mDoc.status || 'processing',
+              multimediaId: mDocs[0]._id,
+              multimediaIds: mDocs.map((m: any) => m._id),
+              multimediaUrl: staged[0].uploadResult.url,
+              multimediaUrls: staged.map((s) => s.uploadResult.url),
+              thumbnailUrl: (mDocs[0] as any).thumbnailUrl || undefined,
+              thumbnailUrls: [],
+              multimediaStatus: (mDocs[0] as any).status || 'processing',
               likesCount: 0,
               commentsCount: 0,
             },
-          ], { session });
+          ], { session, ordered: true });
           const p = Array.isArray(created) ? created[0] : created;
-          if ((this as any).multimediaRepository?.updateOne) {
-            await (this as any).multimediaRepository.updateOne({ _id: mDoc._id }, { $set: { message: p._id, status: 'processing', url: uploadResult.url } }, { session }).exec();
-          } else {
-            await (this as any).multimediaModel.updateOne({ _id: mDoc._id }, { $set: { message: p._id, status: 'processing', url: uploadResult.url } }, { session }).exec();
+          for (let i = 0; i < mDocs.length; i++) {
+            const mDoc = mDocs[i];
+            const s = staged[i];
+            if ((this as any).multimediaRepository?.updateOne) {
+              await (this as any).multimediaRepository.updateOne({ _id: mDoc._id }, { $set: { message: p._id, status: 'processing', url: s.uploadResult.url } }, { session }).exec();
+            } else {
+              await (this as any).multimediaModel.updateOne({ _id: mDoc._id }, { $set: { message: p._id, status: 'processing', url: s.uploadResult.url } }, { session }).exec();
+            }
           }
           createdPostId = p._id?.toString();
-          createdMultimediaDoc = mDoc;
+          createdMultimediaDocs = mDocs;
           createdPostDoc = p;
         });
         usedTransaction = true;
@@ -217,64 +279,76 @@ export class FeedPostsService {
       }
       if (!usedTransaction) {
         try {
-          createdMultimediaDoc = await this.multimediaModel.create({
-            url: uploadResult.url,
-            type: dto.type,
-            owner: new Types.ObjectId(authorId),
-            description: dto.description || undefined,
-            mimeType: uploadResult.mimeType,
-            size: uploadResult.size,
-            status: 'processing',
-            processingJob: {
-              stagingKey,
-              ownerId: authorId,
-              mimeType: file.mimetype,
-              enqueued: false,
-            },
-          });
-          multimediaIdCreated = createdMultimediaDoc._id;
+          createdMultimediaDocs = [];
+          for (const s of staged) {
+            const mDoc: any = await this.multimediaModel.create({
+              url: s.uploadResult.url,
+              type: dto.type,
+              owner: new Types.ObjectId(authorId),
+              description: dto.description || undefined,
+              mimeType: s.uploadResult.mimeType,
+              size: s.uploadResult.size,
+              status: 'processing',
+              processingJob: {
+                stagingKey: s.stagingKey,
+                ownerId: authorId,
+                mimeType: s.file.mimetype,
+                enqueued: false,
+              },
+            });
+            createdMultimediaDocs.push(mDoc);
+          }
+          multimediaIdsCreated = createdMultimediaDocs.map((m: any) => m._id);
           createdPostDoc = await this.feedModel.create({
             description: dto.description,
             type: dto.type,
             author: new Types.ObjectId(authorId),
             authorFirstName: actor.firstName || undefined,
             authorLastName: actor.lastName || undefined,
-            multimediaId: createdMultimediaDoc._id,
-            multimediaUrl: uploadResult.url,
-            thumbnailUrl: createdMultimediaDoc.thumbnailUrl || undefined,
-            multimediaStatus: createdMultimediaDoc.status || 'processing',
+            multimediaId: createdMultimediaDocs[0]._id,
+            multimediaIds: multimediaIdsCreated,
+            multimediaUrl: staged[0].uploadResult.url,
+            multimediaUrls: staged.map((s) => s.uploadResult.url),
+            thumbnailUrl: createdMultimediaDocs[0].thumbnailUrl || undefined,
+            thumbnailUrls: [],
+            multimediaStatus: createdMultimediaDocs[0].status || 'processing',
             likesCount: 0,
             commentsCount: 0,
           });
-          await this.multimediaModel.updateOne({ _id: createdMultimediaDoc._id }, { $set: { message: createdPostDoc._id, status: 'processing', url: uploadResult.url } }).exec();
+          for (let i = 0; i < createdMultimediaDocs.length; i++) {
+            await this.multimediaModel.updateOne({ _id: createdMultimediaDocs[i]._id }, { $set: { message: createdPostDoc._id, status: 'processing', url: staged[i].uploadResult.url } }).exec();
+          }
           createdPostId = createdPostDoc._id?.toString();
         } catch (nonTxErr) {
-          try { if (createdMultimediaDoc && createdMultimediaDoc._id) await this.multimediaModel.deleteOne({ _id: createdMultimediaDoc._id }).exec(); } catch (_) { }
+          for (const m of createdMultimediaDocs) { try { if (m?._id) await this.multimediaModel.deleteOne({ _id: m._id }).exec(); } catch (_) { } }
           try { if (createdPostDoc && createdPostDoc._id) await this.feedModel.deleteOne({ _id: createdPostDoc._id }).exec(); } catch (_) { }
-          try { await this.storage.delete(uploadResult.key) } catch (_) { }
+          for (const s of staged) { try { await this.storage.delete(s.uploadResult.key) } catch (_) { } }
           throw nonTxErr;
         }
       }
     } catch (err) {
-      try { await this.storage.delete(uploadResult.key) } catch (_) { }
+      for (const s of staged) { try { await this.storage.delete(s.uploadResult.key) } catch (_) { } }
       throw err;
     } finally {
       try { session.endSession(); } catch (_) { }
     }
     if (!createdPostId) throw new Error('Failed to create post');
     try {
-      const enqueue = this.multimediaQueue.add('process', {
-        stagingKey: uploadResult.key,
-        multimediaId: multimediaIdCreated?.toString(),
-        messageId: createdPostId,
-        ownerId: authorId,
-        mimeType: file.mimetype,
-      });
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('queue timeout')), 5000));
-      await Promise.race([enqueue, timeout]);
-      try {
-        await this.multimediaModel.updateOne({ _id: multimediaIdCreated }, { $set: { 'processingJob.enqueued': true } }).exec();
-      } catch (_) { }
+      for (let i = 0; i < staged.length; i++) {
+        const s = staged[i];
+        const enqueue = this.multimediaQueue.add('process', {
+          stagingKey: s.uploadResult.key,
+          multimediaId: multimediaIdsCreated[i]?.toString(),
+          messageId: createdPostId,
+          ownerId: authorId,
+          mimeType: s.file.mimetype,
+        });
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('queue timeout')), 5000));
+        await Promise.race([enqueue, timeout]);
+        try {
+          await this.multimediaModel.updateOne({ _id: multimediaIdsCreated[i] }, { $set: { 'processingJob.enqueued': true } }).exec();
+        } catch (_) { }
+      }
     } catch (err) {
       console.warn('[FeedPostsService] multimedia queue enqueue failed (post creado igual):', (err as Error)?.message || err);
     }
@@ -299,7 +373,7 @@ export class FeedPostsService {
       .select(`
         _id description type author
         authorFirstName authorLastName
-        multimediaId multimediaUrl thumbnailUrl multimediaStatus
+        multimediaId multimediaIds multimediaUrl multimediaUrls thumbnailUrl thumbnailUrls multimediaStatus
         likes likesCount commentsCount
         shares views createdAt updatedAt
       `)
@@ -312,24 +386,7 @@ export class FeedPostsService {
     const sliced = hasMore ? posts.slice(0, limit) : posts;
 
     return {
-      posts: sliced.map((doc: any) => ({
-        _id: doc._id,
-        description: doc.description,
-        type: doc.type,
-        author: doc.author?.toString(),
-        authorFirstName: doc.authorFirstName || undefined,
-        authorLastName: doc.authorLastName || undefined,
-        multimediaId: doc.multimediaId,
-        multimediaUrl: doc.multimediaUrl || undefined,
-        thumbnailUrl: doc.thumbnailUrl || undefined,
-        likes: Array.isArray(doc.likes) ? doc.likes.map((id: any) => id?.toString()) : [],
-        likesCount: typeof doc.likesCount === 'number' ? doc.likesCount : (Array.isArray(doc.likes) ? doc.likes.length : 0),
-        commentsCount: typeof doc.commentsCount === 'number' ? doc.commentsCount : 0,
-        shares: doc.shares || 0,
-        views: doc.views || 0,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-      })),
+      posts: sliced.map((doc: any) => this.toApiPost(doc)),
       nextCursor: hasMore ? sliced[sliced.length - 1]._id?.toString() : null,
       hasMore,
     };
@@ -364,14 +421,17 @@ export class FeedPostsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.author?.toString() !== actorId) throw new ForbiddenException('Not allowed');
 
-    let multimediaDoc: any = undefined;
-    if (post.multimediaId) {
-      multimediaDoc = await this.multimediaModel.findById(post.multimediaId).lean().exec();
+    const multimediaIds: any[] = Array.isArray((post as any).multimediaIds) && (post as any).multimediaIds.length > 0
+      ? (post as any).multimediaIds
+      : (post.multimediaId ? [post.multimediaId] : []);
+    let multimediaDocs: any[] = [];
+    if (multimediaIds.length > 0) {
+      multimediaDocs = await this.multimediaModel.find({ _id: { $in: multimediaIds } }).lean().exec();
     }
 
     try {
-      if (multimediaDoc) {
-        await this.multimediaModel.deleteOne({ _id: multimediaDoc._id }).exec();
+      if (multimediaDocs.length > 0) {
+        await this.multimediaModel.deleteMany({ _id: { $in: multimediaDocs.map((m: any) => m._id) } }).exec();
       }
       await this.commentModel.deleteMany({ post: new Types.ObjectId(postId) }).exec();
       await this.feedModel.findByIdAndDelete(postId).exec();
@@ -381,19 +441,21 @@ export class FeedPostsService {
 
     // Limpieza de archivos en disco
     try {
-      const stagingKey = multimediaDoc?.processingJob?.stagingKey;
-      if (stagingKey) await this.storage.delete(stagingKey);
+      for (const multimediaDoc of multimediaDocs) {
+        const stagingKey = multimediaDoc?.processingJob?.stagingKey;
+        if (stagingKey) await this.storage.delete(stagingKey);
 
-      // Si ya se procesó, eliminar archivos finales extrayendo la key desde la URL
-      const finalUrl = multimediaDoc?.url;
-      if (finalUrl && typeof finalUrl === 'string') {
-        const finalKey = finalUrl.split('/uploads/multimedia/')[1];
-        if (finalKey) await this.storage.delete(finalKey);
-      }
-      const thumbUrl = multimediaDoc?.thumbnailUrl;
-      if (thumbUrl && typeof thumbUrl === 'string') {
-        const thumbKey = thumbUrl.split('/uploads/multimedia/')[1];
-        if (thumbKey) await this.storage.delete(thumbKey);
+        // Si ya se procesó, eliminar archivos finales extrayendo la key desde la URL
+        const finalUrl = multimediaDoc?.url;
+        if (finalUrl && typeof finalUrl === 'string') {
+          const finalKey = finalUrl.split('/uploads/multimedia/')[1];
+          if (finalKey) await this.storage.delete(finalKey);
+        }
+        const thumbUrl = multimediaDoc?.thumbnailUrl;
+        if (thumbUrl && typeof thumbUrl === 'string') {
+          const thumbKey = thumbUrl.split('/uploads/multimedia/')[1];
+          if (thumbKey) await this.storage.delete(thumbKey);
+        }
       }
     } catch (_) { }
 
@@ -414,7 +476,7 @@ export class FeedPostsService {
       .select(`
         _id description type author
         authorFirstName authorLastName
-        multimediaId multimediaUrl thumbnailUrl multimediaStatus
+        multimediaId multimediaIds multimediaUrl multimediaUrls thumbnailUrl thumbnailUrls multimediaStatus
         likes likesCount commentsCount
         shares views createdAt updatedAt
       `)
@@ -422,23 +484,6 @@ export class FeedPostsService {
       .limit(limit)
       .lean()
       .exec();
-    return posts.map((doc: any) => ({
-      _id: doc._id,
-      description: doc.description,
-      type: doc.type,
-      author: doc.author?.toString(),
-      authorFirstName: doc.authorFirstName || undefined,
-      authorLastName: doc.authorLastName || undefined,
-      multimediaId: doc.multimediaId,
-      multimediaUrl: doc.multimediaUrl || undefined,
-      thumbnailUrl: doc.thumbnailUrl || undefined,
-      likes: Array.isArray(doc.likes) ? doc.likes.map((id: any) => id?.toString()) : [],
-      likesCount: typeof doc.likesCount === 'number' ? doc.likesCount : (Array.isArray(doc.likes) ? doc.likes.length : 0),
-      commentsCount: typeof doc.commentsCount === 'number' ? doc.commentsCount : 0,
-      shares: doc.shares || 0,
-      views: doc.views || 0,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-    }));
+    return posts.map((doc: any) => this.toApiPost(doc));
   }
 }

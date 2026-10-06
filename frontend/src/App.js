@@ -179,10 +179,9 @@ function AppContent() {
                                             <line x1="15" y1="3" x2="15" y2="21" />
                                         </svg>
                                     </button>
-                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                    <Link to="/chat" aria-label="Chat" title="Chat" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-                                            <circle cx="16" cy="11" r="1" />
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                         </svg>
                                     </Link>
                                     <Link to="/marketplace" aria-label="Marketplace" title="Marketplace" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
@@ -213,7 +212,220 @@ function AppContent() {
                                     </button>
                                 </Box>
                             )}
-                            {showNotif && location.pathname.startsWith('/feed') && (
+                            {location.pathname === '/' && (
+                                <Box style={{
+                                    position: 'absolute',
+                                    left: '54%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '20px',
+                                    padding: '0 8px',
+                                }}>
+                                    <Link to="/feed" aria-label="Foro" title="Foro" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect width="6" height="6" x="3" y="4" rx="1" />
+                                            <rect width="6" height="6" x="3" y="14" rx="1" />
+                                            <path d="M13 5h8" />
+                                            <path d="M13 9h5" />
+                                            <path d="M13 15h8" />
+                                            <path d="M13 19h5" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+                                            <circle cx="16" cy="11" r="1" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/chat" aria-label="Chat" title="Chat" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/supportChat" aria-label="Brivo Soporte" title="Brivo Soporte" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M4 12a8 8 0 0 1 16 0" />
+                                            <rect x="3" y="12" width="4" height="6" rx="1" />
+                                            <rect x="17" y="12" width="4" height="6" rx="1" />
+                                            <path d="M7 18a5 5 0 0 0 10 0" />
+                                        </svg>
+                                    </Link>
+                                    <button
+                                        onClick={() => setShowNotif((v) => !v)}
+                                        aria-label="Notificaciones"
+                                        title="Notificaciones"
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                        </svg>
+                                        <span style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: '#F87171', border: '1px solid #1A1A2E' }} />
+                                    </button>
+                                </Box>
+                            )}
+                            {location.pathname === '/wallets' && (
+                                <Box style={{
+                                    position: 'absolute',
+                                    left: '54%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '20px',
+                                    padding: '0 8px',
+                                }}>
+                                    <Link to="/" aria-label="Dashboard" title="Dashboard" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/feed" aria-label="Foro" title="Foro" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect width="6" height="6" x="3" y="4" rx="1" />
+                                            <rect width="6" height="6" x="3" y="14" rx="1" />
+                                            <path d="M13 5h8" />
+                                            <path d="M13 9h5" />
+                                            <path d="M13 15h8" />
+                                            <path d="M13 19h5" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/chat" aria-label="Chat" title="Chat" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/supportChat" aria-label="Brivo Soporte" title="Brivo Soporte" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M4 12a8 8 0 0 1 16 0" />
+                                            <rect x="3" y="12" width="4" height="6" rx="1" />
+                                            <rect x="17" y="12" width="4" height="6" rx="1" />
+                                            <path d="M7 18a5 5 0 0 0 10 0" />
+                                        </svg>
+                                    </Link>
+                                    <button
+                                        onClick={() => setShowNotif((v) => !v)}
+                                        aria-label="Notificaciones"
+                                        title="Notificaciones"
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                        </svg>
+                                        <span style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: '#F87171', border: '1px solid #1A1A2E' }} />
+                                    </button>
+                                </Box>
+                            )}
+                            {location.pathname.startsWith('/wallet/') && (
+                                <Box style={{
+                                    position: 'absolute',
+                                    left: '54%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '20px',
+                                    padding: '0 8px',
+                                }}>
+                                    <Link to="/p2p" aria-label="Vender P2P" title="Vender P2P" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M7 7h10" />
+                                            <path d="M14 4l3 3-3 3" />
+                                            <path d="M17 17H7" />
+                                            <path d="M10 14l-3 3 3 3" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/create" aria-label="Comprar P2P" title="Comprar P2P" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 10h18" />
+                                            <path d="M5 10V7l2-3h10l2 3v3" />
+                                            <path d="M5 10v9h14v-9" />
+                                            <path d="M10 19v-5h4v5" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/chat" aria-label="Chat" title="Chat" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/swap" aria-label="Swap" title="Swap" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M16 3l4 4-4 4" />
+                                            <path d="M20 7H4" />
+                                            <path d="M8 21l-4-4 4-4" />
+                                            <path d="M4 17h16" />
+                                        </svg>
+                                    </Link>
+                                    <button
+                                        onClick={() => setShowNotif((v) => !v)}
+                                        aria-label="Notificaciones"
+                                        title="Notificaciones"
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                        </svg>
+                                        <span style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: '#F87171', border: '1px solid #1A1A2E' }} />
+                                    </button>
+                                </Box>
+                            )}
+                            {location.pathname === '/swap' && (
+                                <Box style={{
+                                    position: 'absolute',
+                                    left: '54%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '20px',
+                                    padding: '0 8px',
+                                }}>
+                                    <button
+                                        onClick={() => setShowNotif((v) => !v)}
+                                        aria-label="Notificaciones"
+                                        title="Notificaciones"
+                                        style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                                        </svg>
+                                        <span style={{ position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: '50%', background: '#F87171', border: '1px solid #1A1A2E' }} />
+                                    </button>
+                                    <Link to="/wallets" aria-label="Mis billeteras" title="Mis billeteras" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 7a2 2 0 0 1 2-2h14v4H5a2 2 0 1 0 0 4h14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+                                            <circle cx="16" cy="11" r="1" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/" aria-label="Dashboard" title="Dashboard" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                                        </svg>
+                                    </Link>
+                                    <Link to="/feed" aria-label="Foro" title="Foro" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', borderRadius: '10px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect width="6" height="6" x="3" y="4" rx="1" />
+                                            <rect width="6" height="6" x="3" y="14" rx="1" />
+                                            <path d="M13 5h8" />
+                                            <path d="M13 9h5" />
+                                            <path d="M13 15h8" />
+                                            <path d="M13 19h5" />
+                                        </svg>
+                                    </Link>
+                                </Box>
+                            )}
+                            {showNotif && (location.pathname.startsWith('/feed') || location.pathname === '/' || location.pathname === '/wallets' || location.pathname.startsWith('/wallet/') || location.pathname === '/swap') && (
                                 <>
                                     <div
                                         onClick={() => setShowNotif(false)}
