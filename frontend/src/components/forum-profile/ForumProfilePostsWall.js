@@ -29,7 +29,7 @@ export default function ForumProfilePostsWall({ posts, isFollowing }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="fp-wall">
       {posts.map((p) => (
         <FeedItem key={p._id} post={p} actions={actions} initialFollowing={isFollowing} />
       ))}

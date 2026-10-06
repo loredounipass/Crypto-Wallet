@@ -29,8 +29,8 @@ export default function ForumProfilePage() {
   };
 
   return (
-    <div className="feed-layout-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '1rem', padding: '0 10px', width: '100%' }}>
-      <div className="fp-page">
+    <div className="feed-layout-container fp-layout-mobile" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '1rem', padding: '0', width: '100%', containerType: 'inline-size' }}>
+      <div className="fb-list-wrapper fp-page">
         {loading && (
           <div className="fb-empty">Cargando perfil…</div>
         )}

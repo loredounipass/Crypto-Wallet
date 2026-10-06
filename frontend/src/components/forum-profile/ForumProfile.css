@@ -1,16 +1,18 @@
 /* ForumProfile — glassmorphism sobre la paleta del feed */
 .fp-page {
   flex: 1;
-  max-width: 580px;
+  max-width: none;
   width: 100%;
   margin: 0 auto;
-  padding: 20px 10px 24px;
+  padding: 20px 10px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .fp-card {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--fn-glass-bg);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
@@ -267,6 +269,8 @@
 }
 
 .fp-edit-form {
+  width: 100%;
+  box-sizing: border-box;
   padding: 14px 18px 18px;
   border-top: 1px solid var(--fn-glass-border);
   display: flex;
@@ -275,6 +279,7 @@
 }
 
 .fp-field {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -285,6 +290,8 @@
 
 .fp-field input,
 .fp-field textarea {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--fn-glass-bg-soft);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
@@ -303,12 +310,20 @@
 }
 
 .fp-field-row {
+  width: 100%;
   display: flex;
   gap: 10px;
 }
 
 .fp-field-grow {
   flex: 1;
+}
+
+.fp-wall {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .fp-edit-actions {
@@ -331,13 +346,19 @@
   color: var(--fn-muted);
 }
 
+.fp-layout-mobile {
+  padding: 0;
+}
+
 @media (max-width: 640px) {
   .fp-page {
+    max-width: none;
+    width: 100%;
     padding: 8px 0 24px;
   }
   .fp-card {
     border-radius: 14px;
-    margin: 0 8px;
+    margin: 0;
     border-left: 1px solid var(--fn-glass-border);
     border-right: 1px solid var(--fn-glass-border);
   }
