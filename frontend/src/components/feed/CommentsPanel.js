@@ -1,4 +1,5 @@
 import React, { use } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../hooks/AuthContext'
 import UserAvatar from '../common/UserAvatar'
 import { ConfirmToast } from '../toasts/Toast'
@@ -115,6 +116,12 @@ const S = {
 /* ── component ── */
 export default function CommentsPanel({ post, open, onClose, addComment, getComments, deleteComment, joinPost, likeComment, unlikeComment }) {
   const { auth } = use(AuthContext)
+  const navigate = useNavigate()
+  const goToProfile = (authorId) => {
+    if (!authorId) return;
+    try { onClose?.(); } catch (_) { }
+    navigate(`/profile/${authorId}`);
+  };
   const {
     comments, loading, text, setText, submitting, error, replyTo, setReplyTo,
     confirmDeleteId, setConfirmDeleteId, deleting, expandedThreads, setExpandedThreads,
@@ -151,6 +158,8 @@ export default function CommentsPanel({ post, open, onClose, addComment, getComm
           <UserAvatar
             user={{ _id: String(c.author || ''), firstName: c.authorFirstName, lastName: c.authorLastName }}
             size={32}
+            onClick={() => goToProfile(String(c.author || ''))}
+            title="Ver perfil"
           />
           <div style={S.body}>
             <div style={S.nameRow}>

@@ -16,6 +16,24 @@ export class Profile {
 
   @Prop()
   profilePhotoUrl?: string;
+
+  @Prop()
+  coverPhotoUrl?: string;
+
+  @Prop({ maxlength: 300 })
+  bio?: string;
+
+  @Prop({ maxlength: 2 })
+  country?: string;
+
+  @Prop({ type: [String], default: [] })
+  currencies: string[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  followers: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  following: Types.ObjectId[];
 }
 
 export const ProfileSchema = SchemaFactory.createForClass(Profile);

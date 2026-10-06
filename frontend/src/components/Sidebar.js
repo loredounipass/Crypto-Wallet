@@ -109,6 +109,13 @@ const ChatIcon = (props) => (
   </SidebarIconBase>
 );
 
+const ProfileIcon = (props) => (
+  <SidebarIconBase {...props}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </SidebarIconBase>
+);
+
 // const NoticiasIcon = (props) => (
 //   <SidebarIconBase {...props}>
 //     <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
@@ -174,6 +181,7 @@ export default function Sidebar({ open, onToggle, mobileOpen, onMobileClose }) {
     { text: t("sidebar_buy_p2p", "Comprar P2P"), icon: ProviderIcon, path: "/create", matchPaths: ["/create", "/provider-dashboard"] },
     { text: t("sidebar_swap", "Swap"), icon: SwapSidebarIcon, path: "/swap", matchPaths: ["/swap"] },
     { text: t("sidebar_chat", "Chat"), icon: ChatIcon, path: "/chat", matchPaths: ["/chat"] },
+    { text: t("sidebar_profile", "Mi Perfil"), icon: ProfileIcon, path: "/profile", matchPaths: ["/profile"] },
     { text: t("sidebar_support", "Brivo Soporte"), icon: SupportIcon, path: "/supportChat", matchPaths: ["/supportChat"] },
     ...(isAdmin ? [
       { text: "Disputas Admin", icon: AdminShieldIcon, path: "/admin/disputes", matchPaths: ["/admin/disputes"], color: "#F59E0B" },

@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Get, Post, Body, UseInterceptors, UploadedFile, Param, Query } from '@nestjs/common';
+import { Controller, UseGuards, Get, Post, Delete, Body, UseInterceptors, UploadedFile, Param, Query } from '@nestjs/common';
 import { Public } from '../guard/auth/public.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProfileService } from './profile.service';
@@ -60,13 +60,55 @@ export class ProfileController {
   }
 
 
+  // PROCESA LA SUBIDA DE UNA NUEVA FOTO DE PORTADA OPTIMIZANDO LA IMAGEN Y GENERANDO SU MINIATURA
+  @UseGuards(AuthenticatedGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @Post('upload/cover-photo')
+  async uploadCoverPhoto(@UploadedFile() file: MulterFile, @CurrentUser() user: any) {
+    return this.service.uploadImage(user._id.toString(), file, 'cover');
+  }
+
+
+
+  // RECUPERA EL PERFIL DEL FORO: IDENTIDAD, BIO, PAIS, MONEDAS, FLAG P2P Y MURO DE POSTS
+  @UseGuards(AuthenticatedGuard)
+  @Get('forum/:id')
+  async getForumProfile(@Param('id') id: string, @Query('limit') limit?: string, @CurrentUser() user?: any) {
+    const l = limit ? parseInt(limit, 10) : 20;
+    return this.service.getForumProfile(id, l, user?._id?.toString());
+  }
+
+
+  // REGISTRA AL USUARIO ACTUAL COMO SEGUIDOR DEL PERFIL INDICADO
+  @UseGuards(AuthenticatedGuard)
+  @Post('follow/:id')
+  async follow(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.service.follow(user._id.toString(), id);
+  }
+
+
+  // ELIMINA AL USUARIO ACTUAL DE LOS SEGUIDORES DEL PERFIL INDICADO
+  @UseGuards(AuthenticatedGuard)
+  @Delete('follow/:id')
+  async unfollow(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.service.unfollow(user._id.toString(), id);
+  }
+
+
+  // DEVUELVE EL ESTADO DE SEGUIMIENTO Y CONTEOS ENTRE EL USUARIO ACTUAL Y EL PERFIL
+  @UseGuards(AuthenticatedGuard)
+  @Get('follow/:id/state')
+  async followState(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.service.getFollowState(user._id.toString(), id);
+  }
+
 
   // RECUPERA LA LISTA DE PUBLICACIONES MULTIMEDIA ASOCIADAS AL PERFIL PARA MOSTRARLAS EN SU MURO PUBLICO
-  @Public()
+  @UseGuards(AuthenticatedGuard)
   @Get(':id/posts')
   async getPostsByProfile(@Param('id') id: string, @Query('limit') limit?: string) {
     const l = limit ? parseInt(limit, 10) : 50;
-    return this.service.getPostsForProfile(id, l);
+    return this.service.getPostsByAuthor(id, l);
   }
 }
 

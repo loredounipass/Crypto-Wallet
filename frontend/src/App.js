@@ -39,6 +39,7 @@ import P2P from './pages/P2P'
 import P2POrderChat from './components/p2p/P2POrderChat'
 import Swap from './pages/Swap'
 import Feed from './pages/Feed'
+import ForumProfilePage from './pages/ForumProfilePage'
 //import Noticias from './pages/Noticias'
 import BrivoAgent from './components/brivo-agent/BrivoAgent'
 import MobileTopBar from './components/mobile-nav/MobileTopBar'
@@ -219,6 +220,16 @@ function AppContent() {
                                 <Route path='/feed' element={
                                     <PrivateRoute>
                                         <Feed />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/profile/:id' element={
+                                    <PrivateRoute>
+                                        <ForumProfilePage />
+                                    </PrivateRoute>
+                                } />
+                                <Route path='/profile' element={
+                                    <PrivateRoute>
+                                        <ForumProfilePage />
                                     </PrivateRoute>
                                 } />
                                 <Route path='/login' element={

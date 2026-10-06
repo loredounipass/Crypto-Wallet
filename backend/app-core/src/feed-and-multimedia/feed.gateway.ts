@@ -104,6 +104,7 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         author: payload.author,
         authorFirstName: payload.authorFirstName || undefined,
         authorLastName: payload.authorLastName || undefined,
+        authorPhotoUrl: payload.authorPhotoUrl || undefined,
         multimediaId: payload.multimediaId || undefined,
         multimediaIds: Array.isArray(payload.multimediaIds) ? payload.multimediaIds : [],
         multimediaUrl: payload.multimediaUrl || undefined,
@@ -139,6 +140,7 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         author: payload.author,
         authorFirstName: payload.authorFirstName || undefined,
         authorLastName: payload.authorLastName || undefined,
+        authorPhotoUrl: payload.authorPhotoUrl || undefined,
         multimediaId: payload.multimediaId || undefined,
         multimediaIds: Array.isArray(payload.multimediaIds) ? payload.multimediaIds : [],
         multimediaUrl: payload.multimediaUrl || undefined,
@@ -180,6 +182,7 @@ export class FeedGateway implements OnGatewayConnection, OnGatewayDisconnect {
         author: payload.author,
         authorFirstName: payload.authorFirstName || undefined,
         authorLastName: payload.authorLastName || undefined,
+        authorPhotoUrl: payload.authorPhotoUrl || undefined,
         post: payload.post,
         createdAt: payload.createdAt,
       };

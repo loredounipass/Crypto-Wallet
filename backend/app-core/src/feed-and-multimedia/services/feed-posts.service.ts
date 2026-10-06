@@ -8,6 +8,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { LocalStorageProvider } from 'src/storage/local.storage.provider';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Profile, ProfileDocument } from '../../profile/schemas/profile.schema';
 import * as crypto from 'crypto';
 import * as path from 'path';
 
@@ -20,6 +23,7 @@ export class FeedPostsService {
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('multimedia') private readonly multimediaQueue: Queue,
     private readonly storage: LocalStorageProvider,
+    @InjectModel(Profile.name) private readonly profileModel: Model<ProfileDocument>,
   ) { }
 
   // ESCUCHA CUANDO EL PROCESADOR MULTIMEDIA TERMINA DE OPTIMIZAR UNA IMAGEN Y ACTUALIZA EL POST DEL FEED CON LA URL FINAL.
@@ -94,6 +98,7 @@ export class FeedPostsService {
       author: doc.author?.toString(),
       authorFirstName: doc.authorFirstName || undefined,
       authorLastName: doc.authorLastName || undefined,
+      authorPhotoUrl: (doc as any).authorPhotoUrl || undefined,
       multimediaId: doc.multimediaId,
       multimediaIds: Array.isArray(doc.multimediaIds) && doc.multimediaIds.length > 0 ? doc.multimediaIds : legacyIds,
       multimediaUrl: doc.multimediaUrl || undefined,
@@ -112,11 +117,30 @@ export class FeedPostsService {
   }
 
 
+  // ADJUNTA LA FOTO DE PERFIL DE CADA AUTOR EN LOTE (1 QUERY PARA TODA LA PAGINA)
+  private async enrichAuthorPhotos(docs: any[]) {
+    try {
+      const ids = [...new Set(
+        docs.map((d: any) => d?.author?.toString()).filter((id: string) => id && Types.ObjectId.isValid(id)),
+      )].map((id: string) => new Types.ObjectId(id));
+      if (ids.length === 0) return docs;
+      const profiles = await this.profileModel.find({ owner: { $in: ids } }).select('owner profilePhotoUrl').lean().exec();
+      const photoByOwner = new Map((profiles || []).map((p: any) => [String(p.owner), p.profilePhotoUrl]));
+      for (const d of docs) {
+        const url = photoByOwner.get(String(d?.author));
+        if (url) d.authorPhotoUrl = url;
+      }
+    } catch (_) { /* FOTO OPCIONAL: JAMAS ROMPE EL FEED */ }
+    return docs;
+  }
+
+
   // OBTIENE LOS DETALLES COMPLETOS DE UNA PUBLICACION INCLUYENDO SUS ESTADISTICAS Y CONTENIDO MULTIMEDIA
   async getPostById(postId: string) {
     if (!postId || !Types.ObjectId.isValid(postId)) throw new BadRequestException('Invalid post id');
     const post = await this.feedModel.findById(postId).lean().exec();
     if (!post) throw new NotFoundException('Post not found');
+    await this.enrichAuthorPhotos([post]);
     return this.toApiPost(post);
   }
 
@@ -384,6 +408,7 @@ export class FeedPostsService {
 
     const hasMore = posts.length > limit;
     const sliced = hasMore ? posts.slice(0, limit) : posts;
+    await this.enrichAuthorPhotos(sliced);
 
     return {
       posts: sliced.map((doc: any) => this.toApiPost(doc)),
@@ -463,27 +488,4 @@ export class FeedPostsService {
     return { success: true };
   }
 
-
-
-  // BUSCA Y DEVUELVE EXCLUSIVAMENTE LAS PUBLICACIONES QUE CONTIENEN MULTIMEDIA PERTENECIENTES A UN AUTOR ESPECIFICO
-  async getPostsByAuthor(authorId: string, limit = 50) {
-    if (!authorId || !Types.ObjectId.isValid(authorId)) throw new BadRequestException('Invalid author id');
-    const posts = await this.feedModel
-      .find({
-        author: new Types.ObjectId(authorId),
-        multimediaId: { $exists: true, $ne: null },
-      })
-      .select(`
-        _id description type author
-        authorFirstName authorLastName
-        multimediaId multimediaIds multimediaUrl multimediaUrls thumbnailUrl thumbnailUrls multimediaStatus
-        likes likesCount commentsCount
-        shares views createdAt updatedAt
-      `)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean()
-      .exec();
-    return posts.map((doc: any) => this.toApiPost(doc));
-  }
 }

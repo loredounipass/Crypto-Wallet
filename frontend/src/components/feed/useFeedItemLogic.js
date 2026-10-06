@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { mediaBase, apiOrigin } from '../../api/http';
+import { followUserProfile, unfollowUserProfile, getFollowState } from '../../services/profile';
 
 
 
@@ -16,37 +17,73 @@ const resolveUrl = (u) => {
 
 
 // CUSTOM HOOK THAT MANAGES THE STATE AND LOGIC FOR A FEED ITEM
-export default function useFeedItemLogic({ post, actions, auth }) {
+export default function useFeedItemLogic({ post, actions, auth, initialFollowing }) {
   const { likePost, unlikePost, viewPost, sharePost } = actions;
   const isMyPost = post && auth?._id && String(post.author) === String(auth._id);
-  const [following, setFollowing] = useState(false);
+  const [following, setFollowing] = useState(() => {
+    if (typeof initialFollowing === 'boolean') return initialFollowing;
+    return false;
+  });
   const followLoading = useRef(false);
 
+  // SYNCS INITIAL FOLLOW STATE FOR THE POST AUTHOR
+  useEffect(() => {
+    if (typeof initialFollowing === 'boolean') {
+      setFollowing(initialFollowing);
+      return;
+    }
+    if (isMyPost) {
+      setFollowing(false);
+      return;
+    }
+    const authorId = post?.author ? String(post.author._id || post.author) : '';
+    if (!authorId || !auth?._id) return;
+    let cancelled = false;
+    getFollowState(authorId).then(res => {
+      if (cancelled) return;
+      const data = res?.data ?? res;
+      if (data && typeof data.isFollowing === 'boolean') setFollowing(data.isFollowing);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [post?._id, post?.author, isMyPost, auth?._id, initialFollowing]);
 
 
-  // HANDLES FOLLOWING THE POST AUTHOR
+
+  // FOLLOWS THE POST AUTHOR (SYNCED WITH THE PROFILE FOLLOW API)
   const handleFollow = useCallback(async () => {
     if (followLoading.current || following) return;
+    const authorId = post?.author ? String(post.author._id || post.author) : '';
+    if (!authorId) return;
     followLoading.current = true;
+    setFollowing(true);
     try {
-      setFollowing(true);
+      const res = await followUserProfile(authorId);
+      const data = res?.data ?? res;
+      if (data && typeof data.isFollowing === 'boolean') setFollowing(data.isFollowing);
     } catch (err) {
       console.error('[FeedItem] Error following user:', err);
+      setFollowing(false);
     } finally { followLoading.current = false; }
-  }, [following]);
+  }, [following, post?.author]);
 
 
 
-  // HANDLES UNFOLLOWING THE POST AUTHOR
+  // UNFOLLOWS THE POST AUTHOR (SYNCED WITH THE PROFILE FOLLOW API)
   const handleUnfollow = useCallback(async () => {
     if (followLoading.current || !following) return;
+    const authorId = post?.author ? String(post.author._id || post.author) : '';
+    if (!authorId) return;
     followLoading.current = true;
+    setFollowing(false);
     try {
-      setFollowing(false);
+      const res = await unfollowUserProfile(authorId);
+      const data = res?.data ?? res;
+      if (data && typeof data.isFollowing === 'boolean') setFollowing(data.isFollowing);
     } catch (err) {
       console.error('[FeedItem] Error unfollowing user:', err);
+      setFollowing(true);
     } finally { followLoading.current = false; }
-  }, [following]);
+  }, [following, post?.author]);
 
 
 

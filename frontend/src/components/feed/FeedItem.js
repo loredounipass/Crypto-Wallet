@@ -11,7 +11,7 @@ import useFeedItemLogic from './useFeedItemLogic'
 
 const EMPTY_ACTIONS = {};
 
-export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
+export default function FeedItem({ post, actions = EMPTY_ACTIONS, initialFollowing }) {
   const { auth } = use(AuthContext)
   const { deletePost, updatePost, addComment, joinPost, getComments, likeComment, unlikeComment } = actions
   const {
@@ -20,7 +20,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     shareFeedback, shareDialogOpen, setShareDialogOpen, showDeleteConfirm,
     setShowDeleteConfirm, containerRef, displayName, authorHandle, shareUrl, mediaUrls,
     timeStr, handleLike, handleShare
-  } = useFeedItemLogic({ post, actions, auth });
+  } = useFeedItemLogic({ post, actions, auth, initialFollowing });
 
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState('');
@@ -33,6 +33,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
     multimediaUrl,
     commentsCount, views,
   } = post
+  const authorId = post.author ? String(post.author._id || post.author) : '';
 
   const startEditing = () => {
     setDraft(description || '');
@@ -71,7 +72,7 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
           gap: '0.5rem', padding: '0.7rem 0.9rem 0.5rem',
         }}>
           <Link
-            to={post.author ? `/profile/${post.author}` : '/profile'}
+            to={authorId ? `/profile/${authorId}` : '/profile'}
             className="fb-avatar-ring"
             style={{ textDecoration: 'none', flexShrink: 0 }}
             aria-label={isMyPost ? 'Ir a mi perfil' : `Ver perfil de ${displayName}`}
@@ -81,12 +82,13 @@ export default function FeedItem({ post, actions = EMPTY_ACTIONS }) {
                 _id: String(post.author || ''),
                 firstName: post.authorFirstName,
                 lastName: post.authorLastName,
+                profilePhotoUrl: post.authorPhotoUrl,
               }}
               size={28}
             />
           </Link>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <Link to={post.author ? `/profile/${post.author}` : '/profile'} style={{ textDecoration: 'none', color: 'inherit' }} title={displayName}>
+            <Link to={authorId ? `/profile/${authorId}` : '/profile'} style={{ textDecoration: 'none', color: 'inherit' }} title={displayName}>
               <span className="fb-author" style={{ fontSize: 13 }}>{authorHandle}</span>
             </Link>
             <span className="fb-time">· {timeStr}</span>

@@ -16,10 +16,34 @@ const csrfTokenApi = `${apiOrigin}/csrf-token`;
 
 
 
-// GLOBAL AXIOS INTERCEPTOR TO UNIFY AND TRANSLATE BACKEND ERRORS
+// DETECTS A REJECTED CSRF TOKEN IN A FAILED RESPONSE (STALE/ROTATED TOKEN)
+function isCsrfRejection(error) {
+    if (error?.response?.status !== 403) return false;
+    const data = error.response?.data;
+    const code = data?.code || data?.statusCode;
+    const msg = String(data?.message || data?.error || data?.msg || '');
+    return code === 'EBADCSRFTOKEN' || /csrf/i.test(msg);
+}
+
+
+// GLOBAL AXIOS INTERCEPTOR TO UNIFY AND TRANSLATE BACKEND ERRORS.
+// ON CSRF REJECTION IT REFRESHES THE TOKEN ONCE AND RETRIES THE REQUEST.
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+        const config = error?.config;
+        if (config && !config._csrfRetried && isCsrfRejection(error)
+            && !String(config.url || '').includes('/csrf-token')) {
+            config._csrfRetried = true;
+            try {
+                const fresh = await fetchCsrfToken(0);
+                if (fresh) {
+                    config.headers = config.headers || {};
+                    config.headers['x-csrf-token'] = fresh;
+                    return await api.request(config);
+                }
+            } catch (_) { /* fall through to the unified error below */ }
+        }
         let msg = 'Ocurrió un error inesperado.';
         if (error.response?.data?.msg) {
             msg = error.response.data.msg;
@@ -53,6 +77,7 @@ async function fetchCsrfToken(retries = 5, delayMs = 2000) {
         if (csrfToken) {
             api.defaults.headers.common['x-csrf-token'] = csrfToken;
             console.log('CSRF token fetched successfully');
+            return csrfToken;
         }
     } catch (error) {
         console.error(`Failed to fetch CSRF token. Retries left: ${retries}`);
@@ -60,6 +85,7 @@ async function fetchCsrfToken(retries = 5, delayMs = 2000) {
             setTimeout(() => fetchCsrfToken(retries - 1, delayMs * 1.5), delayMs);
         }
     }
+    return null;
 }
 
 
@@ -117,7 +143,11 @@ const myMessagesApi = `${baseApi}/messages/me`
 const profileApi = `${baseApi}/profile`
 const profileMeApi = `${profileApi}/me`
 const profileByIdApi = (id) => `${profileApi}/${id}`
+const profileForumApi = (id, limit) => `${profileApi}/forum/${id}${limit ? `?limit=${limit}` : ''}`
+const profileFollowApi = (id) => `${profileApi}/follow/${id}`
+const profileFollowStateApi = (id) => `${profileApi}/follow/${id}/state`
 const profileUploadProfilePhotoApi = `${profileApi}/upload/profile-photo`
+const profileUploadCoverPhotoApi = `${profileApi}/upload/cover-photo`
 
 
 
@@ -312,7 +342,11 @@ export {
     profileApi,
     profileMeApi,
     profileByIdApi,
+    profileForumApi,
+    profileFollowApi,
+    profileFollowStateApi,
     profileUploadProfilePhotoApi,
+    profileUploadCoverPhotoApi,
     supportChatApi,
     escrowGasEstimateApi,
     escrowCreateOrderApi,

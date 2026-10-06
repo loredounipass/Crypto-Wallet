@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { FeedAndMultimediaController } from './feed-and-multimedia.controller';
 import { FeedPost, FeedPostSchema } from './schemas/feed.schema';
+import { Profile, ProfileSchema } from '../profile/schemas/profile.schema';
 import { Comment, CommentSchema } from './schemas/comment.schema';
 import { Multimedia, MultimediaSchema } from '../messages-and-multimedia/schemas/multimedia.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
@@ -21,6 +22,7 @@ import { FeedEventsService } from './services/feed-events.service';
   imports: [
     MongooseModule.forFeature([
       { name: FeedPost.name, schema: FeedPostSchema },
+      { name: Profile.name, schema: ProfileSchema },
       { name: Comment.name, schema: CommentSchema },
       { name: Multimedia.name, schema: MultimediaSchema },
       { name: User.name, schema: UserSchema },

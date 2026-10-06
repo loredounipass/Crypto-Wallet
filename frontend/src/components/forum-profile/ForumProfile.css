@@ -1,0 +1,318 @@
+/* ForumProfile — glassmorphism sobre la paleta del feed */
+.fp-page {
+  flex: 1;
+  max-width: 580px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 10px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fp-card {
+  background: var(--fn-glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--fn-glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--fn-glass-hi), var(--fn-glass-shadow);
+}
+
+.fp-cover-wrap {
+  position: relative;
+}
+
+.fp-cover {
+  position: relative;
+  height: 170px;
+  background: #0b0b14;
+  overflow: hidden;
+}
+
+.fp-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fp-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #A855F7 0%, #6366F1 50%, #1A1A28 100%);
+  opacity: 0.85;
+}
+
+.fp-cover-edit {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fp-cover-edit:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.fp-identity-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 0 18px;
+  margin-top: -34px;
+  position: relative;
+}
+
+.fp-avatar-ring {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--fn-teal), var(--fn-blue));
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+}
+
+.fp-avatar-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #12121E;
+  background: linear-gradient(135deg, var(--fn-teal), var(--fn-blue));
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fp-identity-text {
+  padding-bottom: 6px;
+  min-width: 0;
+}
+
+.fp-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFFFFF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-country {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--fn-muted);
+  border: 1px solid var(--fn-glass-border);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.fp-meta {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fp-bio {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fn-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fp-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fp-p2p-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #34D399;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.fp-posts-count {
+  font-size: 12.5px;
+  color: var(--fn-muted);
+  font-weight: 600;
+}
+
+.fp-edit-btn {
+  margin-left: auto;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: var(--fn-teal);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fp-edit-btn:hover {
+  background: rgba(168, 85, 247, 0.22);
+}
+
+.fp-follow-btn {
+  margin-left: auto;
+  background: var(--fn-teal);
+  border: 1.5px solid var(--fn-teal);
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.fp-follow-btn.following {
+  background: transparent;
+  color: var(--fn-muted);
+  border-color: var(--fn-border);
+}
+
+.fp-follow-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.fp-currencies {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fp-currencies-label {
+  font-size: 12px;
+  color: var(--fn-muted);
+  font-weight: 600;
+}
+
+.fp-currency-chip {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(96, 165, 250, 0.35));
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 8px;
+  padding: 3px 10px;
+}
+
+.fp-edit-form {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--fn-glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fn-muted);
+}
+
+.fp-field input,
+.fp-field textarea {
+  background: var(--fn-glass-bg-soft);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--fn-text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+}
+
+.fp-field input:focus,
+.fp-field textarea:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+.fp-field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.fp-field-grow {
+  flex: 1;
+}
+
+.fp-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.fp-edit-actions .btn-secondary {
+  margin-top: 0;
+}
+
+.fp-wall-title {
+  margin: 4px 2px 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--fn-muted);
+}
+
+@media (max-width: 640px) {
+  .fp-page {
+    padding: 8px 0 24px;
+  }
+  .fp-card {
+    border-radius: 14px;
+    margin: 0 8px;
+    border-left: 1px solid var(--fn-glass-border);
+    border-right: 1px solid var(--fn-glass-border);
+  }
+  .fp-cover {
+    height: 140px;
+  }
+  .fp-name {
+    font-size: 18px;
+  }
+  .fp-wall-title {
+    margin-left: 10px;
+  }
+}
