@@ -2,13 +2,12 @@ import React from 'react';
 import { Box } from '../../ui/material';
 import MobileNavItem from './MobileNavItem';
 import { mobileNavGroupStyle } from './navStyles';
-import { toggleFeedExtras } from '../feed/FeedExtrasDrawer';
 import {
-  FeedPanelIcon, ChatIcon, WalletIcon, BellIcon, DashboardIcon,
+  DashboardIcon, BuyP2PIcon, WalletIcon, ChatIcon, BellIcon,
 } from './navIcons';
 
-// GRUPO DEL FORO (/feed): DASHBOARD + PANEL + CHAT + MARKETPLACE + VENDER P2P + NOTIFICACIONES
-export default function FeedNavGroup({ onToggleNotif }) {
+// GRUPO DE VENDER P2P (/p2p): DASHBOARD + COMPRAR P2P + BILLETERAS + CHAT + NOTIFICACIONES
+export default function P2PSellNavGroup({ onToggleNotif }) {
   return (
     <Box style={mobileNavGroupStyle}>
       <MobileNavItem to="/" label="Dashboard">
@@ -17,11 +16,11 @@ export default function FeedNavGroup({ onToggleNotif }) {
       <MobileNavItem to="/wallets" label="Mis billeteras">
         <WalletIcon />
       </MobileNavItem>
+      <MobileNavItem to="/create" label="Comprar P2P">
+        <BuyP2PIcon />
+      </MobileNavItem>
       <MobileNavItem to="/chat" label="Chat">
         <ChatIcon />
-      </MobileNavItem>
-      <MobileNavItem onClick={toggleFeedExtras} label="panel del feed" title="Donaciones, links y contactos">
-        <FeedPanelIcon />
       </MobileNavItem>
       <MobileNavItem onClick={onToggleNotif} label="Notificaciones" dot>
         <BellIcon />

@@ -17,12 +17,12 @@ export const mobileBarStyle = {
 
 export const mobileNavGroupStyle = {
   position: 'absolute',
-  left: '54%',
+  left: '56%',
   transform: 'translateX(-50%)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '20px',
+  gap: '16px',
   padding: '0 8px',
 };
 

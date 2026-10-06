@@ -8,6 +8,7 @@ import DashboardNavGroup from './DashboardNavGroup';
 import WalletsNavGroup from './WalletsNavGroup';
 import WalletDetailNavGroup from './WalletDetailNavGroup';
 import SwapNavGroup from './SwapNavGroup';
+import P2PSellNavGroup from './P2PSellNavGroup';
 import NotifDropdown from './NotifDropdown';
 
 // BARRA SUPERIOR MOVIL (SOLO <=md): MENU + ICONOS CENTRALES SEGUN LA RUTA
@@ -20,7 +21,8 @@ export default function MobileTopBar({ onMobileMenuToggle }) {
     location.pathname === '/' ||
     location.pathname === '/wallets' ||
     location.pathname.startsWith('/wallet/') ||
-    location.pathname === '/swap';
+    location.pathname === '/swap' ||
+    location.pathname.startsWith('/p2p');
 
   return (
     <Box style={mobileBarStyle}>
@@ -48,6 +50,9 @@ export default function MobileTopBar({ onMobileMenuToggle }) {
       )}
       {location.pathname === '/swap' && (
         <SwapNavGroup onToggleNotif={toggleNotif} />
+      )}
+      {location.pathname.startsWith('/p2p') && (
+        <P2PSellNavGroup onToggleNotif={toggleNotif} />
       )}
       {showNotif && showNotifPanel && (
         <NotifDropdown open={showNotif} onClose={() => setShowNotif(false)} />
