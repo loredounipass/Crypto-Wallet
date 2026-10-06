@@ -195,6 +195,9 @@
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .fp-follow-btn.following {
@@ -206,6 +209,38 @@
 .fp-follow-btn:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+.fp-action-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.fp-action-btns .fp-follow-btn {
+  margin-left: 0;
+}
+
+.fp-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1.5px solid var(--fn-border);
+  color: var(--fn-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.fp-chat-btn:hover {
+  border-color: var(--fn-teal);
+  color: var(--fn-teal);
 }
 
 .fp-currencies {

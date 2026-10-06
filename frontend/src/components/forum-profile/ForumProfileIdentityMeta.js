@@ -29,14 +29,22 @@ export default function ForumProfileIdentityMeta({
             Editar perfil
           </button>
         ) : (
-          <button
-            type="button"
-            className={isFollowing ? 'fp-follow-btn following' : 'fp-follow-btn'}
-            onClick={onToggleFollow}
-            disabled={followBusy}
-          >
-            {followBusy ? '…' : (isFollowing ? 'Siguiendo' : '+ Seguir')}
-          </button>
+          <div className="fp-action-btns">
+            <button
+              type="button"
+              className={isFollowing ? 'fp-follow-btn following' : 'fp-follow-btn'}
+              onClick={onToggleFollow}
+              disabled={followBusy}
+            >
+              {followBusy ? '…' : (isFollowing ? 'Siguiendo' : '+ Seguir')}
+            </button>
+            <button type="button" className="fp-chat-btn" title="Chat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Chat
+            </button>
+          </div>
         )}
       </div>
       {currencies.length > 0 && (
