@@ -41,6 +41,12 @@ const TOKEN_MAP = {
         '0x0ba304580ee7c9a980cf72e55f5ed2e9fd30bc51': { symbol: 'USDC', decimals: 6, coinGeckoId: null }
     },
 
+    // ---- OPTIMISM SEPOLIA (Testnet de Optimism - Chain ID: 11155420) ----
+    "11155420": {
+        '0xb9467b24117fd79d56f396adc3ccdb695d905ae4': { symbol: 'USDT', decimals: 6, coinGeckoId: null },
+        '0x5fd84259d66cd46123540766be93dfe6d43130d7': { symbol: 'USDC', decimals: 6, coinGeckoId: null }
+    },
+
     // ==========================================
     //   REDES MAINNET (Producción)
     // ==========================================
@@ -61,6 +67,12 @@ const TOKEN_MAP = {
     "137": {
         '0xc2132d05d31c914a87c6611c10748aeb04b58e8f': { symbol: 'USDT', decimals: 6, coinGeckoId: 'tether' },
         '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359': { symbol: 'USDC', decimals: 6, coinGeckoId: 'usd-coin' } // Native USDC Polygon
+    },
+
+    // ---- OPTIMISM MAINNET (Chain ID: 10) ----
+    "10": {
+        '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58': { symbol: 'USDT', decimals: 6, coinGeckoId: 'tether' },
+        '0x0b2c639c533813f4aa9d7837caf62653d097ff85': { symbol: 'USDC', decimals: 6, coinGeckoId: 'usd-coin' }
     }
 }
 
