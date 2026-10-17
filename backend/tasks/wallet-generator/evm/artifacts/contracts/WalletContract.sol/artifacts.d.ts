@@ -15,7 +15,7 @@ export interface IERC20$Type {
   readonly deployedLinkReferences: {};
   readonly immutableReferences: {};
   readonly inputSourceName: "project/contracts/WalletContract.sol";
-  readonly buildInfoId: "solc-0_8_20-a01990e053e816b46b9b0a55c17189227b4f8796";
+  readonly buildInfoId: "solc-0_8_20-36ba37c07b9c6953de8972b158a6980f507ec91c";
 };
 
 export interface WalletContract$Type {
@@ -29,7 +29,7 @@ export interface WalletContract$Type {
   readonly deployedLinkReferences: {};
   readonly immutableReferences: {};
   readonly inputSourceName: "project/contracts/WalletContract.sol";
-  readonly buildInfoId: "solc-0_8_20-a01990e053e816b46b9b0a55c17189227b4f8796";
+  readonly buildInfoId: "solc-0_8_20-36ba37c07b9c6953de8972b158a6980f507ec91c";
 };
 
 import "hardhat/types/artifacts";
