@@ -288,6 +288,7 @@ export class UserService {
 
 
   // LOCALIZA USUARIOS LIMITADOS EN CANTIDAD BASANDOSE EN EXPRESIONES REGULARES E INCLUYE SUS FOTOS DE PERFIL SI EXISTEN
+  // ⚠️ SEGURIDAD: No exponer email en los resultados para evitar cosecha de correos (phishing dirigido)
   async searchUsers(q: string) {
     if (!q) return [];
     const sanitized = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -302,7 +303,7 @@ export class UserService {
       or.push({ _id: q });
     }
     const MAX_LIMIT = 20;
-    const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('_id firstName lastName email language').lean().exec();
+    const users = await this.userRepository.find({ $or: or }).limit(MAX_LIMIT).select('_id firstName lastName language').lean().exec();
     try {
       const ids = users.map((u: any) => u._id).filter(Boolean);
       if (ids.length > 0) {
@@ -312,19 +313,19 @@ export class UserService {
           if (p && p.owner) photoMap[p.owner.toString()] = (p as any).profilePhotoUrl || '';
         }
         return users.map((u: any) => {
-          const { _id, firstName, lastName, email, language } = u;
-          return { _id, firstName, lastName, email, language, profilePhotoUrl: photoMap[u._id?.toString()] || undefined };
+          const { _id, firstName, lastName, language } = u;
+          return { _id, firstName, lastName, language, profilePhotoUrl: photoMap[u._id?.toString()] || undefined };
         });
       }
     } catch (err) {
       return users.map((u: any) => {
-        const { _id, firstName, lastName, email, language } = u;
-        return { _id, firstName, lastName, email, language };
+        const { _id, firstName, lastName, language } = u;
+        return { _id, firstName, lastName, language };
       });
     }
     return users.map((u: any) => {
-      const { _id, firstName, lastName, email, language } = u;
-      return { _id, firstName, lastName, email, language };
+      const { _id, firstName, lastName, language } = u;
+      return { _id, firstName, lastName, language };
     });
   }
 

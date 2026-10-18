@@ -364,6 +364,7 @@
   "p2p_provider_created": "Provider created successfully",
   "p2p_provider_header": "Provider",
   "p2p_provider_label": "Provider:",
+  "p2p_user": "Пользователь",
   "p2p_provider_not_found": "Provider not found in the system.",
   "p2p_providers": "Providers",
   "p2p_recording": "Recording...",

@@ -38,7 +38,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
         {orders.map((order) => {
           const statusColor = STATUS_COLORS[order.status] || '#9CA3AF';
           const statusLabel = STATUS_LABELS[order.status] || order.status;
-          const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
+          const counterparty = order.counterpartName ? formatName(order.counterpartName) : t('p2p_user');
           const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
           }) : '';
@@ -138,7 +138,7 @@ export default function P2PMyOrders({ orders, userRole = 'seller' }) {
       {orders.map((order) => {
         const statusColor = STATUS_COLORS[order.status] || '#9CA3AF';
         const statusLabel = STATUS_LABELS[order.status] || order.status;
-        const counterparty = order.counterpartName ? formatName(order.counterpartName) : (userRole === 'seller' ? order.providerEmail : order.sellerEmail);
+        const counterparty = order.counterpartName ? formatName(order.counterpartName) : t('p2p_user');
         const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es', {
           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
         }) : '';

@@ -364,6 +364,7 @@
   "p2p_provider_created": "Proveedor creado exitosamente",
   "p2p_provider_header": "Proveedor",
   "p2p_provider_label": "Proveedor:",
+  "p2p_user": "Usuario",
   "p2p_provider_not_found": "Proveedor no encontrado en el sistema.",
   "p2p_providers": "Proveedores",
   "p2p_recording": "Grabando...",

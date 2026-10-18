@@ -20,6 +20,7 @@ export default function useChatLogic() {
   const [isSending, setIsSending] = useState(false);
   const [localError, setLocalError] = useState('');
   const [counterpartId, setCounterpartId] = useState(null);
+  const [counterpartName, setCounterpartName] = useState('');
   const fileInputRef = useRef(null);
 
 
@@ -36,7 +37,13 @@ export default function useChatLogic() {
                   : (Array.isArray(res?.data) ? res.data : []);
               if (users.length > 0) {
                   const foundId = users[0]._id;
+                  const user = users[0];
                   setCounterpartId(foundId);
+                  setCounterpartName(
+                    user.firstName
+                      ? `${user.firstName} ${user.lastName || ''}`.trim()
+                      : t('p2p_provider_label')
+                  );
                   setLocalError('');
                   joinChat(foundId);
                   fetchMyMessages();
@@ -99,7 +106,7 @@ export default function useChatLogic() {
     auth,
     messageContent,
     setMessageContent,
-    providerEmail,
+    counterpartName,
     isSending,
     localError,
     counterpartId,

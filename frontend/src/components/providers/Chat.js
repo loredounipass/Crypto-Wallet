@@ -8,7 +8,7 @@ const ChatComponent = () => {
         auth,
         messageContent,
         setMessageContent,
-        providerEmail,
+        counterpartName,
         isSending,
         localError,
         counterpartId,
@@ -48,7 +48,7 @@ const ChatComponent = () => {
                                         className={`max-w-[70%] rounded-xl px-3 py-2 ${isMe ? 'bg-cyan-50 text-cyan-800' : 'bg-lime-50 text-lime-800'}`}
                                     >
                                         <p className="text-xs font-bold">
-                                            {isMe ? t('p2p_you_label') : providerEmail}
+                                            {isMe ? t('p2p_you_label') : counterpartName}
                                         </p>
 
                                         {message.multimediaUrl && message.type === 'image' && (
