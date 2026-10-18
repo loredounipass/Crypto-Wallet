@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { QueryDto } from './dto/query.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,7 +13,6 @@ import { TokenWithdrawDto } from './dto/token-withdraw.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { default as QueueType } from './queue/types.queue'
 import { Queue } from 'bullmq';
-import { v4 as uuidv4 } from 'uuid';
 import { Transaction, TransactionDocument } from '../transaction/schemas/transaction.schema';
 
 @Injectable()
@@ -284,75 +283,74 @@ export class WalletService {
         }
       }
     ]).exec();
-    if (data && data.length > 0) {
-      let wallet = data.find(w => w.walletsData.length > 0)
-      if (wallet) {
-        wallet = wallet.walletsData[0];
-        const transaction = new this.transactionModel({
-          nature: 2,
-          amount: -1 * withdrawDto.amount,
-          created_at: Date.now(),
-          status: 0,
-          to: withdrawDto.to
+    if (!data || data.length === 0) {
+      throw new NotFoundException('No wallets found for this user');
+    }
+    let wallet = data.find(w => w.walletsData.length > 0);
+    if (!wallet) {
+      throw new NotFoundException(`No wallet found for coin ${withdrawDto.coin}`);
+    }
+    wallet = wallet.walletsData[0];
+    const transaction = new this.transactionModel({
+      nature: 2,
+      amount: -1 * withdrawDto.amount,
+      created_at: Date.now(),
+      status: 0,
+      to: withdrawDto.to
+    });
+    const saved = await transaction.save();
+    if (saved) {
+      const result = await this.walletModel.findOneAndUpdate(
+        { _id: new Types.ObjectId(wallet._id), balance: { $gte: withdrawDto.amount } },
+        {
+          $push: { transactions: transaction },
+          $inc: { balance: transaction.amount }
         });
-        const saved = await transaction.save();
-        if (saved) {
-          const result = await this.walletModel.findOneAndUpdate(
-            { _id: new Types.ObjectId(wallet._id), balance: { $gte: withdrawDto.amount } },
-            {
-              $push: { transactions: transaction },
-              $inc: { balance: transaction.amount }
-            });
-          if (result) {
-            await this.transactionStatusQueue.add('status-update', {
-              transactionId: transaction._id.toString(),
-              status: transaction.status,
-              confirmations: transaction.confirmations ?? 0,
-              nature: 2,
-              amount: transaction.amount,
-              coin: wallet.coin,
-              chainId: wallet.chainId,
-              to: withdrawDto.to,
-              fee: 0,
-              source: 'app-core-withdraw'
-            }, {
-              removeOnComplete: true,
-              removeOnFail: 50
-            });
-            await this.withdrawQueue.add('request', {
-              transactionId: transaction._id.toString(),
-              walletId: wallet._id.toString(),
-              amount: withdrawDto.amount,
-              withdrawAddress: withdrawDto.to,
-            }, {
-              attempts: 10,
-              backoff: { type: 'exponential', delay: 5000 }
-            });
-            return {
-              error: null,
-              data: 'success'
-            };
-          }
-          await this.transactionModel.deleteOne({ _id: transaction._id });
-          await this.transactionStatusQueue.add('status-update', {
-            transactionId: transaction._id.toString(),
-            status: 4,
-            confirmations: 0,
-            nature: 2,
-            amount: transaction.amount,
-            coin: wallet.coin,
-            chainId: wallet.chainId,
-            to: withdrawDto.to,
-            fee: 0,
-            source: 'app-core-withdraw-cancelled'
-          }, { removeOnComplete: true, removeOnFail: 50 });
-        }
+      if (result) {
+        await this.transactionStatusQueue.add('status-update', {
+          transactionId: transaction._id.toString(),
+          status: transaction.status,
+          confirmations: transaction.confirmations ?? 0,
+          nature: 2,
+          amount: transaction.amount,
+          coin: wallet.coin,
+          chainId: wallet.chainId,
+          to: withdrawDto.to,
+          fee: 0,
+          source: 'app-core-withdraw'
+        }, {
+          removeOnComplete: true,
+          removeOnFail: 50
+        });
+        await this.withdrawQueue.add('request', {
+          transactionId: transaction._id.toString(),
+          walletId: wallet._id.toString(),
+          amount: withdrawDto.amount,
+          withdrawAddress: withdrawDto.to,
+        }, {
+          attempts: 10,
+          backoff: { type: 'exponential', delay: 5000 }
+        });
         return {
-          error: true,
-          msg: 'Insuficient balance'
+          error: null,
+          data: 'success'
         };
       }
+      await this.transactionModel.deleteOne({ _id: transaction._id });
+      await this.transactionStatusQueue.add('status-update', {
+        transactionId: transaction._id.toString(),
+        status: 4,
+        confirmations: 0,
+        nature: 2,
+        amount: transaction.amount,
+        coin: wallet.coin,
+        chainId: wallet.chainId,
+        to: withdrawDto.to,
+        fee: 0,
+        source: 'app-core-withdraw-cancelled'
+      }, { removeOnComplete: true, removeOnFail: 50 });
     }
+    throw new BadRequestException('Insufficient balance');
   }
 
 
@@ -361,14 +359,14 @@ export class WalletService {
   async withdrawToken(tokenWithdrawDto: TokenWithdrawDto) {
     const wallets = await this.getWallets(tokenWithdrawDto.email);
     if (!wallets || wallets.length === 0) {
-      return { error: true, msg: 'No wallets found' };
+      throw new NotFoundException('No wallets found for this user');
     }
     const chainEntries = await this.erc20LedgerModel.find({
       walletAddress: { $in: wallets.map(w => w.address.toLowerCase()) },
       tokenAddress: String(tokenWithdrawDto.tokenAddress)
     }).exec();
     if (!chainEntries || chainEntries.length === 0) {
-      return { error: true, msg: 'No token balance found for this wallet' };
+      throw new NotFoundException('No token balance found for this wallet');
     }
     const entry = chainEntries[0];
     let available = entry.available_balance || 0;
@@ -381,11 +379,11 @@ export class WalletService {
       available = locked;
     }
     if (available < tokenWithdrawDto.amount) {
-      return { error: true, msg: 'Insufficient token balance' };
+      throw new BadRequestException('Insufficient token balance');
     }
     const wallet = wallets.find(w => w.address.toLowerCase() === entry.walletAddress);
     if (!wallet) {
-      return { error: true, msg: 'Wallet not found' };
+      throw new NotFoundException('Wallet not found');
     }
     const tokenInfo = getTokenInfo(entry.chainId, tokenWithdrawDto.tokenAddress);
     const transaction = new this.transactionModel({
@@ -398,7 +396,7 @@ export class WalletService {
     });
     const saved = await transaction.save();
     if (!saved) {
-      return { error: true, msg: 'Failed to create transaction' };
+      throw new BadRequestException('Failed to create transaction');
     }
     await this.walletModel.updateOne(
       { _id: new Types.ObjectId(wallet.walletId) },
