@@ -109,6 +109,8 @@ const refundSellerWallet = async (order) => {
     // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
     if (order.isToken && order.tokenAddress) {
         const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
+        const { getTokenInfo } = require(`${appRoot}/config/tokens`)
+        const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
         // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
         const internalTxHash = `internal-token-refund-${order.orderId}`
         const claimed = await EscrowOrder.findOneAndUpdate(
@@ -129,6 +131,58 @@ const refundSellerWallet = async (order) => {
             },
             { $inc: { available_balance: order.amount } }
         )
+
+        // ─── FIX: Crear Transaction para visibilidad en UI del seller ───
+        const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
+        const tokenSymbol = tokenInfo?.symbol || order.coin || 'TOKEN'
+        const sellerWallet = await Wallet.findOne({
+            address: new RegExp(`^${String(order.sellerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+            chainId: order.chainId
+        })
+        if (sellerWallet) {
+            const txDoc = await Transaction.findOneAndUpdate(
+                { txHash: internalTxHash, nature: 1 },
+                {
+                    $setOnInsert: {
+                        nature: 1,
+                        amount: Number(order.amount),
+                        created_at: Date.now(),
+                        status: 3,
+                        confirmations: 0,
+                        txHash: internalTxHash,
+                        to: order.sellerWalletAddress,
+                        tokenSymbol
+                    }
+                },
+                { upsert: true, returnDocument: 'after' }
+            )
+            await Wallet.updateOne(
+                { _id: new ObjectId(sellerWallet._id) },
+                { $addToSet: { transactions: txDoc._id } }
+            )
+            await publishTransactionStatusUpdate({
+                transactionId: txDoc._id.toString(),
+                status: 3,
+                confirmations: 0,
+                nature: 1,
+                amount: Number(order.amount),
+                coin: tokenSymbol,
+                tokenSymbol,
+                chainId: order.chainId,
+                txHash: internalTxHash,
+                to: order.sellerWalletAddress,
+                fee: 0,
+                source: 'escrow-expiry-erc20-refund'
+            })
+            console.log('[ESCROW-EXPIRY] ERC20 refund Transaction registered for seller UI:', {
+                orderId: order.orderId, txId: txDoc._id.toString(), tokenSymbol
+            })
+        } else {
+            console.warn('[ESCROW-EXPIRY] Seller wallet not found for ERC20 refund Transaction:', {
+                orderId: order.orderId, sellerWalletAddress: order.sellerWalletAddress
+            })
+        }
+
         console.log('[ESCROW-EXPIRY] ERC20 token refund to ledger complete:', {
             orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
         })

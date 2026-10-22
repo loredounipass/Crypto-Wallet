@@ -132,6 +132,10 @@ const processDisputeResolution = async (order) => {
 
     // ERC20 TOKEN DISPUTE RESOLUTION
     if (order.isToken && order.tokenAddress) {
+        const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
+        const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
+        const tokenSymbol = tokenInfo?.symbol || order.coin || 'TOKEN'
+
         if (resolvedType === 'revert') {
             // Devolver al seller via Erc20Ledger (DB-only)
             const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
@@ -159,9 +163,57 @@ const processDisputeResolution = async (order) => {
             console.log('[DISP-RESOLVE] ERC20 token revert to seller ledger:', {
                 orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
             })
+
+            // ─── FIX: Crear Transaction (depósito) para visibilidad en UI del seller ───
+            const sellerWallet = await Wallet.findOne({
+                address: new RegExp(`^${String(order.sellerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+                chainId: order.chainId
+            })
+            if (sellerWallet) {
+                const txDoc = await Transaction.findOneAndUpdate(
+                    { txHash: revertMarker, nature: 1 },
+                    {
+                        $setOnInsert: {
+                            nature: 1,
+                            amount: Number(order.amount),
+                            created_at: Date.now(),
+                            status: 3,
+                            confirmations: 0,
+                            txHash: revertMarker,
+                            to: order.sellerWalletAddress,
+                            tokenSymbol
+                        }
+                    },
+                    { upsert: true, returnDocument: 'after' }
+                )
+                await Wallet.updateOne(
+                    { _id: new ObjectId(sellerWallet._id) },
+                    { $addToSet: { transactions: txDoc._id } }
+                )
+                await publishTransactionStatusUpdate({
+                    transactionId: txDoc._id.toString(),
+                    status: 3,
+                    confirmations: 0,
+                    nature: 1,
+                    amount: Number(order.amount),
+                    coin: tokenSymbol,
+                    tokenSymbol,
+                    chainId: order.chainId,
+                    txHash: revertMarker,
+                    to: order.sellerWalletAddress,
+                    fee: 0,
+                    source: 'dispute-revert-erc20'
+                })
+                console.log('[DISP-RESOLVE] ERC20 revert Transaction registered for seller UI:', {
+                    orderId: order.orderId, txId: txDoc._id.toString(), tokenSymbol
+                })
+            } else {
+                console.warn('[DISP-RESOLVE] Seller wallet not found for ERC20 revert Transaction:', {
+                    orderId: order.orderId, sellerWalletAddress: order.sellerWalletAddress
+                })
+            }
         } else {
             // Award: enviar ERC20 al provider on-chain desde hot wallet (misma ruta que retiros)
-            const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
             const tokenDecimals = tokenInfo?.decimals ?? 18
             const onTxHash = async (hash) => {
                 console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
@@ -190,6 +242,55 @@ const processDisputeResolution = async (order) => {
             console.log('[DISP-RESOLVE] ERC20 token award to provider:', {
                 orderId: order.orderId, txHash, amount: order.amount
             })
+
+            // ─── FIX: Crear Transaction (depósito) para visibilidad en UI del provider ───
+            const providerWallet = await Wallet.findOne({
+                address: new RegExp(`^${String(order.providerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+                chainId: order.chainId
+            })
+            if (providerWallet) {
+                const txDoc = await Transaction.findOneAndUpdate(
+                    { txHash: txHash, nature: 1 },
+                    {
+                        $setOnInsert: {
+                            nature: 1,
+                            amount: Number(order.amount),
+                            created_at: Date.now(),
+                            status: 3,
+                            confirmations: 0,
+                            txHash: txHash,
+                            to: order.providerWalletAddress,
+                            tokenSymbol
+                        }
+                    },
+                    { upsert: true, returnDocument: 'after' }
+                )
+                await Wallet.updateOne(
+                    { _id: new ObjectId(providerWallet._id) },
+                    { $addToSet: { transactions: txDoc._id } }
+                )
+                await publishTransactionStatusUpdate({
+                    transactionId: txDoc._id.toString(),
+                    status: 3,
+                    confirmations: 0,
+                    nature: 1,
+                    amount: Number(order.amount),
+                    coin: tokenSymbol,
+                    tokenSymbol,
+                    chainId: order.chainId,
+                    txHash: txHash,
+                    to: order.providerWalletAddress,
+                    fee: 0,
+                    source: 'dispute-award-erc20'
+                })
+                console.log('[DISP-RESOLVE] ERC20 award Transaction registered for provider UI:', {
+                    orderId: order.orderId, txId: txDoc._id.toString(), tokenSymbol
+                })
+            } else {
+                console.warn('[DISP-RESOLVE] Provider wallet not found for ERC20 award Transaction:', {
+                    orderId: order.orderId, providerWalletAddress: order.providerWalletAddress
+                })
+            }
         }
 
         await EscrowOrder.updateOne(
