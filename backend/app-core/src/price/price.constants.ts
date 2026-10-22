@@ -19,7 +19,7 @@ export const COINBASE_PRODUCTS: Readonly<Record<string, string>> = Object.freeze
   avax: 'AVAX-USD',
   s: 'S-USD',
   eth: 'ETH-USD',
-  matic: 'MATIC-USD',
+  matic: 'POL-USD',
   op: 'OP-USD',
   usdt: 'USDT-USD',
   usdc: 'USDC-USD',
