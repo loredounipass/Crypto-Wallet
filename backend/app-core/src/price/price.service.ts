@@ -1,15 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REDIS_CLIENT } from '../redis/redis.module';
-import { BinancePriceClient } from './binance.client';
+import { CoinbasePriceClient } from './coinbase.client';
 import {
   APP_COINS,
-  BINANCE_SYMBOLS,
+  COINBASE_PRODUCTS,
   DEFAULT_CHART_CACHE_TTL_SEC,
   DEFAULT_DEGRADED_CACHE_TTL_SEC,
   DEFAULT_PRICE_CACHE_TTL_SEC,
   DEFAULT_STALE_CACHE_TTL_SEC,
   LANDING_COIN_IDS,
-  STABLECOIN_SYMBOLS,
+  STABLECOIN_PRODUCTS,
   readBoolEnv,
   readIntEnv,
 } from './price.constants';
@@ -34,36 +34,36 @@ export class PriceService {
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: any,
-    private readonly binance: BinancePriceClient,
+    private readonly coinbase: CoinbasePriceClient,
   ) {}
 
   async getPrice(coin: string): Promise<PriceResponse> {
-    const symbol = this.resolveBinanceSymbol(coin);
-    if (!symbol) return { USD: 0 };
+    const product = this.resolveCoinbaseProduct(coin);
+    if (!product) return { USD: 0 };
 
     return this.cached<PriceResponse>(
-      this.buildKeys(`price:${symbol}`, `price:stale:${symbol}`, `price:degraded:${symbol}`),
+      this.buildKeys(`price:${product}`, `price:stale:${product}`, `price:degraded:${product}`),
       this.priceTtl,
       async () => {
-        const data = await this.binance.getTickerPrice(symbol);
+        const data = await this.coinbase.getTicker(product);
         const usd = Number(data?.price ?? 0);
         return { USD: Number.isFinite(usd) && usd > 0 ? usd : 0 };
       },
       (value) => Number.isFinite(value?.USD) && value.USD > 0,
-      () => ({ USD: this.stablecoinFallback(symbol) }),
+      () => ({ USD: this.stablecoinFallback(product) }),
     );
   }
 
   async getChart(coin: string): Promise<ChartResponse> {
-    const symbol = this.resolveBinanceSymbol(coin);
-    if (!symbol) return { prices: [] };
+    const product = this.resolveCoinbaseProduct(coin);
+    if (!product) return { prices: [] };
 
     return this.cached<ChartResponse>(
-      this.buildKeys(`chart:${symbol}`, `chart:stale:${symbol}`, `chart:degraded:${symbol}`),
+      this.buildKeys(`chart:${product}`, `chart:stale:${product}`, `chart:degraded:${product}`),
       this.chartTtl,
       async () => {
-        const klines = await this.binance.getKlines(symbol, '1h', 24);
-        const prices = klines.map((k) => Number(k.close)).filter((v) => Number.isFinite(v));
+        const candles = await this.coinbase.getCandles(product, 3600, 24);
+        const prices = candles.map((c) => Number(c.close)).filter((v) => Number.isFinite(v));
         return { prices };
       },
       (value) => Array.isArray(value?.prices) && value.prices.length > 1,
@@ -72,23 +72,25 @@ export class PriceService {
   }
 
   async getLanding(): Promise<LandingPrices> {
-    const symbols = LANDING_COIN_IDS
-      .map((c) => this.resolveBinanceSymbol(c))
-      .filter(Boolean) as string[];
+    const coins = LANDING_COIN_IDS.filter((c) => this.resolveCoinbaseProduct(c));
 
-    if (symbols.length === 0) return {};
+    if (coins.length === 0) return {};
 
     return this.cached<LandingPrices>(
       this.buildKeys('price:landing', 'price:stale:landing', 'price:degraded:landing'),
       this.priceTtl,
       async () => {
-        const all = await this.binance.getTickerPrices();
         const map: LandingPrices = {};
-        for (const sym of symbols) {
-          const item = all.find((p) => p.symbol === sym);
-          if (item) {
-            const coin = Object.keys(BINANCE_SYMBOLS).find((k) => BINANCE_SYMBOLS[k] === sym);
-            if (coin) map[coin] = { usd: Number(item.price) || 0 };
+        for (const coin of coins) {
+          const product = this.resolveCoinbaseProduct(coin)!;
+          try {
+            const ticker = await this.coinbase.getTicker(product);
+            const price = Number(ticker.price);
+            if (Number.isFinite(price)) {
+              map[coin] = { usd: price };
+            }
+          } catch {
+            // continue with others
           }
         }
         return map;
@@ -103,11 +105,11 @@ export class PriceService {
     return USD;
   }
 
-  resolveBinanceSymbol(coin: string): string | null {
+  resolveCoinbaseProduct(coin: string): string | null {
     const key = String(coin ?? '').toLowerCase().trim();
     if (!/^[a-z0-9]{1,32}$/.test(key)) return null;
     if (!APP_COINS.includes(key as any)) return null;
-    return BINANCE_SYMBOLS[key];
+    return COINBASE_PRODUCTS[key];
   }
 
   private async cached<T>(
@@ -174,8 +176,8 @@ export class PriceService {
     return { fresh, stale, degraded };
   }
 
-  private stablecoinFallback(symbol: string): number {
-    return this.stablecoinFallbackEnabled && STABLECOIN_SYMBOLS.has(symbol) ? 1 : 0;
+  private stablecoinFallback(product: string): number {
+    return this.stablecoinFallbackEnabled && STABLECOIN_PRODUCTS.has(product) ? 1 : 0;
   }
 
   private async readJson<T>(key: string): Promise<T | null> {
