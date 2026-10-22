@@ -5,10 +5,15 @@ const Erc20Transaction = require(`${appRoot}/config/models/Erc20Transaction`)
 const Erc20ForwardExecution = require(`${appRoot}/config/models/Erc20ForwardExecution`)
 const { v4: uuidv4 } = require('uuid')
 
+
+// BATCHING THRESHOLD AMOUNT AND ACCUMULATION WINDOW DURATION IN MILLISECONDS (1 MINUTE)
 const THRESHOLD_AMOUNT = 100
 const WINDOW_TIME_MS = 60000
 
+
+// COORDINATES FINITE STATE MACHINE (IDLE, COLLECTING, DISPATCHING) TO BATCH ERC20 FORWARD EXECUTIONS
 const processAggregation = async (job) => {
+    // STEP 1: ATOMICALLY ACQUIRE AGGREGATOR MUTEX LOCK WITH 5-MINUTE STALE OVERRIDE
     const { walletAddress, tokenAddress, chainId, trigger_event } = job.data
 
     const lock = await Erc20Ledger.findOneAndUpdate(
@@ -27,6 +32,7 @@ const processAggregation = async (job) => {
     }
 
     try {
+        // STEP 2: LOAD CURRENT LEDGER STATE MACHINE; SKIP IF DISPATCH IS CURRENTLY IN PROGRESS
         const ledger = await Erc20Ledger.findOne({ walletAddress, tokenAddress, chainId })
         let state = ledger?.aggregatorState || 'IDLE'
 
@@ -35,6 +41,7 @@ const processAggregation = async (job) => {
             return 'dispatching'
         }
 
+        // STEP 3: TRANSITION IDLE STATE TO COLLECTING PHASE ON INCOMING TRIGGER EVENT
         if (state === 'IDLE') {
             state = 'COLLECTING'
             await Erc20Ledger.updateOne(
@@ -43,6 +50,7 @@ const processAggregation = async (job) => {
             )
         }
 
+        // STEP 4: EVALUATE BATCHING CONDITIONS (WINDOW EXPIRY, TIMEOUT EVENT, OR THRESHOLD EXCEEDED)
         if (state === 'COLLECTING') {
             const lockedAmount = ledger ? ledger.locked_for_forward : 0
 
@@ -53,6 +61,7 @@ const processAggregation = async (job) => {
             const isWindowTimeout = trigger_event === 'window_timeout'
             const isThresholdReached = lockedAmount >= THRESHOLD_AMOUNT
 
+            // STEP 5: ATOMICALLY TRANSITION TO DISPATCHING AND CREATE PENDING FORWARD EXECUTION RECORD
             if (isWindowTimeout || isThresholdReached || (isWindowExpired && lockedAmount > 0)) {
                 await Erc20Ledger.updateOne(
                     { walletAddress, tokenAddress, chainId },
@@ -110,6 +119,7 @@ const processAggregation = async (job) => {
             }
         }
     } finally {
+        // STEP 6: ATOMICALLY RELEASE AGGREGATOR MUTEX LOCK IN FINALLY BLOCK
         await Erc20Ledger.updateOne(
             { walletAddress, tokenAddress, chainId },
             { $unset: { aggregatorLock: '' } }
@@ -119,4 +129,6 @@ const processAggregation = async (job) => {
     return 'processed'
 }
 
+
+// EXPORTS AGGREGATION PROCESSOR FOR BULLMQ WORKER QUEUE
 module.exports = processAggregation

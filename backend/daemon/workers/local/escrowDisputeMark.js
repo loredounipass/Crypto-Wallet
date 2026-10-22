@@ -7,8 +7,7 @@ const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContract
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 
 
-
-// MARCA UNA ORDEN DE ESCROW COMO DISPUTADA DIRECTAMENTE EN EL CONTRATO INTELIGENTE DE LA BLOCKCHAIN
+// MARKS ESCROW ORDER AS DISPUTED DIRECTLY ON-CHAIN VIA ESCROW SMART CONTRACT
 const processDisputeMark = async (jobData) => {
     const { orderId, chainId, escrowTxHash } = jobData
     console.log('[ESCROW-DISPUTE-MARK] Processing:', { orderId, chainId })
@@ -33,7 +32,9 @@ const processDisputeMark = async (jobData) => {
     return 'success'
 }
 
+
 connectDB.then(() => {
+    // PROCESSES QUEUED JOBS TO FLAG ORDERS AS DISPUTED ON-CHAIN CONCURRENTLY
     new Worker('escrow-dispute-mark', async (job) => {
         return await processDisputeMark(job.data)
     }, { concurrency: 15 })

@@ -10,16 +10,14 @@ const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const coins = require(`${appRoot}/config/coins/info`)
 
 
-
-// PROCESA EL REEMBOLSO DE FONDOS INTENTANDO DIFERENTES ESTRATEGIAS DE TRANSFERENCIA HASTA TENER EXITO
+// ORCHESTRATES ESCROW SELLER REFUND VIA OFF-CHAIN ERC20 LEDGER CREDIT OR MULTI-TIER ON-CHAIN ROUTES
 const processRefund = async (jobData) => {
     const { orderId, chainId, sellerWalletAddress, amount, coin } = jobData
     console.log('[ESCROW-REFUND] Processing:', { orderId, chainId, seller: sellerWalletAddress?.slice(0, 10) })
 
-    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    // STEP 1 (ERC20 ROUTE): ATOMICALLY CLAIM AND RE-CREDIT SELLER ERC20 LEDGER BALANCE
     const order = await EscrowOrder.findOne({ orderId })
     if (order && order.isToken && order.tokenAddress) {
-        // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
         const internalTxHash = `internal-token-refund-${orderId}`
         const claimed = await EscrowOrder.findOneAndUpdate(
             { orderId, refundTxHash: { $exists: false } },
@@ -43,6 +41,7 @@ const processRefund = async (jobData) => {
         return `internal-token-refund-${orderId}`
     }
 
+    // STEP 2 (NATIVE ROUTE): INITIALIZE INTERACTOR AND ATTEMPT ON-CHAIN ESCROW CONTRACT REFUND
     const interactor = new EscrowContractInteractor(chainId)
     const decimals = coins[coin.toUpperCase()]?.decimals || 18
     const amountWei = parseUnits(String(amount), decimals)
@@ -63,6 +62,8 @@ const processRefund = async (jobData) => {
             console.warn(`[ESCROW-REFUND] Contract refund failed:`, err.message)
         }
     }
+
+    // STEP 3 (NATIVE ROUTE): FALLBACK TO ESCROW WALLET DIRECT NATIVE TRANSFER
     if (!refunded) {
         try {
             await interactor.ensureEscrowWalletBalanceForTransfer(orderId, sellerWalletAddress, amountWei)
@@ -80,6 +81,8 @@ const processRefund = async (jobData) => {
             console.warn(`[ESCROW-REFUND] Escrow wallet refund failed:`, err.message)
         }
     }
+
+    // STEP 4 (NATIVE ROUTE): LAST-RESORT FALLBACK TO HOT WALLET DIRECT NATIVE TRANSFER
     if (!refunded && interactor.hotWalletAddress) {
         try {
             console.log(`[ESCROW-REFUND] Last resort: refunding from hot wallet directly...`)
@@ -98,6 +101,8 @@ const processRefund = async (jobData) => {
             console.warn(`[ESCROW-REFUND] Hot wallet direct refund failed:`, err.message)
         }
     }
+
+    // STEP 5: VERIFY REFUND DISPATCH SUCCESS OR THROW FOR RETRY
     if (!refunded) {
         throw new Error('[ESCROW-REFUND] All refund strategies failed')
     }
@@ -105,6 +110,8 @@ const processRefund = async (jobData) => {
     return refundTxHash
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS CONCURRENT ESCROW REFUND BULLMQ WORKER
 connectDB.then(() => {
     new Worker('escrow-refund', async (job) => {
         return await processRefund(job.data)

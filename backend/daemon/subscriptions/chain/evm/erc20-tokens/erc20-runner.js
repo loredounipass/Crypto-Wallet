@@ -3,11 +3,15 @@ require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { connectAndSubscribeRealtime } = require('./erc20-realtime')
 
+
+// PARSES TRACKED ERC20 TOKEN CONFIGURATIONS AND WEBSOCKET ENDPOINTS FROM ENVIRONMENT
 function buildTokensFromEnv() {
     const tokens = []
+    // STEP 1: PARSE TRACKED TOKENS SPECIFICATION FROM ENVIRONMENT
     const raw = process.env.ERC20_TRACKED_TOKENS
     if (!raw) return tokens
 
+    // STEP 2: RESOLVE WEBSOCKET URL PER CHAIN AND ACCUMULATE SUBSCRIPTION CONFIGS
     for (const entry of raw.split(';')) {
         const parts = entry.split(',')
         if (parts.length >= 2) {
@@ -24,6 +28,8 @@ function buildTokensFromEnv() {
     return tokens
 }
 
+
+// MAPS CHAIN ID TO CANONICAL ENVIRONMENT VARIABLE NETWORK KEY
 function getChainKey(chainId) {
     const map = {
         11155111: 'ETHEREUM',
@@ -41,9 +47,12 @@ function getChainKey(chainId) {
     return map[chainId] || 'ETHEREUM'
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND BOOTSTRAPS REAL-TIME WEBSOCKET MONITORS
 connectDB.then(() => {
     console.log('[ERC20-RUNNER] Conectado a la BD para iniciar suscripciones')
 
+    // STEP 1: PARSE TRACKED TOKEN SUBSCRIPTION TARGETS FROM ENVIRONMENT
     const tokensToTrack = buildTokensFromEnv()
     console.log(`[ERC20-RUNNER] Tracked tokens configurados: ${tokensToTrack.length}`)
 
@@ -51,6 +60,7 @@ connectDB.then(() => {
         console.warn('[ERC20-RUNNER] No ERC20_TRACKED_TOKENS env var found. Set e.g. ERC20_TRACKED_TOKENS="11155111,0xabc...;137,0xdef..."')
     }
 
+    // STEP 2: INITIALIZE REAL-TIME WEBSOCKET SUBSCRIPTION FOR EACH MONITORED TOKEN
     tokensToTrack.forEach(config => {
         connectAndSubscribeRealtime(config).catch(err => {
             console.error(`[ERC20-RUNNER] Error fatal en suscripción para ${config.chainId}:${config.tokenAddress}`, err)

@@ -5,6 +5,8 @@ const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const TxManager = require(`${appRoot}/config/utils/TxManager`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 
+
+// SMART CONTRACT ABI DEFINITION FOR USER WALLET FORWARDTOKEN METHOD
 const walletContractABI = [
     {
         "inputs": [{"internalType": "address","name": "tokenAddress","type": "address"}],
@@ -15,6 +17,8 @@ const walletContractABI = [
     }
 ]
 
+
+// SMART CONTRACT ABI DEFINITION FOR ERC20 BALANCEOF QUERY
 const erc20ABI = [
     {
         "inputs": [{"internalType": "address","name": "account","type": "address"}],
@@ -25,10 +29,14 @@ const erc20ABI = [
     }
 ]
 
+
+// RELAYER CONFIGURATION AND GAS SETTINGS
 const ensureHexPrefix = (hexStr) => hexStr.startsWith('0x') ? hexStr : `0x${hexStr}`
 const RELAYER_PRIVATE_KEY = ensureHexPrefix(process.env.RELAYER_PRIVATE_KEY)
 const GAS_LIMIT_BUFFER = 1.2
 
+
+// SMART CONTRACT ABI DEFINITION FOR ERC20 DECIMALS QUERY
 const ERC20_ABI_DECIMALS = [
     {
         "constant": true,
@@ -39,6 +47,8 @@ const ERC20_ABI_DECIMALS = [
     }
 ]
 
+
+// CONVERTS WEI BIGINT AMOUNT TO DISPLAY DECIMAL NUMBER
 function toDisplayNumber(amountWei, decimals) {
     const divisor = BigInt(10) ** BigInt(decimals)
     const whole = amountWei / divisor
@@ -47,9 +57,12 @@ function toDisplayNumber(amountWei, decimals) {
     return Number(whole.toString() + '.' + fractionalStr)
 }
 
+
+// PROCESSES ERC20 FORWARD EXECUTION BY CALLING FORWARDTOKEN ON USER WALLET VIA RELAYER
 const processForwardExecution = async (job) => {
     const { executionId } = job.data
 
+    // STEP 1: LOAD FORWARD EXECUTION RECORD AND VALIDATE PENDING SETTLEMENT STATE
     const execution = await Erc20ForwardExecution.findOne({ executionId })
     if (!execution || execution.settlement_state !== 'PENDING_FORWARD') {
         console.log(`[FORWARDER] Execution ${executionId} not found or not in PENDING_FORWARD state.`)
@@ -62,6 +75,7 @@ const processForwardExecution = async (job) => {
     const rpcUrl = require(`${appRoot}/config/chains/${chainId}`).rpc
     const web3 = new Web3(rpcUrl)
 
+    // STEP 2: ACQUIRE EXECUTION WORKER LOCK TO PREVENT CONCURRENT PROCESSING
     const lockDoc = await Erc20ForwardExecution.findOneAndUpdate(
         { executionId, forwardLock: { $ne: true } },
         { $set: { forwardLock: true, forwardLockedAt: new Date() } }
@@ -72,6 +86,7 @@ const processForwardExecution = async (job) => {
     }
 
     try {
+        // STEP 3: INITIALIZE RELAYER ACCOUNT, ESTIMATE GAS, AND VERIFY GAS BALANCE
         const account = web3.eth.accounts.privateKeyToAccount(RELAYER_PRIVATE_KEY)
         const relayerBalanceWei = await web3.eth.getBalance(account.address)
         const gasPrice = await web3.eth.getGasPrice()
@@ -104,6 +119,7 @@ const processForwardExecution = async (job) => {
             throw new Error(`Insufficient relayer gas balance for ${walletAddress}`)
         }
 
+        // STEP 4: VERIFY ON-CHAIN CONTRACT TOKEN BALANCE AGAINST EXPECTED FORWARD AMOUNT
         const tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress)
         const onChainBalanceStr = await tokenContract.methods.balanceOf(walletAddress).call()
         const tokenInfo = getTokenInfo(chainId, tokenAddress)
@@ -128,6 +144,7 @@ const processForwardExecution = async (job) => {
             return 'empty_balance'
         }
 
+        // STEP 5: ACQUIRE RELAYER NONCE LOCK AND FETCH ASSIGNED NONCE VIA TX MANAGER
         const RelayerLock = require(`${appRoot}/config/models/RelayerLock`)
         const relayerLock = await RelayerLock.findOneAndUpdate(
             { relayerAddress: account.address.toLowerCase(), chainId, lockActive: { $ne: true } },
@@ -146,6 +163,7 @@ const processForwardExecution = async (job) => {
             execution.nonce = nonce
             await execution.save()
 
+            // STEP 6: SIGN TRANSACTION, BROADCAST TO NETWORK, AND AWAIT MINED RECEIPT
             const txObject = {
                 from: account.address,
                 to: walletAddress,
@@ -170,6 +188,7 @@ const processForwardExecution = async (job) => {
             execution.failure_type = 'NONE'
             await execution.save()
 
+            // STEP 7: SETTLE LEDGER BALANCES ATOMICALLY OR FLAG DRIFT FOR MANUAL RECONCILIATION
             const updateResult = await Erc20Ledger.updateOne(
                 { walletAddress, tokenAddress, chainId, locked_for_forward: { $gte: amountNum } },
                 { $inc: { locked_for_forward: -amountNum, available_balance: -amountNum, forwarded_total: amountNum } }
@@ -185,6 +204,7 @@ const processForwardExecution = async (job) => {
             return 'success'
 
         } catch (txError) {
+            // STEP 8: CLASSIFY TRANSACTION FAILURE, UPDATE EXECUTION STATE, AND RESET NONCE ON COLLISION
             execution.failure_type = await TxManager.classifyFailure(txError)
             execution.tx_state = 'DROPPED'
             execution.settlement_state = 'FAILED'
@@ -197,6 +217,7 @@ const processForwardExecution = async (job) => {
             console.error(`[FORWARDER] Tx failed:`, txError.message)
             throw txError
         } finally {
+            // RELEASE RELAYER NONCE LOCK
             await RelayerLock.updateOne(
                 { relayerAddress: account.address.toLowerCase(), chainId },
                 { $unset: { lockActive: '' } }
@@ -204,6 +225,7 @@ const processForwardExecution = async (job) => {
         }
 
     } finally {
+        // RELEASE FORWARD EXECUTION WORKER LOCK
         await Erc20ForwardExecution.updateOne(
             { executionId },
             { $unset: { forwardLock: '', forwardLockedAt: '' } }
@@ -211,4 +233,6 @@ const processForwardExecution = async (job) => {
     }
 }
 
+
+// EXPORTS FORWARD EXECUTION PROCESSOR FOR BACKGROUND QUEUE WORKERS
 module.exports = processForwardExecution

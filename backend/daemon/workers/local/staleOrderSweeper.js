@@ -4,20 +4,23 @@ const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 const EscrowOrder = require(`${appRoot}/config/models/EscrowOrder`)
 
-const POLL_INTERVAL_MS = 300000 // 5 minutes
-const STALE_THRESHOLD_MS = 600000 // 10 minutes
+// POLLING INTERVAL (5 MINUTES) AND STALE ORDER THRESHOLD (10 MINUTES)
+const POLL_INTERVAL_MS = 300000
+const STALE_THRESHOLD_MS = 600000
 
-// Colas de BullMQ de las 3 etapas críticas
+
+// BULLMQ QUEUE INSTANCES FOR THE THREE CRITICAL ESCROW LIFECYCLE STAGES
 const escrowFundingQueue = new Queue('escrow-funding')
 const escrowReleaseQueue = new Queue('escrow-release')
 const escrowCancelQueue = new Queue('escrow-cancel')
 
-// BUSCA ORDENES ATASCADAS EN CUALQUIER ESTADO CRITICO Y LAS REINJECTA A LA COLA CORRESPONDIENTE
+
+// IDENTIFIES UNPROCESSED STALE ESCROW ORDERS AND RE-ENQUEUES THEM TO APPROPRIATE WORKERS
 const sweepStaleOrders = async () => {
     try {
         const thresholdDate = new Date(Date.now() - STALE_THRESHOLD_MS)
         
-        // Buscar órdenes que se quedaron a medias en cualquier proceso
+        // STEP 1: QUERY FOR STALE ORDERS MISSING CRITICAL ON-CHAIN OR LEDGER TRANSACTION HASHES
         const staleOrders = await EscrowOrder.find({
             createdAt: { $lt: thresholdDate },
             $or: [
@@ -31,7 +34,7 @@ const sweepStaleOrders = async () => {
             return
         }
 
-        // CAPA DE SEGURIDAD 1: Extraer trabajos vivos de TODAS las colas
+        // STEP 2: AUDIT ACTIVE JOBS ACROSS ALL QUEUES TO PREVENT CONCURRENT RECOVERY CONFLICTS
         const fundingJobs = await escrowFundingQueue.getJobs(['waiting', 'active', 'delayed', 'paused'])
         const releaseJobs = await escrowReleaseQueue.getJobs(['waiting', 'active', 'delayed', 'paused'])
         const cancelJobs = await escrowCancelQueue.getJobs(['waiting', 'active', 'delayed', 'paused'])
@@ -45,20 +48,19 @@ const sweepStaleOrders = async () => {
         console.log(`[STALE-ORDER-SWEEPER] Detectadas ${staleOrders.length} órdenes atascadas (Omni-Sweep). Iniciando recuperación...`)
 
         for (const order of staleOrders) {
-            // CAPA DE SEGURIDAD 2: Abortar si ya está siendo procesada
+            // STEP 3: FILTER OUT ACTIVELY RUNNING JOBS AND ORDERS EXCEEDING MAX RECOVERY ATTEMPTS
             if (activeOrderIds.includes(order.orderId)) {
                 console.log(`[STALE-ORDER-SWEEPER] 🛡️ Orden ${order.orderId} omitida: El trabajo sigue vivo en BullMQ.`)
                 continue
             }
 
-            // CAPA DE SEGURIDAD 3: Límite de resurrecciones
             const sweepCount = order.sweepRecoveryCount || 0
             if (sweepCount >= 5) {
                 console.log(`[STALE-ORDER-SWEEPER] 🛑 Orden ${order.orderId} omitida: Superó el límite de 5 recuperaciones.`)
                 continue
             }
 
-            // Seleccionar la cola y trabajo destino basado en el estado atascado
+            // STEP 4: RESOLVE TARGET WORKER QUEUE AND JOB DISPATCH TYPE BASED ON ORDER STATE
             let targetQueue = null
             let jobName = ''
             
@@ -77,7 +79,7 @@ const sweepStaleOrders = async () => {
 
             console.log(`[STALE-ORDER-SWEEPER] Reactivando orden ${order.orderId} en cola '${jobName}' (Intento #${sweepCount + 1})...`)
             
-            // CAPA DE SEGURIDAD 4: ID de Trabajo Único
+            // STEP 5: ENQUEUE RECOVERY JOB WITH UNIQUE DEDUPLICATED IDENTIFIER AND EXPONENTIAL BACKOFF
             const customJobId = `sweep-${order.orderId}-${jobName}-${Date.now()}`
 
             await targetQueue.add(jobName, {
@@ -99,7 +101,7 @@ const sweepStaleOrders = async () => {
                 removeOnComplete: true
             })
             
-            // Actualizar gracia
+            // STEP 6: ATOMICALLY INCREMENT RECOVERY COUNTER AND REFRESH TIMESTAMP GRACE PERIOD
             await EscrowOrder.updateOne(
                 { _id: order._id }, 
                 { 
@@ -113,6 +115,8 @@ const sweepStaleOrders = async () => {
     }
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS RECURRING STALE ORDER SWEEPER POLLER
 connectDB.then(() => {
     console.log('[STALE-ORDER-SWEEPER] Connected to MongoDB')
     console.log('[STALE-ORDER-SWEEPER] Omni-Sweeper started, polling every', POLL_INTERVAL_MS, 'ms')

@@ -3,31 +3,19 @@ require('dotenv').config({ path: `${appRoot}/config/.env` })
 const connectDB = require(`${appRoot}/config/db/getMongoose`)
 const { runBackfill } = require(`${appRoot}/jobs/indexers/erc20-backfill`)
 
+
+// RUNNER POLLING INTERVAL IN MILLISECONDS
 const POLL_INTERVAL_MS = Number(process.env.ERC20_BACKFILL_POLL_INTERVAL_MS || 300000)
 
-function getChainKey(chainId) {
-    const map = {
-        11155111: 'ETHEREUM',
-        137: 'POLYGON',
-        80001: 'POLYGON',
-        80002: 'POLYGON',
-        56: 'BSC',
-        97: 'BSC',
-        43113: 'AVALANCHE',
-        43114: 'AVALANCHE',
-        10: 'OPTIMISM',
-        11155420: 'OPTIMISM',
-        250: 'SONIC',
-        14601: 'SONIC'
-    }
-    return map[chainId] || 'ETHEREUM'
-}
 
+// PARSES TRACKED ERC20 TOKEN ADDRESSES AND RPCS FROM ENVIRONMENT VARIABLES
 function buildTokensFromEnv() {
     const tokens = []
+    // STEP 1: PARSE TRACKED TOKENS SPECIFICATION FROM ENVIRONMENT
     const raw = process.env.ERC20_TRACKED_TOKENS
     if (!raw) return tokens
 
+    // STEP 2: LOAD CHAIN RPC CONFIGURATION AND ACCUMULATE ACTIVE TOKEN TUPLES
     for (const entry of raw.split(';')) {
         const parts = entry.split(',')
         if (parts.length >= 2) {
@@ -44,7 +32,10 @@ function buildTokensFromEnv() {
     return tokens
 }
 
+
+// SEQUENTIALLY EXECUTES BACKFILL INDEXER FOR ALL MONITORED ERC20 TOKENS
 async function runAllBackfills(tokens) {
+    // STEP 1: ITERATE TRACKED TOKEN CONFIGURATIONS AND TRIGGER BACKFILL PROCESSOR
     for (const config of tokens) {
         try {
             await runBackfill(config)
@@ -54,9 +45,12 @@ async function runAllBackfills(tokens) {
     }
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS RECURRING BACKFILL DAEMON
 connectDB.then(async () => {
     console.log('[ERC20-BACKFILL-RUNNER] Conectado a MongoDB')
 
+    // STEP 1: PARSE MONITORED TOKEN CONFIGURATIONS
     const tokens = buildTokensFromEnv()
     console.log(`[ERC20-BACKFILL-RUNNER] Tracked tokens: ${tokens.length}`)
 
@@ -65,6 +59,7 @@ connectDB.then(async () => {
         return
     }
 
+    // STEP 2: LAUNCH CONTINUOUS POLLING CYCLE WITH CONFIGURED DELAY
     const poll = async () => {
         console.log('[ERC20-BACKFILL-RUNNER] Starting backfill cycle...')
         await runAllBackfills(tokens)

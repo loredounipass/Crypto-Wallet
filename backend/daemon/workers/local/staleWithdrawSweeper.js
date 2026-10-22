@@ -6,27 +6,31 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
 
-const POLL_INTERVAL_MS = 600000  // 10 minutos
-const STALE_THRESHOLD_MS = 3600000  // 1 hora: si lleva más de 1h en status 1, está muerta
 
+// POLLING INTERVAL (10 MINUTES) AND STALE WITHDRAWAL THRESHOLD (1 HOUR)
+const POLL_INTERVAL_MS = 600000
+const STALE_THRESHOLD_MS = 3600000
+
+
+// BULLMQ QUEUE INSTANCE FOR WITHDRAW REQUEST MONITORING
 const withdrawQueue = new Queue('withdraw-requests')
 
 
-// BUSCA TRANSACCIONES DE RETIRO ATASCADAS EN STATUS 1 POR MAS DE 1 HORA Y LAS MARCA COMO FALLIDAS RESTAURANDO EL BALANCE
+// IDENTIFIES WITHDRAWALS STUCK IN BROADCASTING STATE, FAILS THEM, AND REFUNDS USER BALANCE
 const sweepStaleWithdraws = async () => {
     try {
         const thresholdDate = new Date(Date.now() - STALE_THRESHOLD_MS)
 
-        // Buscar transacciones de retiro atascadas en status 1 (Broadcasting) por más de 1 hora
+        // STEP 1: QUERY FOR STALE WITHDRAWAL TRANSACTIONS STUCK IN BROADCASTING STATUS (STATUS 1)
         const staleTxs = await Transaction.find({
-            nature: 2,               // Withdrawal
-            status: 1,               // Broadcasting (stuck)
+            nature: 2,
+            status: 1,
             created_at: { $lt: thresholdDate }
         }).limit(50)
 
         if (staleTxs.length === 0) return
 
-        // Verificar jobs activos en BullMQ para no duplicar
+        // STEP 2: AUDIT ACTIVE WITHDRAWAL BULLMQ JOBS TO PREVENT RACE CONDITIONS
         const activeJobs = await withdrawQueue.getJobs(['waiting', 'active', 'delayed'])
         const activeTransactionIds = activeJobs
             .map(j => j.data?.transactionId)
@@ -37,13 +41,13 @@ const sweepStaleWithdraws = async () => {
         for (const tx of staleTxs) {
             const txId = tx._id.toString()
 
-            // No tocar si BullMQ ya lo está procesando
+            // STEP 3: SKIP TRANSACTIONS WITH ACTIVE BACKGROUND PROCESSING JOBS
             if (activeTransactionIds.includes(txId)) {
                 console.log(`[STALE-WITHDRAW-SWEEPER] Skipping ${txId}: active job exists`)
                 continue
             }
 
-            // Marcar como Broadcast Failed y restaurar balance
+            // STEP 4: LOCATE ASSOCIATED USER WALLET AND CALCULATE REFUND AMOUNT
             const wallet = await Wallet.findOne({ transactions: tx._id })
             if (!wallet) {
                 console.error(`[STALE-WITHDRAW-SWEEPER] No wallet found for tx ${txId}`)
@@ -52,9 +56,10 @@ const sweepStaleWithdraws = async () => {
 
             const amount = Math.abs(tx.amount)
 
+            // STEP 5: ATOMICALLY MARK TRANSACTION AS FAILED (STATUS 5) AND CREDIT WALLET BALANCE
             await Transaction.updateOne(
                 { _id: tx._id },
-                { $set: { status: 5 } }  // 5 = Broadcast Failed
+                { $set: { status: 5 } }
             )
 
             await Wallet.updateOne(
@@ -62,6 +67,7 @@ const sweepStaleWithdraws = async () => {
                 { $inc: { balance: amount } }
             )
 
+            // STEP 6: PUBLISH TRANSACTION STATUS UPDATE NOTIFICATION FOR REAL-TIME UI REFLECTION
             await publishTransactionStatusUpdate({
                 transactionId: txId,
                 status: 5,
@@ -83,6 +89,8 @@ const sweepStaleWithdraws = async () => {
     }
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS RECURRING STALE WITHDRAWAL MONITOR POLLER
 connectDB.then(() => {
     console.log('[STALE-WITHDRAW-SWEEPER] Connected to MongoDB')
     console.log('[STALE-WITHDRAW-SWEEPER] Polling every', POLL_INTERVAL_MS, 'ms')

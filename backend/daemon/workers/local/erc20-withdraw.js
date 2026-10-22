@@ -6,8 +6,10 @@ const { Web3 } = require('web3')
 const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 
+// NORMALIZES A HEXADECIMAL STRING BY ENSURING IT INCLUDES THE 0X PREFIX
 const ensureHexPrefix = (hexStr) => hexStr.startsWith('0x') ? hexStr : `0x${hexStr}`
 
+// MINIMAL ERC20 ABI INTERFACE FOR EXECUTING TOKEN TRANSFER TRANSACTIONS
 const ERC20_ABI_TRANSFER = [
     {
         "constant": false,
@@ -21,6 +23,7 @@ const ERC20_ABI_TRANSFER = [
     }
 ]
 
+// MINIMAL ERC20 ABI INTERFACE FOR QUERYING ON-CHAIN TOKEN BALANCES
 const ERC20_ABI_BALANCE = [
     {
         "constant": true,
@@ -31,6 +34,7 @@ const ERC20_ABI_BALANCE = [
     }
 ]
 
+// PROPRIETARY SMART CONTRACT ABI INTERFACE FOR FORWARDING TOKENS TO HOT WALLET
 const WALLET_CONTRACT_ABI = [
     {
         "inputs": [{"internalType": "address","name": "tokenAddress","type": "address"}],
@@ -42,8 +46,7 @@ const WALLET_CONTRACT_ABI = [
 ]
 
 
-
-// CONVIERTE UN VALOR DECIMAL LEGIBLE A SU REPRESENTACION CRUDA EN BASE A LOS DECIMALES DEL TOKEN
+// CONVERTS HUMAN-READABLE DECIMAL STRINGS INTO BASE TOKEN UNITS (SMALLEST SUBUNIT) ACCORDING TO TOKEN DECIMALS
 function toRawAmount(displayAmount, decimals) {
     const divisor = BigInt(10) ** BigInt(decimals)
     const parts = displayAmount.toString().split('.')
@@ -53,8 +56,7 @@ function toRawAmount(displayAmount, decimals) {
 }
 
 
-
-// REENVIA LOS TOKENS RECIBIDOS EN EL CONTRATO DE LA BILLETERA HACIA LA BILLETERA CALIENTE PRINCIPAL
+// RELAYS ERC20 TOKENS FROM USER WALLET CONTRACT TO CENTRAL DISBURSING HOT WALLET VIA FORWARDTOKEN CALL
 async function forwardToHotWallet(web3, walletContractAddress, tokenAddress, relayerPk, chainId) {
     const walletContract = new web3.eth.Contract(WALLET_CONTRACT_ABI, walletContractAddress)
     const txData = walletContract.methods.forwardToken(tokenAddress).encodeABI()
@@ -86,11 +88,15 @@ async function forwardToHotWallet(web3, walletContractAddress, tokenAddress, rel
     console.log(`[ERC20-WITHDRAW] Forwarded tokens from ${walletContractAddress} to hot wallet. Tx: ${receipt.transactionHash}`)
 }
 
+
 connectDB.then(() => {
     console.log('[ERC20-WITHDRAW] Worker started and ready')
+    // CONSUMES QUEUED ERC20 WITHDRAWALS, VALIDATES ON-CHAIN BALANCES, TRIGGERS FORWARD IF NEEDED, SIGNS AND BROADCASTS TRANSFERS
     new Worker('erc20-withdraw-requests', async (job) => {
         const { transactionId, walletAddress, tokenAddress, chainId, amount, withdrawAddress, symbol, deductLocked } = job.data
         console.log(`[ERC20-WITHDRAW] Processing withdrawal of ${amount} ${symbol} to ${withdrawAddress}`)
+
+        // STEP 1: INITIALIZE RPC CONNECTION AND VALIDATE HOT WALLET CONFIGURATION & KEY MATCH
         const chainConfig = require(`${appRoot}/config/chains/${chainId}`)
         const rpcUrl = chainConfig.rpc
         const web3 = new Web3(rpcUrl)
@@ -106,6 +112,7 @@ connectDB.then(() => {
             throw new Error(`CRITICAL MISMATCH: WITHDRAW_FROM_PRIVATE_KEY resolves to ${expectedAddress}, but WITHDRAW_FROM_WALLET is configured as ${hotWalletAddress}`)
         }
 
+        // STEP 2: VERIFY NATIVE BALANCE FOR GAS AND COMPUTE RAW TOKEN AMOUNT IN WEI UNITS
         const nativeBalance = await web3.eth.getBalance(hotWalletAddress)
         if (BigInt(nativeBalance) === 0n) {
             throw new Error(`Insufficient native balance. Hot wallet ${hotWalletAddress} has 0 native tokens to pay for gas.`)
@@ -115,6 +122,8 @@ connectDB.then(() => {
         const rawAmount = toRawAmount(amount, decimals)
         const tokenContract = new web3.eth.Contract(ERC20_ABI_BALANCE, tokenAddress)
         const hotWalletBalance = await tokenContract.methods.balanceOf(hotWalletAddress).call()
+
+        // STEP 3: CHECK HOT WALLET TOKEN BALANCE; IF INSUFFICIENT, FORWARD TOKENS FROM USER CONTRACT AND POLL RPC NODE
         if (BigInt(hotWalletBalance) < BigInt(rawAmount)) {
             console.log(`[ERC20-WITHDRAW] Hot wallet has insufficient balance. Forwarding from wallet contract ${walletAddress}...`)
             const relayerPkRaw = process.env.RELAYER_PRIVATE_KEY
@@ -124,9 +133,6 @@ connectDB.then(() => {
             const relayerPk = ensureHexPrefix(relayerPkRaw)
             await forwardToHotWallet(web3, walletAddress, tokenAddress, relayerPk, chainId)
 
-            // Esperar a que el balance del forward sea visible en el nodo RPC
-            // Esto evita el race condition donde transfer() revierte porque el nodo
-            // aún no refleja el nuevo balance del hot wallet tras el forward
             const MAX_BALANCE_POLLS = 10
             const BALANCE_POLL_INTERVAL = 3000
             let balanceReady = false
@@ -144,6 +150,8 @@ connectDB.then(() => {
                 throw new Error('Forward completed but hot wallet balance not yet visible. Will retry via backoff.')
             }
         }
+
+        // STEP 4: ENCODE ERC20 TRANSFER, SIMULATE GAS ESTIMATE, SIGN AND BROADCAST TRANSACTION ON-CHAIN
         const transferContract = new web3.eth.Contract(ERC20_ABI_TRANSFER, tokenAddress)
         const txData = transferContract.methods.transfer(withdrawAddress, rawAmount).encodeABI()
         const gasPrice = await web3.eth.getGasPrice()
@@ -171,6 +179,8 @@ connectDB.then(() => {
         const signedTx = await web3.eth.accounts.signTransaction(txObject, hotWalletPk)
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
         console.log(`[ERC20-WITHDRAW] ${symbol} withdrawal sent. Tx: ${receipt.transactionHash}`)
+
+        // STEP 5: ATOMICALLY DEDUCT LEDGER BALANCES, CONFIRM TRANSACTION RECORD, AND DISPATCH WEBSOCKET NOTIFICATION
         const deduct = Math.min(amount, deductLocked || amount)
         await Erc20Ledger.updateOne(
             { walletAddress: walletAddress.toLowerCase(), tokenAddress: tokenAddress.toLowerCase(), chainId },
@@ -202,7 +212,8 @@ connectDB.then(() => {
             fee: 0,
             source: 'erc20-withdraw'
         })
-        // EMAIL DE RETIRO ERC20 (PARIDAD CON RETIROS NATIVOS)
+
+        // STEP 6: DISPATCH WITHDRAWAL CONFIRMATION EMAIL NOTIFICATION TO RECIPIENT
         try {
             const WalletForEmail = require(`${appRoot}/config/models/Wallet`)
             const UserForEmail = require(`${appRoot}/config/models/User`)
@@ -219,10 +230,9 @@ connectDB.then(() => {
         return receipt.transactionHash
     }, { concurrency: 15 })
 
-    // Handler de fallo final: cuando el job agota TODOS sus reintentos,
-    // marcar la transacción como fallida y notificar al usuario via WebSocket
+
+    // TERMINAL FAILURE HANDLER: MARKS TRANSACTION STATUS AS FAILED (5) AND DISPATCHES WEBSOCKET ROLLBACK EVENTS WHEN ALL RETRIES ARE EXHAUSTED
     .on('failed', async (job, err) => {
-        // Solo ejecutar rollback cuando es el ÚLTIMO intento (sin más reintentos posibles)
         if (!job) return
         const maxAttempts = job.opts?.attempts || 0
         if (maxAttempts > 0 && job.attemptsMade < maxAttempts) return
@@ -233,7 +243,7 @@ connectDB.then(() => {
             const Transaction = require(`${appRoot}/config/models/Transaction`)
             await Transaction.updateOne(
                 { _id: transactionId },
-                { $set: { status: 5 } }  // 5 = Broadcast Failed
+                { $set: { status: 5 } }
             )
             const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
             await publishTransactionStatusUpdate({

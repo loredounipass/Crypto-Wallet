@@ -13,19 +13,20 @@ const coins = require(`${appRoot}/config/coins/info`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
+
+// POLLING INTERVAL FOR PERIODICALLY SCANNING DISPUTED ESCROW ORDERS AWAITING RESOLUTION
 const POLL_INTERVAL_MS = 30000
 
 
-
-// CONVIERTE UNA CANTIDAD LEGIBLE A SU EQUIVALENTE EN WEI CONSIDERANDO LOS DECIMALES
+// CONVERTS HUMAN-READABLE COIN AMOUNTS TO BASE WEI UNITS USING SPECIFIED DECIMALS
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
 
-
-// REGISTRA LA TRANSACCION RESULTANTE DE LA RESOLUCION DE LA DISPUTA A FAVOR DEL GANADOR
+// REGISTERS INTERNAL DISPUTE RESOLUTION TRANSACTION DOCUMENT AND ATOMICALLY CREDITS BENEFICIARY WALLET
 const registerResolutionTransaction = async (order, txHash, resolutionType) => {
+    // STEP 1: RESOLVE DETERMINISTIC RESOLUTION HASH AND CHECK FOR EXISTING TRANSACTION
     const coin = String(order.coin || '').toUpperCase()
     const chainId = Number(order.chainId)
     let txHashToUse = txHash ? String(txHash).toLowerCase() : `internal-resolve-${resolutionType}-${order.orderId}`
@@ -41,6 +42,8 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
         })
         return existing
     }
+
+    // STEP 2: LOCATE RECIPIENT WALLET BY CHAIN AND COIN OR THROW FOR RETRY
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${recipientAddress}$`, 'i'),
         coin,
@@ -55,6 +58,8 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
         })
         throw new Error(`Recipient wallet not found for order ${order.orderId}`)
     }
+
+    // STEP 3: PERSIST RESOLUTION TRANSACTION DOCUMENT (STATUS 3 INTERNAL OR STATUS 1 ON-CHAIN)
     const isInternal = !txHash
     let transaction = new Transaction({
         nature: 1,
@@ -79,6 +84,8 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
             throw err
         }
     }
+
+    // STEP 4: LINK TRANSACTION TO BENEFICIARY WALLET AND CREDIT INTERNAL BALANCE IF NON-CHAIN
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: savedTransaction._id } }
@@ -106,8 +113,7 @@ const registerResolutionTransaction = async (order, txHash, resolutionType) => {
 }
 
 
-
-// BUSCA UNA TRANSACCION PREVIA QUE COINCIDA CON LOS PATRONES DE RESOLUCION PARA EVITAR DUPLICADOS
+// QUERIES FOR EXISTING RESOLUTION TRANSACTIONS MATCHING DETERMINISTIC PATTERNS TO PREVENT DUPLICATES
 const findPreviousResolutionTx = async (orderId, recipientAddress, amount) => {
     const patternMatch = await Transaction.findOne({
         $or: [
@@ -122,24 +128,23 @@ const findPreviousResolutionTx = async (orderId, recipientAddress, amount) => {
 }
 
 
-
-// PROCESA LA TRANSFERENCIA DE FONDOS HACIA EL GANADOR DE LA DISPUTA Y ACTUALIZA LOS ESTADOS
+// EXECUTES ERC20 OR NATIVE DISPUTE RESOLUTION BY REFUNDING SELLER OR AWARDING PROVIDER
 const processDisputeResolution = async (order) => {
+    // STEP 1: INITIALIZE ORDER PARAMETERS AND DETERMINE DISPUTE RESOLUTION TYPE (REVERT VS AWARD)
     const decimals = coins[String(order.coin || '').toUpperCase()]?.decimals || 18
     const interactor = new EscrowContractInteractor(order.chainId)
     const resolvedType = order.isReverted ? 'revert' : 'award'
     let txHash = null
 
-    // ERC20 TOKEN DISPUTE RESOLUTION
+    // STEP 2 (ERC20 ROUTE): PROCESS DISPUTE SETTLEMENT VIA OFF-CHAIN LEDGER OR ON-CHAIN RELAYER TRANSFER
     if (order.isToken && order.tokenAddress) {
         const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
         const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
         const tokenSymbol = tokenInfo?.symbol || order.coin || 'TOKEN'
 
+        // STEP 2.1 (ERC20 REVERT): ATOMICALLY REVERT FUNDS TO SELLER LEDGER AND CREATE DASHBOARD DEPOSIT TRANSACTION
         if (resolvedType === 'revert') {
-            // Devolver al seller via Erc20Ledger (DB-only)
             const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
-            // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
             const revertMarker = `internal-resolve-revert-${order.orderId}`
             const claimed = await EscrowOrder.findOneAndUpdate(
                 { orderId: order.orderId, releaseTxHash: { $exists: false } },
@@ -164,7 +169,6 @@ const processDisputeResolution = async (order) => {
                 orderId: order.orderId, amount: order.amount, tokenAddress: order.tokenAddress
             })
 
-            // ─── FIX: Crear Transaction (depósito) para visibilidad en UI del seller ───
             const sellerWallet = await Wallet.findOne({
                 address: new RegExp(`^${String(order.sellerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
                 chainId: order.chainId
@@ -213,7 +217,7 @@ const processDisputeResolution = async (order) => {
                 })
             }
         } else {
-            // Award: enviar ERC20 al provider on-chain desde hot wallet (misma ruta que retiros)
+            // STEP 2.2 (ERC20 AWARD): TRANSFER ERC20 TO PROVIDER ON-CHAIN (FORWARDING FROM SELLER IF NEEDED) AND CREATE TRANSACTION
             const tokenDecimals = tokenInfo?.decimals ?? 18
             const onTxHash = async (hash) => {
                 console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
@@ -243,7 +247,6 @@ const processDisputeResolution = async (order) => {
                 orderId: order.orderId, txHash, amount: order.amount
             })
 
-            // ─── FIX: Crear Transaction (depósito) para visibilidad en UI del provider ───
             const providerWallet = await Wallet.findOne({
                 address: new RegExp(`^${String(order.providerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
                 chainId: order.chainId
@@ -293,6 +296,7 @@ const processDisputeResolution = async (order) => {
             }
         }
 
+        // STEP 2.3 (ERC20 ROUTE): FINALIZE ORDER STATE, UPDATE PROVIDER METRICS, AND EMIT RESOLUTION STATUS EVENT
         await EscrowOrder.updateOne(
             { orderId: order.orderId },
             {
@@ -319,7 +323,7 @@ const processDisputeResolution = async (order) => {
         return 'success'
     }
 
-    // NATIVE COIN DISPUTE RESOLUTION (unchanged)
+    // STEP 3 (NATIVE ROUTE): AUDIT PRIOR RESOLUTION PATTERNS AND VERIFY CONFIRMED FUNDING ON-CHAIN
     const amountWei = toWeiAmount(order.amount, decimals)
     const patternTx = await findPreviousResolutionTx(order.orderId, null, null)
     if (patternTx) {
@@ -359,6 +363,7 @@ const processDisputeResolution = async (order) => {
                 console.log(`[DISP-RESOLVE] Pre-saving releaseTxHash ${hash} to prevent duplicate retries`)
                 await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { releaseTxHash: hash } })
             }
+            // STEP 4 (NATIVE ROUTE): DISPATCH ESCROW WALLET TRANSFER TO BENEFICIARY WITH ATOMIC PRE-SAVED HASH
             if (resolvedType === 'revert') {
                 receipt = await interactor.refundFundsFromEscrowWallet(order.orderId, order.sellerWalletAddress, amountWei, onTxHash)
             } else {
@@ -379,10 +384,8 @@ const processDisputeResolution = async (order) => {
             throw new Error(`Escrow wallet transfer failed for order ${order.orderId}`)
         }
     }
-    // NOTA duplicacion 2026-10-04: si la resolucion fue on-chain (hash 0x), NO crear
-    // Transaction aqui. La subscription WSS detecta la llegada al wallet ganador
-    // y crea el unico documento via transaction.js -> deposit.js (mismo fix que
-    // releases). Solo el caso interno (sin hash on-chain) necesita registro manual.
+
+    // STEP 5: REGISTER INTERNAL RESOLUTION TRANSACTION IF NON-CHAIN, UPDATE ORDER STATE, AND EMIT STATUS EVENT
     if (!txHash || !String(txHash).startsWith('0x')) {
         await registerResolutionTransaction(order, txHash, resolvedType)
     }
@@ -430,10 +433,10 @@ const processDisputeResolution = async (order) => {
 }
 
 
-
-// VERIFICA CONTINUAMENTE LA BASE DE DATOS EN BUSCA DE ORDENES EN DISPUTA MARCADAS PARA RESOLUCION
+// PERIODICALLY POLLS DISPUTED ORDERS REQUIRING SETTLEMENT AND PROCESSES RESOLUTIONS SEQUENTIALLY
 const checkDisputedOrders = async () => {
     try {
+        // STEP 1: QUERY FOR DISPUTED ESCROW ORDERS REQUIRING SETTLEMENT
         const pendingOrders = await EscrowOrder.find({
             status: 'disputed',
             $or: [
@@ -446,6 +449,7 @@ const checkDisputedOrders = async () => {
         console.log(`[DISP-RESOLVE] Found ${pendingOrders.length} disputed orders awaiting resolution`)
         for (const order of pendingOrders) {
             try {
+                // STEP 2: ATOMICALLY ACQUIRE RESOLUTION LOCK (RESOLVEDAT) TO PREVENT CONCURRENT PROCESSING
                 const locked = await EscrowOrder.findOneAndUpdate(
                     {
                         orderId: order.orderId,
@@ -458,6 +462,7 @@ const checkDisputedOrders = async () => {
                     console.log(`[DISP-RESOLVE] Order ${order.orderId} already being processed, skipping`)
                     continue
                 }
+                // STEP 3: DISPATCH DISPUTE SETTLEMENT OR PRESERVE LOCK IF MANUAL REVIEW IS REQUIRED
                 await processDisputeResolution(order)
             } catch (orderError) {
                 console.error('[DISP-RESOLVE] Error processing order:', order.orderId, orderError.message)
@@ -476,6 +481,8 @@ const checkDisputedOrders = async () => {
     }
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS PERIODIC DISPUTE RESOLUTION POLLING LOOP
 connectDB.then(() => {
     console.log('[DISP-RESOLVE] Worker started, polling every', POLL_INTERVAL_MS, 'ms')
     checkDisputedOrders()

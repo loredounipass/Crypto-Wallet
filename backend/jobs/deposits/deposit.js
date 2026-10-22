@@ -11,18 +11,26 @@ const { publishTransactionStatusUpdate } = require('../notifications/transaction
 
 let web3
 
+
+// POLLING AND CONFIRMATION THRESHOLDS FOR MONITORING ON-CHAIN NATIVE DEPOSITS
 const POLL_INTERVAL_MS = Number(process.env.CONFIRMATION_POLL_INTERVAL_MS || 10000)
 const MAX_CONFIRMATION_POLLS = Number(process.env.MAX_CONFIRMATION_POLLS || 180)
 const MIN_CONFIRMATIONS = Number(process.env.MIN_CONFIRMATIONS || 12)
 
+
+// CONVERTS BIGINT OR STRING REPRESENTATIONS INTO NATIVE NUMERIC VALUES
 const toNumber = (value) => {
     if (typeof value === 'bigint') return Number(value)
     if (typeof value === 'string') return Number(value)
     return value
 }
 
+
+// VALIDATES WHETHER THE GIVEN VALUE IS A FINITE NUMERIC VALUE
 const isFiniteNumber = (value) => Number.isFinite(Number(value))
 
+
+// CONVERTS RAW WEI OR BASE UNIT NUMERIC VALUE TO HUMAN-READABLE COIN AMOUNT USING DECIMALS
 const toCoinAmount = (rawValue, coin) => {
     const decimals = coins[String(coin || '').toUpperCase()]?.decimals || 18
     const numeric = toNumber(rawValue)
@@ -30,10 +38,14 @@ const toCoinAmount = (rawValue, coin) => {
     return Number(numeric) / 10 ** decimals
 }
 
+
+// THROWS RUNTIME ERROR TO REJECT DEPOSIT PROCESSING AND TRIGGER BULLMQ RETRY
 const reject = (message = 'err: not deposited') => {
     throw new Error(message)
 }
 
+
+// ATOMICALLY UPDATES TRANSACTION STATUS AND CONFIRMATIONS, PUBLISHING REAL-TIME UI NOTIFICATION
 const _updateTransactionState = async (tId, status, value, confirmations, enrichment = {}) => {
     const upsert = {
         status
@@ -65,6 +77,8 @@ const _updateTransactionState = async (tId, status, value, confirmations, enrich
     })
 }
 
+
+// ATOMICALLY CREDITS WALLET BALANCE AND SENDS CONFIRMATION EMAIL UPON REACHING FINALITY
 const _deposit = async (transactionId, chainId, coin, address, value, txHash) => {
     console.log('[DEPOSIT] applying balance increment', {
         transactionId,
@@ -74,14 +88,14 @@ const _deposit = async (transactionId, chainId, coin, address, value, txHash) =>
         value
     })
 
-    // Early check: if transaction is already completed, skip immediately
+    // STEP 1: VERIFY IF TRANSACTION HAS ALREADY BEEN PROCESSED TO PREVENT DUPLICATES
     const txCheck = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (txCheck && txCheck.status === 3) {
         console.log('[DEPOSIT] Transaction already completed (early check), skipping:', { transactionId })
         return 'deposit_already_processed'
     }
 
-    // Atomic claim: only one concurrent job will succeed in marking status=3
+    // STEP 2: ATOMICALLY CLAIM FINAL STATUS (STATUS 3) TO PREVENT CONCURRENT EXECUTION
     const claimed = await Transaction.findOneAndUpdate(
         { _id: new ObjectId(transactionId), status: { $ne: 3 } },
         { $set: { status: 3, confirmations: MIN_CONFIRMATIONS } }
@@ -93,6 +107,7 @@ const _deposit = async (transactionId, chainId, coin, address, value, txHash) =>
         return 'deposit_already_processed'
     }
 
+    // STEP 3: PUBLISH TRANSACTION COMPLETION NOTIFICATION EVENT TO STATUS QUEUE
     await publishTransactionStatusUpdate({
         transactionId,
         status: 3,
@@ -106,6 +121,7 @@ const _deposit = async (transactionId, chainId, coin, address, value, txHash) =>
         fee: 0
     })
 
+    // STEP 4: ATOMICALLY INCREMENT WALLET BALANCE OR MARK TRANSACTION AS FAILED
     const result = await Wallet.updateOne({
         address, coin, chainId
     }, {
@@ -126,6 +142,8 @@ const _deposit = async (transactionId, chainId, coin, address, value, txHash) =>
         reject('err: wallet not found for deposit')
         return
     }
+
+    // STEP 5: LOCATE ASSOCIATED USER RECORD AND DISPATCH DEPOSIT CONFIRMATION EMAIL
     const wallet = await Wallet.findOne({
         transactions: new ObjectId(transactionId)
     })
@@ -148,9 +166,12 @@ const _deposit = async (transactionId, chainId, coin, address, value, txHash) =>
     return 'deposit'
 }
 
+
+// VERIFIES ON-CHAIN TRANSACTION RECEIPT STATUS BEFORE INVOKING BALANCE DEPOSIT CREDIT
 const _checkConfirmation = async (
     address, txHash, amount, coin, chainId, transactionId
 ) => {
+    // STEP 1: FETCH ON-CHAIN RECEIPT AND CONFIRM SUCCESSFUL STATUS BEFORE CREDITING
     var result = await web3.eth.getTransactionReceipt(txHash)
     if (result && 'status' in result && result.status) {
         console.log('[DEPOSIT] receipt confirmed, processing credit', {
@@ -165,13 +186,18 @@ const _checkConfirmation = async (
     reject()
 }
 
+
+// ASYNCHRONOUS DELAY HELPER FOR POLLING INTERVAL BACKOFF
 const _sleep = async (ms) => {
     return await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+
+// ORCHESTRATES ON-CHAIN TRANSACTION CONFIRMATION POLLING AND DISPATCHES DEPOSIT CREDIT
 const processDeposit = async (
     { walletAddress, transactionHash, transactionId, chainId, coin }
 ) => {
+    // STEP 1: INITIALIZE WEB3 PROVIDER FOR TARGET CHAIN AND LOAD TRACKED TRANSACTION
     console.log('[DEPOSIT] processing started', {
         walletAddress,
         transactionHash,
@@ -182,6 +208,7 @@ const processDeposit = async (
     web3 = new Web3(require(`${appRoot}/config/chains/${chainId}`).rpc)
     let trackedTransaction = await Transaction.findOne({ _id: new ObjectId(transactionId) })
     if (trackedTransaction) {
+        // STEP 2: POLL ON-CHAIN TRANSACTION DETAILS AND CALCULATE CONFIRMATIONS AND AMOUNT
         for (let poll = 0; poll < MAX_CONFIRMATION_POLLS; poll++) {
             const chainTx = await web3.eth.getTransaction(transactionHash)
             if (chainTx && 'value' in chainTx) {
@@ -216,6 +243,8 @@ const processDeposit = async (
                         chainAmount,
                         trackedAmount: amount
                     })
+
+                    // STEP 3: UPDATE TRANSACTION CONFIRMATIONS AND BROADCAST INTERMEDIATE STATE
                     await _updateTransactionState(
                         transactionId,
                         2,
@@ -223,6 +252,8 @@ const processDeposit = async (
                         confirmations,
                         { coin, chainId, txHash: transactionHash, to: walletAddress }
                     )
+
+                    // STEP 4: CHECK IF MINIMUM CONFIRMATION THRESHOLD IS REACHED AND EXECUTE FINAL RECEIPT VERIFICATION
                     if (confirmations >= MIN_CONFIRMATIONS) {
                         console.log('[DEPOSIT] minimum confirmations reached', {
                             transactionId,
@@ -251,6 +282,7 @@ const processDeposit = async (
                 }
             }
 
+            // STEP 5: HANDLE PENDING BLOCK INCLUSION OR THROW TIMEOUT EXCEPTION ON MAX RETRIES
             trackedTransaction = await Transaction.findOne({ _id: new ObjectId(transactionId) })
             await _sleep(POLL_INTERVAL_MS)
         }
@@ -261,4 +293,6 @@ const processDeposit = async (
     reject()
 }
 
+
+// EXPORTS DEPOSIT PROCESSOR FOR BULLMQ WORKER QUEUES
 module.exports = processDeposit

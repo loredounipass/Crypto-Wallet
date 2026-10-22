@@ -12,16 +12,15 @@ const coins = require(`${appRoot}/config/coins/info`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
 
-
-// CONVIERTE UNA CANTIDAD LEGIBLE A SU EQUIVALENTE EN WEI CONSIDERANDO LOS DECIMALES
+// CONVERTS HUMAN-READABLE COIN AMOUNTS TO BASE WEI UNITS USING SPECIFIED DECIMALS
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
 
-
-// REGISTRA LA TRANSACCION DE REEMBOLSO DEL ESCROW ASOCIANDOLA A LA BILLETERA DEL VENDEDOR
+// REGISTERS INTERNAL ESCROW REFUND TRANSACTION DOCUMENT AND ATOMICALLY CREDITS SELLER WALLET
 const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
+    // STEP 1: RESOLVE TRANSACTION HASH AND DEDUPLICATE AGAINST EXISTING RECORDS
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
@@ -35,6 +34,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         return existing
     }
+
+    // STEP 2: LOCATE SELLER WALLET OR FAIL FOR WORKER RETRY
     const wallet = await Wallet.findOne({
         address: new RegExp(`^${sellerAddress}$`, 'i'),
         coin,
@@ -49,6 +50,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
+
+    // STEP 3: PERSIST REFUND TRANSACTION RECORD (INTERNAL DB DEPOSIT OR CONFIRMATION TRACKING)
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
     let transaction
@@ -70,6 +73,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             throw err
         }
     }
+
+    // STEP 4: LINK TRANSACTION TO SELLER WALLET AND CREDIT INTERNAL BALANCE IF NON-CHAIN
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: transaction._id } }
@@ -96,9 +101,9 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
 }
 
 
-
-// PROCESA LA CANCELACION DE LA ORDEN DE ESCROW REEMBOLSANDO LOS FONDOS Y ACTUALIZANDO EL ESTADO
+// ORCHESTRATES ESCROW CANCELLATION BY REFUNDING ERC20 OR NATIVE FUNDS AND EMITTING STATUS EVENTS
 const processEscrowCancel = async (jobData) => {
+    // STEP 1: VALIDATE ORDER EXISTENCE AND VERIFY CANCELLATION STATE & PRIOR REFUND STATUS
     const { orderId, sellerEmail, providerEmail } = jobData
     console.log(`[ESCROW-CANCEL-WORKER] [Job ${jobData.orderId}] Processing cancel request...`)
     const order = await EscrowOrder.findOne({ orderId })
@@ -111,13 +116,12 @@ const processEscrowCancel = async (jobData) => {
         return 'success'
     }
 
-    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    // STEP 2 (ERC20 ROUTE): ATOMICALLY CREDIT SELLER ERC20 LEDGER AND REUSE CLAIM IDENTIFIER
     if (order.isToken && order.tokenAddress) {
         const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
         const { getTokenInfo } = require(`${appRoot}/config/tokens`)
         const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
         const internalTxHash = `internal-token-refund-${orderId}`
-        // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
         const claimed = await EscrowOrder.findOneAndUpdate(
             { orderId, refundTxHash: { $exists: false } },
             { $set: { refundTxHash: internalTxHash } }
@@ -138,7 +142,7 @@ const processEscrowCancel = async (jobData) => {
             $set: { status: 'cancelled', refundTxHash: internalTxHash }
         })
 
-        // ─── FIX: Crear Transaction para visibilidad en UI del seller ───
+        // STEP 2.1 (ERC20 ROUTE): CREATE REFUND TRANSACTION FOR DASHBOARD VISIBILITY AND EMIT WEBSOCKET EVENT
         const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
         const tokenSymbol = tokenInfo?.symbol || order.coin || 'TOKEN'
         const sellerWallet = await Wallet.findOne({
@@ -199,6 +203,7 @@ const processEscrowCancel = async (jobData) => {
         return 'success'
     }
 
+    // STEP 3 (NATIVE ROUTE): AUDIT ON-CHAIN FUNDING STATUS AND EXECUTE ESCROW WALLET REFUND
     let refundTxHash = null
     let refundAmountEth = null
     if (order.escrowTxHash) {
@@ -218,6 +223,7 @@ const processEscrowCancel = async (jobData) => {
             await interactor.ensureEscrowWalletBalanceForTransfer(order.orderId, order.sellerWalletAddress, amountWei)
             refundAmountEth = order.amount
             console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] Refunding full amount ${refundAmountEth} (gas prepaid at creation)...`)
+            // STEP 3.1: PRE-SAVE REFUND TRANSACTION HASH ATOMICALLY TO PREVENT DUPLICATE TRANSFERS
             const onTxHash = async (hash) => {
                 console.log(`[ESCROW-CANCEL-WORKER] Pre-saving refundTxHash ${hash} to prevent duplicate retries`)
                 await EscrowOrder.updateOne({ orderId }, { $set: { refundTxHash: hash } })
@@ -234,14 +240,13 @@ const processEscrowCancel = async (jobData) => {
     } else {
         console.log(`[ESCROW-CANCEL-WORKER] [Job ${orderId}] No on-chain transaction found (escrowTxHash is null). Proceeding with internal DB refund...`)
     }
-    // NOTA duplicacion 2026-10-04: si el refund fue on-chain (hash 0x), NO crear
-    // Transaction aqui. La subscription WSS detecta la llegada al wallet del seller
-    // y crea el unico documento via transaction.js -> deposit.js (mismo fix que
-    // releases: el worker creaba un doc y el scanner otro con igual txHash).
-    // Solo el refund interno (sin hash) necesita doc + credito manual.
+
+    // STEP 4: REGISTER INTERNAL REFUND RECORD IF NO ON-CHAIN TRANSACTION OCCURRED
     if (!refundTxHash) {
         await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
     }
+
+    // STEP 5: FINALIZE ORDER CANCELLATION AND DISPATCH STATUS EVENT NOTIFICATION
     const cancelRefundTxHash = refundTxHash || `internal-refund-${order.orderId}`
     await EscrowOrder.updateOne(
         { orderId },
@@ -263,8 +268,10 @@ const processEscrowCancel = async (jobData) => {
     return 'success'
 }
 
+
 connectDB.then(() => {
     console.log('[ESCROW-CANCEL-WORKER] Worker started and ready')
+    // CONSUMES QUEUED ESCROW CANCELLATION JOBS AND DISPATCHES ORDER REFUNDS CONCURRENTLY
     new Worker('escrow-cancel', async (job) => {
         console.log(`[ESCROW-CANCEL-WORKER] Processing job ${job.id}`)
         try {

@@ -5,6 +5,8 @@ const Erc20Transaction = require(`${appRoot}/config/models/Erc20Transaction`)
 const Erc20ForwardExecution = require(`${appRoot}/config/models/Erc20ForwardExecution`)
 const { Queue } = require(`${appRoot}/config/bullmq`)
 
+
+// REQUIRED FINALITY CONFIRMATION BLOCKS PER CHAIN ID TO AUDIT FINALIZED TRANSACTIONS
 const CHAIN_CONFIRMATIONS = {
     1: 12,
     137: 150,
@@ -15,7 +17,10 @@ const CHAIN_CONFIRMATIONS = {
 }
 const DEFAULT_CONFIRMATIONS = 12
 
+
+// RECONCILES ERC20 LEDGER BALANCES AGAINST FINALIZED ON-CHAIN DEPOSIT EVENTS AND FORWARD TOTALS
 const runReconciliation = async ({ chainId, tokenAddress, rpcUrl }) => {
+    // STEP 1: INITIALIZE WEB3 PROVIDER AND CALCULATE FINALIZED BLOCK NUMBER USING CHAIN THRESHOLDS
     const web3 = new Web3(rpcUrl)
     console.log(`[RECONCILIATION] Starting reconciliation for ${chainId}:${tokenAddress}`)
 
@@ -23,11 +28,13 @@ const runReconciliation = async ({ chainId, tokenAddress, rpcUrl }) => {
     const minConf = CHAIN_CONFIRMATIONS[chainId] || DEFAULT_CONFIRMATIONS
     const finalizedBlock = latestBlock - minConf
 
+    // STEP 2: LOAD ALL ERC20 LEDGERS FOR TARGET TOKEN AND INITIALIZE ANOMALY REPAIR QUEUE
     const ledgers = await Erc20Ledger.find({ chainId, tokenAddress })
 
     const anomalyQueue = new Queue('erc20-anomaly-repair')
 
     for (const ledger of ledgers) {
+        // STEP 3: AGGREGATE FINALIZED ON-CHAIN DEPOSITS AND CALCULATE EXPECTED NET HELD BALANCE
         const { walletAddress, available_balance, locked_for_forward, forwarded_total } = ledger
 
         const finalizedTxs = await Erc20Transaction.find({
@@ -38,6 +45,7 @@ const runReconciliation = async ({ chainId, tokenAddress, rpcUrl }) => {
         const expectedNetBalance = totalDepositsFromEvents - (forwarded_total || 0)
         const actualHeld = available_balance + locked_for_forward
 
+        // STEP 4: DETECT LEDGER DRIFT AND ENQUEUE ANOMALY REPAIR AUDIT JOB WHEN DRIFT EXCEEDS TOLERANCE
         if (Math.abs(expectedNetBalance - actualHeld) > 0.0001) {
             console.warn(`[RECONCILIATION] Drift detected for ${walletAddress}. ` +
                 `Deposits: ${totalDepositsFromEvents}, Forwarded: ${forwarded_total}, ` +
@@ -60,4 +68,6 @@ const runReconciliation = async ({ chainId, tokenAddress, rpcUrl }) => {
     }
 }
 
+
+// EXPORTS RECONCILIATION AUDIT RUNNER FOR SCHEDULED AND MANUAL EXECUTION
 module.exports = { runReconciliation }

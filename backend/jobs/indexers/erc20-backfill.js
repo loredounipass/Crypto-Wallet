@@ -4,9 +4,13 @@ const Wallet = require(`${appRoot}/config/models/Wallet`)
 const IndexerCheckpoint = require(`${appRoot}/config/models/IndexerCheckpoint`)
 const OrderingEngine = require(`${appRoot}/config/utils/OrderingEngine`)
 
+
+// BLOCK QUERY CHUNK SIZE AND RPC RATE-LIMIT THROTTLING DELAY IN MILLISECONDS
 const MAX_BLOCKS_PER_QUERY = 9
 const BATCH_DELAY_MS = 250
 
+
+// REQUIRED FINALITY CONFIRMATION BLOCKS PER CHAIN ID FOR BACKFILL SAFE TARGET
 const CHAIN_CONFIRMATIONS = {
     1: 12,
     137: 150,
@@ -22,7 +26,10 @@ const CHAIN_CONFIRMATIONS = {
 }
 const DEFAULT_CONFIRMATIONS = 12
 
+
+// BACKFILLS HISTORICAL ERC20 TRANSFER LOGS IN CHUNKS AND INGESTS EVENTS FOR RECOGNIZED WALLETS
 const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
+    // STEP 1: INITIALIZE WEB3 PROVIDER AND CALCULATE SAFE FINALIZED TARGET BLOCK
     const web3 = new Web3(rpcUrl)
     const topic = Web3.utils.sha3('Transfer(address,address,uint256)')
     const minConf = CHAIN_CONFIRMATIONS[chainId] || DEFAULT_CONFIRMATIONS
@@ -31,6 +38,7 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
         const latestBlockNumber = Number(await web3.eth.getBlockNumber())
         const targetBlock = latestBlockNumber - minConf
 
+        // STEP 2: LOAD OR INITIALIZE INDEXER CHECKPOINT AND VERIFY IF BACKFILL IS REQUIRED
         let checkpoint = await IndexerCheckpoint.findOne({ chainId, tokenAddress })
         if (!checkpoint) {
             checkpoint = new IndexerCheckpoint({ chainId, tokenAddress, last_processed_block: targetBlock - 1000 })
@@ -40,11 +48,12 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
         let fromBlock = checkpoint.last_processed_block + 1
 
         if (fromBlock > targetBlock) {
-            return // Up to date
+            return
         }
 
         console.log(`[ERC20-BACKFILL][${chainId}] Starting backfill for ${tokenAddress} from ${fromBlock} to ${targetBlock}`)
 
+        // STEP 3: QUERY HISTORICAL ERC20 TRANSFER LOGS IN CHUNKS UP TO TARGET BLOCK
         while (fromBlock <= targetBlock) {
             const toBlock = Math.min(fromBlock + MAX_BLOCKS_PER_QUERY - 1, targetBlock)
             
@@ -56,6 +65,7 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
                     topics: [topic]
                 })
 
+                // STEP 4: DECODE TRANSFER EVENT LOGS, MATCH RECIPIENT WALLET, AND INGEST INTO ORDERING ENGINE
                 for (const result of logs) {
                     try {
                         const fromAddress = web3.eth.abi.decodeParameter('address', result.topics[1]).toLowerCase()
@@ -86,7 +96,7 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
                     }
                 }
 
-                // Update checkpoint
+                // STEP 5: ATOMICALLY PERSIST PROGRESS CHECKPOINT AND APPLY THROTTLING DELAY
                 checkpoint.last_processed_block = toBlock
                 checkpoint.updated_at = new Date()
                 await checkpoint.save()
@@ -95,8 +105,8 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
 
                 await new Promise(r => setTimeout(r, BATCH_DELAY_MS))
             } catch (err) {
+                // STEP 6: HANDLE RPC RATE LIMITING WITH BACKOFF OR ABORT ON UNRECOVERABLE FAILURE
                 console.error(`[ERC20-BACKFILL][${chainId}] getPastLogs failed:`, err.message || err)
-                // On rate limit, wait and retry the same batch
                 if (err.message && err.message.includes('exceeded its compute units')) {
                     console.log(`[ERC20-BACKFILL][${chainId}] Rate limited. Waiting 2s before retry...`)
                     await new Promise(r => setTimeout(r, 2000))
@@ -110,4 +120,6 @@ const runBackfill = async ({ chainId, tokenAddress, rpcUrl }) => {
     }
 }
 
+
+// EXPORTS ERC20 BACKFILL RUNNER FOR CRON JOBS AND INDEXER WORKERS
 module.exports = { runBackfill }

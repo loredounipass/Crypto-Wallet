@@ -14,20 +14,14 @@ const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 
 
-
-// CONVIERTE UNA CANTIDAD LEGIBLE A SU EQUIVALENTE EN WEI CONSIDERANDO LOS DECIMALES
+// CONVERTS HUMAN-READABLE UNIT AMOUNT TO WEI EQUIVALENT USING TOKEN DECIMALS
 const toWeiAmount = (amount, decimals) => {
     return parseUnits(String(amount), decimals)
 }
 
 
-
-// REGISTRA LA TRANSACCION DE LIBERACION ASOCIANDOLA A LA BILLETERA DEL PROVEEDOR
-// DEPRECADO: no llamar desde processEscrowRelease. La subscription WSS nativa
-// (DepositedOnMetaDapp -> transaction.js -> deposit.js) es la unica creadora del
-// documento Transaction para el releaseTxHash. Crear otro aqui genera duplicados
-// en UI (mismo txHash, 2 docs) porque txHash no tiene indice unico.
-// Se conserva solo como fallback idempotente via upsert por si se necesita.
+// DEPRECATED HELPER: PRESERVED FOR HISTORICAL REFERENCE (UNINVOKED TO PREVENT DUPLICATE TRANSACTIONS WITH ON-CHAIN DEPOSIT SCANNER)
+/*
 const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
     const coin = String(order.coin || '').toUpperCase()
     const providerAddress = String(order.providerWalletAddress || '').toLowerCase()
@@ -73,11 +67,12 @@ const registerEscrowReleaseTransaction = async (order, releaseTxHash) => {
     })
     return transaction
 }
+*/
 
 
-
-// EJECUTA LA TRANSFERENCIA DE LOS FONDOS RETENIDOS HACIA LA BILLETERA DEL PROVEEDOR Y ACTUALIZA SUS ESTADISTICAS
+// ORCHESTRATES ESCROW RELEASE TRANSFER TO BENEFICIARY PROVIDER AND UPDATES TRADE METRICS
 const processEscrowRelease = async (jobData) => {
+    // STEP 1: VALIDATE ORDER ELIGIBILITY AND RESOLVE EXISTING RELEASE TRANSACTION HASH
     const {
         orderId, providerWalletAddress, sellerWalletAddress,
         amount, coin, chainId, sellerEmail, providerEmail,
@@ -95,6 +90,7 @@ const processEscrowRelease = async (jobData) => {
     let releaseTxHash = order.releaseTxHash
     const interactor = new EscrowContractInteractor(chainId)
 
+    // STEP 2: AUDIT PENDING RELEASE TRANSACTION RECEIPT, NONCE INTEGRITY, OR MEMPOOL STATUS
     if (releaseTxHash && order.status !== 'completed') {
         console.log(`[ESCROW-RELEASE] Found pending releaseTxHash ${releaseTxHash}. Checking status...`)
         let receipt = null
@@ -102,7 +98,6 @@ const processEscrowRelease = async (jobData) => {
         try {
             receipt = await interactor.web3.eth.getTransactionReceipt(releaseTxHash)
         } catch (e) {
-            // web3 v4 lanza TransactionNotFound cuando el hash nunca se broadcasteo (pre-save huerfano)
             if (e.message && (e.message.includes('Transaction not found') || e.message.includes('not found'))) {
                 txMissing = true
             } else {
@@ -111,7 +106,6 @@ const processEscrowRelease = async (jobData) => {
             }
         }
         if (txMissing || receipt === null) {
-            // Verificar si la tx existe en mempool antes de declararla stale
             let txExists = false
             let txNonce = null
             try {
@@ -126,7 +120,6 @@ const processEscrowRelease = async (jobData) => {
                 await EscrowOrder.updateOne({ orderId }, { $unset: { releaseTxHash: '' } })
                 releaseTxHash = null
             } else if (txNonce !== null) {
-                // Tx en mempool pero sin minar: si su nonce esta muy por encima del nonce real, quedo huerfana por gap (nunca minara)
                 const chainNonce = Number(await interactor.web3.eth.getTransactionCount(interactor.hotWalletAddress, 'pending'))
                 if (txNonce > chainNonce + 5) {
                     console.log(`[ESCROW-RELEASE] Orphaned tx ${releaseTxHash} nonce=${txNonce} chainNonce=${chainNonce}. Clearing hash + resetting TxManager...`)
@@ -155,6 +148,8 @@ const processEscrowRelease = async (jobData) => {
         console.log(`[ESCROW-RELEASE] Order ${orderId} already released, skipping`)
         return 'success'
     }
+
+    // STEP 3: VERIFY FUNDING CONFIRMATIONS AND ATOMICALLY PRE-SAVE RELEASE TRANSACTION HASH
     if (!releaseTxHash || order.status !== 'completed') {
         if (!releaseTxHash) {
             if (order.escrowTxHash && !order.escrowTxHash.startsWith('offchain-')) {
@@ -174,7 +169,6 @@ const processEscrowRelease = async (jobData) => {
                 )
             }
 
-            // BIFURCAR: ERC20 vs NATIVO
             if (!coin) throw new Error('[ESCROW-RELEASE] Coin is undefined, cannot determine decimals')
             const isErc20Token = isToken || (order && order.isToken)
             const theTokenAddress = tokenAddress || (order && order.tokenAddress)
@@ -182,8 +176,8 @@ const processEscrowRelease = async (jobData) => {
                 throw new Error('[ESCROW-RELEASE] Missing tokenAddress for ERC20 order, refusing native fallback')
             }
 
+            // STEP 3.1 (ERC20 ROUTE): DISPATCH ERC20 TRANSFER TO PROVIDER WITH LIQUIDITY FORWARDING FALLBACK
             if (isErc20Token && theTokenAddress) {
-                // Obtener decimales correctos del token (USDC=6, USDT=6, etc)
                 const tokenInfo = getTokenInfo(chainId, theTokenAddress)
                 const tokenDecimals = tokenInfo?.decimals ?? 18
                 console.log('[ESCROW-RELEASE] Releasing ERC20 token from hot wallet...', { tokenDecimals, token: theTokenAddress })
@@ -193,7 +187,6 @@ const processEscrowRelease = async (jobData) => {
                         theTokenAddress, providerWalletAddress, amount, tokenDecimals, onTxHash
                     )
                 } catch (e) {
-                    // Si hot no tiene liquidez, los fondos siguen en el contrato del seller: forwardear y reintentar una vez
                     if (e.message && e.message.includes('Insufficient ERC20 balance in hot wallet')) {
                         console.log('[ESCROW-RELEASE] Hot wallet short on ERC20, forwarding from seller contract and retrying...', { orderId })
                         await interactor.forwardSellerERC20ToHotWallet(order.sellerWalletAddress, theTokenAddress)
@@ -223,6 +216,7 @@ const processEscrowRelease = async (jobData) => {
                 releaseTxHash = receipt.transactionHash
                 console.log('[ESCROW-RELEASE] ERC20 transfer successful:', { orderId, txHash: releaseTxHash })
             } else {
+                // STEP 3.2 (NATIVE ROUTE): AUDIT ESCROW BALANCE AND DISPATCH ON-CHAIN NATIVE RELEASE TRANSFER
                 const decimals = coins[coin.toUpperCase()]?.decimals || 18
                 const amountWei = toWeiAmount(amount, decimals)
                 console.log('[ESCROW-RELEASE] Releasing via escrow wallet native transfer...')
@@ -237,6 +231,8 @@ const processEscrowRelease = async (jobData) => {
             }
         }
     }
+
+    // STEP 4: FINALIZE ORDER STATUS, ATOMICALLY UPDATE PROVIDER METRICS, AND EMIT EVENT
     await EscrowOrder.updateOne(
         { orderId },
         {
@@ -246,11 +242,6 @@ const processEscrowRelease = async (jobData) => {
             }
         }
     )
-    // NOTA: no crear Transaction aqui. La subscription WSS on-chain detecta esta
-    // transferencia al wallet del provider y crea el unico documento via
-    // transaction.js -> deposit.js. Crear otro aqui duplicaba el deposito en UI
-    // (mismo txHash, 2 docs) porque txHash no tiene indice unico. Ver fix 2026-08-21
-    // revertido por error en 2026-10-03 al agregar soporte ERC20.
     const providerResult = await Provider.updateOne(
         { email: providerEmail },
         {
@@ -277,6 +268,8 @@ const processEscrowRelease = async (jobData) => {
     return 'success'
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS CONCURRENT ESCROW RELEASE BULLMQ WORKER
 connectDB.then(() => {
     console.log('[ESCROW-RELEASE] Worker started and ready')
     new Worker('escrow-release', async (job) => {

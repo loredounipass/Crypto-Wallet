@@ -5,6 +5,8 @@ const Wallet = require(`${appRoot}/config/models/Wallet`)
 const Erc20ForwardExecution = require(`${appRoot}/config/models/Erc20ForwardExecution`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 
+
+// MINIMAL ERC20 ABI INTERFACES FOR BALANCE INQUIRY AND DECIMALS RESOLUTION
 const erc20ABI = [
     {
         "inputs": [{"internalType": "address","name": "account","type": "address"}],
@@ -25,9 +27,14 @@ const ERC20_ABI_DECIMALS = [
     }
 ]
 
+
+// MINIMUM TOKEN BALANCE THRESHOLD REQUIRED TO TRIGGER A RESIDUAL SWEEP
 const SWEEP_THRESHOLD = 0.01
 
+
+// SCANS ON-CHAIN TOKEN BALANCES ACROSS USER WALLETS AND ENQUEUES SWEEPS FOR ORPHAN RESIDUALS
 const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
+    // STEP 1: INITIALIZE WEB3 CONTRACT INSTANCE AND RESOLVE TOKEN DECIMALS AND DIVISOR
     const web3 = new Web3(rpcUrl)
     const tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress)
     console.log(`[RESIDUAL-SWEEP] Running for ${chainId}:${tokenAddress}`)
@@ -46,9 +53,11 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
     }
     const divisor = BigInt(10) ** BigInt(decimals)
 
+    // STEP 2: LOAD ALL REGISTERED USER WALLETS ON TARGET CHAIN FOR AUDITING
     const wallets = await Wallet.find({ chainId })
 
     for (const wallet of wallets) {
+        // STEP 3: QUERY ON-CHAIN BALANCE AND FORMAT TO HUMAN-READABLE UNIT AMOUNT
         const walletAddress = wallet.address
 
         const balanceStr = await tokenContract.methods.balanceOf(walletAddress).call()
@@ -58,6 +67,7 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
         const fractionalStr = remainder.toString().padStart(decimals, '0').slice(0, 8)
         const balanceDisplay = Number(whole.toString() + '.' + fractionalStr)
 
+        // STEP 4: VERIFY IF ORPHAN BALANCE EXCEEDS THRESHOLD AND ENSURE NO IN-FLIGHT FORWARDS EXIST
         if (balanceDisplay > SWEEP_THRESHOLD) {
             const pendingExecs = await Erc20ForwardExecution.countDocuments({
                 walletAddress,
@@ -66,10 +76,10 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
                 settlement_state: { $in: ['PENDING_FORWARD', 'IN_FLIGHT'] }
             })
 
+            // STEP 5: ENQUEUE DEDUPLICATED AGGREGATION JOB TO SWEEP ORPHAN TOKEN BALANCE
             if (pendingExecs === 0) {
                 console.log(`[RESIDUAL-SWEEP] Orphan balance ${balanceDisplay} detected for ${walletAddress}. Forcing sweep.`)
                 const aggregationQueue = new Queue('erc20-aggregation')
-                // jobId estable: 2 sweeps concurrentes sobre el mismo wallet encolan 1 solo job
                 await aggregationQueue.add('aggregate', {
                     walletAddress,
                     tokenAddress,
@@ -87,4 +97,6 @@ const runResidualSweep = async ({ chainId, tokenAddress, rpcUrl }) => {
     }
 }
 
+
+// EXPORTS RESIDUAL SWEEP AUDITOR FOR SCHEDULED RECURRING CRON JOBS
 module.exports = { runResidualSweep }

@@ -12,15 +12,14 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const EscrowContractInteractor = require(`${appRoot}/config/utils/EscrowContractInteractor`)
 const coins = require(`${appRoot}/config/coins/info`)
 
+
+// POLLING INTERVAL FOR PERIODICALLY SCANNING EXPIRED ESCROW ORDERS AWAITING REFUNDS
 const POLL_INTERVAL_MS = 60000
 
 
-
-// REGISTRA EL REEMBOLSO COMO UNA NUEVA TRANSACCION ASOCIADA A LA BILLETERA DEL VENDEDOR
-// IDEMPOTENTE: verifica existencia por txHash antes de insertar porque txHash no
-// tiene indice unico y el catch 11000 nunca dispara. Si el scanner WSS ya creo el
-// doc, se reutiliza en vez de duplicar (mismo bug que releases 2026-10-04).
+// IDEMPOTENTLY REGISTERS ESCROW REFUND TRANSACTION DOCUMENT AND ATOMICALLY CREDITS SELLER WALLET
 const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmountEth = null) => {
+    // STEP 1: RESOLVE DETERMINISTIC REFUND HASH AND REUSE EXISTING TRANSACTION IF FOUND
     const coin = String(order.coin || '').toUpperCase()
     const sellerAddress = String(order.sellerWalletAddress || '').toLowerCase()
     const chainId = Number(order.chainId)
@@ -38,6 +37,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         )
         return existing
     }
+
+    // STEP 2: LOCATE SELLER WALLET FOR CHAIN AND COIN OR THROW FOR RETRY
     const isInternal = !refundTxHash
     const actualAmount = refundAmountEth !== null ? Number(refundAmountEth) : Number(order.amount || 0)
     const wallet = await Wallet.findOne({
@@ -54,6 +55,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
         })
         throw new Error(`Seller wallet not found for order ${order.orderId}`)
     }
+
+    // STEP 3: PERSIST REFUND TRANSACTION DOCUMENT (STATUS 3 INTERNAL OR STATUS 1 ON-CHAIN)
     let transaction = new Transaction({
         nature: 1,
         amount: actualAmount,
@@ -77,6 +80,8 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
             throw err
         }
     }
+
+    // STEP 4: LINK TRANSACTION TO SELLER WALLET AND CREDIT INTERNAL BALANCE IF NON-CHAIN
     await Wallet.updateOne(
         { _id: new ObjectId(wallet._id) },
         { $addToSet: { transactions: savedTransaction._id } }
@@ -103,15 +108,13 @@ const registerEscrowRefundTransaction = async (order, refundTxHash, refundAmount
 }
 
 
-
-// REEMBOLSA LOS FONDOS DIRECTAMENTE DESDE LA BILLETERA ESCROW HACIA LA BILLETERA DEL VENDEDOR
+// REFUNDS FUNDS TO SELLER VIA ERC20 LEDGER CREDIT OR NATIVE ESCROW WALLET ON-CHAIN TRANSFER
 const refundSellerWallet = async (order) => {
-    // ERC20 TOKEN: return balance to Erc20Ledger (no on-chain refund needed)
+    // STEP 1 (ERC20 ROUTE): ATOMICALLY CREDIT SELLER ERC20 LEDGER AND REUSE CLAIM IDENTIFIER
     if (order.isToken && order.tokenAddress) {
         const Erc20Ledger = require(`${appRoot}/config/models/Erc20Ledger`)
         const { getTokenInfo } = require(`${appRoot}/config/tokens`)
         const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
-        // CLAIM ATOMICO: solo el primer intento acredita; reintentos reusan la marca
         const internalTxHash = `internal-token-refund-${order.orderId}`
         const claimed = await EscrowOrder.findOneAndUpdate(
             { orderId: order.orderId, refundTxHash: { $exists: false } },
@@ -132,7 +135,7 @@ const refundSellerWallet = async (order) => {
             { $inc: { available_balance: order.amount } }
         )
 
-        // ─── FIX: Crear Transaction para visibilidad en UI del seller ───
+        // STEP 1.1 (ERC20 ROUTE): CREATE REFUND TRANSACTION FOR DASHBOARD VISIBILITY AND EMIT WEBSOCKET EVENT
         const tokenInfo = getTokenInfo(order.chainId, order.tokenAddress)
         const tokenSymbol = tokenInfo?.symbol || order.coin || 'TOKEN'
         const sellerWallet = await Wallet.findOne({
@@ -189,6 +192,7 @@ const refundSellerWallet = async (order) => {
         return
     }
 
+    // STEP 2 (NATIVE ROUTE): AUDIT ON-CHAIN ESCROW WALLET BALANCE AND EXECUTE NATIVE REFUND
     let refundTxHash = null;
     let refundAmountEth = null;
     if (order.escrowTxHash) {
@@ -204,6 +208,7 @@ const refundSellerWallet = async (order) => {
                     orderId: order.orderId,
                     refundAmount: refundAmountEth,
                 })
+                // STEP 2.1: PRE-SAVE REFUND TRANSACTION HASH ATOMICALLY TO PREVENT DUPLICATE TRANSFERS
                 const onTxHash = async (hash) => {
                     console.log(`[ESCROW-EXPIRY] Pre-saving refundTxHash ${hash} to prevent duplicate retries`)
                     await EscrowOrder.updateOne({ orderId: order.orderId }, { $set: { refundTxHash: hash } })
@@ -231,14 +236,16 @@ const refundSellerWallet = async (order) => {
             throw error
         }
     }
+
+    // STEP 3: REGISTER INTERNAL REFUND RECORD IF NO ON-CHAIN TRANSACTION OCCURRED
     await registerEscrowRefundTransaction(order, refundTxHash, refundAmountEth)
 }
 
 
-
-// CONSULTA PERIÓDICAMENTE LAS ORDENES EXPIRADAS PARA PROCESAR EL REEMBOLSO Y CAMBIAR SU ESTADO
+// PERIODICALLY POLLS AND PROCESSES EXPIRED ESCROW ORDERS TO DISPATCH REFUNDS AND EMIT EVENTS
 const checkExpiredOrders = async () => {
     try {
+        // STEP 1: QUERY FOR EXPIRED ORDERS ELIGIBLE FOR REFUND (PENDING OR FUNDED)
         const pendingOrders = await EscrowOrder.find({
             status: { $in: ['pending', 'funded'] },
             expiresAt: { $lt: new Date() },
@@ -248,6 +255,7 @@ const checkExpiredOrders = async () => {
         console.log(`[ESCROW-EXPIRY] Found ${pendingOrders.length} expired orders`)
         const statusQueue = new Queue('escrow-status-events')
         for (const order of pendingOrders) {
+            // STEP 2: ATOMICALLY ACQUIRE EXPIRY LOCK (EXPIRYLOCKEDAT) TO PREVENT CONCURRENT PROCESSING
             const claimed = await EscrowOrder.findOneAndUpdate(
                 {
                     orderId: order.orderId,
@@ -262,6 +270,7 @@ const checkExpiredOrders = async () => {
                 continue
             }
             try {
+                // STEP 3: DISPATCH SELLER REFUND, MARK ORDER AS EXPIRED, AND EMIT LIFECYCLE EVENT
                 await refundSellerWallet(order)
                 await EscrowOrder.updateOne(
                     { orderId: order.orderId },
@@ -287,6 +296,8 @@ const checkExpiredOrders = async () => {
     }
 }
 
+
+// INITIALIZES DATABASE CONNECTION AND STARTS PERIODIC EXPIRY MONITORING POLLER
 connectDB.then(() => {
     console.log('[ESCROW-EXPIRY] Worker started, polling every', POLL_INTERVAL_MS, 'ms')
     checkExpiredOrders()

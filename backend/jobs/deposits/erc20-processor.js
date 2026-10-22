@@ -8,6 +8,8 @@ const Transaction = require(`${appRoot}/config/models/Transaction`)
 const Wallet = require(`${appRoot}/config/models/Wallet`)
 const { getTokenInfo } = require(`${appRoot}/config/tokens`)
 
+
+// REQUIRED FINALITY CONFIRMATION BLOCKS PER CHAIN ID FOR ERC20 PROCESSING
 const CHAIN_CONFIRMATIONS = {
     1: 12,
     137: 150,
@@ -23,6 +25,8 @@ const CHAIN_CONFIRMATIONS = {
 }
 const DEFAULT_CONFIRMATIONS = 12
 
+
+// MINIMAL ERC20 ABI INTERFACE FOR DECIMALS RESOLUTION
 const ERC20_ABI_DECIMALS = [
     {
         "constant": true,
@@ -33,6 +37,8 @@ const ERC20_ABI_DECIMALS = [
     }
 ]
 
+
+// CONVERTS WEI AMOUNT BIGINT TO HUMAN-READABLE FLOATING POINT DISPLAY NUMBER USING DECIMALS
 function toDisplayNumber(amountWei, decimals) {
     const divisor = BigInt(10) ** BigInt(decimals)
     const whole = amountWei / divisor
@@ -41,12 +47,15 @@ function toDisplayNumber(amountWei, decimals) {
     return Number(whole.toString() + '.' + fractionalStr)
 }
 
+
+// PROCESSES INCOMING ON-CHAIN ERC20 TRANSFER EVENTS WITH IDEMPOTENT LEDGER CREDITING AND AGGREGATION
 const processERC20Event = async (job) => {
     const { eventId, chainId, txHash, logIndex, blockNumber, tokenAddress, walletAddress, amount } = job.data
 
     console.log(`[ERC20-PROCESSOR] Processing event ${eventId} on block ${blockNumber}`)
 
     try {
+        // STEP 1: RESOLVE CHAIN PROVIDER, CONFIRMATION COUNT, TOKEN DECIMALS, AND DISPLAY AMOUNT
         const rpcUrl = require(`${appRoot}/config/chains/${chainId}`).rpc
         const web3 = new Web3(rpcUrl)
         const latestBlockNumber = Number(await web3.eth.getBlockNumber())
@@ -70,6 +79,7 @@ const processERC20Event = async (job) => {
         const amountBig = BigInt(amount)
         const displayAmount = toDisplayNumber(amountBig, decimals)
 
+        // STEP 2: UPSERT TRACKING TRANSACTION DOCUMENT AND LINK TO BENEFICIARY WALLET
         let txRecord = await Transaction.findOne({
             nature: 1,
             txHash,
@@ -109,6 +119,7 @@ const processERC20Event = async (job) => {
             await txRecord.save()
         }
 
+        // STEP 3: PUBLISH INTERMEDIATE TRANSACTION STATUS UPDATE TO NOTIFICATION QUEUE
         try {
             const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
             await publishTransactionStatusUpdate({
@@ -127,19 +138,14 @@ const processERC20Event = async (job) => {
             console.error(`[ERC20-PROCESSOR] Failed to publish status update:`, pubErr.message)
         }
 
+        // STEP 4: DELAY BULLMQ JOB RETRY IF TRANSACTION HAS NOT YET REACHED FINALITY CONFIRMATIONS
         if (confirmations < minConf) {
             console.log(`[ERC20-PROCESSOR] Event ${eventId} pending confirmations: ${confirmations}/${minConf}. Requeuing.`)
             await job.moveToDelayed(Date.now() + 15000, job.token)
             throw new DelayedError()
         }
 
-        // IDEMPOTENCIA EN 2 FASES (fix doble-credito 2026-10-04):
-        // Fase 1: upsert atomico -> un solo doc por eventId aunque N jobs concurran.
-        // Fase 2: claim atomico de ledgerApplied -> solo el ganador hace el $inc.
-        // El claim va ANTES del $inc: si el proceso muere entre ambos, el evento
-        // queda marcado sin acreditar y el reconciliation-job lo detecta como drift
-        // (reparable). El orden inverso crearia dinero de la nada. Sin replica-set
-        // no hay transacciones multi-doc, este es el patron correcto.
+        // STEP 5: ATOMIC TWO-PHASE IDEMPOTENT CLAIM (RECORD INSERTION FOLLOWED BY LEDGER CREDIT)
         await Erc20Transaction.findOneAndUpdate(
             { eventId },
             {
@@ -176,7 +182,7 @@ const processERC20Event = async (job) => {
 
         console.log(`[ERC20-PROCESSOR] Event ${eventId} Ledger Updated for wallet ${walletAddress}. Amount: ${displayAmount} ${symbol}`)
 
-        // CLAIM ATOMICO: SOLO EL GANADOR PUBLICA Y ENVIA EMAIL (EVITA DUPLICADOS CONCURRENTES)
+        // STEP 6: ATOMICALLY TRANSITION TRANSACTION TO COMPLETED (STATUS 3) AND DISPATCH DEPOSIT EMAIL
         let emailClaim = null
         if (txRecord) {
             emailClaim = await Transaction.findOneAndUpdate(
@@ -200,7 +206,6 @@ const processERC20Event = async (job) => {
                     fee: 0
                 })
             } catch (pubErr) {}
-            // EMAIL DE DEPOSITO ERC20 (PARIDAD CON DEPOSITOS NATIVOS)
             try {
                 const WalletForEmail = require(`${appRoot}/config/models/Wallet`)
                 const UserForEmail = require(`${appRoot}/config/models/User`)
@@ -215,6 +220,7 @@ const processERC20Event = async (job) => {
             }
         }
 
+        // STEP 7: ENQUEUE AGGREGATION JOB TO TRIGGER BATCHED FORWARDING TO HOT WALLET
         const aggregationQueue = new Queue('erc20-aggregation')
         await aggregationQueue.add('aggregate', {
             walletAddress,
@@ -232,7 +238,6 @@ const processERC20Event = async (job) => {
 
     } catch (e) {
         if (e instanceof DelayedError || e.name === 'DelayedError' || (e.message && e.message.includes('bullmq:movedToDelayed'))) {
-            // Flujo normal: el job fue movido a delayed para esperar confirmaciones
             throw e
         }
         console.error(`[ERC20-PROCESSOR] REAL error processing event ${eventId}:`, e.message)
@@ -240,4 +245,6 @@ const processERC20Event = async (job) => {
     }
 }
 
+
+// EXPORTS ERC20 EVENT PROCESSOR FOR BULLMQ WORKER QUEUE
 module.exports = processERC20Event

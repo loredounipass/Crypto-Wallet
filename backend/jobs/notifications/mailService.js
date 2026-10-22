@@ -1,11 +1,15 @@
 const nodemailer = require('nodemailer')
 
+
+// ENVIRONMENT AND SMTP CONFIGURATION
 const mailService = process.env.SERVICE || 'gmail'
 const mailUser = process.env.USER
 const mailPass = process.env.PASS
 const mailFrom = process.env.EMAIL_FROM || process.env.MAIL_FROM || `BrivoTrust <${mailUser}>`
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
 
+
+// SHARED EMAIL VISUAL STYLES AND BRAND ASSETS
 const GRADIENT = 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #2186EB 100%)'
 
 const LOGO_SVG = `
@@ -61,6 +65,8 @@ const FOOTER = `
   </div>
 `
 
+
+// WRAPS EMAIL BODY CONTENT WITH STANDARDIZED HTML SHELL AND BRANDED STYLING
 function wrapHtml(bodyContent) {
   return `
     <html>
@@ -83,6 +89,8 @@ function wrapHtml(bodyContent) {
   `
 }
 
+
+// NODEMAILER TRANSPORTER INITIALIZATION
 let mailTransporter = null
 if (mailUser && mailPass) {
     mailTransporter = nodemailer.createTransport({
@@ -94,6 +102,8 @@ if (mailUser && mailPass) {
     })
 }
 
+
+// DISPATCHES EMAIL MESSAGE SAFELY WITH ERROR LOGGING AND GRACEFUL DEGRADATION
 const sendMailSafe = async (mailDetails) => {
     if (!mailTransporter) {
         console.warn('[MAIL] transporter not configured: missing SERVICE/USER/PASS credentials')
@@ -108,6 +118,8 @@ const sendMailSafe = async (mailDetails) => {
     }
 }
 
+
+// SENDS DEPOSIT CONFIRMATION EMAIL NOTIFICATION TO RECIPIENT
 const sendDepositEmail = async (amount, coin, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -131,6 +143,8 @@ const sendDepositEmail = async (amount, coin, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
+
+// SENDS WITHDRAWAL CONFIRMATION EMAIL NOTIFICATION TO RECIPIENT
 const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -152,12 +166,7 @@ const sendWithdrawEmail = async (amount, coin, toAddress, txId, toEmail) => {
 }
 
 
-
-// ─────────────────────────────────────────────────────────────
-// P2P / ESCROW EMAIL FUNCTIONS
-// ─────────────────────────────────────────────────────────────
-
-// CONSTRUYE UNA TABLA HTML REUTILIZABLE CON LOS DATOS CLAVE DE UNA ORDEN P2P
+// BUILDS REUSABLE HTML TABLE RENDERING KEY P2P ESCROW ORDER DETAILS
 const buildP2POrderDetailsTable = (o) => {
     const truncAddr = (addr) => addr ? `${addr.slice(0, 8)}...${addr.slice(-6)}` : '—'
     const formatDate = (d) => d ? new Date(d).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
@@ -183,7 +192,8 @@ const buildP2POrderDetailsTable = (o) => {
     `
 }
 
-// GENERA EL BOTON CTA PARA IR AL CHATROOM DE LA ORDEN
+
+// GENERATES CALL-TO-ACTION BUTTON REDIRECTING USER TO ORDER CHATROOM
 const buildChatroomCTA = (chatroomId, label = 'Ir al Chat de la Orden') => {
     if (!chatroomId) return ''
     return `
@@ -197,7 +207,8 @@ const buildChatroomCTA = (chatroomId, label = 'Ir al Chat de la Orden') => {
     `
 }
 
-// NOTIFICA AL VENDEDOR Y AL PROVEEDOR QUE SE CREO UNA NUEVA ORDEN P2P EN ESTADO PENDIENTE
+
+// SENDS P2P ORDER CREATED EMAIL NOTIFICATION TO SELLER OR COUNTERPARTY
 const sendP2POrderCreatedEmail = async (orderData, toEmail, recipientType = 'seller') => {
     const isSeller = recipientType === 'seller'
     const roleLabel = isSeller ? 'has creado' : 'ha recibido'
@@ -219,7 +230,8 @@ const sendP2POrderCreatedEmail = async (orderData, toEmail, recipientType = 'sel
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA QUE LOS FONDOS QUEDARON BLOQUEADOS EN EL CONTRATO ESCROW Y LA ORDEN ESTA ACTIVA
+
+// SENDS ESCROW FUNDED EMAIL NOTIFICATION CONFIRMING LOCKED ASSETS
 const sendP2POrderFundedEmail = async (orderData, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -237,7 +249,8 @@ const sendP2POrderFundedEmail = async (orderData, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA AL VENDEDOR QUE EL PROVEEDOR CONFIRMO HABER RECIBIDO EL PAGO FIAT
+
+// SENDS FIAT PAYMENT CONFIRMATION EMAIL TO SELLER PROMPTING ASSET RELEASE
 const sendP2PPaymentConfirmedEmail = async (orderData, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -262,7 +275,8 @@ const sendP2PPaymentConfirmedEmail = async (orderData, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA AL PROVEEDOR QUE EL VENDEDOR LIBERO LOS FONDOS DEL ESCROW
+
+// SENDS ESCROW RELEASE EMAIL NOTIFICATION TO BUYER
 const sendP2PFundsReleasedEmail = async (orderData, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -280,7 +294,8 @@ const sendP2PFundsReleasedEmail = async (orderData, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA A AMBAS PARTES QUE LA ORDEN P2P FUE COMPLETADA EXITOSAMENTE
+
+// SENDS ORDER COMPLETION EMAIL NOTIFICATION TO PARTICIPATING PARTY
 const sendP2POrderCompletedEmail = async (orderData, toEmail, recipientType = 'seller') => {
     const isSeller = recipientType === 'seller'
     const mailDetails = {
@@ -306,7 +321,8 @@ const sendP2POrderCompletedEmail = async (orderData, toEmail, recipientType = 's
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA A AMBAS PARTES QUE LA ORDEN FUE CANCELADA Y LOS FONDOS SERAN DEVUELTOS
+
+// SENDS ORDER CANCELLATION EMAIL NOTIFICATION TO PARTICIPATING PARTY
 const sendP2POrderCancelledEmail = async (orderData, toEmail, recipientType = 'seller') => {
     const isSeller = recipientType === 'seller'
     const mailDetails = {
@@ -326,7 +342,8 @@ const sendP2POrderCancelledEmail = async (orderData, toEmail, recipientType = 's
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA AL VENDEDOR QUE LA ORDEN EXPIRO POR TIEMPO Y LOS FONDOS SERAN REEMBOLSADOS
+
+// SENDS ORDER EXPIRATION EMAIL NOTIFICATION CONFIRMING AUTOMATIC REFUND
 const sendP2POrderExpiredEmail = async (orderData, toEmail) => {
     const mailDetails = {
         from: mailFrom,
@@ -357,7 +374,8 @@ const sendP2POrderExpiredEmail = async (orderData, toEmail) => {
     return await sendMailSafe(mailDetails)
 }
 
-// NOTIFICA A TODAS LAS PARTES INVOLUCRADAS QUE SE ABRIO UNA DISPUTA EN LA ORDEN
+
+// SENDS DISPUTE OPENED NOTIFICATION EMAIL TO PARTICIPANTS AND ADMINISTRATORS
 const sendP2PDisputeOpenedEmail = async (orderData, toEmail, recipientType = 'seller') => {
     const isAdmin = recipientType === 'admin'
     const isSeller = recipientType === 'seller'
@@ -398,10 +416,11 @@ const sendP2PDisputeOpenedEmail = async (orderData, toEmail, recipientType = 'se
     return await sendMailSafe(mailDetails)
 }
 
+
+// EXPORTS NOTIFICATION EMAIL SERVICES FOR SYSTEM WORKERS AND API CONTROLLERS
 module.exports = {
     sendDepositEmail,
     sendWithdrawEmail,
-    // P2P / Escrow
     sendP2POrderCreatedEmail,
     sendP2POrderFundedEmail,
     sendP2PPaymentConfirmedEmail,
