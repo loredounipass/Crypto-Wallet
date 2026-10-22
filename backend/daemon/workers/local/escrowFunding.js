@@ -109,6 +109,69 @@ const processEscrowFunding = async (jobData) => {
                 status: 'funded'
             }
         })
+
+        // ─── FIX: Crear Transaction para visibilidad en UI del seller ───
+        // Sin este doc, la deducción del Erc20Ledger era invisible al dashboard.
+        // Status 3 (confirmed) porque offchain-ledger no tiene tx on-chain que trackear.
+        const { getTokenInfo } = require(`${appRoot}/config/tokens`)
+        const tokenInfo = getTokenInfo(chainId, tokenAddress)
+        const tokenSymbol = tokenInfo?.symbol || coin || 'TOKEN'
+
+        const sellerWallet = await Wallet.findOne({
+            address: new RegExp(`^${String(sellerWalletAddress).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+            chainId
+        })
+        if (sellerWallet) {
+            const txDoc = await Transaction.findOneAndUpdate(
+                { txHash: offchainTxHash, nature: 2 },
+                {
+                    $setOnInsert: {
+                        nature: 2,
+                        amount: -1 * Number(amount),
+                        created_at: Date.now(),
+                        status: 3,
+                        confirmations: 0,
+                        txHash: offchainTxHash,
+                        to: providerWalletAddress,
+                        tokenSymbol
+                    }
+                },
+                { upsert: true, returnDocument: 'after' }
+            )
+            await Wallet.updateOne(
+                { _id: new ObjectId(sellerWallet._id) },
+                { $addToSet: { transactions: txDoc._id } }
+            )
+
+            // Notificar al frontend vía WebSocket para actualización en tiempo real
+            const { publishTransactionStatusUpdate } = require(`${appRoot}/jobs/notifications/transactionStatusQueue`)
+            await publishTransactionStatusUpdate({
+                transactionId: txDoc._id.toString(),
+                status: 3,
+                confirmations: 0,
+                nature: 2,
+                amount: -1 * Number(amount),
+                coin: tokenSymbol,
+                tokenSymbol,
+                chainId,
+                txHash: offchainTxHash,
+                to: providerWalletAddress,
+                fee: 0,
+                source: 'escrow-funding-erc20-offchain'
+            })
+
+            console.log('[ESCROW-FUNDING] ERC20 Transaction registered for seller UI:', {
+                orderId,
+                txId: txDoc._id.toString(),
+                tokenSymbol,
+                walletId: sellerWallet._id.toString()
+            })
+        } else {
+            console.warn('[ESCROW-FUNDING] Seller wallet not found for ERC20 Transaction registration:', {
+                orderId, sellerWalletAddress, chainId
+            })
+        }
+
         const statusQueue = new Queue('escrow-status-events')
         statusQueue.add('status-update', {
             orderId, status: 'funded', sellerEmail, providerEmail, escrowTxHash: offchainTxHash
