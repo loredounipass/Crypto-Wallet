@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import useAllWallets from '../hooks/useAllWallets';
 import useTokenBalances from '../hooks/useTokenBalances';
 import useCoinPrice from '../hooks/useCoinPrice';
-import { get } from '../api/http';
+import Price from '../services/price';
 import { ArrowBack } from '../ui/icons';
 import {
     getCoinList,
@@ -147,7 +147,7 @@ const Wallets = () => {
         let isMounted = true;
         const fetchHistoricalData = async () => {
             try {
-                const { data } = await get(`price/${selectedCoin}/chart`);
+                const { data } = await Price.getChart(selectedCoin);
                 if (isMounted && Array.isArray(data?.prices) && data.prices.length > 1) {
                     setChartDataValues(data.prices);
                 }

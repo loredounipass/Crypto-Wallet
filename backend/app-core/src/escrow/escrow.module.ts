@@ -14,6 +14,7 @@ import { Provider, ProviderSchema } from '../providers/schemas/provider.schema';
 import { Chat, ChatSchema } from '../providers/schemas/chat-schema/chat.schema';
 import { Transaction, TransactionSchema } from '../transaction/schemas/transaction.schema';
 import { Erc20Ledger, Erc20LedgerSchema } from '../wallet/schemas/erc20-ledger.schema';
+import { PriceModule } from '../price/price.module';
 import { default as EscrowQueueType } from './queue/types.queue';
 
 @Module({
@@ -46,6 +47,7 @@ import { default as EscrowQueueType } from './queue/types.queue';
     BullModule.registerQueue({
       name: EscrowQueueType.ESCROW_DISPUTE_MARK,
     }),
+    PriceModule,
   ],
   controllers: [EscrowController],
   providers: [EscrowService, EscrowGateway, EscrowStatusProcessor, EscrowMailService],

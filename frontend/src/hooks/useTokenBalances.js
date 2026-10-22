@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Wallet from '../services/wallet'
 import Price from '../services/price'
+import { getStablecoinFallbackPrice } from '../utils/prices'
 
 const CACHE_TTL_MS = 30 * 1000;
 let cache = {
@@ -45,7 +46,6 @@ async function fetchTokenBalances(force = false) {
         const { data } = await Wallet.getTokenBalances();
         const tokens = Array.isArray(data) ? data : [];
 
-        const STABLECOIN_FALLBACK_PRICE = { USDT: 1, USDC: 1 };
         const uniqueGeckoIds = [...new Set(tokens.reduce((acc, t) => {
             if (t.coinGeckoId) acc.push(t.coinGeckoId);
             return acc;
@@ -64,7 +64,7 @@ async function fetchTokenBalances(force = false) {
         const usdValue = tokens.reduce((acc, t) => {
             const usdPrice = t.coinGeckoId
                 ? Number(priceMap[t.coinGeckoId] || 0)
-                : (STABLECOIN_FALLBACK_PRICE[String(t.tokenSymbol).toUpperCase()] || 0);
+                : getStablecoinFallbackPrice(t.tokenSymbol);
             return acc + (t.availableBalance * usdPrice);
         }, 0);
 

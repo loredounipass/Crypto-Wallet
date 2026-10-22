@@ -4,10 +4,10 @@ import useAllWallets from '../../hooks/useAllWallets';
 import useTokenBalances from '../../hooks/useTokenBalances';
 import Price from '../../services/price';
 import Escrow from '../../services/escrow';
+import { getStablecoinFallbackPrice } from '../../utils/prices';
 import { getNetworkName } from '../utils/Chains';
 
 const MIN_ORDER_USD = 10;
-const STABLECOIN_FALLBACK_PRICE = { USDT: 1, USDC: 1 };
 
 
 
@@ -150,12 +150,12 @@ export default function useP2PCreateOrderModalLogic({ open, provider, onSubmit }
             setCoinPriceUsd(price);
           } else {
             // Fallback for testnet stablecoins
-            setCoinPriceUsd(STABLECOIN_FALLBACK_PRICE[coin.toUpperCase()] || 0);
+            setCoinPriceUsd(getStablecoinFallbackPrice(coin));
           }
         }
       } catch (_) {
         if (isMountedLocal) {
-          setCoinPriceUsd(STABLECOIN_FALLBACK_PRICE[coin.toUpperCase()] || 0);
+          setCoinPriceUsd(getStablecoinFallbackPrice(coin));
         }
       }
     }
